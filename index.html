@@ -3,123 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Portal da Campanha: Kuar-Tor</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Roboto+Slab:wght@400;700&display=swap" rel="stylesheet">
-    <style>
-        body {
-            font-family: 'Roboto Slab', serif;
-            background-color: #0a0a0a;
-            color: #d1d5db;
-            background-image: url('https://images.unsplash.com/photo-1597873819455-90031846b6c3?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D');
-            background-size: cover;
-            background-position: center;
-            background-attachment: fixed;
-        }
-        .main-container {
-            background-color: rgba(10, 10, 10, 0.9);
-            backdrop-filter: blur(8px);
-        }
-        h1, h2 {
-            font-family: 'Cinzel', serif;
-        }
-        .resource-card {
-            background-color: rgba(23, 23, 23, 0.7);
-            border: 1px solid #404040;
-            transition: all 0.3s ease;
-        }
-        .resource-card:hover {
-            border-color: #ef4444;
-            transform: translateY(-5px);
-            box-shadow: 0 10px 15px -3px rgba(239, 68, 68, 0.1), 0 4px 6px -2px rgba(239, 68, 68, 0.05);
-        }
-        .btn-theme {
-            transition: all 0.2s ease-in-out;
-            font-family: 'Cinzel', serif;
-        }
-        .btn-theme:hover {
-            transform: scale(1.05);
-        }
-        /* New styles for the tape */
-        .tape-overlay {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%) rotate(-5deg); /* Slightly rotate for effect */
-            width: 110%; /* Slightly wider than the button */
-            height: 40px; /* Adjust as needed */
-            pointer-events: none; /* Allows clicks to pass through to the button */
-            z-index: 10; /* Ensure it's above the button */
-        }
-                /* Specific positioning for each tape */
-        .tape-overlay-1 {
-            top: 25%;
-            left: 50%;
-            transform: translate(-50%, -50%) rotate(-5deg);
-        }
-        .tape-overlay-2 {
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%) rotate(5deg);
-        }
-        .tape-overlay-3 {
-            top: 75%;
-            left: 50%;
-            transform: translate(-50%, -50%) rotate(-10deg);
-        }
-        .tape-overlay-4 {
-            top: 90%; /* New tape, slightly lower */
-            left: 50%;
-            transform: translate(-50%, -50%) rotate(2deg);
-        }
-    </style>
+    <title>Redirecting...</title>
+    <script>
+        window.location.href = "main.html";
+    </script>
 </head>
-<body class="flex items-center justify-center min-h-screen p-4">
-
-    <div class="main-container w-full max-w-5xl p-8 rounded-xl shadow-2xl border border-gray-800">
-        <header class="text-center mb-10">
-            <h1 class="text-5xl md:text-6xl font-bold text-red-500" style="text-shadow: 0 0 10px rgba(153, 27, 27, 0.7);">Portal de Kuar-Tor</h1>
-            <p class="text-xl text-gray-300 mt-2">Recursos para a campanha "A Última Expedição"</p>
-        </header>
-
-        <main class="grid grid-cols-1 md:grid-cols-3 gap-8">
-
-            <div class="resource-card rounded-lg p-6 flex flex-col">
-                <h2 class="text-2xl font-bold text-white mb-3">O Mundo de Kuar-Tor</h2>
-                <p class="text-gray-400 mb-6 flex-grow">Descubra a história, regras do sistema +2d6, e os segredos da ilha amaldiçoada. Essencial para todos os jogadores.</p>
-                <a href="Site/siteV1.1.html" class="btn-theme mt-auto block w-full text-center bg-red-700 hover:bg-red-600 text-white font-semibold py-3 rounded-md">Explorar a Campanha</a>
-            </div>
-
-            <div class="resource-card rounded-lg p-6 flex flex-col">
-                <h2 class="text-2xl font-bold text-white mb-3">Gerador de Fichas</h2>
-                <p class="text-gray-400 mb-6 flex-grow">Forje seu personagem para a expedição. Salve, importe e gerencie suas fichas de forma prática e rápida.</p>
-                <a href="Forms/formV4.3.html" class="btn-theme mt-auto block w-full text-center bg-amber-600 hover:bg-amber-500 text-white font-semibold py-3 rounded-md">Criar Personagem</a>
-            </div>
-
-            <div class="resource-card rounded-lg p-6 flex flex-col">
-                <h2 class="text-2xl font-bold text-white mb-3">Tomo das Estatísticas</h2>
-                <p class="text-gray-400 mb-6 flex-grow">Utilize este grimório para rolar dados, adicionar valores personalizados e consultar as estatísticas arcanas de seus lançamentos.</p>
-                <a href="Dados/dados.html" class="btn-theme mt-auto block w-full text-center bg-indigo-700 hover:bg-indigo-600 text-white font-semibold py-3 rounded-md">Rolar os Dados</a>
-            </div>
-
-            <div class="resource-card rounded-lg p-6 flex flex-col relative overflow-hidden">
-                <h2 class="text-2xl font-bold text-white mb-3">Manutenção</h2>
-                <p class="text-gray-400 mb-6 flex-grow">Acesse ferramentas e recursos de manutenção para a campanha, incluindo mapas, cofres e arquivos de inteligência.</p>
-                <a href="Rascunhos/manu.html" class="btn-theme mt-auto block w-full text-center bg-emerald-700 hover:bg-emerald-600 text-white font-semibold py-3 rounded-md">Acessar Manutenção</a>
-                <img src="faixa.png" alt="Under Construction Tape" class="tape-overlay tape-overlay-2">
-                <img src="faixa.png" alt="Under Construction Tape" class="tape-overlay tape-overlay-1">
-                <img src="faixa.png" alt="Under Construction Tape" class="tape-overlay tape-overlay-3">
-                <img src="faixa.png" alt="Under Construction Tape" class="tape-overlay tape-overlay-4">
-            </div>
-
-        </main>
-        
-        <footer class="text-center mt-12">
-            <p class="text-gray-500 text-sm">São Carlos, SP, Brasil | Domingo, 8 de junho de 2025</p>
-        </footer>
-    </div>
-
+<body>
+    <p>If you are not redirected automatically, follow this <a href="main.html">link to the main page</a>.</p>
 </body>
 </html>

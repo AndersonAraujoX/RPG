@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Santuário de Kuar-Tor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0c0c0c;
+            color: #d1d5db;
+        }
+        .font-cinzel { font-family: 'Cinzel', serif; }
+        .tab-button.active {
+            border-bottom: 2px solid #ef4444;
+            color: #ef4444;
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gray-900 text-white p-4">
+
+    <div id="app" class="max-w-7xl mx-auto">
+        <!-- Header -->
+        <header class="flex justify-between items-center mb-6">
+            <h1 class="text-4xl font-cinzel text-red-500">Santuário</h1>
+            <div id="user-info"></div>
+        </header>
+
+        <!-- Tabs -->
+        <div class="mb-6 border-b border-gray-700">
+            <nav class="flex space-x-8">
+                <button data-tab="forja" class="tab-button font-cinzel text-lg py-2 px-1 text-gray-400 hover:text-red-400 transition">Forja</button>
+                <button data-tab="mercado" class="tab-button font-cinzel text-lg py-2 px-1 text-gray-400 hover:text-red-400 transition">Mercado</button>
+                <button data-tab="cofre" class="tab-button font-cinzel text-lg py-2 px-1 text-gray-400 hover:text-red-400 transition">Cofre da Guilda</button>
+            </nav>
+        </div>
+
+        <!-- Content -->
+        <main id="tab-content">
+            <!-- Forja -->
+            <div id="forja-content" class="hidden">
+                <h2 class="text-2xl font-cinzel text-red-400 mb-4">Forjar Itens</h2>
+                <div id="forge-items" class="grid grid-cols-1 md:grid-cols-3 gap-4"></div>
+            </div>
+
+            <!-- Mercado -->
+            <div id="mercado-content" class="hidden">
+                <h2 class="text-2xl font-cinzel text-red-400 mb-4">Comprar Itens</h2>
+                <div id="market-items" class="grid grid-cols-1 md:grid-cols-3 gap-4"></div>
+            </div>
+
+            <!-- Cofre -->
+            <div id="cofre-content" class="hidden">
+                <h2 class="text-2xl font-cinzel text-red-400 mb-4">Itens da Guilda</h2>
+                <div id="guild-vault-items" class="grid grid-cols-1 md:grid-cols-3 gap-4"></div>
+            </div>
+        </main>
+        
+        <!-- Player Info Fixed Footer -->
+        <footer class="fixed bottom-0 left-0 right-0 bg-gray-800 p-4 border-t border-gray-700">
+            <div class="max-w-7xl mx-auto flex justify-between items-center">
+                <div id="player-funds" class="text-lg font-semibold"></div>
+                <div id="player-inventory-summary" class="text-sm"></div>
+            </div>
+        </footer>
+    </div>
+    
+    <script src="firebase-config.js"></script>
+    <script type="module">
+            document.addEventListener('DOMContentLoaded', () => {
+                let state = {
+                    user: null,
+                    playerData: { funds: 0, inventory: [] },
+                    santuarioData: null,
+                    activeTab: 'forja',
+                };
+
+                const ui = {
+                    userInfo: document.getElementById('user-info'),
+                    tabs: document.querySelectorAll('.tab-button'),
+                    tabContent: document.getElementById('tab-content'),
+                    forjaContent: document.getElementById('forja-content'),
+                    mercadoContent: document.getElementById('mercado-content'),
+                    cofreContent: document.getElementById('cofre-content'),
+                    forgeItems: document.getElementById('forge-items'),
+                    marketItems: document.getElementById('market-items'),
+                    guildVaultItems: document.getElementById('guild-vault-items'),
+                    playerFunds: document.getElementById('player-funds'),
+                    playerInventorySummary: document.getElementById('player-inventory-summary'),
+                };
+                
+                function render() {
+                    // Render User Info
+                    if (state.user) {
+                        ui.userInfo.innerHTML = `
+                            <div class="flex items-center">
+                                <span class="mr-4">${state.user.email}</span>
+                                <button id="logout-btn" class="bg-red-600 px-3 py-1 rounded">Logout</button>
+                            </div>
+                        `;
+                        document.getElementById('logout-btn').addEventListener('click', () => auth.signOut());
+                    } else {
+                        ui.userInfo.innerHTML = `<button id="login-btn" class="bg-blue-600 px-3 py-1 rounded">Login com Google</button>`;
+                        document.getElementById('login-btn').addEventListener('click', () => {
+                            const provider = new firebase.auth.GoogleAuthProvider();
+                            auth.signInWithPopup(provider);
+                        });
+                    }
+
+                    // Render Tabs
+                    ui.tabs.forEach(tab => {
+                        tab.classList.toggle('active', tab.dataset.tab === state.activeTab);
+                    });
+
+                    // Render Content
+                    ['forja', 'mercado', 'cofre'].forEach(tabName => {
+                        ui[`${tabName}Content`].style.display = state.activeTab === tabName ? 'block' : 'none';
+                    });
+                    
+                    if (state.santuarioData) {
+                       renderItems(ui.forgeItems, state.santuarioData.forja, 'Forjar');
+                       renderItems(ui.marketItems, state.santuarioData.mercado, 'Comprar');
+                       renderItems(ui.guildVaultItems, state.santuarioData.cofre, 'Pegar');
+                    }
+                    
+                    // Render Player Info
+                    ui.playerFunds.textContent = `Fundos: ${state.playerData.funds} moedas`;
+                    // A more detailed inventory could be shown in a modal
+                    ui.playerInventorySummary.textContent = `Itens: ${state.playerData.inventory.length}`;
+                }
+
+                function renderItems(container, items, action) {
+                    container.innerHTML = '';
+                    if (!items) return;
+                    Object.entries(items).forEach(([key, item]) => {
+                        const itemEl = document.createElement('div');
+                        itemEl.className = 'bg-gray-800 p-4 rounded-lg';
+                        itemEl.innerHTML = `
+                            <h3 class="text-xl font-cinzel text-red-300">${item.nome}</h3>
+                            <p class="text-gray-400">${item.descricao}</p>
+                            <p class="mt-2 font-semibold">Custo: ${item.custo} moedas</p>
+                            <button data-id="${key}" class="mt-4 w-full bg-red-600 hover:bg-red-700 py-2 rounded">${action}</button>
+                        `;
+                        container.appendChild(itemEl);
+                    });
+                }
+                
+                function setupListeners() {
+                    ui.tabs.forEach(tab => {
+                        tab.addEventListener('click', () => {
+                            state.activeTab = tab.dataset.tab;
+                            render();
+                        });
+                    });
+                }
+
+                // Firestore and Auth listeners
+                function initialize() {
+                    setupListeners();
+                    auth.onAuthStateChanged(user => {
+                        state.user = user;
+                        if (user) {
+                            // Listen to player data
+                            db.collection('players').doc(user.uid).onSnapshot(doc => {
+                                state.playerData = doc.data() || { funds: 0, inventory: [] };
+                                render();
+                            });
+                        }
+                        render();
+                    });
+                    
+                    // Listen to Santuario data
+                    db.collection('santuario').doc('config').onSnapshot(doc => {
+                        state.santuarioData = doc.data();
+                        render();
+                    });
+                }
+
+                initialize();
+            });
+    </script>
+</body>
+</html>
