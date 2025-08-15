@@ -154,7 +154,6 @@
                 <div class="points-block"><div class="points-label">Atributos</div><div id="attributePointsValue" class="points-value">0/14</div></div>
                 <div class="points-block"><div class="points-label">Perícias</div><div id="skillPointsValue" class="points-value">0/10</div></div>
                 <div class="points-block"><div class="points-label">Vantagens</div><div id="advantagePointsValue" class="points-value">0/5</div></div>
-                <div class="points-block"><div class="points-label">Caminhos</div><div id="magicPathPointsValue" class="points-value">0/0</div></div>
             </div>
 
             <form id="rpgSheetForm" class="space-y-6">
@@ -230,12 +229,7 @@
                 <!-- Seção de Magia -->
                 <fieldset id="secao-magia" class="border border-neutral-700 p-4 rounded-md">
                     <legend class="text-lg px-2 section-title !border-none !mb-0 !pb-0 !text-amber-500">🔮 Magia & Rituais</legend>
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 my-4">
-                        <div>
-                            <label for="poderesMagicos" class="block text-sm font-medium text-gray-400 mb-1">Poderes Mágicos (Vantagem)</label>
-                            <input type="number" id="poderesMagicos" name="poderesMagicos" class="w-full bg-neutral-900 border-neutral-600 rounded-md p-2" placeholder="1-5" min="0" max="5" value="0">
-                            <p class="text-xs text-gray-500 mt-1">Pontos para Caminhos.</p>
-                        </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 my-4">
                         <div>
                             <label for="tradicaoMagica" class="block text-sm font-medium text-gray-400 mb-1">Tradição Mágica</label>
                             <select id="tradicaoMagica" name="tradicaoMagica" class="w-full bg-neutral-900 border-neutral-600 rounded-md p-2 h-[42px]">
@@ -390,7 +384,6 @@
             sab: document.getElementById('sab'), pod: document.getElementById('pod'),
             car: document.getElementById('car')
         };
-        const poderesMagicosInput = document.getElementById('poderesMagicos');
         const tradicaoMagicaSelect = document.getElementById('tradicaoMagica');
         const pontosEnergiaInput = document.getElementById('pontosEnergia');
         const addCaminhoBtn = document.getElementById('addCaminhoBtn');
@@ -400,7 +393,6 @@
         const attributePointsValueDiv = document.getElementById('attributePointsValue');
         const skillPointsValueDiv = document.getElementById('skillPointsValue');
         const advantagePointsValueDiv = document.getElementById('advantagePointsValue');
-        const magicPathPointsValueDiv = document.getElementById('magicPathPointsValue');
         
         const expInput = document.getElementById('expPoints');
         const earnedAttributePointsDiv = document.getElementById('earnedAttributePoints');
@@ -474,7 +466,13 @@
 
             const advantages = JSON.parse(document.getElementById('vantagensInput').value || '[]');
             const disadvantages = JSON.parse(document.getElementById('desvantagensInput').value || '[]');
-            const advantagesSpent = advantages.reduce((total, adv) => total + (adv.custo || 0), 0);
+            
+            let pontosGastosCaminho = 0;
+            caminhosContainer.querySelectorAll('input[type="number"]').forEach(input => {
+                pontosGastosCaminho += parseInt(input.value) || 0;
+            });
+
+            const advantagesSpent = advantages.reduce((total, adv) => total + (adv.custo || 0), 0) + pontosGastosCaminho;
             const disadvantagesBonus = disadvantages.reduce((total, dis) => total + (dis.bonus || 0), 0);
             const advantagePointsPool = 5 + Math.min(disadvantagesBonus, 3) + pontosVantagemAdd;
             advantagePointsValueDiv.textContent = `${advantagesSpent}/${advantagePointsPool}`;
@@ -487,14 +485,6 @@
             else if (tradicao === 'SAB') atributoMagicoVal = parseInt(allAtributosInputs.sab.value) || 0;
             else if (tradicao === 'POD') atributoMagicoVal = parseInt(allAtributosInputs.pod.value) || 0;
             pontosEnergiaInput.value = atributoMagicoVal + con + 10;
-            
-            const pontosDisponiveisCaminho = parseInt(poderesMagicosInput.value) || 0;
-            let pontosGastosCaminho = 0;
-            caminhosContainer.querySelectorAll('input[type="number"]').forEach(input => {
-                pontosGastosCaminho += parseInt(input.value) || 0;
-            });
-            magicPathPointsValueDiv.textContent = `${pontosGastosCaminho}/${pontosDisponiveisCaminho}`;
-            magicPathPointsValueDiv.classList.toggle('negative', pontosGastosCaminho > pontosDisponiveisCaminho);
         }
 
         function adicionarCaminho(caminhoData = { nome: '', nivel: 0, customName: '' }) {
@@ -516,7 +506,7 @@
                     <input type="text" name="caminho-custom-${id}" class="w-full bg-neutral-700 border border-neutral-600 rounded-md h-10 px-2 text-sm ${caminhoData.nome === 'OUTRO' ? '' : 'hidden'}" placeholder="Nome do Caminho Secundário" value="${caminhoData.customName || ''}">
                 </div>
                 <div class="flex items-center space-x-2">
-                    <label class="text-sm">Nível:</label>
+                    <label class="text-sm">Nível (Custo):</label>
                     <input type="number" name="caminho-nivel-${id}" class="attribute-input w-16" placeholder="Nvl" min="0" value="${caminhoData.nivel || 0}">
                 </div>
                 <p name="caminho-formas-${id}" class="text-sm text-gray-400">Formas: -</p>
@@ -762,7 +752,6 @@
 
         // --- EVENT LISTENERS ---
         Object.values(allAtributosInputs).forEach(input => input.addEventListener('input', updateAllStats));
-        poderesMagicosInput.addEventListener('input', updateAllStats);
         tradicaoMagicaSelect.addEventListener('input', updateAllStats);
         addCaminhoBtn.addEventListener('click', () => adicionarCaminho());
         expInput.addEventListener('input', updateAllStats);
