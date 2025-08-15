@@ -151,9 +151,9 @@
 
             <!-- Contador de Pontos -->
             <div id="pointCounterSection" class="points-counter">
-                <div class="points-block"><div class="points-label">Atributos</div><div id="attributePointsValue" class="points-value">0/12</div></div>
+                <div class="points-block"><div class="points-label">Atributos</div><div id="attributePointsValue" class="points-value">0/14</div></div>
                 <div class="points-block"><div class="points-label">Perícias</div><div id="skillPointsValue" class="points-value">0/10</div></div>
-                <div class="points-block"><div class="points-label">Vantagens</div><div id="advantagePointsValue" class="points-value">0/0</div></div>
+                <div class="points-block"><div class="points-label">Vantagens</div><div id="advantagePointsValue" class="points-value">0/5</div></div>
                 <div class="points-block"><div class="points-label">Caminhos</div><div id="magicPathPointsValue" class="points-value">0/0</div></div>
             </div>
 
@@ -162,9 +162,9 @@
                 <fieldset class="border border-neutral-700 p-4 rounded-md">
                     <legend class="text-lg px-2 section-title !border-none !mb-0 !pb-0 !text-amber-500">Identidade</legend>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                         <div><label for="charName" class="block text-sm font-medium mb-1">Nome:</label><input type="text" id="charName" name="charName" required class="w-full p-2 bg-neutral-900 border-neutral-600 rounded-md"></div>
-                         <div><label for="charRace" class="block text-sm font-medium mb-1">Raça:</label><input type="text" id="charRace" name="charRace" class="w-full p-2 bg-neutral-900 border-neutral-600 rounded-md"></div>
-                         <div><label for="charClass" class="block text-sm font-medium mb-1">Classe:</label><input type="text" id="charClass" name="charClass" class="w-full p-2 bg-neutral-900 border-neutral-600 rounded-md"></div>
+                          <div><label for="charName" class="block text-sm font-medium mb-1">Nome:</label><input type="text" id="charName" name="charName" required class="w-full p-2 bg-neutral-900 border-neutral-600 rounded-md"></div>
+                          <div><label for="charRace" class="block text-sm font-medium mb-1">Raça:</label><input type="text" id="charRace" name="charRace" class="w-full p-2 bg-neutral-900 border-neutral-600 rounded-md"></div>
+                          <div><label for="charClass" class="block text-sm font-medium mb-1">Classe:</label><input type="text" id="charClass" name="charClass" class="w-full p-2 bg-neutral-900 border-neutral-600 rounded-md"></div>
                     </div>
                 </fieldset>
                 
@@ -251,6 +251,74 @@
                             <p class="text-xs text-gray-500 mt-1">Atributo Mágico + CON + 10.</p>
                         </div>
                     </div>
+
+                    <!-- Tabela de Magia -->
+                    <div class="mt-6 mb-4">
+                        <h4 class="text-lg content-font text-gray-300 mb-2 text-center">Tabela de Efeitos Mágicos (Referência)</h4>
+                        <div class="overflow-x-auto rounded-lg border border-neutral-700">
+                            <table class="min-w-full bg-neutral-900 text-sm text-center">
+                                <thead class="bg-neutral-800">
+                                    <tr class="text-amber-500 title-font">
+                                        <th class="p-3 border-b border-r border-neutral-700">Nível</th>
+                                        <th class="p-3 border-b border-r border-neutral-700">PE</th>
+                                        <th class="p-3 border-b border-r border-neutral-700">Dano</th>
+                                        <th class="p-3 border-b border-r border-neutral-700">Bônus/RD</th>
+                                        <th class="p-3 border-b border-r border-neutral-700">Alcance/Área</th>
+                                        <th class="p-3 border-b border-r border-neutral-700">Duração</th>
+                                        <th class="p-3 border-b border-neutral-700">CD</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="text-neutral-300">
+                                    <tr>
+                                        <td class="p-2 border-b border-r border-neutral-700 font-bold">2</td>
+                                        <td class="p-2 border-b border-r border-neutral-700">2</td>
+                                        <td class="p-2 border-b border-r border-neutral-700">2d6+4</td>
+                                        <td class="p-2 border-b border-r border-neutral-700">RD 4</td>
+                                        <td class="p-2 border-b border-r border-neutral-700">10m / 2x2m</td>
+                                        <td class="p-2 border-b border-r border-neutral-700">2d6 Rod.</td>
+                                        <td class="p-2 border-b border-neutral-700">10</td>
+                                    </tr>
+                                    <tr class="bg-neutral-800/30">
+                                        <td class="p-2 border-b border-r border-neutral-700 font-bold">3</td>
+                                        <td class="p-2 border-b border-r border-neutral-700">3</td>
+                                        <td class="p-2 border-b border-r border-neutral-700">3d6+6</td>
+                                        <td class="p-2 border-b border-r border-neutral-700">RD 6</td>
+                                        <td class="p-2 border-b border-r border-neutral-700">25m / 5x5m</td>
+                                        <td class="p-2 border-b border-r border-neutral-700">3d6 Rod.</td>
+                                        <td class="p-2 border-b border-neutral-700">12</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="p-2 border-b border-r border-neutral-700 font-bold">4</td>
+                                        <td class="p-2 border-b border-r border-neutral-700">4</td>
+                                        <td class="p-2 border-b border-r border-neutral-700">4d6+8</td>
+                                        <td class="p-2 border-b border-r border-neutral-700">RD 8</td>
+                                        <td class="p-2 border-b border-r border-neutral-700">50m / 10x10m</td>
+                                        <td class="p-2 border-b border-r border-neutral-700">4d6 Rod.</td>
+                                        <td class="p-2 border-b border-neutral-700">14</td>
+                                    </tr>
+                                    <tr class="bg-neutral-800/30">
+                                        <td class="p-2 border-b border-r border-neutral-700 font-bold">5</td>
+                                        <td class="p-2 border-b border-r border-neutral-700">5</td>
+                                        <td class="p-2 border-b border-r border-neutral-700">5d6+10</td>
+                                        <td class="p-2 border-b border-r border-neutral-700">RD 10</td>
+                                        <td class="p-2 border-b border-r border-neutral-700">100m / 20x20m</td>
+                                        <td class="p-2 border-b border-r border-neutral-700">5d6 Rod.</td>
+                                        <td class="p-2 border-b border-neutral-700">16</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="p-2 border-r border-neutral-700 font-bold">6+</td>
+                                        <td class="p-2 border-r border-neutral-700">6+</td>
+                                        <td class="p-2 border-r border-neutral-700">6d6+12</td>
+                                        <td class="p-2 border-r border-neutral-700">RD 12+</td>
+                                        <td class="p-2 border-r border-neutral-700">200m+</td>
+                                        <td class="p-2 border-r border-neutral-700">Sustentado</td>
+                                        <td class="p-2">18+</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
                     <div>
                         <h3 class="text-xl content-font text-gray-300 mb-3 border-t border-gray-700 pt-4">Caminhos de Magia</h3>
                         <div id="caminhosContainer" class="space-y-3"></div>
@@ -296,7 +364,7 @@
                 <button id="printSheetButton" class="px-6 py-2 action-button action-button-primary">Imprimir</button>
                 <button id="exportJsonButton" class="px-6 py-2 action-button action-button-secondary">Exportar JSON</button>
                 <button id="exportMarkdownButton" class="px-6 py-2 action-button action-button-secondary">Exportar Markdown</button>
-            </div>
+             </div>
         </div>
     </div>
 
@@ -392,7 +460,7 @@
             spendOnSkillButton.disabled = evolutionPointsAvailable <= 0;
             spendOnAdvantageButton.disabled = evolutionPointsAvailable <= 0;
 
-            const totalAttributePoints = 12 + attributePointsEarned;
+            const totalAttributePoints = 14 + attributePointsEarned;
             let attributesSpent = 0;
             Object.values(allAtributosInputs).forEach(input => { attributesSpent += parseInt(input.value) || 0; });
             attributePointsValueDiv.textContent = `${attributesSpent}/${totalAttributePoints}`;
@@ -408,7 +476,7 @@
             const disadvantages = JSON.parse(document.getElementById('desvantagensInput').value || '[]');
             const advantagesSpent = advantages.reduce((total, adv) => total + (adv.custo || 0), 0);
             const disadvantagesBonus = disadvantages.reduce((total, dis) => total + (dis.bonus || 0), 0);
-            const advantagePointsPool = Math.min(disadvantagesBonus, 3) + pontosVantagemAdd;
+            const advantagePointsPool = 5 + Math.min(disadvantagesBonus, 3) + pontosVantagemAdd;
             advantagePointsValueDiv.textContent = `${advantagesSpent}/${advantagePointsPool}`;
             advantagePointsValueDiv.classList.toggle('negative', advantagesSpent > advantagePointsPool);
 
