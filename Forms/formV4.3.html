@@ -204,6 +204,21 @@
                     </div>
                 </fieldset>
 
+                <!-- Recursos de Combate -->
+                <fieldset class="border border-neutral-700 p-4 rounded-md">
+                    <legend class="text-lg px-2 section-title !border-none !mb-0 !pb-0 !text-amber-500">Recursos de Combate</legend>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-center">
+                        <div>
+                            <label for="pontosVida" class="block text-lg font-bold title-font text-gray-300">Pontos de Vida (PV)</label>
+                            <input type="number" id="pontosVida" name="pontosVida" class="attribute-input mt-1 w-24" value="10">
+                        </div>
+                        <div>
+                            <label for="pontosEnergia" class="block text-lg font-bold title-font text-gray-300">Pontos de Energia (PE)</label>
+                            <input type="number" id="pontosEnergia" name="pontosEnergia" class="attribute-input mt-1 w-24" value="10">
+                        </div>
+                    </div>
+                </fieldset>
+
                 <!-- Habilidades -->
                 <fieldset class="border border-neutral-700 p-4 rounded-md">
                     <legend class="text-lg px-2 section-title !border-none !mb-0 !pb-0 !text-amber-500">Habilidades & Peculiaridades</legend>
@@ -238,11 +253,6 @@
                                 <option value="POD">Inata (POD)</option>
                             </select>
                              <p class="text-xs text-gray-500 mt-1">Atributo chave.</p>
-                        </div>
-                        <div>
-                            <label for="pontosEnergia" class="block text-sm font-medium text-gray-400 mb-1">Pontos de Energia (PE)</label>
-                            <input type="text" id="pontosEnergia" name="pontosEnergia" class="w-full bg-neutral-900 border-neutral-600 rounded-md p-2" readonly>
-                            <p class="text-xs text-gray-500 mt-1">Atributo Mágico + CON + 10.</p>
                         </div>
                     </div>
 
@@ -386,6 +396,7 @@
         };
         const tradicaoMagicaSelect = document.getElementById('tradicaoMagica');
         const pontosEnergiaInput = document.getElementById('pontosEnergia');
+        const pontosVidaInput = document.getElementById('pontosVida');
         const addCaminhoBtn = document.getElementById('addCaminhoBtn');
         const caminhosContainer = document.getElementById('caminhosContainer');
         const caminhosMagiaInput = document.getElementById('caminhosMagiaInput');
@@ -477,14 +488,6 @@
             const advantagePointsPool = 5 + Math.min(disadvantagesBonus, 3) + pontosVantagemAdd;
             advantagePointsValueDiv.textContent = `${advantagesSpent}/${advantagePointsPool}`;
             advantagePointsValueDiv.classList.toggle('negative', advantagesSpent > advantagePointsPool);
-
-            const con = parseInt(allAtributosInputs.con.value) || 0;
-            const tradicao = tradicaoMagicaSelect.value;
-            let atributoMagicoVal = 0;
-            if (tradicao === 'INT') atributoMagicoVal = parseInt(allAtributosInputs.int.value) || 0;
-            else if (tradicao === 'SAB') atributoMagicoVal = parseInt(allAtributosInputs.sab.value) || 0;
-            else if (tradicao === 'POD') atributoMagicoVal = parseInt(allAtributosInputs.pod.value) || 0;
-            pontosEnergiaInput.value = atributoMagicoVal + con + 10;
         }
 
         function adicionarCaminho(caminhoData = { nome: '', nivel: 0, customName: '' }) {
@@ -772,13 +775,14 @@
             let sheetHtml = `
                 <div class="print-section print-full-width"><h3>Identidade</h3><p><strong>Nome:</strong> ${data.charName || 'N/A'} | <strong>Raça:</strong> ${data.charRace || 'N/A'} | <strong>Classe:</strong> ${data.charClass || 'N/A'}</p></div>
                 <div class="print-section"><h3>Atributos</h3><div class="print-attributes-grid">${Object.keys(allAtributosInputs).map(attr => `<div class="print-attribute-box"><strong>${attr.toUpperCase()}</strong><span>${data[attr] || 0}</span></div>`).join('')}</div></div>
+                 <div class="print-section"><h3>Recursos</h3><p><strong>Pontos de Vida:</strong> ${data.pontosVida} | <strong>Pontos de Energia:</strong> ${data.pontosEnergia}</p></div>
                 <div class="print-section"><h3>Habilidades</h3>
                     <h4>Perícias</h4><ul class="print-pvd-list">${data.pericias.map(p => `<li class="print-pvd-item"><strong>${p.nome} (${p.atributo}: ${p.valor})</strong><span class="description">${p.descricao || ''}</span></li>`).join('') || '<li>Nenhuma</li>'}</ul>
                     <h4>Vantagens</h4><ul class="print-pvd-list">${data.vantagens.map(v => `<li class="print-pvd-item"><strong>${v.nome} (${v.custo}pts)</strong><span class="description">${v.descricao || ''}</span></li>`).join('') || '<li>Nenhuma</li>'}</ul>
                     <h4>Desvantagens</h4><ul class="print-pvd-list">${data.desvantagens.map(d => `<li class="print-pvd-item"><strong>${d.nome} (${d.bonus}pts)</strong><span class="description">${d.descricao || ''}</span></li>`).join('') || '<li>Nenhuma</li>'}</ul>
                 </div>
                 <div class="print-section print-full-width"><h3>Magia & Rituais</h3>
-                    <p><strong>Tradição:</strong> ${data.tradicaoMagica} | <strong>PEs:</strong> ${data.pontosEnergia}</p>
+                    <p><strong>Tradição:</strong> ${data.tradicaoMagica}</p>
                     <h4>Caminhos de Magia</h4><ul class="print-pvd-list">${data.caminhosMagia.map(c => `<li class="print-pvd-item"><strong>${c.nome === 'OUTRO' ? c.customName : c.nome} (Nível ${c.nivel})</strong></li>`).join('') || '<li>Nenhum</li>'}</ul>
                 </div>
                 <div class="print-section print-full-width"><h3>Equipamento</h3><div class="print-text-area">${(data.equipment || 'Nenhum').replace(/\n/g, '<br>')}</div></div>
@@ -817,12 +821,13 @@
             md += `| FOR | DES | CON | INT | SAB | POD | CAR |\n`;
             md += `|:---:|:---:|:---:|:---:|:---:|:---:|:---:|\n`;
             md += `| ${data.for} | ${data.des} | ${data.con} | ${data.int} | ${data.sab} | ${data.pod} | ${data.car} |\n\n`;
+            md += `**PV:** ${data.pontosVida} | **PE:** ${data.pontosEnergia}\n\n`;
             md += `## Habilidades\n\n`;
             md += `### Perícias\n${data.pericias.map(p => `- **${p.nome}** (${p.atributo}: ${p.valor}) ${p.descricao ? `*${p.descricao}*` : ''}`).join('\n') || '- Nenhuma'}\n\n`;
             md += `### Vantagens\n${data.vantagens.map(v => `- **${v.nome}** (${v.custo}pts) ${v.descricao ? `*${v.descricao}*` : ''}`).join('\n') || '- Nenhuma'}\n\n`;
             md += `### Desvantagens\n${data.desvantagens.map(d => `- **${d.nome}** (${d.bonus}pts) ${d.descricao ? `*${d.descricao}*` : ''}`).join('\n') || '- Nenhuma'}\n\n`;
             md += `## Magia\n\n`;
-            md += `**Tradição:** ${data.tradicaoMagica} | **PEs:** ${data.pontosEnergia}\n\n`;
+            md += `**Tradição:** ${data.tradicaoMagica}\n\n`;
             md += `### Caminhos de Magia\n${data.caminhosMagia.map(c => `- **${c.nome === 'OUTRO' ? c.customName : c.nome}** (Nível ${c.nivel})`).join('\n') || '- Nenhum'}\n\n`;
             md += `## Equipamento\n\n${data.equipment || 'Nenhum'}\n\n`;
             md += `## Histórico\n\n${data.backstory || 'Nenhum'}\n`;
