@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sombra OS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Press Start 2P', cursive;
+            background-color: #000;
+            color: #00ff41; /* Cor do texto do terminal */
+            text-shadow: 0 0 5px #00ff41, 0 0 10px #00ff41;
+            image-rendering: pixelated;
+            overflow: hidden;
+        }
+
+        .vhs-wrapper {
+            position: relative;
+            width: 100%;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .vhs-wrapper::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: repeating-linear-gradient(0deg, rgba(0,0,0,0.4) 0px, rgba(0,0,0,0.4) 1px, transparent 1px, transparent 2px);
+            animation: vhs-scanlines 2s steps(4) infinite;
+            pointer-events: none;
+            z-index: 2;
+        }
+        
+        .vhs-wrapper::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #1a1a2e;
+            opacity: 0.1;
+            z-index: -1;
+            animation: vhs-flicker 0.15s infinite;
+        }
+
+        @keyframes vhs-scanlines {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(8px); }
+        }
+        
+        @keyframes vhs-flicker {
+            0%, 100% { opacity: 0.1; }
+            50% { opacity: 0.2; }
+        }
+
+        .content-glitch {
+             animation: vhs-glitch 2.5s linear infinite alternate-reverse;
+        }
+
+        @keyframes vhs-glitch {
+          2%,64% { transform: translate(1px,-1px) skew(0deg); }
+          4%,60% { transform: translate(-1px,1px) skew(0deg); }
+          62% { transform: translate(0,0) skew(2deg); }
+        }
+        
+        .terminal {
+            width: 100%;
+            height: 100vh;
+            padding: 2rem;
+            overflow-y: auto;
+            scrollbar-width: none; /* Firefox */
+            -ms-overflow-style: none;  /* Internet Explorer 10+ */
+        }
+        .terminal::-webkit-scrollbar { 
+            display: none;  /* Safari and Chrome */
+        }
+        
+        #terminal-output p, #terminal-output div {
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        .prompt-input {
+            background: transparent;
+            border: none;
+            outline: none;
+            color: #00ff41;
+            text-shadow: 0 0 5px #00ff41, 0 0 10px #00ff41;
+            width: 100%;
+        }
+
+        .cursor {
+            display: inline-block;
+            width: 10px;
+            height: 1.2em;
+            background-color: #00ff41;
+            animation: blink 1s step-end infinite;
+            box-shadow: 0 0 5px #00ff41, 0 0 10px #00ff41;
+        }
+
+        @keyframes blink {
+            from, to { background-color: transparent; }
+            50% { background-color: #00ff41; }
+        }
+        
+        .alert-text {
+            color: #ff0000;
+            text-shadow: 0 0 5px #ff0000, 0 0 10px #ff0000;
+            animation: blink-red-text 1.5s step-end infinite;
+        }
+
+        @keyframes blink-red-text {
+            from, to { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+    </style>
+</head>
+<body>
+    <div class="vhs-wrapper">
+        <div id="terminal" class="terminal content-glitch" onclick="initiateConnection()">
+            <div id="terminal-output" class="text-sm md:text-base"></div>
+            <div id="input-line" class="flex" style="display: none;">
+                <span id="prompt-symbol" class="text-green-400">sombra@kuar-tor:~$</span>
+                <input type="text" id="command-input" class="prompt-input flex-1 ml-2">
+                <span class="cursor"></span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const terminalOutput = document.getElementById('terminal-output');
+        const inputField = document.getElementById('command-input');
+        const inputLine = document.getElementById('input-line');
+        const promptSymbol = document.getElementById('prompt-symbol');
+        let isAudioStarted = false;
+        let typeSound;
+        let isProtocoloFantasmaActive = true;
+        let alertInterval;
+        let areFragmentsCollected = false;
+
+        // Conteúdo dos arquivos criptografados
+        const encryptedContent = {
+            'manifesto_vazio.enc': {
+                password: 'ecos',
+                content: `
+MANIFESTO DO VAZIO - FRAGMENTO 7
+---------------------------------
+O silêncio será a única verdade. A forma é uma ilusão. A matéria, uma mentira.
+Nós somos os Ecos da canção final, a entropia feita vontade. Kuar-Tor não é uma conquista, é um sacrifício.
+A Corrupção é a nossa bênção, a primeira nota da sinfonia do nada.
+Quando o último Guardião cair, a porta se abrirá e a paz do esquecimento abraçará tudo.
+Não temam o Vazio. Anseiem por ele.
+                `
+            },
+            'projeto_quimera.enc': {
+                password: 'inventor',
+                content: `
+PROJETO QUIMERA - LOG DE LAPLACE XANG
+---------------------------------------
+ENTRADA 1: A Corrupção... fascinante. Não é meramente biológica ou mágica. É informacional. Um código que reescreve a realidade. Os espécimes coletados demonstram uma capacidade de adaptação sem precedentes.
+
+ENTRADA 4: A fusão de tecnologia e a anomalia da Corrupção é possível. Os primeiros testes resultaram em falhas catastróficas, mas o potencial é ilimitado. Uma arma? Uma cura? Uma nova forma de vida?
+
+ENTRADA 9: Sucesso. O protótipo 'Quimera' está estável. Ele pode assimilar e replicar qualquer tecnologia ou habilidade biológica. No entanto, sua consciência é... instável. Fragmentada. Parece ouvir os sussurros do Vazio. Preciso de mais amostras do núcleo da Corrupção para aperfeiçoá-lo. Este é o meu maior trabalho. O auge da minha genialidade como Inventor. O mundo não está preparado.
+`
+            }
+        };
+
+        // Filesystem com contexto da campanha Kuar-Tor
+        let filesystem = {
+            'leia-me.txt': 'AVISO: As informações contidas neste sistema são confidenciais. O acesso não autorizado será rastreado. A curiosidade é uma virtude, mas a discrição é uma arte.',
+            'memoria_corrompida.log': `
+*** ALERTA DE SISTEMA: FALHA CRÍTICA NO NÚCLEO DE MEMÓRIA ***
+----------------------------------------------------------------
+O núcleo de memória principal da S.O.M.B.R.A., contendo dados estratégicos sobre o Vazio, "Aquele que Tocou o Vazio" e contramedidas, está fragmentado.
+
+ANÁLISE: A memória foi dividida em três fragmentos de dados distintos, cada um ligado a uma das Três Famílias Fundadoras.
+
+- FRAGMENTO 1: Protocolo ZHAUW. Última localização conhecida: Servidores centrais em Portirus, a cidade-fortaleza da família Zhauw.
+- FRAGMENTO 2: Protocolo YANG. Última localização conhecida: Arquivos do Templo de Elementalis, o centro de poder da família Yang.
+- FRAGMENTO 3: Protocolo XANG. Última localização conhecida: Cofre de dados privado nos Laboratórios Laplace, sob controle da família Xang.
+
+DIRETIVA: Recuperar os três fragmentos é essencial para restaurar a capacidade total da S.O.M.B.R.A. e entender como enfrentar a ameaça principal. A restauração completa desbloqueará novas capacidades de análise de dados. Proceda com extrema cautela.
+`,
+            'sombra_protocolo.txt': `
+PROTOCOLO DE FUNDAÇÃO - S.O.M.B.R.A
+------------------------------------
+NOME: Solução Organizacional para Monitoramento de Brechas e Recontenção de Anomalias (S.O.M.B.R.A)
+FUNDADOR: O Inventor
+LÍDER ORIGINAL: [DADOS CORROMPIDOS]
+DIRETIVA PRIMÁRIA: Servir como uma força-tarefa oculta, operando fora da burocracia da Aliança de Extermínio e dos interesses políticos dos reinos financiadores.
+OBJETIVOS:
+1. Executar missões de alta periculosidade e importância estratégica em Kuar-Tor.
+2. Investigar a origem do Vazio e da Corrupção sem interferências externas.
+3. Conter anomalias perigosas liberadas dos antigos laboratórios de Laplace após o cataclismo.
+4. Operar com total autonomia e sigilo. O fracasso não é uma opção; o anonimato é a nossa maior arma.
+`,
+            'dossie_anya.txt': `
+DOSSIÊ CONFIDENCIAL - ATIVO 'ANYA'
+-----------------------------------------
+NOME: Anya, "A Estrategista de Ferro"
+AFILIAÇÃO: Império do Sol Poente
+STATUS: Candidata principal para liderança da Terceira Expedição.
+
+AVALIAÇÃO INTERNA DO IMPÉRIO (Interceptada):
+"Anya representa o futuro da nossa expansão. Ela tem a visão e a crueldade necessárias para domar Kuar-Tor. Os fracassos das expedições anteriores foram de liderança, não de força. Anya é a solução. Sua promoção para General e Comandante é a nossa maior prioridade estratégica. Ela não irá falhar."
+
+NOSSA RECOMENDAÇÃO (ANÁLISE S.O.M.B.R.A.):
+A ascensão de Anya é o cenário ideal. Sua força e ímpeto a colocarão em rota de colisão direta com a anomalia-alvo, "Aquele que Tocou o Vazio". Ela será a ponta de lança que o Império acredita controlar, mas que na verdade abrirá o caminho para nós. Enquanto ela gasta seus recursos e força no confronto direto, nós observaremos, aprenderemos e agiremos na brecha que ela inevitavelmente criará. Sua promoção não deve ser impedida; deve ser garantida. Ela é a chave para forçar a mão do nosso verdadeiro inimigo.
+`,
+            'manual_hackeado.txt': `
+SISTEMA +2D6 - GUIA RÁPIDO (VERSÃO PIRATA)
+------------------------------------------
+- TESTES: Role 2d6 e some o bônus do Atributo relevante. O alvo padrão é 8.
+- CRÍTICOS: Acerto (12) e Falha (2).
+- ATRIBUTOS CHAVE: FOR, DES, CON, INT, SAB, CAR.
+>> Fim do arquivo. Este manual foi simplificado para acesso rápido em campo. <<
+            `,
+            'log_missao_eco.txt': `
+LOG DE MISSÃO FRAGMENTADO - RECUPERADO
+---------------------------------------
+...dados corrompidos...
+Entrada 3: A "Corrupção" não é uma praga, é uma consciência. Ela sussurra nas sombras, torce a realidade. Encontramos uma estrutura antiga, pulsando com a mesma energia sombria. Parece ser a fonte.
+Entrada 5: A névoa escarlate está se espalhando a partir do epicentro. Criaturas que a respiram se tornam... outras coisas. Hostis. Deformadas. Ecos do que eram antes.
+Entrada 7: O Guardião caiu. A energia o consumiu. Ele agora protege a fonte. Não podemos passar. O Vazio está mais perto... A equipe...
+...dados corrompidos...
+FIM DA TRANSMISSÃO
+            `,
+            'manifesto_vazio.enc': 'DADOS CRIPTOGRAFADOS - ALGORITMO SOMBRIO v.3.4',
+            'projeto_quimera.enc': 'DADOS CRIPTOGRAFADOS - PROTOCOLO XANG v.7.1'
+        };
+
+        // Command definitions
+        const commands = {
+            'help': {
+                description: 'Exibe a lista de comandos disponíveis.',
+                execute: () => {
+                    const availableCommands = Object.keys(commands).filter(cmd => !cmd.startsWith('_')).map(cmd => `  ${cmd.padEnd(12)} - ${commands[cmd].description}`).join('\n');
+                    return `Comandos disponíveis no Sombra OS:\n${availableCommands}`;
+                }
+            },
+            'ls': {
+                description: 'Lista os arquivos no diretório atual.',
+                execute: () => {
+                    return Object.keys(filesystem).join('   ');
+                }
+            },
+            'cat': {
+                description: 'Exibe o conteúdo de um arquivo. Uso: cat [arquivo]',
+                execute: (args) => {
+                    const fileName = args[0];
+                    if (!fileName) {
+                        return 'Uso: cat [arquivo]';
+                    }
+                    if (fileName.endsWith('.enc')) {
+                        return `ERRO: Arquivo criptografado. Use o comando 'decrypt [arquivo] [senha]' para acessar.`;
+                    }
+                    if (filesystem[fileName]) {
+                        return filesystem[fileName];
+                    }
+                    return `cat: ${fileName}: Arquivo ou diretório não encontrado`;
+                }
+            },
+            'decrypt': {
+                description: 'Descriptografa um arquivo. Uso: decrypt [arquivo] [senha]',
+                execute: (args) => {
+                    const fileName = args[0];
+                    const password = args[1];
+
+                    if (!fileName || !password) {
+                        return 'Uso: decrypt [arquivo] [senha]';
+                    }
+
+                    const encryptedFile = encryptedContent[fileName];
+                    if (encryptedFile && password.toLowerCase() === encryptedFile.password) {
+                        const newFileName = fileName.replace('.enc', '.txt');
+                        filesystem[newFileName] = encryptedFile.content;
+                        delete filesystem[fileName];
+                        delete encryptedContent[fileName];
+                        return `Arquivo '${fileName}' descriptografado com sucesso como '${newFileName}'.`;
+                    } else {
+                        return `Falha na descriptografia. Senha incorreta ou arquivo não encontrado.`;
+                    }
+                }
+            },
+            'status': {
+                description: 'Exibe o último relatório e a diretiva atual da S.O.M.B.R.A.',
+                execute: () => {
+                    return `
+-- ÚLTIMO RELATÓRIO DA S.O.M.B.R.A --
+--------------------------------------------------
+DATA: 30 anos atrás (data exata corrompida)
+STATUS DA ORGANIZAÇÃO: Inativa. Recuo estratégico.
+EVENTO CRÍTICO: Líder da S.O.M.B.R.A, [DADOS CORROMPIDOS], morto em combate.
+CAUSA: Encontro com hostil de classe apocalíptica, designado "Aquele que Tocou o Vazio". Hostil demonstrou capacidades de aniquilação além dos parâmetros conhecidos. Impossível de eliminar com os recursos atuais.
+
+-- NOVA DIRETIVA --
+--------------------------------------------------
+PROTOCOLO FANTASMA ATIVADO: A S.O.M.B.R.A deve recuar para as sombras. Todas as operações cessam. A nova missão primária é a sobrevivência e a pesquisa. Descobrir uma maneira de neutralizar "Aquele que Tocou o Vazio".
+
+DIRETIVA SECUNDÁRIA: Anomalias dos antigos laboratórios de Laplace estão livres em Kuar-Tor e sofreram mutações perigosas. Agentes remanescentes devem, quando possível, conter essas anomalias e transportá-las para o "Nexo do Paradoxo" para estudo e contenção.
+`;
+                }
+            },
+            'reactivate': {
+                description: 'Reativa a S.O.M.B.R.A. Requer senha do antigo líder.',
+                execute: (args) => {
+                    const password = args[0];
+                    if (!password) {
+                        return 'Uso: reactivate [senha]';
+                    }
+
+                    if (password.toLowerCase() === 'hunhow') {
+                        if (isProtocoloFantasmaActive) {
+                            isProtocoloFantasmaActive = false;
+                            clearInterval(alertInterval);
+                            promptSymbol.textContent = 'agente@sombra-ativa:~$';
+                            return 'SENHA ACEITA. PROTOCOLO FANTASMA DESATIVADO.\n\nSINAL DE REATIVAÇÃO ENVIADO.\nTODOS OS AGENTES DA S.O.M.B.R.A. FORAM CONVOCADOS.\n\nPONTO DE ENCONTRO: KUAR-TOR.\n\nA MISSÃO CONTINUA.';
+                        } else {
+                            return 'S.O.M.B.R.A. já está ativa.';
+                        }
+                    } else {
+                        return 'ERRO: Senha de reativação incorreta.';
+                    }
+                }
+            },
+            'analyze': {
+                description: 'Analisa os dados recuperados do núcleo de memória.',
+                execute: () => {
+                    if (areFragmentsCollected) {
+                        return `
+ANÁLISE DO NÚCLEO DE MEMÓRIA RESTAURADO
+---------------------------------------
+DADOS RECUPERADOS: Entrada para a "Árvore do Imperador".
+
+A Árvore não é uma estrutura biológica, mas uma bio-máquina senciente que serve como um portão ou condutor. A entrada física é selada por uma barreira de energia ressonante.
+
+PROTOCOLO DE ACESSO: A barreira é sintonizada com a 'assinatura vital' do Imperador original. Para atravessá-la, é necessário um objeto imbuído com essa assinatura ou um ser que a compartilhe.
+
+DADOS ADICIONAIS: Fragmentos recuperados sugerem a existência de três 'chaves' criadas pelo Inventor: artefatos que podem replicar a assinatura necessária. Suas localizações são desconhecidas, mas provavelmente estão em locais de grande poder ou importância para as Três Famílias.
+
+CONCLUSÃO: Encontrar uma das chaves ou uma alternativa viável é o único método conhecido para entrar na Árvore do Imperador.
+`;
+                    } else {
+                        return 'ERRO: Análise impossível. O núcleo de memória está incompleto. Recupere os três fragmentos para continuar.';
+                    }
+                }
+            },
+            '_collect_fragments': { // Comando de Mestre, não visível no help
+                description: 'Simula a coleta dos fragmentos de memória.',
+                execute: () => {
+                    areFragmentsCollected = true;
+                    return 'Simulação: Fragmentos de memória das famílias Zhauw, Yang e Xang recuperados. O núcleo de memória está completo. O comando "analyze" agora está disponível.';
+                }
+            },
+            'whoami': {
+                description: 'Exibe o nome do usuário atual.',
+                execute: () => isProtocoloFantasmaActive ? 'sombra' : 'agente'
+            },
+            'date': {
+                description: 'Exibe a data e hora atuais.',
+                execute: () => new Date().toLocaleString('pt-BR')
+            },
+            'echo': {
+                description: 'Exibe uma linha de texto. Uso: echo [texto]',
+                execute: (args) => args.join(' ')
+            },
+            'clear': {
+                description: 'Limpa a tela do terminal.',
+                execute: () => {
+                    terminalOutput.innerHTML = '';
+                    return ''; // No output for clear command
+                }
+            }
+        };
+
+        const bootSequence = [
+            "Inicializando Sombra OS v2.2 (Kernel 8.3.0-convocacao)...",
+            "Verificando memória... OK",
+            "Montando sistema de arquivos criptografado... OK",
+            "Iniciando serviços de rede furtiva...",
+            "Conexão segura estabelecida com o servidor 'O Olho'.",
+            "ERRO CRÍTICO: Falha na integridade do núcleo de memória. Dados fragmentados.",
+            "ALERTA: Protocolo Fantasma ATIVO.",
+            " ",
+            "Bem-vindo ao Sombra OS, Agente.",
+            "Leia 'memoria_corrompida.log' para detalhes da missão.",
+        ];
+
+        function focusInput() {
+            inputField.focus();
+        }
+
+        async function typeWriter(text, element, speed = 20) {
+            return new Promise(resolve => {
+                let i = 0;
+                function type() {
+                    if (i < text.length) {
+                        if (typeSound && text.charAt(i) !== ' ' && text.charAt(i) !== '\n') {
+                           typeSound.triggerAttackRelease("C6", "0.05");
+                        }
+                        element.innerHTML += text.charAt(i);
+                        i++;
+                        terminal.scrollTop = terminal.scrollHeight;
+                        setTimeout(type, speed);
+                    } else {
+                        resolve();
+                    }
+                }
+                type();
+            });
+        }
+        
+        async function typeWriterSilent(text, element, speed = 50) {
+            return new Promise(resolve => {
+                let i = 0;
+                function type() {
+                    if (i < text.length) {
+                        element.innerHTML += text.charAt(i);
+                        i++;
+                        terminal.scrollTop = terminal.scrollHeight;
+                        setTimeout(type, speed);
+                    } else {
+                        resolve();
+                    }
+                }
+                type();
+            });
+        }
+        
+        async function playDialUpSound() {
+            return new Promise(async (resolve) => {
+                const dialMsg = document.createElement('p');
+                terminalOutput.appendChild(dialMsg);
+                await typeWriter("ESTABELECENDO CONEXÃO SEGURA...", dialMsg, 50);
+
+                const noise = new Tone.Noise("white").toDestination();
+                const synth = new Tone.FMSynth({
+                    harmonicity: 3, modulationIndex: 10,
+                    envelope: { attack: 0.01, decay: 0.2, sustain: 0.2, release: 0.2 },
+                    modulationEnvelope: { attack: 0.01, decay: 0.2, sustain: 0.2, release: 0.2 }
+                }).toDestination();
+                
+                noise.volume.value = -20;
+
+                const dtmf = (f1, f2) => {
+                    const o1 = new Tone.Oscillator(f1, "sine").toDestination();
+                    const o2 = new Tone.Oscillator(f2, "sine").toDestination();
+                    o1.volume.value = -15; o2.volume.value = -15;
+                    o1.start().stop("+0.15"); o2.start().stop("+0.15");
+                };
+                
+                Tone.Transport.scheduleOnce(() => dtmf(697, 1209), "0.1");
+                Tone.Transport.scheduleOnce(() => dtmf(770, 1336), "0.4");
+                Tone.Transport.scheduleOnce(() => dtmf(852, 1477), "0.7");
+
+                Tone.Transport.scheduleOnce(() => {
+                    noise.start().stop("+2.5");
+                    synth.triggerAttackRelease("C2", "0.2", Tone.now());
+                    synth.frequency.rampTo("C4", 1, Tone.now() + 0.5);
+                }, "1.0");
+
+                Tone.Transport.scheduleOnce(async () => {
+                    new Tone.Synth().toDestination().triggerAttackRelease("C5", "0.5");
+                    dialMsg.textContent = "CONECTADO.";
+                    resolve();
+                }, "3.5");
+                
+                Tone.Transport.start();
+            });
+        }
+
+        async function handleCommand() {
+            const fullCommand = inputField.value.trim();
+            if (fullCommand === '') return;
+
+            const commandElement = document.createElement('p');
+            commandElement.textContent = `${promptSymbol.textContent} ${fullCommand}`;
+            terminalOutput.appendChild(commandElement);
+            
+            inputField.value = '';
+            inputLine.style.display = 'none';
+
+            const [command, ...args] = fullCommand.toLowerCase().split(' ');
+
+            let output = '';
+            if (commands[command]) {
+                output = commands[command].execute(args);
+            } else {
+                output = `Sombra: comando não encontrado: ${command}`;
+            }
+
+            if (output) {
+                const responseElement = document.createElement('p');
+                responseElement.className = "text-green-400 my-2";
+                terminalOutput.appendChild(responseElement);
+                await typeWriter(output, responseElement);
+            }
+            
+            inputLine.style.display = 'flex';
+            terminal.scrollTop = terminal.scrollHeight;
+            focusInput();
+        }
+
+        function startAlerts() {
+            if (isProtocoloFantasmaActive) {
+                alertInterval = setInterval(async () => {
+                    if (!isProtocoloFantasmaActive) {
+                        clearInterval(alertInterval);
+                        return;
+                    }
+                    const isInputVisible = inputLine.style.display !== 'none';
+                    if (!isInputVisible) return; // Don't show alert if a command is running
+
+                    inputLine.style.display = 'none';
+                    
+                    const alertElement = document.createElement('p');
+                    alertElement.className = 'alert-text my-2';
+                    terminalOutput.appendChild(alertElement);
+                    await typeWriter(">> ALERTA: PROTOCOLO FANTASMA ATIVO. DIRETIVA PRIMÁRIA: SOBREVIVÊNCIA E PESQUISA. <<", alertElement, 30);
+                    
+                    terminal.scrollTop = terminal.scrollHeight;
+                    inputLine.style.display = 'flex';
+                    focusInput();
+                }, 60000); // 60 seconds
+            }
+        }
+
+        inputField.addEventListener('keydown', function(event) {
+            if (event.key === 'Enter') {
+                handleCommand();
+            }
+        });
+
+        async function startTerminal() {
+            for (const line of bootSequence) {
+                const lineElement = document.createElement('p');
+                terminalOutput.appendChild(lineElement);
+                await typeWriter(line, lineElement, 20);
+            }
+            inputLine.style.display = 'flex';
+            focusInput();
+            startAlerts();
+        }
+        
+        async function initiateConnection() {
+            if (isAudioStarted) {
+                focusInput();
+                return;
+            }
+            isAudioStarted = true;
+            
+            terminalOutput.innerHTML = ''; 
+            await Tone.start();
+            
+            typeSound = new Tone.PolySynth(Tone.MembraneSynth, {
+                "pitchDecay": 0.008,
+                "octaves": 2,
+                "envelope": { "attack": 0.001, "decay": 0.1, "sustain": 0.01, "release": 0.01 },
+            }).toDestination();
+            typeSound.volume.value = -25;
+
+            await playDialUpSound();
+            await startTerminal();
+        }
+
+        window.onload = async () => {
+            const initialMsg = document.createElement('p');
+            terminalOutput.appendChild(initialMsg);
+            await typeWriterSilent("CLIQUE PARA INICIAR CONEXÃO...", initialMsg, 50);
+        };
+
+    </script>
+</body>
+</html>

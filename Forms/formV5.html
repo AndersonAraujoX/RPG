@@ -1,0 +1,910 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerador de Ficha +2D6 Dark Fantasy - Kuar-Tor Final (Online)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Inter:wght@400;500;700&family=MedievalSharp&display=swap" rel="stylesheet">
+    
+    <style>
+        body { 
+            font-family: 'Inter', sans-serif;
+            background-color: #111827;
+            color: #d1d5db;
+        }
+        .title-font { font-family: 'Cinzel', serif; }
+        .content-font { font-family: 'MedievalSharp', cursive; }
+
+        input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        input[type=number] { -moz-appearance: textfield; }
+        
+        .attribute-input { 
+            width: 60px;
+            background-color: #1f2937;
+            border: 1px solid #4b5563;
+            color: #d1d5db;
+            text-align: center;
+            border-radius: 0.375rem;
+            padding: 0.5rem;
+        }
+        .attribute-input:focus {
+            outline: none;
+            border-color: #ef4444;
+            box-shadow: 0 0 0 2px #ef444460;
+        }
+        
+        .section-card {
+            background-color: #1f2937;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            border: 1px solid #374151;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+
+        .section-title {
+            font-family: 'Cinzel', serif;
+            font-weight: 700;
+            color: #f87171;
+            border-bottom: 2px solid #374151;
+            padding-bottom: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .action-button { border: 1px solid #52525b; transition: background-color 0.2s, border-color 0.2s; border-radius: 0.375rem; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); }
+        .action-button-primary { background-color: #7f1d1d; color: #fecaca; border-color: #991b1b; }
+        .action-button-primary:hover { background-color: #991b1b; }
+        .action-button-secondary { background-color: #52525b; color: #d4d4d8; border-color: #71717a; }
+        .action-button-secondary:hover { background-color: #71717a; }
+        .action-button-main { background-color: #047857; color: #d1fae5; font-weight: 600; border: 1px solid #065f46; }
+        .action-button-main:hover { background-color: #065f46; }
+        .action-button-import { background-color: #4338ca; color: #e0e7ff; font-weight: 600; border: 1px solid #3730a3; }
+        .action-button-import:hover { background-color: #3730a3; }
+        .action-button-resource { background-color: #1e40af; color: #dbeafe; font-weight: 500; border: 1px solid #1d4ed8; }
+        .action-button-resource:hover { background-color: #1d4ed8; }
+
+        .points-counter { background-color: rgba(0,0,0,0.2); border: 1px solid #3f3f46; border-radius: 0.5rem; padding: 0.75rem 1rem; margin-bottom: 1.5rem; display: flex; justify-content: space-around; flex-wrap: wrap; gap: 1rem; }
+        .points-block { text-align: center; }
+        .points-label { font-size: 0.8rem; color: #a1a1aa; text-transform: uppercase; }
+        .points-value { font-family: 'Cinzel', serif; font-size: 1.5rem; font-weight: bold; color: #f5f5f5; }
+        .points-value.negative { color: #ef4444; }
+
+        .modal { position: fixed; inset: 0; background-color: rgba(10, 10, 10, 0.85); display: flex; align-items: center; justify-content: center; padding: 1rem; z-index: 1000; }
+        .modal-content { background-color: #18181b; border: 1px solid #3f3f46; padding: 1.5rem; border-radius: 0.5rem; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5), 0 10px 10px -5px rgba(0,0,0,0.4); max-width: 48rem; width: 100%; color: #a3a3a3; }
+        .modal-title { font-family: 'Cinzel', serif; font-size: 1.5rem; font-weight: 700; color: #f5f5f5; }
+        .modal-close-button { color: #a3a3a3; background: none; border: none; font-size: 1.75rem; cursor: pointer; line-height: 1; }
+        .modal-close-button:hover { color: #e5e5e5; }
+        .modal-body { max-height: 70vh; overflow-y: auto; }
+
+        .pvd-item { display: flex; align-items: flex-start; justify-content: space-between; padding: 0.5rem; border-bottom: 1px solid #3f3f46; }
+        .pvd-item:last-child { border-bottom: none; }
+        .pvd-item-details strong { color: #e5e7eb; }
+        .pvd-item-details .description { display: block; font-size: 0.8rem; color: #a1a1aa; margin-top: 0.25rem; white-space: normal; }
+
+        @media print {
+            body { background-color: #ffffff !important; color: #000 !important; font-family: 'Times New Roman', Times, serif; font-size: 10pt; }
+            .no-print, #rpgSheetForm, #mainTitle, #savedSheetsSection, #firebase-status { display: none !important; }
+            #generatedSheet { display: block !important; box-shadow: none !important; border: none !important; color: #000 !important; background-color: #fff !important; }
+            
+            #sheetContent {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 15px;
+                color: #000 !important;
+            }
+            .print-section {
+                border: 1px solid #000;
+                padding: 10px;
+                border-radius: 5px;
+                page-break-inside: avoid;
+            }
+            .print-section h3 {
+                font-family: 'Cinzel', serif;
+                font-size: 14pt;
+                font-weight: bold;
+                margin: 0 0 10px 0;
+                border-bottom: 1px solid #000;
+                padding-bottom: 5px;
+                color: #000 !important;
+            }
+            .print-full-width { grid-column: 1 / -1; }
+            .print-attributes-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; text-align: center; }
+            .print-attribute-box { border: 1px solid #000; padding: 5px; }
+            .print-attribute-box strong { font-size: 8pt; display: block; }
+            .print-attribute-box span { font-size: 12pt; font-weight: bold; }
+            .print-pvd-list { list-style-type: none; padding: 0; margin: 0; }
+            .print-pvd-item { margin-bottom: 8px; }
+            .print-pvd-item strong { font-weight: bold; }
+            .print-pvd-item span { font-size: 9pt; }
+            .print-pvd-item .description { font-style: italic; font-size: 8pt; margin-left: 10px; display: block; color: #333 !important; }
+            .print-text-area { min-height: 50px; padding: 5px; border: 1px solid #ccc; }
+        }
+    </style>
+</head>
+<body class="bg-neutral-900 text-neutral-300 min-h-screen flex flex-col items-center pt-8 pb-12 px-4">
+
+    <div class="w-full max-w-3xl">
+        <header class="text-center mb-8 no-print">
+            <h1 id="mainTitle" class="text-4xl md:text-5xl title-font text-red-500">Kuar-Tor: Ecos do Vazio</h1>
+            <p class="content-font text-xl text-gray-400 mt-2">Ficha de Personagem Unificada (Online)</p>
+        </header>
+        
+        <!-- Status do Firebase -->
+        <div id="firebase-status" class="text-center mb-4 p-3 rounded-md border border-neutral-700 bg-neutral-800 no-print">
+            <p id="auth-status">Conectando aos arquivos arcanos...</p>
+        </div>
+
+
+        <div class="w-full bg-neutral-800 p-6 sm:p-8 rounded-lg shadow-2xl border border-neutral-700 no-print">
+            <div class="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
+                <h1 class="title-font text-3xl sm:text-4xl font-bold text-center text-amber-500">Gerador de Fichas</h1>
+                <div class="flex space-x-3">
+                    <button type="button" id="importSheetButton" class="px-5 py-2.5 action-button-import rounded-md shadow-md text-sm">Importar Ficha</button>
+                </div>
+            </div>
+            <input type="file" id="fileInput" accept=".json" class="hidden">
+
+            <!-- Seção de Recursos -->
+            <div class="mb-6 no-print">
+                <h3 class="text-lg font-semibold text-amber-500 text-center mb-3">Recursos Rápidos</h3>
+                <div class="flex justify-center flex-wrap gap-3">
+                    <a href="https://andersonaraujox.github.io/RPG/Arquivos/Vantagens.pdf" target="_blank" class="px-4 py-2 action-button action-button-resource rounded-md text-sm">Vantagens (PDF)</a>
+                    <a href="https://andersonaraujox.github.io/RPG/Arquivos/desvantagens.pdf" target="_blank" class="px-4 py-2 action-button action-button-resource rounded-md text-sm">Desvantagens (PDF)</a>
+                    <a href="https://andersonaraujox.github.io/RPG/Arquivos/medieval2d6-livreto.pdf" target="_blank" class="px-4 py-2 action-button action-button-resource rounded-md text-sm">Livreto +2D6 (PDF)</a>
+                </div>
+            </div>
+
+            <!-- Contador de Pontos -->
+            <div id="pointCounterSection" class="points-counter">
+                <div class="points-block"><div class="points-label">Atributos</div><div id="attributePointsValue" class="points-value">0/12</div></div>
+                <div class="points-block"><div class="points-label">Perícias</div><div id="skillPointsValue" class="points-value">0/10</div></div>
+                <div class="points-block"><div class="points-label">Vantagens</div><div id="advantagePointsValue" class="points-value">0/0</div></div>
+                <div class="points-block"><div class="points-label">Caminhos</div><div id="magicPathPointsValue" class="points-value">0/0</div></div>
+            </div>
+
+            <form id="rpgSheetForm" class="space-y-6">
+                <!-- Informações Básicas -->
+                <fieldset class="border border-neutral-700 p-4 rounded-md">
+                    <legend class="text-lg px-2 section-title !border-none !mb-0 !pb-0 !text-amber-500">Identidade</legend>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                         <div><label for="charName" class="block text-sm font-medium mb-1">Nome:</label><input type="text" id="charName" name="charName" required class="w-full p-2 bg-neutral-900 border-neutral-600 rounded-md"></div>
+                         <div><label for="charRace" class="block text-sm font-medium mb-1">Raça:</label><input type="text" id="charRace" name="charRace" class="w-full p-2 bg-neutral-900 border-neutral-600 rounded-md"></div>
+                         <div><label for="charClass" class="block text-sm font-medium mb-1">Classe:</label><input type="text" id="charClass" name="charClass" class="w-full p-2 bg-neutral-900 border-neutral-600 rounded-md"></div>
+                    </div>
+                </fieldset>
+                
+                <!-- Evolução -->
+                 <fieldset class="border border-neutral-700 p-4 rounded-md">
+                    <legend class="text-lg px-2 section-title !border-none !mb-0 !pb-0 !text-amber-500">Evolução & Experiência</legend>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+                        <div>
+                            <label for="expPoints" class="block text-sm font-medium mb-1">Pontos de Experiência (EXP):</label>
+                            <input type="number" id="expPoints" name="expPoints" min="0" value="0" class="w-full p-2 bg-neutral-900 border-neutral-600 rounded-md">
+                        </div>
+                        <div class="bg-neutral-900/50 p-3 rounded-md border border-neutral-700 space-y-2">
+                            <div class="flex justify-between text-sm"><span class="text-neutral-400">Pontos de Atributo Ganhos:</span><span id="earnedAttributePoints" class="font-bold text-amber-400">0</span></div>
+                            <div class="flex justify-between text-sm"><span class="text-neutral-400">Pontos de Evolução Ganhos:</span><span id="earnedEvolutionPoints" class="font-bold text-amber-400">0</span></div>
+                            <hr class="border-neutral-700">
+                            <div class="flex justify-between text-sm"><span class="text-neutral-400">Pontos de Evolução Disponíveis:</span><span id="availableEvolutionPoints" class="font-bold text-green-400">0</span></div>
+                            <div class="flex justify-center space-x-2 pt-2">
+                                <button type="button" id="spendOnSkillButton" class="text-xs action-button action-button-secondary px-2 py-1 disabled:opacity-50 disabled:cursor-not-allowed" title="Gasta 1 Ponto de Evolução para ganhar +1 Ponto de Perícia.">+1 para Perícias</button>
+                                <button type="button" id="spendOnAdvantageButton" class="text-xs action-button action-button-secondary px-2 py-1 disabled:opacity-50 disabled:cursor-not-allowed" title="Gasta 1 Ponto de Evolução para ganhar +1 Ponto para Vantagens.">+1 para Vantagens</button>
+                            </div>
+                        </div>
+                    </div>
+                    <input type="hidden" name="pontosPericiaAdicionais" id="pontosPericiaAdicionais" value="0">
+                    <input type="hidden" name="pontosVantagemAdicionais" id="pontosVantagemAdicionais" value="0">
+                </fieldset>
+
+                <!-- Atributos -->
+                <fieldset class="border border-neutral-700 p-4 rounded-md">
+                    <legend class="text-lg px-2 section-title !border-none !mb-0 !pb-0 !text-amber-500">Atributos</legend>
+                    <div class="grid grid-cols-3 md:grid-cols-7 gap-4 justify-items-center text-center">
+                        <div><label for="for" class="block text-lg font-bold title-font text-gray-300">FOR</label><input type="number" id="for" name="for" class="attribute-input mt-1" value="2" min="1" max="5"></div>
+                        <div><label for="des" class="block text-lg font-bold title-font text-gray-300">DES</label><input type="number" id="des" name="des" class="attribute-input mt-1" value="2" min="1" max="5"></div>
+                        <div><label for="con" class="block text-lg font-bold title-font text-gray-300">CON</label><input type="number" id="con" name="con" class="attribute-input mt-1" value="2" min="1" max="5"></div>
+                        <div><label for="int" class="block text-lg font-bold title-font text-gray-300">INT</label><input type="number" id="int" name="int" class="attribute-input mt-1" value="2" min="1" max="5"></div>
+                        <div><label for="sab" class="block text-lg font-bold title-font text-gray-300">SAB</label><input type="number" id="sab" name="sab" class="attribute-input mt-1" value="2" min="1" max="5"></div>
+                        <div><label for="pod" class="block text-lg font-bold title-font text-gray-300">POD</label><input type="number" id="pod" name="pod" class="attribute-input mt-1" value="2" min="1" max="5"></div>
+                        <div><label for="car" class="block text-lg font-bold title-font text-gray-300">CAR</label><input type="number" id="car" name="car" class="attribute-input mt-1" value="2" min="1" max="5"></div>
+                    </div>
+                </fieldset>
+
+                <!-- Habilidades -->
+                <fieldset class="border border-neutral-700 p-4 rounded-md">
+                    <legend class="text-lg px-2 section-title !border-none !mb-0 !pb-0 !text-amber-500">Habilidades & Peculiaridades</legend>
+                    <div class="space-y-4">
+                        <div>
+                            <div class="flex justify-between items-center mb-1"><label class="block text-sm font-medium">Perícias:</label><button type="button" id="manageSkillsButton" class="text-sm action-button action-button-secondary px-3 py-1">Gerir Perícias</button></div>
+                            <div id="displaySkills" class="p-2 min-h-[40px] bg-neutral-900/50 rounded-md border border-neutral-600 text-sm italic text-neutral-400">Nenhuma perícia.</div>
+                            <input type="hidden" name="pericias" id="periciasInput" value="[]">
+                        </div>
+                        <div>
+                            <div class="flex justify-between items-center mb-1"><label class="block text-sm font-medium">Vantagens:</label><button type="button" id="manageAdvantagesButton" class="text-sm action-button action-button-secondary px-3 py-1">Gerir Vantagens</button></div>
+                            <div id="displayAdvantages" class="p-2 min-h-[40px] bg-neutral-900/50 rounded-md border border-neutral-600 text-sm italic text-neutral-400">Nenhuma vantagem.</div>
+                            <input type="hidden" name="vantagens" id="vantagensInput" value="[]">
+                        </div>
+                        <div>
+                            <div class="flex justify-between items-center mb-1"><label class="block text-sm font-medium">Desvantagens:</label><button type="button" id="manageDisadvantagesButton" class="text-sm action-button action-button-secondary px-3 py-1">Gerir Desvantagens</button></div>
+                            <div id="displayDisadvantages" class="p-2 min-h-[40px] bg-neutral-900/50 rounded-md border border-neutral-600 text-sm italic text-neutral-400">Nenhuma desvantagem.</div>
+                            <input type="hidden" name="desvantagens" id="desvantagensInput" value="[]">
+                        </div>
+                    </div>
+                </fieldset>
+
+                <!-- Seção de Magia -->
+                <fieldset id="secao-magia" class="border border-neutral-700 p-4 rounded-md">
+                    <legend class="text-lg px-2 section-title !border-none !mb-0 !pb-0 !text-amber-500">🔮 Magia & Rituais</legend>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 my-4">
+                        <div>
+                            <label for="poderesMagicos" class="block text-sm font-medium text-gray-400 mb-1">Poderes Mágicos (Vantagem)</label>
+                            <input type="number" id="poderesMagicos" name="poderesMagicos" class="w-full bg-neutral-900 border-neutral-600 rounded-md p-2" placeholder="1-5" min="0" max="5" value="0">
+                            <p class="text-xs text-gray-500 mt-1">Pontos para Caminhos.</p>
+                        </div>
+                        <div>
+                            <label for="tradicaoMagica" class="block text-sm font-medium text-gray-400 mb-1">Tradição Mágica</label>
+                            <select id="tradicaoMagica" name="tradicaoMagica" class="w-full bg-neutral-900 border-neutral-600 rounded-md p-2 h-[42px]">
+                                <option value="INT">Arcana (INT)</option>
+                                <option value="SAB">Divina/Primal (SAB)</option>
+                                <option value="POD">Inata (POD)</option>
+                            </select>
+                             <p class="text-xs text-gray-500 mt-1">Atributo chave.</p>
+                        </div>
+                        <div>
+                            <label for="pontosEnergia" class="block text-sm font-medium text-gray-400 mb-1">Pontos de Energia (PE)</label>
+                            <input type="text" id="pontosEnergia" name="pontosEnergia" class="w-full bg-neutral-900 border-neutral-600 rounded-md p-2" readonly>
+                            <p class="text-xs text-gray-500 mt-1">Atributo Mágico + CON + 10.</p>
+                        </div>
+                    </div>
+                    <div>
+                        <h3 class="text-xl content-font text-gray-300 mb-3 border-t border-gray-700 pt-4">Caminhos de Magia</h3>
+                        <div id="caminhosContainer" class="space-y-3"></div>
+                        <input type="hidden" name="caminhosMagia" id="caminhosMagiaInput" value="[]">
+                        <button type="button" id="addCaminhoBtn" class="mt-4 text-sm bg-red-800 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-md shadow-lg transition-colors duration-200">+ Adicionar Caminho</button>
+                    </div>
+                </fieldset>
+
+                 <!-- Equipamento e Narrativa -->
+                <fieldset class="border border-neutral-700 p-4 rounded-md">
+                    <legend class="text-lg px-2 section-title !border-none !mb-0 !pb-0 !text-amber-500">Equipamento & Narrativa</legend>
+                    <div class="space-y-4">
+                        <div>
+                            <label for="equipment" class="block text-sm font-medium mb-1">Equipamento e Relíquias:</label>
+                            <textarea id="equipment" name="equipment" rows="4" class="w-full p-2 bg-neutral-900 border-neutral-600 rounded-md" placeholder="Adaga ritualística, tomo esquecido, armadura de placas enferrujada..."></textarea>
+                        </div>
+                        <div>
+                             <label for="backstory" class="block text-sm font-medium mb-1">Passado Sombrio:</label>
+                            <textarea id="backstory" name="backstory" rows="6" class="w-full p-2 bg-neutral-900 border-neutral-600 rounded-md" placeholder="Nascido sob uma lua de sangue, marcado por uma tragédia indizível..."></textarea>
+                        </div>
+                    </div>
+                </fieldset>
+
+                <div class="flex justify-end mt-6 space-x-4">
+                    <button type="button" id="clearFormButton" class="px-6 py-2 action-button action-button-secondary rounded-md shadow-md">Limpar</button>
+                    <button type="submit" class="px-6 py-2 action-button action-button-primary rounded-md shadow-md">Salvar e Visualizar</button>
+                </div>
+            </form>
+        </div>
+        
+        <!-- Seção de Fichas Salvas -->
+        <div id="savedSheetsSection" class="w-full bg-neutral-800 p-6 sm:p-8 rounded-lg shadow-2xl mt-10 border border-neutral-700 no-print">
+            <h2 class="title-font text-2xl font-bold text-center text-amber-600 mb-4">Crônicas Salvas na Nuvem</h2>
+            <div id="savedSheetsList" class="space-y-2 max-h-96 overflow-y-auto pr-2">
+                <p class="text-neutral-500 text-center">Nenhuma crônica registrada ainda.</p>
+            </div>
+        </div>
+
+        <!-- Div para exibir a ficha gerada -->
+        <div id="generatedSheet" class="w-full mt-8 hidden">
+             <div id="sheetContent"></div>
+             <div class="no-print mt-4 flex justify-center space-x-4">
+                <button id="printSheetButton" class="px-6 py-2 action-button action-button-primary">Imprimir</button>
+                <button id="exportJsonButton" class="px-6 py-2 action-button action-button-secondary">Exportar JSON</button>
+                <button id="exportMarkdownButton" class="px-6 py-2 action-button action-button-secondary">Exportar Markdown</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Genérico para Perícias, Vantagens, Desvantagens -->
+    <div id="pvdModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="flex justify-between items-center mb-4"><h3 id="pvdModalTitle" class="modal-title">Gerir Itens</h3><button id="closePvdModal" class="modal-close-button" title="Fechar">&times;</button></div>
+            <div class="modal-body space-y-4">
+                <div id="pvdFormContainer"></div>
+                <div id="pvdListContainer" class="max-h-60 overflow-y-auto border border-neutral-700 rounded-md p-2 bg-neutral-800/50"></div>
+            </div>
+            <div class="mt-6 text-right"><button id="savePvdButton" class="action-button action-button-primary px-4 py-2">Concluir Edição</button></div>
+        </div>
+    </div>
+
+    <script type="module">
+        // --- IMPORTAÇÕES DO FIREBASE ---
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, doc, onSnapshot, setDoc, getDoc, deleteDoc, serverTimestamp, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // --- CONFIGURAÇÃO E INICIALIZAÇÃO DO FIREBASE ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyC-awoLK4cc0XtLtNppibqgYnNLclUeeI4",
+            authDomain: "kuar-tor-portal.firebaseapp.com",
+            databaseURL: "https://kuar-tor-portal-default-rtdb.firebaseio.com", // I added this line
+            projectId: "kuar-tor-portal",
+            storageBucket: "kuar-tor-portal.appspot.com",
+            messagingSenderId: "438781244189",
+            appId: "1:438781244189:web:99ea6a25fc459b14f567f4",
+            measurementId: "G-X5GTEY10VZ"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        
+        // --- VARIÁVEIS GLOBAIS DE ESTADO ---
+        let currentUserId = null;
+        let currentSheetId = null;
+        let unsubscribeFromSheets = null; // Função para parar de ouvir as atualizações do Firestore
+
+        // --- LÓGICA DE AUTENTICAÇÃO ---
+        onAuthStateChanged(auth, async (user) => {
+            const authStatusEl = document.getElementById('auth-status');
+            if (user) {
+                currentUserId = user.uid;
+                authStatusEl.innerHTML = `Conectado! <span class="text-xs text-neutral-500 break-all">ID: ${currentUserId}</span>`;
+                console.log("Usuário autenticado:", currentUserId);
+                mainAppLogic(); // Inicia a lógica principal da aplicação
+            } else {
+                authStatusEl.textContent = "Autenticando...";
+                console.log("Nenhum usuário logado. Tentando login anônimo.");
+                try {
+                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                        await signInWithCustomToken(auth, __initial_auth_token);
+                    } else {
+                        await signInAnonymously(auth);
+                    }
+                } catch (error) {
+                    console.error("Erro na autenticação:", error);
+                    authStatusEl.textContent = "Falha na conexão com os servidores.";
+                }
+            }
+        });
+
+
+    function mainAppLogic() {
+        // --- ELEMENTOS DO DOM ---
+        const form = document.getElementById('rpgSheetForm');
+        const allAtributosInputs = {
+            for: document.getElementById('for'), des: document.getElementById('des'),
+            con: document.getElementById('con'), int: document.getElementById('int'),
+            sab: document.getElementById('sab'), pod: document.getElementById('pod'),
+            car: document.getElementById('car')
+        };
+        const poderesMagicosInput = document.getElementById('poderesMagicos');
+        const tradicaoMagicaSelect = document.getElementById('tradicaoMagica');
+        const pontosEnergiaInput = document.getElementById('pontosEnergia');
+        const addCaminhoBtn = document.getElementById('addCaminhoBtn');
+        const caminhosContainer = document.getElementById('caminhosContainer');
+        
+        const attributePointsValueDiv = document.getElementById('attributePointsValue');
+        const skillPointsValueDiv = document.getElementById('skillPointsValue');
+        const advantagePointsValueDiv = document.getElementById('advantagePointsValue');
+        const magicPathPointsValueDiv = document.getElementById('magicPathPointsValue');
+        
+        const expInput = document.getElementById('expPoints');
+        const earnedAttributePointsDiv = document.getElementById('earnedAttributePoints');
+        const earnedEvolutionPointsDiv = document.getElementById('earnedEvolutionPoints');
+        const availableEvolutionPointsDiv = document.getElementById('availableEvolutionPoints');
+        const spendOnSkillButton = document.getElementById('spendOnSkillButton');
+        const spendOnAdvantageButton = document.getElementById('spendOnAdvantageButton');
+        const pontosPericiaAdicionaisInput = document.getElementById('pontosPericiaAdicionais');
+        const pontosVantagemAdicionaisInput = document.getElementById('pontosVantagemAdicionais');
+        
+        const manageSkillsButton = document.getElementById('manageSkillsButton');
+        const manageAdvantagesButton = document.getElementById('manageAdvantagesButton');
+        const manageDisadvantagesButton = document.getElementById('manageDisadvantagesButton');
+        const displaySkillsDiv = document.getElementById('displaySkills');
+        const displayAdvantagesDiv = document.getElementById('displayAdvantages');
+        const displayDisadvantagesDiv = document.getElementById('displayDisadvantages');
+        
+        const pvdModal = document.getElementById('pvdModal');
+        const pvdModalTitle = document.getElementById('pvdModalTitle');
+        const closePvdModalButton = document.getElementById('closePvdModal');
+        const pvdFormContainer = document.getElementById('pvdFormContainer');
+        const pvdListContainer = document.getElementById('pvdListContainer');
+        const savePvdButton = document.getElementById('savePvdButton');
+
+        const savedSheetsListDiv = document.getElementById('savedSheetsList');
+        const generatedSheetDiv = document.getElementById('generatedSheet');
+        const sheetContentDiv = document.getElementById('sheetContent');
+        const clearFormButton = document.getElementById('clearFormButton');
+        const printSheetButton = document.getElementById('printSheetButton');
+        const exportJsonButton = document.getElementById('exportJsonButton');
+        const exportMarkdownButton = document.getElementById('exportMarkdownButton');
+        const importSheetButton = document.getElementById('importSheetButton');
+        const fileInput = document.getElementById('fileInput');
+
+        // --- ESTADO E CONSTANTES ---
+        let currentEditingPVDType = null;
+        let tempPVDList = [];
+        const listaPericiasMedieval2D6 = ["Acadêmico", "Acrobata", "Arqueiro", "Artífice", "Atletismo", "Cavalgar", "Curandeiro", "Disciplina", "Dissimular", "Domador", "Empatia", "Erudição", "Expressão", "Furtivo", "Guerreiro", "Ladino", "Linguística", "Manha", "Manipulação", "Mecânico", "Navegador", "Ocultismo", "Percepção", "Performance", "Presença", "Sobrevivência"];
+        const caminhosDisponiveis = ["Magia (Fogo)", "Magia (Água)", "Magia (Ar)", "Magia (Terra)", "Magia (Luz)", "Magia (Trevas)", "Magia (Animais)", "Magia (Plantas)", "Magia (Humanos)", "Magia (Spiritum)", "Magia (Arkanum)", "Magia (Metamagia)"];
+
+        // --- FUNÇÕES ---
+        
+        function updateAllStats() {
+            const exp = parseInt(expInput.value) || 0;
+            const pontosPericiaAdd = parseInt(pontosPericiaAdicionaisInput.value) || 0;
+            const pontosVantagemAdd = parseInt(pontosVantagemAdicionaisInput.value) || 0;
+            const attributePointsEarned = Math.floor(exp / 20);
+            const evolutionPointsEarned = Math.floor(exp / 5);
+            const evolutionPointsSpent = pontosPericiaAdd + pontosVantagemAdd;
+            const evolutionPointsAvailable = evolutionPointsEarned - evolutionPointsSpent;
+            earnedAttributePointsDiv.textContent = attributePointsEarned;
+            earnedEvolutionPointsDiv.textContent = evolutionPointsEarned;
+            availableEvolutionPointsDiv.textContent = evolutionPointsAvailable;
+            spendOnSkillButton.disabled = evolutionPointsAvailable <= 0;
+            spendOnAdvantageButton.disabled = evolutionPointsAvailable <= 0;
+
+            const totalAttributePoints = 12 + attributePointsEarned;
+            let attributesSpent = 0;
+            Object.values(allAtributosInputs).forEach(input => { attributesSpent += parseInt(input.value) || 0; });
+            attributePointsValueDiv.textContent = `${attributesSpent}/${totalAttributePoints}`;
+            attributePointsValueDiv.classList.toggle('negative', attributesSpent > totalAttributePoints);
+
+            const totalSkillPoints = 10 + pontosPericiaAdd;
+            const skills = JSON.parse(document.getElementById('periciasInput').value || '[]');
+            const skillsSpent = skills.reduce((total, skill) => total + (skill.valor || 0), 0);
+            skillPointsValueDiv.textContent = `${skillsSpent}/${totalSkillPoints}`;
+            skillPointsValueDiv.classList.toggle('negative', skillsSpent > totalSkillPoints);
+
+            const advantages = JSON.parse(document.getElementById('vantagensInput').value || '[]');
+            const disadvantages = JSON.parse(document.getElementById('desvantagensInput').value || '[]');
+            const advantagesSpent = advantages.reduce((total, adv) => total + (adv.custo || 0), 0);
+            const disadvantagesBonus = disadvantages.reduce((total, dis) => total + (dis.bonus || 0), 0);
+            const advantagePointsPool = Math.min(disadvantagesBonus, 3) + pontosVantagemAdd;
+            advantagePointsValueDiv.textContent = `${advantagesSpent}/${advantagePointsPool}`;
+            advantagePointsValueDiv.classList.toggle('negative', advantagesSpent > advantagePointsPool);
+
+            const con = parseInt(allAtributosInputs.con.value) || 0;
+            const tradicao = tradicaoMagicaSelect.value;
+            let atributoMagicoVal = 0;
+            if (tradicao === 'INT') atributoMagicoVal = parseInt(allAtributosInputs.int.value) || 0;
+            else if (tradicao === 'SAB') atributoMagicoVal = parseInt(allAtributosInputs.sab.value) || 0;
+            else if (tradicao === 'POD') atributoMagicoVal = parseInt(allAtributosInputs.pod.value) || 0;
+            pontosEnergiaInput.value = atributoMagicoVal + con + 10;
+            
+            const pontosDisponiveisCaminho = parseInt(poderesMagicosInput.value) || 0;
+            let pontosGastosCaminho = 0;
+            caminhosContainer.querySelectorAll('input[type="number"]').forEach(input => {
+                pontosGastosCaminho += parseInt(input.value) || 0;
+            });
+            magicPathPointsValueDiv.textContent = `${pontosGastosCaminho}/${pontosDisponiveisCaminho}`;
+            magicPathPointsValueDiv.classList.toggle('negative', pontosGastosCaminho > pontosDisponiveisCaminho);
+        }
+
+        function adicionarCaminho(caminhoData = { nome: '', nivel: 0, customName: '' }) {
+            const id = Date.now();
+            const div = document.createElement('div');
+            div.className = 'grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-2 items-center p-2 bg-neutral-900/50 rounded-md border border-neutral-700';
+            
+            let optionsHtml = caminhosDisponiveis.map(c => `<option value="${c}" ${c === caminhoData.nome ? 'selected' : ''}>${c}</option>`).join('');
+            optionsHtml += `<option value="OUTRO" ${caminhoData.nome === 'OUTRO' ? 'selected' : ''}>Outro (Secundário)...</option>`;
+            
+            div.innerHTML = `
+                <div class="col-span-1 md:col-span-1">
+                    <select name="caminho-nome-${id}" class="w-full bg-neutral-700 border border-neutral-600 rounded-md h-10 px-2 text-sm">
+                        <option value="">-- Escolha um Caminho --</option>
+                        ${optionsHtml}
+                    </select>
+                </div>
+                <div class="col-span-2 md:col-span-2">
+                    <input type="text" name="caminho-custom-${id}" class="w-full bg-neutral-700 border border-neutral-600 rounded-md h-10 px-2 text-sm ${caminhoData.nome === 'OUTRO' ? '' : 'hidden'}" placeholder="Nome do Caminho Secundário" value="${caminhoData.customName || ''}">
+                </div>
+                <div class="flex items-center space-x-2">
+                    <label class="text-sm">Nível:</label>
+                    <input type="number" name="caminho-nivel-${id}" class="attribute-input w-16" placeholder="Nvl" min="0" value="${caminhoData.nivel || 0}">
+                </div>
+                <p name="caminho-formas-${id}" class="text-sm text-gray-400">Formas: -</p>
+                <button type="button" class="remove-caminho-btn text-gray-400 hover:text-red-500 transition-colors no-print justify-self-end">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" /></svg>
+                </button>
+            `;
+            caminhosContainer.appendChild(div);
+
+            const select = div.querySelector('select');
+            const customInput = div.querySelector(`input[name="caminho-custom-${id}"]`);
+            const nivelInput = div.querySelector(`input[name="caminho-nivel-${id}"]`);
+            const formasDisplay = div.querySelector(`p[name="caminho-formas-${id}"]`);
+            
+            select.addEventListener('change', () => {
+                customInput.classList.toggle('hidden', select.value !== 'OUTRO');
+            });
+
+            const updateHandler = () => {
+                atualizarFormas(nivelInput, formasDisplay);
+                updateAllStats();
+            };
+            nivelInput.addEventListener('input', updateHandler);
+            select.addEventListener('change', updateHandler);
+            customInput.addEventListener('input', updateHandler);
+
+            div.querySelector('.remove-caminho-btn').addEventListener('click', () => {
+                div.remove();
+                updateAllStats();
+            });
+            
+            atualizarFormas(nivelInput, formasDisplay);
+        }
+        
+        function atualizarFormas(nivelInput, formasDisplay) {
+            const nivel = parseInt(nivelInput.value) || 0;
+            let formasTexto = "Formas: ";
+            if (nivel >= 3) formasTexto += '<span class="text-green-400">Entender</span>, <span class="text-yellow-400">Controlar</span>, <span class="text-red-400">Criar</span>';
+            else if (nivel === 2) formasTexto += '<span class="text-green-400">Entender</span>, <span class="text-yellow-400">Controlar</span>';
+            else if (nivel === 1) formasTexto += '<span class="text-green-400">Entender</span>';
+            else formasTexto += "-";
+            formasDisplay.innerHTML = formasTexto;
+        }
+
+        function openPVDModal(type) {
+            currentEditingPVDType = type;
+            tempPVDList = JSON.parse(document.getElementById(type + 'Input').value || '[]');
+            let title = "";
+            let formHtml = "";
+
+            if (type === 'pericias') {
+                title = "Gerir Perícias";
+                formHtml = `
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 items-end">
+                        <div>
+                            <label for="pvdSkillSelect" class="block text-xs font-medium text-neutral-400">Perícia:</label>
+                            <select id="pvdSkillSelect" class="mt-1 block w-full p-2 text-sm bg-neutral-700 border-neutral-600 rounded-md"><option value="">-- Selecione --</option>${listaPericiasMedieval2D6.map(p => `<option value="${p}">${p}</option>`).join('')}<option value="OUTRA">Outra...</option></select>
+                        </div>
+                        <div id="pvdCustomNameContainer" class="hidden md:col-span-2"><label for="pvdName" class="block text-xs font-medium text-neutral-400">Nome da Perícia Personalizada:</label><input type="text" id="pvdName" class="mt-1 block w-full p-2 text-sm bg-neutral-700 border-neutral-600 rounded-md"></div>
+                        <div><label for="pvdValue" class="block text-xs font-medium text-neutral-400">Valor (1-5):</label><input type="number" id="pvdValue" min="1" max="5" value="1" class="mt-1 block w-full p-2 text-sm bg-neutral-700 border-neutral-600 rounded-md"></div>
+                        <div class="md:col-span-2"><label for="pvdAttribute" class="block text-xs font-medium text-neutral-400">Atributo Base:</label><select id="pvdAttribute" class="mt-1 block w-full p-2 text-sm bg-neutral-700 border-neutral-600 rounded-md">${Object.keys(allAtributosInputs).map(attr => `<option value="${attr.toUpperCase()}">${attr.toUpperCase()}</option>`).join('')}</select></div>
+                        <div class="md:col-span-2"><label for="pvdDescription" class="block text-xs font-medium text-neutral-400">Descrição/Notas:</label><input type="text" id="pvdDescription" class="mt-1 block w-full p-2 text-sm bg-neutral-700 border-neutral-600 rounded-md"></div>
+                    </div>
+                    <button type="button" id="addPvdItemButton" class="mt-3 action-button action-button-main px-3 py-1 text-sm">Adicionar Perícia</button>`;
+            } else if (type === 'vantagens' || type === 'desvantagens') {
+                const isAdvantage = type === 'vantagens';
+                title = isAdvantage ? "Gerir Vantagens" : "Gerir Desvantagens";
+                const costOrBonus = isAdvantage ? 'Custo' : 'Bônus';
+                formHtml = `
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 items-end">
+                        <div><label for="pvdName" class="block text-xs font-medium text-neutral-400">Nome:</label><input type="text" id="pvdName" class="mt-1 block w-full p-2 text-sm bg-neutral-700 border-neutral-600 rounded-md"></div>
+                        <div><label for="pvdCost" class="block text-xs font-medium text-neutral-400">${costOrBonus} (1-5):</label><input type="number" id="pvdCost" min="1" max="5" value="1" class="mt-1 block w-full p-2 text-sm bg-neutral-700 border-neutral-600 rounded-md"></div>
+                        <div class="md:col-span-2"><label for="pvdDescription" class="block text-xs font-medium text-neutral-400">Descrição:</label><textarea id="pvdDescription" rows="2" class="mt-1 block w-full p-2 text-sm bg-neutral-700 border-neutral-600 rounded-md"></textarea></div>
+                    </div>
+                    <button type="button" id="addPvdItemButton" class="mt-3 action-button action-button-main px-3 py-1 text-sm">Adicionar ${isAdvantage ? 'Vantagem' : 'Desvantagem'}</button>`;
+            }
+
+            pvdModalTitle.textContent = title;
+            pvdFormContainer.innerHTML = formHtml;
+            renderPVDList();
+            pvdModal.classList.remove('hidden');
+
+            if (type === 'pericias') {
+                const skillSelect = document.getElementById('pvdSkillSelect');
+                const customNameContainer = document.getElementById('pvdCustomNameContainer');
+                skillSelect.addEventListener('change', () => customNameContainer.classList.toggle('hidden', skillSelect.value !== 'OUTRA'));
+            }
+            document.getElementById('addPvdItemButton').addEventListener('click', addPvdItem);
+        }
+
+        function addPvdItem() {
+            let name, value, cost, bonus, description, atributo;
+            const nameInput = document.getElementById('pvdName');
+            const descInput = document.getElementById('pvdDescription');
+            
+            if (currentEditingPVDType === 'pericias') {
+                const skillSelect = document.getElementById('pvdSkillSelect');
+                name = skillSelect.value === 'OUTRA' ? nameInput.value.trim() : skillSelect.value;
+                value = parseInt(document.getElementById('pvdValue').value);
+                atributo = document.getElementById('pvdAttribute').value;
+                description = descInput.value.trim();
+                if (!name || isNaN(value)) return;
+                tempPVDList.push({ id: Date.now(), nome: name, valor: value, atributo: atributo, descricao: description });
+            } else {
+                name = nameInput.value.trim();
+                cost = parseInt(document.getElementById('pvdCost').value);
+                description = descInput.value.trim();
+                if (!name || isNaN(cost)) return;
+                const item = { id: Date.now(), nome: name, descricao: description };
+                if (currentEditingPVDType === 'vantagens') item.custo = cost;
+                else item.bonus = cost;
+                tempPVDList.push(item);
+            }
+            renderPVDList();
+            pvdFormContainer.querySelector('input[type="text"]')?.form.reset();
+        }
+
+        function removePvdItem(id) {
+            tempPVDList = tempPVDList.filter(item => item.id != id);
+            renderPVDList();
+        }
+
+        function renderPVDList() {
+            pvdListContainer.innerHTML = tempPVDList.map(item => {
+                let text = `<strong>${item.nome}</strong>`;
+                if (item.valor) text += ` (${item.atributo}: ${item.valor})`;
+                if (item.custo) text += ` (Custo: ${item.custo})`;
+                if (item.bonus) text += ` (Bônus: ${item.bonus})`;
+                if (item.descricao) text += `<span class="description">${item.descricao}</span>`;
+                return `<div class="pvd-item"><div class="pvd-item-details flex-grow">${text}</div><button type="button" data-id="${item.id}" class="remove-pvd-item-btn text-red-500 hover:text-red-400 font-bold text-xs ml-2 p-1">X</button></div>`;
+            }).join('') || `<p class="text-sm text-neutral-500">Nenhum item.</p>`;
+            pvdListContainer.querySelectorAll('.remove-pvd-item-btn').forEach(btn => btn.addEventListener('click', e => removePvdItem(e.target.dataset.id)));
+        }
+        
+        function savePVDChanges() {
+            document.getElementById(currentEditingPVDType + 'Input').value = JSON.stringify(tempPVDList);
+            pvdModal.classList.add('hidden');
+            updateDisplayPVDs();
+            updateAllStats();
+        }
+        
+        function updateDisplayPVDs() {
+            const pericias = JSON.parse(document.getElementById('periciasInput').value || '[]');
+            const vantagens = JSON.parse(document.getElementById('vantagensInput').value || '[]');
+            const desvantagens = JSON.parse(document.getElementById('desvantagensInput').value || '[]');
+            displaySkillsDiv.innerHTML = pericias.map(p => `<span>${p.nome} (${p.atributo}: ${p.valor})</span>`).join('; ') || '<span class="italic text-neutral-500">Nenhuma perícia.</span>';
+            displayAdvantagesDiv.innerHTML = vantagens.map(v => `<span>${v.nome} (Custo: ${v.custo})</span>`).join('; ') || '<span class="italic text-neutral-500">Nenhuma vantagem.</span>';
+            displayDisadvantagesDiv.innerHTML = desvantagens.map(d => `<span>${d.nome} (Bônus: ${d.bonus})</span>`).join('; ') || '<span class="italic text-neutral-500">Nenhuma desvantagem.</span>';
+        }
+
+        function getFormAsJson() {
+            const formData = new FormData(form);
+            const data = Object.fromEntries(formData.entries());
+            const caminhos = [];
+            caminhosContainer.querySelectorAll('.grid').forEach(row => {
+                const select = row.querySelector('select');
+                const customInput = row.querySelector('input[type="text"]');
+                const nivelInput = row.querySelector('input[type="number"]');
+                const nivel = parseInt(nivelInput.value) || 0;
+                let nome = select.value;
+                let customName = '';
+
+                if (nome === 'OUTRO') {
+                    customName = customInput.value.trim();
+                }
+
+                if ((nome && nome !== 'OUTRO' && nivel > 0) || (nome === 'OUTRO' && customName && nivel > 0)) {
+                    caminhos.push({ nome, nivel, customName });
+                }
+            });
+            data.caminhosMagia = caminhos;
+            data.pericias = JSON.parse(data.pericias || '[]');
+            data.vantagens = JSON.parse(data.vantagens || '[]');
+            data.desvantagens = JSON.parse(data.desvantagens || '[]');
+            return data;
+        }
+        
+        function loadFormFromJson(data) {
+            for (const key in data) {
+                if(key === 'pericias' || key === 'vantagens' || key === 'desvantagens' || key === 'caminhosMagia' || key === 'sheetData') continue;
+                const element = form.elements[key];
+                if (element) {
+                    if (element.type === 'checkbox') element.checked = data[key];
+                    else element.value = data[key];
+                }
+            }
+            document.getElementById('periciasInput').value = JSON.stringify(data.pericias || []);
+            document.getElementById('vantagensInput').value = JSON.stringify(data.vantagens || []);
+            document.getElementById('desvantagensInput').value = JSON.stringify(data.desvantagens || []);
+            
+            caminhosContainer.innerHTML = '';
+            if (data.caminhosMagia) {
+                data.caminhosMagia.forEach(caminho => adicionarCaminho(caminho));
+            }
+            updateDisplayPVDs();
+            updateAllStats();
+        }
+        
+        // --- FUNÇÕES DO FIREBASE ---
+        async function saveSheetToFirestore() {
+            if (!currentUserId) return;
+            const sheetIdToSave = currentSheetId || Date.now().toString();
+            const sheetData = getFormAsJson();
+            
+            const sheetDocRef = doc(db, `users/${currentUserId}/characters`, sheetIdToSave);
+            
+            try {
+                await setDoc(sheetDocRef, {
+                    name: sheetData.charName || 'Sem Nome',
+                    lastUpdated: serverTimestamp(),
+                    sheetData: sheetData // Salva o objeto de dados completo
+                });
+                console.log(`Ficha ${sheetIdToSave} salva no Firestore.`);
+                currentSheetId = sheetIdToSave; // Garante que o ID atual seja o salvo
+            } catch (error) {
+                console.error("Erro ao salvar ficha:", error);
+            }
+        }
+        
+        function loadSavedSheetsFromFirestore() {
+            if (!currentUserId) return;
+            
+            // Cancela a inscrição anterior para evitar múltiplos listeners
+            if (unsubscribeFromSheets) {
+                unsubscribeFromSheets();
+            }
+            
+            const sheetsCollectionRef = collection(db, `users/${currentUserId}/characters`);
+            const q = query(sheetsCollectionRef);
+
+            unsubscribeFromSheets = onSnapshot(q, (snapshot) => {
+                const sheets = [];
+                snapshot.forEach(doc => {
+                    sheets.push({ id: doc.id, ...doc.data() });
+                });
+                
+                savedSheetsListDiv.innerHTML = sheets.map(item => `
+                    <div class="flex justify-between items-center p-2 bg-neutral-700 rounded-md">
+                        <span>${item.name}</span>
+                        <div>
+                            <button class="load-sheet-btn text-xs action-button action-button-secondary px-2 py-1" data-id="${item.id}">Carregar</button>
+                            <button class="delete-sheet-btn text-xs action-button action-button-primary px-2 py-1" data-id="${item.id}">Excluir</button>
+                        </div>
+                    </div>
+                `).join('') || '<p class="text-neutral-500 text-center">Nenhuma crônica registrada na nuvem.</p>';
+            }, (error) => {
+                console.error("Erro ao carregar fichas:", error);
+                savedSheetsListDiv.innerHTML = '<p class="text-red-500 text-center">Erro ao carregar crônicas.</p>';
+            });
+        }
+
+        async function loadSheetFromFirestore(sheetId) {
+            if (!currentUserId || !sheetId) return;
+            // Correção para a Linha 757
+            const sheetDocRef = doc(db, `users/${currentUserId}/characters`, sheetId);
+
+            try {
+                const docSnap = await getDoc(sheetDocRef);
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    loadFormFromJson(data.sheetData);
+                    currentSheetId = sheetId;
+                    console.log(`Ficha ${sheetId} carregada.`);
+                } else {
+                    console.log("Nenhuma ficha encontrada com este ID!");
+                }
+            } catch (error) {
+                console.error("Erro ao carregar ficha:", error);
+            }
+        }
+
+        async function deleteSheetFromFirestore(sheetId) {
+            if (!currentUserId || !sheetId) return;
+            if (confirm('Tem certeza que deseja excluir esta ficha da nuvem? Esta ação não pode ser desfeita.')) {
+                // Correção para a Linha 776
+                const sheetDocRef = doc(db, `users/${currentUserId}/characters`, sheetId);
+                try {
+                    await deleteDoc(sheetDocRef);
+                    console.log(`Ficha ${sheetId} excluída.`);
+                    if(currentSheetId === sheetId) {
+                       clearFormButton.click();
+                    }
+                } catch (error) {
+                    console.error("Erro ao excluir ficha:", error);
+                }
+            }
+        }
+
+        // --- EVENT LISTENERS ---
+        savedSheetsListDiv.addEventListener('click', e => {
+            const id = e.target.dataset.id;
+            if (e.target.classList.contains('load-sheet-btn')) {
+                loadSheetFromFirestore(id);
+            } else if (e.target.classList.contains('delete-sheet-btn')) {
+                deleteSheetFromFirestore(id);
+            }
+        });
+        
+        Object.values(allAtributosInputs).forEach(input => input.addEventListener('input', updateAllStats));
+        poderesMagicosInput.addEventListener('input', updateAllStats);
+        tradicaoMagicaSelect.addEventListener('input', updateAllStats);
+        addCaminhoBtn.addEventListener('click', () => adicionarCaminho());
+        expInput.addEventListener('input', updateAllStats);
+        spendOnSkillButton.addEventListener('click', () => { pontosPericiaAdicionaisInput.value = parseInt(pontosPericiaAdicionaisInput.value) + 1; updateAllStats(); });
+        spendOnAdvantageButton.addEventListener('click', () => { pontosVantagemAdicionaisInput.value = parseInt(pontosVantagemAdicionaisInput.value) + 1; updateAllStats(); });
+        manageSkillsButton.addEventListener('click', () => openPVDModal('pericias'));
+        manageAdvantagesButton.addEventListener('click', () => openPVDModal('vantagens'));
+        manageDisadvantagesButton.addEventListener('click', () => openPVDModal('desvantagens'));
+        closePvdModalButton.addEventListener('click', () => pvdModal.classList.add('hidden'));
+        savePvdButton.addEventListener('click', savePVDChanges);
+
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            saveSheetToFirestore(); // Salva no Firestore
+            
+            const data = getFormAsJson();
+            let sheetHtml = `
+                <div class="print-section print-full-width"><h3>Identidade</h3><p><strong>Nome:</strong> ${data.charName || 'N/A'} | <strong>Raça:</strong> ${data.charRace || 'N/A'} | <strong>Classe:</strong> ${data.charClass || 'N/A'}</p></div>
+                <div class="print-section"><h3>Atributos</h3><div class="print-attributes-grid">${Object.keys(allAtributosInputs).map(attr => `<div class="print-attribute-box"><strong>${attr.toUpperCase()}</strong><span>${data[attr] || 0}</span></div>`).join('')}</div></div>
+                <div class="print-section"><h3>Habilidades</h3>
+                    <h4>Perícias</h4><ul class="print-pvd-list">${data.pericias.map(p => `<li class="print-pvd-item"><strong>${p.nome} (${p.atributo}: ${p.valor})</strong><span class="description">${p.descricao || ''}</span></li>`).join('') || '<li>Nenhuma</li>'}</ul>
+                    <h4>Vantagens</h4><ul class="print-pvd-list">${data.vantagens.map(v => `<li class="print-pvd-item"><strong>${v.nome} (${v.custo}pts)</strong><span class="description">${v.descricao || ''}</span></li>`).join('') || '<li>Nenhuma</li>'}</ul>
+                    <h4>Desvantagens</h4><ul class="print-pvd-list">${data.desvantagens.map(d => `<li class="print-pvd-item"><strong>${d.nome} (${d.bonus}pts)</strong><span class="description">${d.descricao || ''}</span></li>`).join('') || '<li>Nenhuma</li>'}</ul>
+                </div>
+                <div class="print-section print-full-width"><h3>Magia & Rituais</h3>
+                    <p><strong>Tradição:</strong> ${data.tradicaoMagica} | <strong>PEs:</strong> ${data.pontosEnergia}</p>
+                    <h4>Caminhos de Magia</h4><ul class="print-pvd-list">${data.caminhosMagia.map(c => `<li class="print-pvd-item"><strong>${c.nome === 'OUTRO' ? c.customName : c.nome} (Nível ${c.nivel})</strong></li>`).join('') || '<li>Nenhum</li>'}</ul>
+                </div>
+                <div class="print-section print-full-width"><h3>Equipamento</h3><div class="print-text-area">${(data.equipment || 'Nenhum').replace(/\n/g, '<br>')}</div></div>
+                <div class="print-section print-full-width"><h3>Histórico</h3><div class="print-text-area">${(data.backstory || 'Nenhum').replace(/\n/g, '<br>')}</div></div>
+            `;
+            sheetContentDiv.innerHTML = sheetHtml;
+            generatedSheetDiv.classList.remove('hidden');
+        });
+
+        clearFormButton.addEventListener('click', () => {
+            form.reset();
+            currentSheetId = null;
+            caminhosContainer.innerHTML = '';
+            ['periciasInput', 'vantagensInput', 'desvantagensInput'].forEach(id => document.getElementById(id).value = '[]');
+            updateDisplayPVDs();
+            updateAllStats();
+            generatedSheetDiv.classList.add('hidden');
+        });
+
+        printSheetButton.addEventListener('click', () => window.print());
+        exportJsonButton.addEventListener('click', () => {
+            const data = getFormAsJson();
+            const json = JSON.stringify(data, null, 2);
+            const blob = new Blob([json], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${form.elements.charName.value || 'personagem'}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        });
+        exportMarkdownButton.addEventListener('click', () => {
+            const data = getFormAsJson();
+            let md = `# Ficha de Personagem: ${data.charName || 'Sem Nome'}\n\n`;
+            md += `**Raça:** ${data.charRace || ''} | **Classe:** ${data.charClass || ''}\n\n`;
+            md += `## Atributos\n`;
+            md += `| FOR | DES | CON | INT | SAB | POD | CAR |\n`;
+            md += `|:---:|:---:|:---:|:---:|:---:|:---:|:---:|\n`;
+            md += `| ${data.for} | ${data.des} | ${data.con} | ${data.int} | ${data.sab} | ${data.pod} | ${data.car} |\n\n`;
+            md += `## Habilidades\n\n`;
+            md += `### Perícias\n${data.pericias.map(p => `- **${p.nome}** (${p.atributo}: ${p.valor}) ${p.descricao ? `*${p.descricao}*` : ''}`).join('\n') || '- Nenhuma'}\n\n`;
+            md += `### Vantagens\n${data.vantagens.map(v => `- **${v.nome}** (${v.custo}pts) ${v.descricao ? `*${v.descricao}*` : ''}`).join('\n') || '- Nenhuma'}\n\n`;
+            md += `### Desvantagens\n${data.desvantagens.map(d => `- **${d.nome}** (${d.bonus}pts) ${d.descricao ? `*${d.descricao}*` : ''}`).join('\n') || '- Nenhuma'}\n\n`;
+            md += `## Magia\n\n`;
+            md += `**Tradição:** ${data.tradicaoMagica} | **PEs:** ${data.pontosEnergia}\n\n`;
+            md += `### Caminhos de Magia\n${data.caminhosMagia.map(c => `- **${c.nome === 'OUTRO' ? c.customName : c.nome}** (Nível ${c.nivel})`).join('\n') || '- Nenhum'}\n\n`;
+            md += `## Equipamento\n\n${data.equipment || 'Nenhum'}\n\n`;
+            md += `## Histórico\n\n${data.backstory || 'Nenhum'}\n`;
+
+            const blob = new Blob([md], { type: 'text/markdown' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${form.elements.charName.value || 'personagem'}.md`;
+            a.click();
+            URL.revokeObjectURL(url);
+        });
+        importSheetButton.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file && currentUserId) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const data = JSON.parse(event.target.result);
+                    loadFormFromJson(data);
+                    currentSheetId = Date.now().toString(); // Cria um novo ID para a ficha importada
+                    saveSheetToFirestore(); // Salva a nova ficha no Firestore
+                };
+                reader.readAsText(file);
+            }
+        });
+
+        // --- INICIALIZAÇÃO ---
+        loadSavedSheetsFromFirestore();
+        updateAllStats();
+    }
+    </script>
+</body>
+</html>

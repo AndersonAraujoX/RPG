@@ -6,208 +6,252 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Terminal da Aliança - Expedição Kuar-Tor</title>
     
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Google Fonts: Inter e Roboto Mono -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
-    
-    <!-- Estilos personalizados -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Roboto+Mono:wght@400;700&family=Cinzel:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
     <style>
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #0c0c0c; /* Fundo quase preto */
+            background-color: #0c0c0c;
             background-image: url('https://www.transparenttextures.com/patterns/dark-matter.png');
-            color: #a1a1aa; /* Texto cinza neutro */
-            /* A propriedade 'overflow: hidden' foi removida para permitir a rolagem */
+            color: #a1a1aa;
         }
-        .font-roboto-mono {
-            font-family: 'Roboto Mono', monospace;
+        .font-roboto-mono { font-family: 'Roboto Mono', monospace; }
+        .font-cinzel { font-family: 'Cinzel', serif; }
+        .terminal-card { background-color: rgba(10, 10, 10, 0.7); backdrop-filter: blur(5px); border: 1px solid rgba(220, 38, 38, 0.2); }
+        .mission-roster h4 {
+            font-family: 'Cinzel', serif; color: #fca5a5; margin-top: 1rem; margin-bottom: 0.5rem;
+            border-bottom: 1px solid #4b5563; padding-bottom: 0.25rem;
         }
-        /* Efeito de vinheta para escurecer as bordas */
-        body::after {
-            content: '';
-            position: fixed; /* Mudei para 'fixed' para cobrir a viewport */
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            box-shadow: inset 0 0 150px rgba(0,0,0,0.8);
-            pointer-events: none;
-            z-index: 10;
-        }
-        /* Efeito de scanlines para dar um ar de monitor antigo */
-        .scanlines::before {
-            content: '';
-            position: fixed; /* Mudei para 'fixed' para cobrir a viewport */
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-image: linear-gradient(
-                to bottom,
-                rgba(18, 18, 18, 0) 50%,
-                rgba(0, 0, 0, 0.25) 50%
-            );
-            background-size: 100% 4px;
-            z-index: 5;
-            pointer-events: none;
-            animation: scanline-animation 10s linear infinite;
-        }
-        @keyframes scanline-animation {
-            0% { background-position: 0 0; }
-            100% { background-position: 0 -200px; }
-        }
-        /* Efeito de brilho vermelho */
-        .glow-effect-red {
-            box-shadow: 0 0 8px rgba(220, 38, 38, 0.3), 0 0 12px rgba(220, 38, 38, 0.2);
-        }
-        /* Estilo dos cards */
-        .terminal-card {
-            background-color: rgba(10, 10, 10, 0.7);
-            backdrop-filter: blur(5px);
-            border: 1px solid rgba(220, 38, 38, 0.2);
-        }
-        /* Animação de pulso vermelha */
-        .pulsate-red {
-            animation: pulsate-red 2.5s infinite;
-        }
-        @keyframes pulsate-red {
-            0% { text-shadow: 0 0 4px rgba(220, 38, 38, 0.6); }
-            50% { text-shadow: 0 0 25px rgba(220, 38, 38, 1); }
-            100% { text-shadow: 0 0 4px rgba(220, 38, 38, 0.6); }
+        .roster-entry { display: flex; justify-content: space-between; font-size: 0.9rem; padding: 0.25rem 0; }
+        .roster-character { font-weight: 600; color: #e5e7eb; }
+        .roster-user { font-style: italic; color: #9ca3af; font-size: 0.8rem; }
+        .form-select {
+            background-color: #1f2937;
+            border: 1px solid #4b5563;
         }
     </style>
 </head>
-<body class="min-h-screen p-4 scanlines">
+<body class="min-h-screen p-4">
 
-    <div class="w-full max-w-7xl mx-auto z-20 relative py-8">
-        <!-- Cabeçalho -->
-        <header class="text-center mb-8">
-            <h1 class="text-4xl md:text-5xl font-bold text-red-600 font-roboto-mono tracking-wider animate-pulse">TERMINAL DA ALIANÇA</h1>
-            <p class="text-lg text-gray-500">CONEXÃO INSTÁVEL // PROTOCOLO QUIMERA</p>
+    <div id="main-content" class="hidden">
+        <header class="text-center mb-8 flex justify-between items-center">
+            <div>
+                <a href="../main.html" class="bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded transition-colors duration-300">
+                    &larr; Voltar ao Portal
+                </a>
+            </div>
+            <div>
+                <h1 class="text-4xl md:text-5xl font-bold text-red-600 font-roboto-mono tracking-wider animate-pulse">TERMINAL DA ALIANÇA</h1>
+                <p id="user-display" class="text-lg text-gray-500">CONEXÃO ESTABELECIDA</p>
+            </div>
+            <button id="logout-button" class="bg-red-700 hover:bg-red-600 text-white font-bold py-2 px-4 rounded transition-colors duration-300">SAIR</button>
         </header>
 
-        <!-- Grid Principal do Dashboard -->
-        <main class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-            <!-- Coluna Esquerda (Avisos e Resumo) -->
-            <div class="lg:col-span-2 space-y-6">
-                <!-- Seção de Avisos -->
-                <section class="terminal-card rounded-lg p-6 glow-effect-red">
-                    <h2 class="text-2xl font-bold text-red-600 mb-4 border-b border-red-700/30 pb-2 flex items-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
-                        DIRETIVAS DE EMERGÊNCIA
-                    </h2>
-                    <div class="space-y-4 text-gray-400">
-                        <article>
-                            <h3 class="font-semibold text-red-500">ORDEM DE MOBILIZAÇÃO FINAL</h3>
-                            <p>A partida do 'Arauto do Amanhecer' é inevitável. As estimativas de baixas para a fase inicial da missão foram reavaliadas para 85%. Que seus deuses, se existirem, tenham piedade de suas almas.</p>
-                        </article>
-                        <article>
-                            <h3 class="font-semibold text-red-500">RACIONAMENTO DE EMERGÊNCIA</h3>
-                            <p>Devido a uma "falha logística", os suprimentos médicos e de munição foram reduzidos. A ordem é clara: cada bala conta. Cada bandagem é um luxo. Não esperem por reforços.</p>
-                        </article>
-                         <article>
-                            <h3 class="font-semibold text-red-500">ALERTA DE CONTAMINAÇÃO PSÍQUICA</h3>
-                            <p>A exposição prolongada à ilha está causando degradação mental acelerada. Relatos de alucinações auditivas e paranoia estão se tornando comuns. Monitorem seus companheiros. Reportem qualquer desvio de comportamento. Eliminem a ameaça se necessário.</p>
-                        </article>
+        <main class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div class="space-y-6">
+                <section class="terminal-card rounded-lg p-6">
+                    <h2 class="text-2xl font-bold text-red-600 mb-4 border-b border-red-700/30 pb-2 font-cinzel">INSCREVER-SE NA MISSÃO</h2>
+                    <div class="space-y-4">
+                        <div>
+                            <label for="mission-select" class="block text-sm font-medium mb-1">Selecione a Missão:</label>
+                            <select id="mission-select" class="w-full p-2 form-select rounded-md text-white"></select>
+                        </div>
+                        <div>
+                            <label for="character-select" class="block text-sm font-medium mb-1">Selecione o Personagem:</label>
+                            <select id="character-select" class="w-full p-2 form-select rounded-md text-white"></select>
+                            <p id="no-characters-message" class="text-xs text-amber-400 mt-2 hidden">
+                                Nenhum personagem encontrado. Crie um no <a href="../Forms/formV5.html" class="underline hover:text-amber-300">Gerador de Fichas</a>.
+                            </p>
+                        </div>
+                        <button id="confirm-signup-button" class="mt-4 w-full bg-red-700 text-white font-bold py-3 px-4 rounded transition-colors duration-300 disabled:bg-gray-500 disabled:cursor-not-allowed" disabled>CONFIRMAR INSCRIÇÃO</button>
                     </div>
                 </section>
-
-                <!-- Seção de Resumo da Missão -->
                 <section class="terminal-card rounded-lg p-6">
-                    <h2 class="text-2xl font-bold text-red-600 mb-4 border-b border-red-700/30 pb-2 flex items-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>
-                        DEBRIEFING DA ÚLTIMA PATRULHA
-                    </h2>
-                    <p class="text-gray-400">
-                        A incursão ao posto avançado foi um sucesso pírrico. O diário do Capitão Valerius foi recuperado, mas seus escritos são o testamento de um homem louco. As páginas falam de sombras que sangram e de uma geometria que grita. A equipe Bravo perdeu o recruta Miller para "terrores noturnos" e o som que os persegue desde que voltaram não é de nenhuma criatura catalogada. É o som de unhas arranhando metal, vindo de dentro das paredes do próprio refúgio.
-                    </p>
+                    <h2 class="text-2xl font-bold text-red-600 mb-4 border-b border-red-700/30 pb-2 font-cinzel">DIRETIVAS DA MISSÃO</h2>
+                    <div class="text-gray-400 space-y-3">
+                        <p><strong class="text-red-400">Objetivo Primário:</strong> Adentrar as ruínas de Kuar-Tor e resgatar o artefato "A Lágrima de Aethel".</p>
+                        <p><strong class="text-red-400">Contexto:</strong> Uma flutuação de energia caótica ameaça rasgar o véu entre os mundos. A Lágrima é a única chave para selar a fenda.</p>
+                        <p><strong class="text-red-400">Ameaças Conhecidas:</strong> Espectros, bestas disformes, e entidades que se alimentam da sanidade. Um guardião de poder imensurável protege o artefato.</p>
+                        <p><strong class="text-red-400">Prognóstico:</strong> Chance de sobrevivência: 15%. Esta é uma missão de sacrifício. Não falhem.</p>
+                    </div>
                 </section>
             </div>
-
-            <!-- Coluna Direita (Contagem e Links) -->
             <div class="space-y-6">
-                <!-- Contagem Regressiva -->
-                <section class="terminal-card rounded-lg p-6 text-center">
-                    <h2 class="text-xl font-bold text-red-600 mb-4">TEMPO RESTANTE:</h2>
-                    <div id="countdown" class="flex justify-center space-x-2 md:space-x-4">
-                        <div>
-                            <span id="days" class="text-4xl md:text-6xl font-bold font-roboto-mono text-red-500 pulsate-red">00</span>
-                            <span class="block text-xs text-gray-500">DIAS</span>
-                        </div>
-                        <div>
-                            <span id="hours" class="text-4xl md:text-6xl font-bold font-roboto-mono text-red-500 pulsate-red">00</span>
-                            <span class="block text-xs text-gray-500">HORAS</span>
-                        </div>
-                        <div>
-                            <span id="minutes" class="text-4xl md:text-6xl font-bold font-roboto-mono text-red-500 pulsate-red">00</span>
-                            <span class="block text-xs text-gray-500">MIN</span>
-                        </div>
-                        <div>
-                            <span id="seconds" class="text-4xl md:text-6xl font-bold font-roboto-mono text-red-500 pulsate-red">00</span>
-                            <span class="block text-xs text-gray-500">SEG</span>
-                        </div>
+                 <section class="terminal-card rounded-lg p-6">
+                    <h2 class="text-2xl font-bold text-red-600 mb-4 border-b border-red-700/30 pb-2 font-cinzel">INSCRITOS NA EXPEDIÇÃO</h2>
+                    <div id="mission-roster" class="mission-roster">
+                        <p class="text-center text-gray-500">Aguardando dados...</p>
                     </div>
                 </section>
-
-                <!-- Links Rápidos -->
-                <nav class="terminal-card rounded-lg p-6">
-                    <h2 class="text-2xl font-bold text-red-600 mb-4 border-b border-red-700/30 pb-2 flex items-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-                        REGISTOS DA MISSÃO
-                    </h2>
-                    <div class="space-y-3">
-                        <a href="#" class="block w-full text-left bg-gray-900 hover:bg-red-800 hover:text-white transition-colors duration-300 p-4 rounded-md font-semibold">
-                            Dossiês dos Agentes
-                        </a>
-                        <a href="#" class="block w-full text-left bg-gray-900 hover:bg-red-800 hover:text-white transition-colors duration-300 p-4 rounded-md font-semibold">
-                            Cartografia Corrompida
-                        </a>
-                        <a href="#" class="block w-full text-left bg-gray-900 hover:bg-red-800 hover:text-white transition-colors duration-300 p-4 rounded-md font-semibold">
-                            Diário de Bordo
-                        </a>
-                         <a href="#" class="block w-full text-left bg-gray-900 hover:bg-red-800 hover:text-white transition-colors duration-300 p-4 rounded-md font-semibold">
-                            Anatomia do Horror
-                        </a>
-                    </div>
-                </nav>
             </div>
         </main>
     </div>
 
+    <script src="../firebase-config.js"></script>
     <script>
-        // --- SCRIPT DA CONTAGEM REGRESSIVA ---
-
-        // Defina a data da próxima sessão aqui.
-        // Formato: 'Month Day, YYYY HH:MM:SS'
-        const countdownDate = new Date('July 18, 2025 20:00:00').getTime();
-
-        const countdownFunction = setInterval(() => {
-            const now = new Date().getTime();
-            const distance = countdownDate - now;
-
-            const days = Math.floor(distance / (1000 * 60 * 60 * 24));
-            const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-            const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-
-            const formatTime = (time) => time < 10 ? `0${time}` : time;
-
-            document.getElementById('days').innerText = formatTime(days);
-            document.getElementById('hours').innerText = formatTime(hours);
-            document.getElementById('minutes').innerText = formatTime(minutes);
-            document.getElementById('seconds').innerText = formatTime(seconds);
-
-            if (distance < 0) {
-                clearInterval(countdownFunction);
-                document.getElementById('countdown').innerHTML = '<span class="text-2xl md:text-3xl font-bold text-red-500 pulsate-red">A HORA CHEGOU. SEM VOLTA.</span>';
+        document.addEventListener('DOMContentLoaded', () => {
+            // Check if Firebase is initialized
+            if (typeof firebase === 'undefined' || !firebase.apps.length) {
+                console.error("Firebase not initialized!");
+                document.body.innerHTML = "<h1>Erro Crítico: Falha na conexão com os servidores. Verifique o console.</h1>";
+                return;
             }
-        }, 1000);
-    </script>
 
+            const auth = firebase.auth();
+            const db = firebase.firestore();
+
+            const mainContent = document.getElementById('main-content');
+            const userDisplay = document.getElementById('user-display');
+            const logoutButton = document.getElementById('logout-button');
+            const missionSelect = document.getElementById('mission-select');
+            const characterSelect = document.getElementById('character-select');
+            const noCharactersMessage = document.getElementById('no-characters-message');
+            const confirmSignupButton = document.getElementById('confirm-signup-button');
+            const missionRosterDiv = document.getElementById('mission-roster');
+            
+            let missions = [];
+            let currentUser = null;
+
+            auth.onAuthStateChanged(user => {
+                if (user) {
+                    currentUser = user;
+                    mainContent.classList.remove('hidden');
+                    userDisplay.textContent = `Operativo Conectado: ${user.displayName || user.email}`;
+                    loadMissions();
+                    loadCharacters(); // New function call
+                    listenForSignups();
+                } else {
+                    // Redirect to the main login page, not the old one.
+                    window.location.href = '../login.html'; 
+                }
+            });
+
+            logoutButton.addEventListener('click', () => {
+                auth.signOut().catch(error => console.error("Logout Error:", error));
+            });
+            
+            async function loadMissions() {
+                try {
+                    const missionsSnapshot = await db.collection('missions').get();
+                    missions = missionsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    missionSelect.innerHTML = missions.map(m => `<option value="${m.id}">${m.name}</option>`).join('');
+                } catch (err) {
+                    console.error("Error loading missions:", err);
+                }
+            }
+            
+            // --- NEW FUNCTION to load characters ---
+            async function loadCharacters() {
+                if (!currentUser) return;
+                
+                try {
+                    const charactersRef = db.collection(`users/${currentUser.uid}/characters`);
+                    const snapshot = await charactersRef.get();
+                    
+                    characterSelect.innerHTML = '<option value="">-- Carregando... --</option>';
+                    
+                    if (snapshot.empty) {
+                        noCharactersMessage.classList.remove('hidden');
+                        characterSelect.innerHTML = '<option value="">-- Nenhum Personagem --</option>';
+                        confirmSignupButton.disabled = true;
+                        return;
+                    }
+                    
+                    let characterOptions = '<option value="">-- Selecione seu Personagem --</option>';
+                    snapshot.forEach(doc => {
+                        const character = doc.data();
+                        characterOptions += `<option value="${doc.id}">${character.name || 'Personagem sem nome'}</option>`;
+                    });
+                    characterSelect.innerHTML = characterOptions;
+                    confirmSignupButton.disabled = false; // Enable button once characters are loaded
+                    
+                } catch (error) {
+                    console.error("Error loading characters:", error);
+                    characterSelect.innerHTML = '<option value="">-- Erro ao Carregar --</option>';
+                    confirmSignupButton.disabled = true;
+                }
+            }
+
+            confirmSignupButton.addEventListener('click', async () => {
+                const selectedMissionId = missionSelect.value;
+                const selectedCharacterId = characterSelect.value;
+                
+                if (!selectedMissionId || !selectedCharacterId) {
+                    alert("Por favor, selecione uma missão e um personagem.");
+                    return;
+                }
+                
+                const selectedMission = missions.find(m => m.id === selectedMissionId);
+                // Get character name from the dropdown text content
+                const selectedCharacterName = characterSelect.options[characterSelect.selectedIndex].text;
+
+                try {
+                    // Check if this character is already signed up for this mission
+                    const existingSignupQuery = await db.collection('mission_signups')
+                        .where('missionId', '==', selectedMissionId)
+                        .where('characterId', '==', selectedCharacterId)
+                        .get();
+
+                    if (!existingSignupQuery.empty) {
+                        alert(`O personagem "${selectedCharacterName}" já está inscrito nesta missão.`);
+                        return;
+                    }
+
+                    await db.collection('mission_signups').add({
+                        missionId: selectedMissionId,
+                        missionName: selectedMission.name,
+                        characterId: selectedCharacterId, // Store character ID
+                        characterName: selectedCharacterName, // Store character name
+                        userId: currentUser.uid,
+                        userNickname: currentUser.displayName || currentUser.email,
+                        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                    alert(`Personagem "${selectedCharacterName}" inscrito na missão "${selectedMission.name}" com sucesso!`);
+                } catch (error) {
+                    console.error("Error signing up for mission: ", error);
+                    alert("Falha ao se inscrever. Verifique suas permissões ou tente novamente.");
+                }
+            });
+
+            function listenForSignups() {
+                db.collection('mission_signups').orderBy('timestamp', 'asc').onSnapshot(snapshot => {
+                    const signupsByMission = {};
+                    snapshot.docs.forEach(doc => {
+                        const signup = doc.data();
+                        if (!signupsByMission[signup.missionName]) {
+                            signupsByMission[signup.missionName] = [];
+                        }
+                        signupsByMission[signup.missionName].push(signup);
+                    });
+                    renderRoster(signupsByMission);
+                }, error => {
+                    console.error("Error listening for signups:", error);
+                });
+            }
+
+            function renderRoster(signupsByMission) {
+                if (Object.keys(signupsByMission).length === 0) {
+                    missionRosterDiv.innerHTML = '<p class="text-center text-gray-500">Nenhum operativo inscrito ainda.</p>';
+                    return;
+                }
+                let rosterHtml = '';
+                for (const missionName in signupsByMission) {
+                    rosterHtml += `<h4>${missionName}</h4>`;
+                    rosterHtml += signupsByMission[missionName].map(signup => `
+                        <div class="roster-entry">
+                            <span class="roster-character">${signup.characterName}</span>
+                            <span class="roster-user">${signup.userNickname}</span>
+                        </div>
+                    `).join('');
+                }
+                missionRosterDiv.innerHTML = rosterHtml;
+            }
+        });
+    </script>
 </body>
 </html>

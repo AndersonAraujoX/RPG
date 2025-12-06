@@ -3,379 +3,647 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mesa de Operações - Kuar-Tor</title>
-    
-    <!-- Tailwind CSS -->
+    <title>Mesa de Estratégia: Kuar-Tor</title>
+    <!-- Tailwind CSS para estilização -->
     <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Google Fonts: Inter e Roboto Mono -->
+    <!-- Fontes do Google Fonts para o tema Dark Fantasy -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
-    
-    <!-- Tone.js para áudio -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
-
-    <!-- Estilos personalizados -->
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Roboto+Mono:wght@400;700&family=Cinzel:wght@400;700&display=swap" rel="stylesheet">
     <style>
+        /* Estilização base com fontes temáticas */
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #111827;
+            background-image: url("https://www.transparenttextures.com/patterns/tactile-noise.png");
+        }
+        h1, h2, h3, button {
+            font-family: 'Cinzel', serif;
+        }
+        /* Painéis com novo estilo */
+        .panel {
+            background-color: rgba(17, 24, 39, 0.8);
+            backdrop-filter: blur(10px);
+            border: 1px solid #991b1b;
+            box-shadow: inset 0 0 15px rgba(220, 38, 38, 0.2), 0 0 10px rgba(220, 38, 38, 0.4);
+        }
+        canvas {
+            max-width: 100%;
+            height: auto;
+            cursor: crosshair;
+        }
+        /* Estilo para os pontos de interesse (SVG) */
+        .pin {
+            position: absolute;
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+            transform: translate(-50%, -50%);
+            filter: drop-shadow(0 0 5px #ef4444);
+            animation: pulse-pin 2s infinite;
+        }
+        .pin:hover {
+            filter: drop-shadow(0 0 10px #fca5a5);
+            animation-play-state: paused;
+        }
+        @keyframes pulse-pin {
+            0% { transform: translate(-50%, -50%) scale(0.95); }
+            70% { transform: translate(-50%, -50%) scale(1.1); }
+            100% { transform: translate(-50%, -50%) scale(0.95); }
+        }
+        /* Botões com gradiente */
+        .btn {
+            font-weight: bold;
+            padding: 10px 20px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            border-style: solid;
+            border-width: 1px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .btn-primary {
+            background: linear-gradient(45deg, #991b1b, #7f1d1d);
+            border-color: #dc2626;
+            color: white;
+            box-shadow: 0 0 8px rgba(220, 38, 38, 0.5);
+        }
+        .btn-primary:hover {
+            background: linear-gradient(45deg, #dc2626, #991b1b);
+            box-shadow: 0 0 15px rgba(220, 38, 38, 0.8);
+        }
+        .btn-danger {
+            background: linear-gradient(45deg, #991b1b, #7f1d1d);
+            border-color: #ef4444;
+            color: white;
+            box-shadow: 0 0 8px rgba(239, 68, 68, 0.5);
+        }
+        .btn-danger:hover {
+            background: linear-gradient(45deg, #ef4444, #b91c1c);
+            box-shadow: 0 0 15px rgba(239, 68, 68, 0.8);
+        }
+        .btn-secondary {
+            background: linear-gradient(45deg, #4b5563, #374151);
+            border-color: #6b7280;
+            color: #d1d5db;
+            box-shadow: 0 0 8px rgba(107, 114, 128, 0.5);
+        }
+        .btn-secondary:hover {
+            background: linear-gradient(45deg, #6b7280, #4b5563);
+            box-shadow: 0 0 15px rgba(107, 114, 128, 0.8);
+        }
         body {
             font-family: 'Inter', sans-serif;
             background-color: #0c0c0c;
             background-image: url('https://www.transparenttextures.com/patterns/dark-matter.png');
             color: #a1a1aa;
         }
-        .font-roboto-mono {
-            font-family: 'Roboto Mono', monospace;
+        .font-roboto-mono { font-family: 'Roboto Mono', monospace; }
+        .font-cinzel { font-family: 'Cinzel', serif; }
+        .terminal-card { background-color: rgba(10, 10, 10, 0.7); backdrop-filter: blur(5px); border: 1px solid #374151; }
+        .mission-board { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 1.5rem; }
+        .mission-card { background-color: #1f2937; border-radius: 0.5rem; border: 1px solid #4b5563; padding: 1.5rem; }
+        .mission-card h3 { color: #fca5a5; }
+        .character-entry {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 0.5rem; border-bottom: 1px solid #374151;
+            cursor: pointer; transition: background-color 0.2s;
         }
-        body::after {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            box-shadow: inset 0 0 150px rgba(0,0,0,0.8);
-            pointer-events: none;
-            z-index: 10;
-        }
-        .scanlines::before {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-image: linear-gradient(to bottom, rgba(18, 18, 18, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
-            background-size: 100% 4px;
-            z-index: 5;
-            pointer-events: none;
-            animation: scanline-animation 10s linear infinite;
-        }
-        @keyframes scanline-animation {
-            0% { background-position: 0 0; }
-            100% { background-position: 0 -200px; }
-        }
-        .glow-effect-red {
-            box-shadow: 0 0 8px rgba(220, 38, 38, 0.3), 0 0 12px rgba(220, 38, 38, 0.2);
-        }
-        .terminal-card {
-            background-color: rgba(10, 10, 10, 0.7);
-            backdrop-filter: blur(5px);
-            border: 1px solid rgba(220, 38, 38, 0.2);
-        }
-        /* Estilos do Rolador de Dados */
-        .dice-container {
-            display: flex;
-            gap: 20px;
-            perspective: 1000px;
-        }
-        .dice {
-            width: 80px;
-            height: 80px;
-            position: relative;
-            transform-style: preserve-3d;
-            transition: transform 1s;
-            font-size: 2.5rem;
-            font-weight: bold;
-        }
-        .dice-face {
-            position: absolute;
-            width: 80px;
-            height: 80px;
-            background: rgba(20, 20, 20, 0.8);
-            border: 2px solid #dc2626;
-            color: #ef4444;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            text-shadow: 0 0 10px #ef4444;
-        }
-        .face-1 { transform: rotateY(0deg) translateZ(40px); }
-        .face-2 { transform: rotateY(90deg) translateZ(40px); }
-        .face-3 { transform: rotateY(180deg) translateZ(40px); }
-        .face-4 { transform: rotateY(-90deg) translateZ(40px); }
-        .face-5 { transform: rotateX(90deg) translateZ(40px); }
-        .face-6 { transform: rotateX(-90deg) translateZ(40px); }
-
-        /* Estilos do Mapa de Combate */
-        #combat-map {
-            display: grid;
-            grid-template-columns: repeat(20, 1fr);
-            grid-template-rows: repeat(20, 1fr);
-            width: 100%;
-            height: 500px;
-            border: 1px solid rgba(220, 38, 38, 0.3);
-            background-color: rgba(0,0,0,0.2);
-            background-image: linear-gradient(rgba(220, 38, 38, 0.1) 1px, transparent 1px), linear-gradient(to right, rgba(220, 38, 38, 0.1) 1px, transparent 1px);
-            background-size: calc(100% / 20) calc(100% / 20);
-        }
-        .token {
-            width: 90%;
-            height: 90%;
-            border-radius: 50%;
-            cursor: grab;
-            position: relative;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-weight: bold;
-            color: white;
-            z-index: 10;
-        }
-        .token.player { background-color: #3b82f6; border: 2px solid #93c5fd; }
-        .token.enemy { background-color: #dc2626; border: 2px solid #fca5a5; }
-        .token:active { cursor: grabbing; }
+        .character-entry:hover { background-color: rgba(239, 68, 68, 0.1); }
+        .character-entry:last-child { border-bottom: none; }
+        
+        /* Modal Styles */
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.7); }
+        .modal-content { background-color: #18181b; margin: 5% auto; padding: 2rem; border: 1px solid #3f3f46; width: 90%; max-width: 800px; border-radius: 0.5rem; }
+        .modal-close { color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
     </style>
 </head>
-<body class="min-h-screen p-4 scanlines">
+<body class="bg-slate-900 text-gray-300 min-h-screen p-4 md:p-8">
 
-    <div class="w-full max-w-7xl mx-auto z-20 relative py-8">
-        <!-- Cabeçalho -->
-        <header class="text-center mb-12">
-            <h1 class="text-4xl md:text-5xl font-bold text-red-600 font-roboto-mono tracking-wider">MESA DE OPERAÇÕES</h1>
-            <p class="text-lg text-gray-500">FERRAMENTAS DE CAMPO // SISTEMA +2D6</p>
+    <div class="container mx-auto p-4 sm:p-6 md:p-8">
+        <header class="text-center mb-8">
+            <h1 class="text-4xl sm:text-5xl font-bold text-red-400 drop-shadow-[0_2px_2px_rgba(0,0,0,0.7)]">Campanha Kuar-Tor</h1>
+            <p class="text-md text-gray-400 mt-2">Kuar-Tor é uma ilha senciente, um organismo vivo remanescente de um ser primordial. Expedições do mundo exterior estabeleceram reinos e facções que agora lutam pelo controle de seus segredos e recursos, enfrentando não apenas uns aos outros, mas a própria ilha e suas defesas naturais.</p>
         </header>
 
-        <!-- Conteúdo Principal em Grid -->
         <main class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-
-            <!-- Coluna Esquerda: Rolador de Dados e Áudio -->
-            <div class="space-y-8">
-                <!-- Módulo 1: Rolador de Dados Temático -->
-                <section id="dice-roller" class="terminal-card rounded-lg p-6">
-                    <h2 class="text-2xl font-bold text-red-600 mb-4 border-b border-red-700/30 pb-2">Oráculo do Vazio (2d6)</h2>
-                    <div class="flex flex-col items-center">
-                        <div class="dice-container mb-6">
-                            <div id="dice1" class="dice"><div class="dice-face face-1">1</div><div class="dice-face face-2">2</div><div class="dice-face face-3">3</div><div class="dice-face face-4">4</div><div class="dice-face face-5">5</div><div class="dice-face face-6">6</div></div>
-                            <div id="dice2" class="dice"><div class="dice-face face-1">1</div><div class="dice-face face-2">2</div><div class="dice-face face-3">3</div><div class="dice-face face-4">4</div><div class="dice-face face-5">5</div><div class="dice-face face-6">6</div></div>
-                        </div>
-                        <div id="roll-result" class="text-center mb-6 h-16">
-                            <p class="text-xl font-roboto-mono">Resultado: <span id="total-result" class="text-3xl font-bold text-white">0</span></p>
-                            <p id="formula-display" class="text-sm text-gray-400 h-4"></p>
-                        </div>
-                        <button id="roll-button" class="bg-red-700 hover:bg-red-600 text-white font-bold py-3 px-6 rounded-lg w-full mb-4 transition-colors">Rolar Dados</button>
-                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 w-full">
-                            <button class="test-btn bg-gray-700 hover:bg-gray-600 text-white py-2 px-3 rounded-md text-sm" data-formula="2d6 + DES + Armas Brancas">Ataque</button>
-                            <button class="test-btn bg-gray-700 hover:bg-gray-600 text-white py-2 px-3 rounded-md text-sm" data-formula="2d6 + SAB + Procurar">Percepção</button>
-                            <button class="test-btn bg-gray-700 hover:bg-gray-600 text-white py-2 px-3 rounded-md text-sm" data-formula="2d6 + CON">Resistência</button>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- Módulo 2: Trilha Sonora e Efeitos -->
-                <section id="audio-console" class="terminal-card rounded-lg p-6">
-                    <h2 class="text-2xl font-bold text-red-600 mb-4 border-b border-red-700/30 pb-2">Console de Áudio</h2>
-                    <div class="space-y-4">
-                        <div>
-                            <h3 class="font-semibold text-gray-300 mb-2">Trilhas Sonoras:</h3>
-                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                                <button class="audio-btn bg-gray-800 hover:bg-red-800 p-2 rounded" data-sound="tense">Exploração Tensa</button>
-                                <button class="audio-btn bg-gray-800 hover:bg-red-800 p-2 rounded" data-sound="combat">Combate Frenético</button>
-                                <button class="audio-btn bg-gray-800 hover:bg-red-800 p-2 rounded" data-sound="mystery">Mistério Arcano</button>
+            <!-- Coluna do Canvas para Desenho -->
+            <div class="panel p-6 rounded-2xl flex flex-col">
+                <h2 class="text-2xl font-semibold mb-4 text-red-400">Rascunho Tático</h2>
+                <div class="relative w-full aspect-w-16 aspect-h-9 flex-grow">
+                    <canvas id="drawingCanvas" class="border border-red-800/50 rounded-lg w-full h-full"></canvas>
+                </div>
+                <!-- Controles de Desenho -->
+                <div class="mt-6 pt-4 border-t border-red-900/50">
+                    <div class="flex flex-wrap items-center justify-between gap-4">
+                        <div class="flex items-center gap-4">
+                            <div>
+                                <label for="colorPicker" class="block text-sm font-medium text-gray-300 mb-1">Cor do Giz</label>
+                                <input type="color" id="colorPicker" value="#ef4444" class="w-10 h-10 p-1 bg-slate-700 border border-red-600 rounded-md cursor-pointer">
                             </div>
-                             <button id="stop-music" class="w-full mt-2 bg-gray-600 hover:bg-gray-500 p-2 rounded">Parar Música</button>
-                        </div>
-                        <div>
-                            <h3 class="font-semibold text-gray-300 mb-2">Efeitos Sonoros:</h3>
-                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                                <button class="sfx-btn bg-gray-700 hover:bg-red-700 p-2 rounded" data-sfx="roar">Rugido</button>
-                                <button class="sfx-btn bg-gray-700 hover:bg-red-700 p-2 rounded" data-sfx="creak">Porta Rangendo</button>
-                                <button class="sfx-btn bg-gray-700 hover:bg-red-700 p-2 rounded" data-sfx="whispers">Sussurros</button>
+                            <div class="flex-grow">
+                                <label for="brushSize" class="block text-sm font-medium text-gray-300 mb-1">Espessura: <span id="brushSizeValue">5</span></label>
+                                <input type="range" id="brushSize" min="1" max="50" value="5" class="w-full h-2 bg-slate-600 rounded-lg appearance-none cursor-pointer accent-red-500">
                             </div>
                         </div>
+                        <button id="clearButton" class="btn btn-danger">
+                            Apagar
+                        </button>
                     </div>
-                </section>
+                </div>
             </div>
 
-            <!-- Coluna Direita: Mapa de Combate -->
-            <section id="combat-module" class="terminal-card rounded-lg p-6">
-                <h2 class="text-2xl font-bold text-red-600 mb-4 border-b border-red-700/30 pb-2">Mapa Tático</h2>
-                <div id="combat-map-container" class="w-full h-full">
-                    <div id="combat-map"></div>
+            <!-- Coluna da Imagem Estática -->
+            <div class="panel p-6 rounded-2xl">
+                <h2 class="text-2xl font-semibold mb-4 text-red-400">Mapa de Guerra: Kuar-Tor</h2>
+                <div id="mapContainer" class="relative w-full aspect-w-16 aspect-h-9 cursor-default">
+                    <!-- MAPA DA CAMPANHA -->
+                    <img id="originalImage" src="map.png?v=2" alt="Mapa de Kuar-Tor" class="rounded-lg object-cover w-full h-full" onerror="this.onerror=null;this.src='https://placehold.co/600x400/1e2b3b/94a3b8?text=Mapa+Indispon%C3%ADvel';">
+                    <div id="pinsContainer" class="absolute top-0 left-0 w-full h-full"></div>
                 </div>
-                <div class="mt-4 flex space-x-2">
-                    <button id="add-player" class="bg-blue-600 hover:bg-blue-500 text-white py-2 px-4 rounded text-sm">Add Jogador</button>
-                    <button id="add-enemy" class="bg-red-600 hover:bg-red-500 text-white py-2 px-4 rounded text-sm">Add Inimigo</button>
+                <div class="mt-6 pt-4 border-t border-red-900/50">
+                    <h3 class="font-semibold text-lg text-red-400">Inteligência de Campo</h3>
+                    <p id="adminHelpText" class="text-gray-400 mt-2">Passe a senha para editar o mapa.</p>
+                    <button id="adminLoginButton" class="btn btn-primary w-full mt-4">
+                        Acesso Restrito
+                    </button>
                 </div>
-            </section>
+            </div>
         </main>
     </div>
 
+    <!-- Modal de Senha -->
+    <div id="passwordModal" class="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center p-4 hidden z-50">
+        <div class="panel rounded-2xl shadow-xl p-6 w-full max-w-sm">
+            <h3 class="text-xl font-semibold mb-4 text-red-400">Acesso de Administrador</h3>
+            <div>
+                <label for="passwordInput" class="block text-sm font-medium text-gray-300 mb-1">Palavra-Passe</label>
+                <input type="password" id="passwordInput" class="w-full bg-slate-700 border border-red-600 text-white rounded-lg p-2.5 focus:ring-red-500 focus:border-red-500">
+                <p id="passwordError" class="text-red-400 text-sm mt-2 hidden">Palavra-passe incorreta.</p>
+            </div>
+            <div class="mt-6 flex justify-end gap-4">
+                <button id="cancelPasswordButton" class="btn btn-secondary">Cancelar</button>
+                <button id="submitPasswordButton" class="btn btn-primary">Entrar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para ADICIONAR/EDITAR um Ponto de Interesse -->
+    <div id="pinModal" class="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center p-4 hidden z-50">
+        <div class="panel rounded-2xl shadow-xl p-6 w-full max-w-md">
+            <h3 class="text-xl font-semibold mb-4 text-red-400">Adicionar Ponto de Interesse</h3>
+            <div>
+                <label for="pinTitle" class="block text-sm font-medium text-gray-300 mb-1">Título</label>
+                <input type="text" id="pinTitle" class="w-full bg-slate-700 border border-red-600 text-white rounded-lg p-2.5 focus:ring-red-500 focus:border-red-500">
+            </div>
+            <div class="mt-4">
+                <label for="pinDescription" class="block text-sm font-medium text-gray-300 mb-1">Descrição</label>
+                <textarea id="pinDescription" rows="3" class="w-full bg-slate-700 border border-red-600 text-white rounded-lg p-2.5 focus:ring-red-500 focus:border-red-500"></textarea>
+            </div>
+            <div class="mt-6 flex justify-end gap-4">
+                <button id="cancelPinButton" class="btn btn-secondary">Cancelar</button>
+                <button id="savePinButton" class="btn btn-primary">Salvar Ponto</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal para EXIBIR um Ponto de Interesse -->
+    <div id="viewPinModal" class="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center p-4 hidden z-50">
+        <div class="panel rounded-2xl shadow-xl p-6 w-full max-w-md">
+            <h3 id="viewPinTitle" class="text-2xl font-semibold mb-2 text-red-400">Título do Ponto</h3>
+            <p id="viewPinDescription" class="text-gray-300 mb-6 whitespace-pre-wrap">Descrição do ponto de interesse aqui.</p>
+            <div class="flex justify-between items-center">
+                <button id="removePinButton" class="btn btn-danger hidden">Remover</button>
+                <button id="closeViewPinButton" class="btn btn-primary">Fechar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="main-content" class="hidden">
+        <header class="text-center mb-8 flex justify-between items-center">
+            <a href="../index.html" class="bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded transition-colors duration-300">
+                &larr; Voltar ao Portal
+            </a>
+            <div>
+                <h1 class="text-3xl md:text-5xl font-cinzel font-bold text-red-500 tracking-wider">Mesa de Operações</h1>
+                <p id="user-display" class="text-lg text-gray-500">Operativo Mestre Conectado</p>
+            </div>
+            <button id="logout-button" class="bg-red-700 hover:bg-red-600 text-white font-bold py-2 px-4 rounded transition-colors duration-300">TERMINAR SESSÃO</button>
+        </header>
+
+        <main id="mission-board" class="mission-board">
+            <p class="text-center text-gray-500 col-span-full">Carregando dados da missão...</p>
+        </main>
+    </div>
+
+    <!-- Character Sheet Modal -->
+    <div id="character-modal" class="modal">
+        <div class="modal-content">
+            <span id="modal-close-button" class="modal-close">&times;</span>
+            <div id="modal-body">
+                <p>Carregando ficha...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase Core SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            // --- LÓGICA DO ROLADOR DE DADOS ---
-            const dice1 = document.getElementById('dice1');
-            const dice2 = document.getElementById('dice2');
-            const totalResultEl = document.getElementById('total-result');
-            const formulaDisplayEl = document.getElementById('formula-display');
-            const rollButton = document.getElementById('roll-button');
-            const testButtons = document.querySelectorAll('.test-btn');
+        const firebaseConfig = {
+            apiKey: "AIzaSyC-awoLK4cc0XtLtNppibqgYnNLclUeeI4",
+            authDomain: "kuar-tor-portal.firebaseapp.com",
+            projectId: "kuar-tor-portal",
+            storageBucket: "kuar-tor-portal.appspot.com",
+            messagingSenderId: "438781244189",
+            appId: "1:438781244189:web:99ea6a25fc459b14f567f4"
+        };
+        
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const auth = firebase.auth();
+        const db = firebase.firestore();
 
-            function rollDice(formula = '2d6') {
-                const d1 = Math.floor(Math.random() * 6) + 1;
-                const d2 = Math.floor(Math.random() * 6) + 1;
-                const total = d1 + d2;
+        window.addEventListener('load', () => {
+            // --- Constantes e Variáveis Globais ---
+            const ADMIN_PASSWORD = 'fungus';
+            let isAdminMode = false;
+            // PONTOS DE INTERESSE DA CAMPANHA KUAR-TOR
+            let pointsOfInterest = [];
+            let currentPinCoords = { x: 0, y: 0 };
+            let isImageLoaded = false;
 
-                // Animação dos dados
-                const rotations = {
-                    1: 'rotateY(0deg)', 2: 'rotateY(-90deg)', 3: 'rotateY(-180deg)',
-                    4: 'rotateY(90deg)', 5: 'rotateX(-90deg)', 6: 'rotateX(90deg)'
-                };
-                dice1.style.transform = `rotateX(${Math.random()*360}deg) rotateY(${Math.random()*360}deg) rotateZ(${Math.random()*360}deg)`;
-                dice2.style.transform = `rotateX(${Math.random()*360}deg) rotateY(${Math.random()*360}deg) rotateZ(${Math.random()*360}deg)`;
+            // --- Elementos do DOM ---
+            const canvas = document.getElementById('drawingCanvas');
+            const ctx = canvas.getContext('2d');
+            const colorPicker = document.getElementById('colorPicker');
+            const brushSize = document.getElementById('brushSize');
+            const brushSizeValue = document.getElementById('brushSizeValue');
+            const clearButton = document.getElementById('clearButton');
+            const originalImage = document.getElementById('originalImage');
+            const mapContainer = document.getElementById('mapContainer');
+            const pinsContainer = document.getElementById('pinsContainer');
+            const adminLoginButton = document.getElementById('adminLoginButton');
+            const adminHelpText = document.getElementById('adminHelpText');
 
-                setTimeout(() => {
-                    dice1.style.transform = rotations[d1];
-                    dice2.style.transform = rotations[d2];
-                }, 100);
+            // Modais
+            const passwordModal = document.getElementById('passwordModal');
+            const pinModal = document.getElementById('pinModal');
+            const viewPinModal = document.getElementById('viewPinModal');
+            const removePinButton = document.getElementById('removePinButton');
 
-                totalResultEl.textContent = total;
-                formulaDisplayEl.textContent = `(${d1} + ${d2}) | ${formula}`;
-            }
+            // --- Lógica de Desenho no Canvas ---
+            let isDrawing = false, lastX = 0, lastY = 0;
+            const backgroundImage = new Image();
+            backgroundImage.crossOrigin = "Anonymous";
+            backgroundImage.src = originalImage.src;
+            
+            const drawFallbackText = () => {
+                ctx.fillStyle = '#1e293b';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = '#94a3b8';
+                ctx.textAlign = 'center';
+                ctx.font = '16px Roboto';
+                ctx.fillText('Imagem não pôde ser carregada.', canvas.width / 2, canvas.height / 2);
+            };
 
-            rollButton.addEventListener('click', () => rollDice());
-            testButtons.forEach(btn => {
-                btn.addEventListener('click', () => rollDice(btn.dataset.formula));
-            });
-
-            // --- LÓGICA DO CONSOLE DE ÁUDIO (Tone.js) ---
-            const audioBtns = document.querySelectorAll('.audio-btn');
-            const sfxBtns = document.querySelectorAll('.sfx-btn');
-            const stopMusicBtn = document.getElementById('stop-music');
-            let currentLoop = null;
-
-            const sounds = {
-                tense: () => {
-                    const loop = new Tone.Loop(time => {
-                        const synth = new Tone.FMSynth().toDestination();
-                        synth.triggerAttackRelease("C2", "4n", time);
-                        const noise = new Tone.Noise("pink").start(time).stop(time + 0.5);
-                        const filter = new Tone.AutoFilter("2n").toDestination().start();
-                        noise.connect(filter);
-                    }, "2n").start(0);
-                    return loop;
-                },
-                combat: () => {
-                    const loop = new Tone.Loop(time => {
-                        const synth = new Tone.MembraneSynth().toDestination();
-                        synth.triggerAttackRelease("C1", "8n", time);
-                    }, "4n").start(0);
-                    return loop;
-                },
-                mystery: () => {
-                    const loop = new Tone.Loop(time => {
-                        const synth = new Tone.AMSynth().toDestination();
-                        const notes = ["C4", "E4", "G4", "B4"];
-                        const note = notes[Math.floor(Math.random() * notes.length)];
-                        synth.triggerAttackRelease(note, "16n", time);
-                    }, "8n").start(0);
-                    return loop;
-                },
-                roar: () => {
-                    const noise = new Tone.Noise("brown").toDestination();
-                    const filter = new Tone.AutoFilter({
-                        frequency: "4n",
-                        baseFrequency: 200,
-                        octaves: 4
-                    }).toDestination();
-                    noise.connect(filter);
-                    noise.start();
-                    setTimeout(() => noise.stop(), 800);
-                },
-                creak: () => {
-                    const noise = new Tone.Noise("pink").toDestination();
-                    const filter = new Tone.Filter(800, "lowpass").toDestination();
-                    noise.connect(filter);
-                    noise.start();
-                    filter.frequency.rampTo(400, 1.5);
-                    setTimeout(() => noise.stop(), 1500);
-                },
-                whispers: () => {
-                    const noise = new Tone.Noise("white").toDestination();
-                    const filter = new Tone.AutoFilter({
-                        frequency: "2n",
-                        baseFrequency: 4000,
-                        octaves: 2
-                    }).toDestination();
-                    noise.connect(filter);
-                    noise.start();
-                    setTimeout(() => noise.stop(), 2000);
-                }
+            backgroundImage.onerror = () => {
+                isImageLoaded = false;
+                console.error("Erro ao carregar a imagem de fundo.");
+                drawFallbackText();
+            };
+            backgroundImage.onload = () => {
+                isImageLoaded = true;
+                resizeCanvas();
+                redrawBackgroundImage();
             };
             
-            const playSound = async (soundName, isLoop) => {
-                await Tone.start();
-                if (isLoop) {
-                    if (currentLoop) currentLoop.stop().dispose();
-                    currentLoop = sounds[soundName]();
-                    Tone.Transport.start();
+            function resizeCanvas() {
+                const container = canvas.parentElement;
+                if (!container) return;
+                const containerWidth = container.clientWidth;
+                const scale = containerWidth / (backgroundImage.naturalWidth || containerWidth);
+                canvas.width = backgroundImage.naturalWidth || containerWidth;
+                canvas.height = backgroundImage.naturalHeight || (containerWidth * 0.5625);
+                canvas.style.width = `${containerWidth}px`;
+                canvas.style.height = `${canvas.height * scale}px`;
+            }
+
+            function redrawBackgroundImage() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                if (isImageLoaded) {
+                    ctx.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height);
                 } else {
-                    sounds[soundName]();
+                    drawFallbackText();
                 }
-            };
+            }
+            function draw(e) { if (!isDrawing) return; e.preventDefault(); const { x, y } = getMousePos(canvas, e); ctx.strokeStyle = colorPicker.value; ctx.lineWidth = brushSize.value; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.beginPath(); ctx.moveTo(lastX, lastY); ctx.lineTo(x, y); ctx.stroke();[lastX, lastY] = [x, y]; }
+            function getMousePos(canvasEl, event) { const rect = canvasEl.getBoundingClientRect(); const scaleX = canvasEl.width / rect.width; const scaleY = canvasEl.height / rect.height; let clientX = event.touches ? event.touches[0].clientX : event.clientX; let clientY = event.touches ? event.touches[0].clientY : event.clientY; return { x: (clientX - rect.left) * scaleX, y: (clientY - rect.top) * scaleY }; }
+            function startDrawing(e) { isDrawing = true;[lastX, lastY] = Object.values(getMousePos(canvas, e)); }
+            function stopDrawing() { isDrawing = false; }
+            canvas.addEventListener('mousedown', startDrawing); canvas.addEventListener('mousemove', draw); canvas.addEventListener('mouseup', stopDrawing); canvas.addEventListener('mouseout', stopDrawing); canvas.addEventListener('touchstart', startDrawing); canvas.addEventListener('touchmove', draw); canvas.addEventListener('touchend', stopDrawing);
+            brushSize.addEventListener('input', (e) => { brushSizeValue.textContent = e.target.value; });
+            clearButton.addEventListener('click', redrawBackgroundImage);
+            
+            // --- Lógica dos Pontos de Interesse (Pins) ---
+            function renderPins() {
+                pinsContainer.innerHTML = '';
+                const pinSVG = `
+                    <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                        <defs>
+                            <radialGradient id="grad1" cx="50%" cy="50%" r="50%" fx="50%" fy="50%">
+                                <stop offset="0%" style="stop-color:rgb(254, 202, 202);stop-opacity:1" />
+                                <stop offset="60%" style="stop-color:rgb(252, 165, 165);stop-opacity:1" />
+                                <stop offset="100%" style="stop-color:rgb(239, 68, 68);stop-opacity:1" />
+                            </radialGradient>
+                        </defs>
+                        <path d="M50 0 L61.8 38.2 L100 38.2 L69.1 61.8 L80.9 100 L50 76.4 L19.1 100 L30.9 61.8 L0 38.2 L38.2 38.2 Z" fill="url(#grad1)" stroke="#7f1d1d" stroke-width="5"/>
+                    </svg>
+                `;
 
-            audioBtns.forEach(btn => btn.addEventListener('click', () => playSound(btn.dataset.sound, true)));
-            sfxBtns.forEach(btn => btn.addEventListener('click', () => playSound(btn.dataset.sfx, false)));
-            stopMusicBtn.addEventListener('click', () => {
-                if(currentLoop) {
-                    currentLoop.stop().dispose();
-                    Tone.Transport.stop();
-                    currentLoop = null;
+                pointsOfInterest.forEach((point) => {
+                    const pinWrapper = document.createElement('div');
+                    pinWrapper.className = 'pin';
+                    pinWrapper.style.left = `${point.x * 100}%`;
+                    pinWrapper.style.top = `${point.y * 100}%`;
+                    pinWrapper.dataset.id = point.id;
+                    pinWrapper.innerHTML = pinSVG;
+                    
+                    pinWrapper.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const viewPinTitle = document.getElementById('viewPinTitle');
+                        const viewPinDescription = document.getElementById('viewPinDescription');
+                        viewPinTitle.textContent = point.title;
+                        viewPinDescription.textContent = point.description;
+                        
+                        if (isAdminMode) {
+                            removePinButton.classList.remove('hidden');
+                            removePinButton.dataset.id = point.id;
+                        } else {
+                            removePinButton.classList.add('hidden');
+                        }
+                        
+                        viewPinModal.classList.remove('hidden');
+                    });
+                    
+                    pinsContainer.appendChild(pinWrapper);
+                });
+            }
+
+            mapContainer.addEventListener('click', (e) => {
+                if (!isAdminMode) return;
+                const rect = mapContainer.getBoundingClientRect();
+                const x = (e.clientX - rect.left) / rect.width;
+                const y = (e.clientY - rect.top) / rect.height;
+                currentPinCoords = { x, y };
+                document.getElementById('pinTitle').value = '';
+                document.getElementById('pinDescription').value = '';
+                pinModal.classList.remove('hidden');
+            });
+
+            // --- Lógica dos Modais ---
+            const passwordInput = document.getElementById('passwordInput');
+            const passwordError = document.getElementById('passwordError');
+            
+            function setAdminMode(isAdmin) {
+                if (isAdmin && !auth.currentUser) {
+                    alert("Você precisa estar logado para entrar no modo de administrador.");
+                    return;
+                }
+                isAdminMode = isAdmin;
+                if (isAdmin) {
+                    adminLoginButton.textContent = "Sair do Modo Admin";
+                    adminHelpText.textContent = "Modo de edição ativo. Clique no mapa para adicionar um ponto.";
+                    mapContainer.style.cursor = 'crosshair';
+                } else {
+                    adminLoginButton.textContent = "Acesso Restrito";
+                    adminHelpText.textContent = "Passe a senha para editar o mapa.";
+                    mapContainer.style.cursor = 'default';
+                }
+                 renderPins(); // Re-renderiza para mostrar/ocultar botão de remover
+            }
+            
+            adminLoginButton.addEventListener('click', () => {
+                if (isAdminMode) {
+                    setAdminMode(false);
+                } else {
+                    passwordModal.classList.remove('hidden');
+                }
+            });
+            
+            document.getElementById('cancelPasswordButton').addEventListener('click', () => passwordModal.classList.add('hidden'));
+            document.getElementById('submitPasswordButton').addEventListener('click', () => {
+                if (passwordInput.value === ADMIN_PASSWORD) {
+                    setAdminMode(true);
+                    passwordModal.classList.add('hidden');
+                    passwordInput.value = '';
+                    passwordError.classList.add('hidden');
+                } else {
+                    passwordError.classList.remove('hidden');
+                    passwordInput.value = '';
                 }
             });
 
-            // --- LÓGICA DO MAPA DE COMBATE ---
-            const combatMap = document.getElementById('combat-map');
-            let tokenCount = 0;
-
-            function makeDraggable(token) {
-                let isDragging = false;
-                token.addEventListener('mousedown', (e) => {
-                    isDragging = true;
-                    token.style.zIndex = 1000;
-                    e.preventDefault();
-                });
-
-                document.addEventListener('mousemove', (e) => {
-                    if (!isDragging) return;
-                    const mapRect = combatMap.getBoundingClientRect();
-                    let x = e.clientX - mapRect.left;
-                    let y = e.clientY - mapRect.top;
-                    
-                    // Garante que o token fique dentro do mapa
-                    x = Math.max(0, Math.min(x, mapRect.width - token.offsetWidth));
-                    y = Math.max(0, Math.min(y, mapRect.height - token.offsetHeight));
-
-                    token.style.position = 'absolute';
-                    token.style.left = `${x}px`;
-                    token.style.top = `${y}px`;
-                });
-
-                document.addEventListener('mouseup', () => {
-                    if (isDragging) {
-                        isDragging = false;
-                        token.style.zIndex = 10;
-                    }
-                });
-            }
-
-            function addToken(type) {
-                tokenCount++;
-                const token = document.createElement('div');
-                token.classList.add('token', type);
-                token.textContent = type === 'player' ? `P${tokenCount}` : `E${tokenCount}`;
-                combatMap.appendChild(token);
-                makeDraggable(token);
-            }
-
-            document.getElementById('add-player').addEventListener('click', () => addToken('player'));
-            document.getElementById('add-enemy').addEventListener('click', () => addToken('enemy'));
+            document.getElementById('cancelPinButton').addEventListener('click', () => pinModal.classList.add('hidden'));
             
-            // Adiciona alguns tokens iniciais como exemplo
-            addToken('player');
-            addToken('enemy');
+            document.getElementById('savePinButton').addEventListener('click', async () => {
+                if (!auth.currentUser) {
+                    alert("Você precisa estar logado para salvar um ponto.");
+                    return;
+                }
+                const title = document.getElementById('pinTitle').value;
+                const description = document.getElementById('pinDescription').value;
+                if (title && description) {
+                    const newPin = { ...currentPinCoords, title, description };
+                    try {
+                        const docRef = await db.collection("map_pins").add(newPin);
+                        newPin.id = docRef.id;
+                        pointsOfInterest.push(newPin);
+                        renderPins();
+                        pinModal.classList.add('hidden');
+                    } catch (error) {
+                        console.error("Error adding document: ", error);
+                        alert("Erro ao salvar o ponto. Verifique as permissões do banco de dados.");
+                    }
+                } else {
+                    const pinModalElement = document.getElementById('pinModal').querySelector('div');
+                    pinModalElement.classList.add('animate-shake');
+                    setTimeout(() => pinModalElement.classList.remove('animate-shake'), 500);
+                }
+            });
+
+            document.getElementById('closeViewPinButton').addEventListener('click', () => viewPinModal.classList.add('hidden'));
+            
+            removePinButton.addEventListener('click', async () => {
+                if (!auth.currentUser) {
+                    alert("Você precisa estar logado para remover um ponto.");
+                    return;
+                }
+                const pinIdToRemove = removePinButton.dataset.id;
+                if (pinIdToRemove) {
+                    try {
+                        await db.collection("map_pins").doc(pinIdToRemove).delete();
+                        pointsOfInterest = pointsOfInterest.filter(p => p.id !== pinIdToRemove);
+                        renderPins();
+                        viewPinModal.classList.add('hidden');
+                    } catch (error) {
+                        console.error("Error removing document: ", error);
+                        alert("Erro ao remover o ponto. Verifique as permissões do banco de dados.");
+                    }
+                }
+            });
+
+            async function loadPins() {
+                if (!auth.currentUser) {
+                    return;
+                }
+                try {
+                    const querySnapshot = await db.collection("map_pins").get();
+                    pointsOfInterest = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    renderPins();
+                } catch (error) {
+                    console.log("Error getting documents: ", error);
+                }
+            }
+            
+            window.addEventListener('resize', () => {
+                resizeCanvas();
+                redrawBackgroundImage();
+                renderPins();
+            });
+        });
+
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                mainContent.style.display = 'block';
+                userDisplay.textContent = `Operativo Mestre Conectado: ${user.displayName || user.email}`;
+                loadOperationsData();
+                loadPins();
+            } else {
+                window.location.href = '../login.html';
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const mainContent = document.getElementById('main-content');
+            const userDisplay = document.getElementById('user-display');
+            const logoutButton = document.getElementById('logout-button');
+            const missionBoard = document.getElementById('mission-board');
+            const modal = document.getElementById('character-modal');
+            const modalBody = document.getElementById('modal-body');
+            const modalCloseButton = document.getElementById('modal-close-button');
+
+            logoutButton.addEventListener('click', () => auth.signOut());
+            modalCloseButton.addEventListener('click', () => modal.style.display = "none");
+            window.addEventListener('click', (event) => {
+                if (event.target == modal) {
+                    modal.style.display = "none";
+                }
+            });
+
+            async function loadOperationsData() {
+                try {
+                    // Fetch all signups and all characters in parallel
+                    const [signupsSnapshot, charactersSnapshot] = await Promise.all([
+                        db.collection('mission_signups').orderBy('timestamp', 'asc').get(),
+                        db.collection('personagens').get()
+                    ]);
+
+                    const allCharacters = charactersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    const signupsByMission = {};
+
+                    signupsSnapshot.docs.forEach(doc => {
+                        const signup = doc.data();
+                        // Find the full character sheet for this signup
+                        const characterData = allCharacters.find(c => c.userId === signup.userId && c.nome === signup.characterName);
+                        
+                        if (!signupsByMission[signup.missionName]) {
+                            signupsByMission[signup.missionName] = [];
+                        }
+                        signupsByMission[signup.missionName].push({ ...signup, characterSheet: characterData });
+                    });
+
+                    renderMissionBoard(signupsByMission);
+
+                } catch (err) {
+                    console.error("Error loading operations data:", err);
+                    missionBoard.innerHTML = '<p class="text-red-500 col-span-full">Erro ao carregar dados. Verifique as permissões do banco de dados.</p>';
+                }
+            }
+            
+            function renderMissionBoard(signupsByMission) {
+                if (Object.keys(signupsByMission).length === 0) {
+                    missionBoard.innerHTML = '<p class="text-center text-gray-500 col-span-full">Nenhum operativo inscrito em missões ainda.</p>';
+                    return;
+                }
+
+                missionBoard.innerHTML = ''; // Clear loading message
+                for (const missionName in signupsByMission) {
+                    const missionCard = document.createElement('div');
+                    missionCard.className = 'mission-card';
+                    
+                    let charactersHtml = signupsByMission[missionName].map(signup => {
+                        const characterId = signup.characterSheet ? signup.characterSheet.id : null;
+                        return `
+                            <div class="character-entry" data-character-id="${characterId}">
+                                <span>${signup.characterName}</span>
+                                <span class="text-gray-400 text-sm">${signup.userNickname}</span>
+                            </div>
+                        `;
+                    }).join('');
+
+                    missionCard.innerHTML = `
+                        <h3 class="text-xl font-cinzel mb-4">${missionName}</h3>
+                        <div class="space-y-2">${charactersHtml}</div>
+                    `;
+                    missionBoard.appendChild(missionCard);
+                }
+                
+                // Add event listeners after rendering
+                missionBoard.querySelectorAll('.character-entry').forEach(entry => {
+                    entry.addEventListener('click', () => {
+                        const characterId = entry.dataset.characterId;
+                        if (characterId && characterId !== 'null') {
+                            showCharacterSheet(characterId);
+                        } else {
+                            alert('Ficha de personagem não encontrada para este operativo.');
+                        }
+                    });
+                });
+            }
+
+            async function showCharacterSheet(characterId) {
+                modalBody.innerHTML = '<p>Carregando ficha...</p>';
+                modal.style.display = "block";
+                
+                try {
+                    const characterDoc = await db.collection('personagens').doc(characterId).get();
+                    if (!characterDoc.exists) {
+                        modalBody.innerHTML = '<p class="text-red-500">Erro: Ficha de personagem não encontrada.</p>';
+                        return;
+                    }
+                    
+                    const char = characterDoc.data();
+                    let sheetHtml = `<h2 class="text-3xl font-cinzel text-red-400 mb-4">${char.nome}</h2>`;
+                    sheetHtml += '<div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">';
+                    for (const key in char) {
+                        if (key !== 'userId' && key !== 'createdAt' && typeof char[key] !== 'object') {
+                           sheetHtml += `<div><strong>${key.charAt(0).toUpperCase() + key.slice(1)}:</strong> ${char[key]}</div>`;
+                        }
+                    }
+                    sheetHtml += '</div>';
+                    modalBody.innerHTML = sheetHtml;
+
+                } catch (error) {
+                    console.error("Error fetching character sheet:", error);
+                    modalBody.innerHTML = '<p class="text-red-500">Ocorreu um erro ao buscar a ficha.</p>';
+                }
+            }
         });
     </script>
-
 </body>
 </html>
