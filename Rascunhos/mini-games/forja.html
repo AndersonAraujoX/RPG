@@ -1,16 +1,37 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mini-Game de Forja</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=MedievalSharp&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        rpg: {
+                            black: '#0B0C10',
+                            cyan: '#66FCF1',
+                            slate: '#1F2833',
+                            silver: '#C5C6C7',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Inter:wght@400;600&display=swap"
+        rel="stylesheet">
     <style>
         body {
-            font-family: 'MedievalSharp', cursive;
-            background-color: #1a202c;
-            color: #e2e8f0;
+            font-family: 'Inter', sans-serif;
+            background-color: #0B0C10;
+            background-image: url('https://www.transparenttextures.com/patterns/dark-matter.png');
+            color: #C5C6C7;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -18,74 +39,94 @@
             margin: 0;
             overflow: hidden;
         }
+
         .container {
-            background-color: #2d3748;
-            border: 2px solid #4a5568;
+            background-color: rgba(31, 40, 51, 0.95);
+            /* rpg-slate */
+            border: 1px solid #66FCF1;
             border-radius: 1rem;
             padding: 2rem;
             text-align: center;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 0 20px rgba(102, 252, 241, 0.15);
             width: 90%;
             max-width: 500px;
+            backdrop-filter: blur(5px);
         }
+
         h1 {
+            font-family: 'Cinzel', serif;
             font-size: 2.5rem;
-            color: #f6ad55;
-            text-shadow: 2px 2px #975a16;
+            color: #66FCF1;
+            text-shadow: 0 0 10px rgba(102, 252, 241, 0.5);
         }
+
         #progressBarContainer {
             width: 100%;
             height: 40px;
-            background-color: #4a5568;
+            background-color: #0B0C10;
             border-radius: 0.5rem;
             position: relative;
             margin: 1rem 0;
             overflow: hidden;
-            border: 2px solid #2d3748;
+            border: 1px solid #4B5563;
         }
+
         #movingBar {
-            width: 10px;
+            width: 8px;
             height: 100%;
-            background-color: #f6ad55;
+            background-color: #66FCF1;
             position: absolute;
             top: 0;
             left: 0;
-            border-right: 2px solid #c05621;
+            box-shadow: 0 0 10px #66FCF1;
         }
+
         #successZone {
             height: 100%;
-            background-color: rgba(76, 175, 80, 0.6);
+            background-color: rgba(102, 252, 241, 0.3);
             position: absolute;
             top: 0;
-            border-left: 2px dashed #a0aec0;
-            border-right: 2px dashed #a0aec0;
+            border-left: 1px solid #66FCF1;
+            border-right: 1px solid #66FCF1;
             transition: width 0.3s ease-in-out;
         }
+
         button {
-            background-color: #dd6b20;
-            color: white;
+            background-color: #1F2833;
+            color: #66FCF1;
             padding: 0.8rem 1.5rem;
             border-radius: 0.5rem;
             font-size: 1.2rem;
+            font-weight: bold;
+            font-family: 'Cinzel', serif;
             cursor: pointer;
-            transition: background-color 0.3s;
-            border: none;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+            transition: all 0.3s;
+            border: 1px solid #66FCF1;
+            box-shadow: 0 0 10px rgba(102, 252, 241, 0.2);
             margin-top: 1rem;
         }
+
         button:hover {
-            background-color: #c05621;
+            background-color: #66FCF1;
+            color: #0B0C10;
+            box-shadow: 0 0 20px rgba(102, 252, 241, 0.5);
         }
+
         button:disabled {
-            background-color: #718096;
+            background-color: #0B0C10;
+            color: #4B5563;
+            border-color: #4B5563;
             cursor: not-allowed;
+            box-shadow: none;
         }
+
         #message {
             margin-top: 1.5rem;
             font-size: 1.2rem;
             min-height: 2rem;
+            font-weight: 600;
         }
-        
+
         /* Estilos da Animação da Forja */
         #forge-animation {
             width: 150px;
@@ -100,18 +141,21 @@
             bottom: 0;
             left: 50%;
             transform: translateX(-50%);
-            fill: #718096;
+            fill: #4B5563;
+            /* Gray-600 */
         }
 
         #ingot {
             width: 50px;
             position: absolute;
-            bottom: 30px; /* Posição em cima da bigorna */
+            bottom: 30px;
             left: 50%;
             transform: translateX(-50%);
-            fill: #dd6b20; /* Cor de metal quente */
-            opacity: 0; /* Começa invisível */
+            fill: #66FCF1;
+            /* Cyan hot */
+            opacity: 0;
             transition: opacity 0.1s ease-in-out;
+            filter: drop-shadow(0 0 5px #66FCF1);
         }
 
         #ingot.glow {
@@ -119,9 +163,21 @@
         }
 
         @keyframes glow-animation {
-            0% { fill: #dd6b20; transform: translateX(-50%) scale(1.0); }
-            50% { fill: #fefcbf; transform: translateX(-50%) scale(1.1); }
-            100% { fill: #dd6b20; transform: translateX(-50%) scale(1.0); }
+            0% {
+                fill: #66FCF1;
+                transform: translateX(-50%) scale(1.0);
+            }
+
+            50% {
+                fill: #ffffff;
+                transform: translateX(-50%) scale(1.1);
+                filter: drop-shadow(0 0 15px #66FCF1);
+            }
+
+            100% {
+                fill: #66FCF1;
+                transform: translateX(-50%) scale(1.0);
+            }
         }
 
         #hammer {
@@ -130,7 +186,7 @@
             top: 0;
             right: 0;
             transform-origin: bottom right;
-            fill: #a0aec0;
+            fill: #C5C6C7;
             transform: rotate(25deg);
         }
 
@@ -139,21 +195,33 @@
         }
 
         @keyframes strike-animation {
-            0% { transform: rotate(25deg); top: 0; }
-            50% { transform: rotate(-45deg); top: 30px; }
-            100% { transform: rotate(25deg); top: 0; }
+            0% {
+                transform: rotate(25deg);
+                top: 0;
+            }
+
+            50% {
+                transform: rotate(-45deg);
+                top: 30px;
+            }
+
+            100% {
+                transform: rotate(25deg);
+                top: 0;
+            }
         }
 
         .spark {
             position: absolute;
-            width: 5px;
-            height: 5px;
-            background: #f6ad55;
+            width: 4px;
+            height: 4px;
+            background: #66FCF1;
             border-radius: 50%;
             opacity: 1;
             animation: spark-animation 0.6s forwards;
-            bottom: 35px; /* Posição das faíscas */
+            bottom: 35px;
             left: 55%;
+            box-shadow: 0 0 5px #66FCF1;
         }
 
         @keyframes spark-animation {
@@ -161,12 +229,13 @@
                 opacity: 1;
                 transform: translate(0, 0) scale(1);
             }
+
             100% {
                 opacity: 0;
                 transform: var(--transform-end) scale(0);
             }
         }
-        
+
         .controls-container {
             display: flex;
             justify-content: center;
@@ -175,28 +244,48 @@
             margin: 1.5rem 0;
             flex-wrap: wrap;
         }
-        #difficultySelector, #periciaSelector {
-            background-color: #4a5568;
-            color: #e2e8f0;
-            border: 1px solid #718096;
+
+        #difficultySelector,
+        #periciaSelector {
+            background-color: #0B0C10;
+            color: #66FCF1;
+            border: 1px solid #4B5563;
             border-radius: 0.5rem;
-            padding: 0.3rem 0.5rem;
-            font-family: 'MedievalSharp', cursive;
+            padding: 0.4rem 0.6rem;
+            font-family: 'Inter', sans-serif;
+            outline: none;
         }
 
+        #difficultySelector:focus,
+        #periciaSelector:focus {
+            border-color: #66FCF1;
+        }
+
+        label {
+            color: #C5C6C7;
+            font-size: 0.9rem;
+            margin-bottom: 0.2rem;
+            display: block;
+            text-align: left;
+        }
     </style>
 </head>
+
 <body>
 
-    <div class="container">
+    <div class="container relative">
+        <a href="index.html"
+            class="absolute top-4 left-4 text-xs text-gray-500 hover:text-rpg-cyan transition-colors">&larr; Voltar</a>
         <h1>Forja de Kuar-Tor</h1>
         <p class="text-lg text-gray-400 mb-4">Acerte o tempo para forjar a arma perfeita!</p>
-        
+
         <!-- Animação da Forja -->
         <div id="forge-animation">
             <div id="sparks-container"></div>
             <svg id="anvil" viewBox="0 0 100 50">
-                <path d="M5,15 h90 l5,5 v20 l-5,5 h-90 l-5,-5 v-20 z M0,15 a5,5 0 0,1 5,-5 h15 l5,-5 h50 l5,5 h15 a5,5 0 0,1 5,5 v20 a5,5 0 0,1 -5,5 h-90 a5,5 0 0,1 -5,-5 z M30,45 h40 v5 h-40 z"></path>
+                <path
+                    d="M5,15 h90 l5,5 v20 l-5,5 h-90 l-5,-5 v-20 z M0,15 a5,5 0 0,1 5,-5 h15 l5,-5 h50 l5,5 h15 a5,5 0 0,1 5,5 v20 a5,5 0 0,1 -5,5 h-90 a5,5 0 0,1 -5,-5 z M30,45 h40 v5 h-40 z">
+                </path>
             </svg>
             <svg id="ingot" viewBox="0 0 50 15">
                 <rect width="50" height="15" rx="3" />
@@ -209,13 +298,13 @@
 
         <div class="controls-container">
             <div>
-                <label for="difficultySelector">Dificuldade:</label>
+                <label for="difficultySelector">Dificuldade</label>
                 <select id="difficultySelector">
                     <!-- Options generated by JS -->
                 </select>
             </div>
             <div>
-                <label for="periciaSelector">Usar Perícia:</label>
+                <label for="periciaSelector">Nível da Perícia</label>
                 <select id="periciaSelector">
                     <!-- Options generated by JS -->
                 </select>
@@ -280,7 +369,7 @@
         let gameInterval;
         let gameActive = false;
         let periciaBonus = 0;
-        
+
         function populateDifficultySelector() {
             for (let i = 1; i <= 18; i++) {
                 const option = document.createElement('option');
@@ -333,7 +422,7 @@
             const containerWidth = progressBarContainer.clientWidth;
             const successZoneWidth = containerWidth * finalZonePercentage;
             const successZoneLeft = Math.random() * (containerWidth - successZoneWidth);
-            
+
             successZone.style.width = `${successZoneWidth}px`;
             successZone.style.left = `${successZoneLeft}px`;
 
@@ -368,7 +457,7 @@
             gameActive = false;
             hitButton.disabled = true;
         }
-        
+
         hitButton.addEventListener('click', () => {
             initAudio();
 
@@ -380,9 +469,9 @@
                 setupGame();
                 return;
             }
-            
+
             playHammerSound();
-            
+
             hammer.classList.add('strike');
             hammer.addEventListener('animationend', () => hammer.classList.remove('strike'), { once: true });
 
@@ -390,26 +479,26 @@
             ingot.classList.add('glow');
             ingot.addEventListener('animationend', () => {
                 ingot.classList.remove('glow');
-                 if (message.style.color !== 'rgb(104, 211, 145)') {
+                if (message.style.color !== 'rgb(104, 211, 145)') {
                     ingot.style.opacity = 0;
                 }
             }, { once: true });
 
             stopGame();
-            
+
             const barRect = movingBar.getBoundingClientRect();
             const successRect = successZone.getBoundingClientRect();
             const barCenter = barRect.left + barRect.width / 2;
-            
+
             if (barCenter >= successRect.left && barCenter <= successRect.right) {
-                message.textContent = `Sucesso!`;
-                message.style.color = '#68d391';
+                message.innerHTML = `<span class="text-rpg-cyan drop-shadow-[0_0_5px_rgba(102,252,241,0.8)]">✨ SUCESSO! ✨</span>`;
+                // message.style.color handled by class
                 setTimeout(createSparks, 100);
             } else {
-                message.textContent = `Falha! Tente novamente.`;
-                message.style.color = '#fc8181';
+                message.innerHTML = `<span class="text-red-500">FALHA! O metal esfriou.</span>`;
+                // message.style.color handled by class
             }
-            
+
             periciaBonus = 0; // Reseta o bônus após a tentativa
 
             setTimeout(() => {
@@ -421,15 +510,15 @@
                 periciaSelector.value = 0; // Reseta o seletor de perícia
             }, 1500);
         });
-        
+
         window.onload = () => {
-             hitButton.textContent = "Iniciar Forja";
-             populateDifficultySelector();
-             populatePericiaSelector();
+            hitButton.textContent = "Iniciar Forja";
+            populateDifficultySelector();
+            populatePericiaSelector();
         };
-        
+
     </script>
 
 </body>
-</html>
 
+</html>
