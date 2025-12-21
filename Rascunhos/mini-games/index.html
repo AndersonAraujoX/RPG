@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Salão de Jogos de Kuar-Tor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        rpg: {
+                            black: '#0B0C10',
+                            cyan: '#66FCF1',
+                            slate: '#1F2833',
+                            silver: '#C5C6C7',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Inter:wght@400;600&display=swap"
+        rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0B0C10;
+            background-image: url('https://www.transparenttextures.com/patterns/dark-matter.png');
+            color: #C5C6C7;
+        }
+
+        h1,
+        h2 {
+            font-family: 'Cinzel', serif;
+        }
+
+        .game-card {
+            background-color: rgba(31, 40, 51, 0.9);
+            border: 1px solid rgba(102, 252, 241, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .game-card:hover {
+            border-color: #66FCF1;
+            transform: translateY(-5px);
+            box-shadow: 0 0 15px rgba(102, 252, 241, 0.3);
+        }
+
+        .btn-play {
+            background-color: #66FCF1;
+            color: #0B0C10;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+
+        .btn-play:hover {
+            background-color: #45EBE0;
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+
+<body class="min-h-screen flex flex-col items-center p-6">
+
+    <header class="w-full max-w-4xl text-center mb-12">
+        <h1 class="text-4xl md:text-5xl text-rpg-cyan mb-2" style="text-shadow: 0 0 10px rgba(102, 252, 241, 0.5);">
+            Salão de Jogos</h1>
+        <p class="text-rpg-silver text-lg">Desafios rápidos para testar sua sorte e habilidade.</p>
+        <div class="w-32 h-1 bg-rpg-cyan mx-auto mt-4 rounded"></div>
+    </header>
+
+    <main class="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+        <!-- Fazenda -->
+        <div class="game-card rounded-xl p-6 flex flex-col items-center text-center">
+            <div
+                class="w-16 h-16 bg-green-900 rounded-full flex items-center justify-center mb-4 border border-green-500 text-3xl">
+                🌱</div>
+            <h2 class="text-2xl text-rpg-cyan mb-2">A Fazenda</h2>
+            <p class="text-sm text-gray-400 mb-6 flex-grow">Gerencie recursos e cultive a terra corrompida para
+                sobreviver.</p>
+            <a href="Fazenda.html" class="btn-play py-2 px-6 rounded-lg w-full">JOGAR</a>
+        </div>
+
+        <!-- Forja -->
+        <div class="game-card rounded-xl p-6 flex flex-col items-center text-center">
+            <div
+                class="w-16 h-16 bg-red-900 rounded-full flex items-center justify-center mb-4 border border-red-500 text-3xl">
+                🔨</div>
+            <h2 class="text-2xl text-rpg-cyan mb-2">A Forja</h2>
+            <p class="text-sm text-gray-400 mb-6 flex-grow">Domine o fogo e o metal para criar equipamentos lendários.
+            </p>
+            <a href="forja.html" class="btn-play py-2 px-6 rounded-lg w-full">JOGAR</a>
+        </div>
+
+        <!-- Mineração -->
+        <div class="game-card rounded-xl p-6 flex flex-col items-center text-center">
+            <div
+                class="w-16 h-16 bg-yellow-900 rounded-full flex items-center justify-center mb-4 border border-yellow-500 text-3xl">
+                ⛏️</div>
+            <h2 class="text-2xl text-rpg-cyan mb-2">Mineração</h2>
+            <p class="text-sm text-gray-400 mb-6 flex-grow">Escave as profundezas em busca de preciosidades e perigos.
+            </p>
+            <a href="mineracao.html" class="btn-play py-2 px-6 rounded-lg w-full">JOGAR</a>
+        </div>
+
+    </main>
+
+    <footer class="mt-12 text-center">
+        <a href="../../main.html" class="text-gray-500 hover:text-rpg-cyan transition-colors underline">Voltar para o
+            Portal Principal</a>
+    </footer>
+
+</body>
+
+</html>
