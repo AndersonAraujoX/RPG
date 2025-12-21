@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -12,9 +13,11 @@
     <style>
         body {
             font-family: 'Press Start 2P', cursive;
-            background-color: #000;
-            color: #00ff41; /* Cor do texto do terminal */
-            text-shadow: 0 0 5px #00ff41, 0 0 10px #00ff41;
+            background-color: #0B0C10;
+            /* rpg-black */
+            color: #66FCF1;
+            /* rpg-cyan */
+            text-shadow: 0 0 5px #66FCF1, 0 0 10px #66FCF1;
             image-rendering: pixelated;
             overflow: hidden;
         }
@@ -33,12 +36,12 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: repeating-linear-gradient(0deg, rgba(0,0,0,0.4) 0px, rgba(0,0,0,0.4) 1px, transparent 1px, transparent 2px);
+            background: repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.4) 0px, rgba(0, 0, 0, 0.4) 1px, transparent 1px, transparent 2px);
             animation: vhs-scanlines 2s steps(4) infinite;
             pointer-events: none;
             z-index: 2;
         }
-        
+
         .vhs-wrapper::before {
             content: '';
             position: absolute;
@@ -53,38 +56,66 @@
         }
 
         @keyframes vhs-scanlines {
-            0% { transform: translateY(0); }
-            100% { transform: translateY(8px); }
+            0% {
+                transform: translateY(0);
+            }
+
+            100% {
+                transform: translateY(8px);
+            }
         }
-        
+
         @keyframes vhs-flicker {
-            0%, 100% { opacity: 0.1; }
-            50% { opacity: 0.2; }
+
+            0%,
+            100% {
+                opacity: 0.1;
+            }
+
+            50% {
+                opacity: 0.2;
+            }
         }
 
         .content-glitch {
-             animation: vhs-glitch 2.5s linear infinite alternate-reverse;
+            animation: vhs-glitch 2.5s linear infinite alternate-reverse;
         }
 
         @keyframes vhs-glitch {
-          2%,64% { transform: translate(1px,-1px) skew(0deg); }
-          4%,60% { transform: translate(-1px,1px) skew(0deg); }
-          62% { transform: translate(0,0) skew(2deg); }
+
+            2%,
+            64% {
+                transform: translate(1px, -1px) skew(0deg);
+            }
+
+            4%,
+            60% {
+                transform: translate(-1px, 1px) skew(0deg);
+            }
+
+            62% {
+                transform: translate(0, 0) skew(2deg);
+            }
         }
-        
+
         .terminal {
             width: 100%;
             height: 100vh;
             padding: 2rem;
             overflow-y: auto;
-            scrollbar-width: none; /* Firefox */
-            -ms-overflow-style: none;  /* Internet Explorer 10+ */
+            scrollbar-width: none;
+            /* Firefox */
+            -ms-overflow-style: none;
+            /* Internet Explorer 10+ */
         }
-        .terminal::-webkit-scrollbar { 
-            display: none;  /* Safari and Chrome */
+
+        .terminal::-webkit-scrollbar {
+            display: none;
+            /* Safari and Chrome */
         }
-        
-        #terminal-output p, #terminal-output div {
+
+        #terminal-output p,
+        #terminal-output div {
             white-space: pre-wrap;
             word-break: break-all;
         }
@@ -93,8 +124,8 @@
             background: transparent;
             border: none;
             outline: none;
-            color: #00ff41;
-            text-shadow: 0 0 5px #00ff41, 0 0 10px #00ff41;
+            color: #66FCF1;
+            text-shadow: 0 0 5px #66FCF1, 0 0 10px #66FCF1;
             width: 100%;
         }
 
@@ -102,16 +133,23 @@
             display: inline-block;
             width: 10px;
             height: 1.2em;
-            background-color: #00ff41;
+            background-color: #66FCF1;
             animation: blink 1s step-end infinite;
-            box-shadow: 0 0 5px #00ff41, 0 0 10px #00ff41;
+            box-shadow: 0 0 5px #66FCF1, 0 0 10px #66FCF1;
         }
 
         @keyframes blink {
-            from, to { background-color: transparent; }
-            50% { background-color: #00ff41; }
+
+            from,
+            to {
+                background-color: transparent;
+            }
+
+            50% {
+                background-color: #66FCF1;
+            }
         }
-        
+
         .alert-text {
             color: #ff0000;
             text-shadow: 0 0 5px #ff0000, 0 0 10px #ff0000;
@@ -119,18 +157,25 @@
         }
 
         @keyframes blink-red-text {
-            from, to { opacity: 1; }
-            50% { opacity: 0.6; }
-        }
 
+            from,
+            to {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.6;
+            }
+        }
     </style>
 </head>
+
 <body>
     <div class="vhs-wrapper">
         <div id="terminal" class="terminal content-glitch" onclick="initiateConnection()">
             <div id="terminal-output" class="text-sm md:text-base"></div>
             <div id="input-line" class="flex" style="display: none;">
-                <span id="prompt-symbol" class="text-green-400">sombra@kuar-tor:~$</span>
+                <span id="prompt-symbol" class="text-green-400" style="color: #66FCF1;">sombra@kuar-tor:~$</span>
                 <input type="text" id="command-input" class="prompt-input flex-1 ml-2">
                 <span class="cursor"></span>
             </div>
@@ -377,7 +422,7 @@ DIRETIVA SECUNDÁRIA: Anomalias dos antigos laboratórios de Laplace estão livr
                 function type() {
                     if (i < text.length) {
                         if (typeSound && text.charAt(i) !== ' ' && text.charAt(i) !== '\n') {
-                           typeSound.triggerAttackRelease("C6", "0.05");
+                            typeSound.triggerAttackRelease("C6", "0.05");
                         }
                         element.innerHTML += text.charAt(i);
                         i++;
@@ -390,7 +435,7 @@ DIRETIVA SECUNDÁRIA: Anomalias dos antigos laboratórios de Laplace estão livr
                 type();
             });
         }
-        
+
         async function typeWriterSilent(text, element, speed = 50) {
             return new Promise(resolve => {
                 let i = 0;
@@ -407,7 +452,7 @@ DIRETIVA SECUNDÁRIA: Anomalias dos antigos laboratórios de Laplace estão livr
                 type();
             });
         }
-        
+
         async function playDialUpSound() {
             return new Promise(async (resolve) => {
                 const dialMsg = document.createElement('p');
@@ -420,7 +465,7 @@ DIRETIVA SECUNDÁRIA: Anomalias dos antigos laboratórios de Laplace estão livr
                     envelope: { attack: 0.01, decay: 0.2, sustain: 0.2, release: 0.2 },
                     modulationEnvelope: { attack: 0.01, decay: 0.2, sustain: 0.2, release: 0.2 }
                 }).toDestination();
-                
+
                 noise.volume.value = -20;
 
                 const dtmf = (f1, f2) => {
@@ -429,7 +474,7 @@ DIRETIVA SECUNDÁRIA: Anomalias dos antigos laboratórios de Laplace estão livr
                     o1.volume.value = -15; o2.volume.value = -15;
                     o1.start().stop("+0.15"); o2.start().stop("+0.15");
                 };
-                
+
                 Tone.Transport.scheduleOnce(() => dtmf(697, 1209), "0.1");
                 Tone.Transport.scheduleOnce(() => dtmf(770, 1336), "0.4");
                 Tone.Transport.scheduleOnce(() => dtmf(852, 1477), "0.7");
@@ -445,7 +490,7 @@ DIRETIVA SECUNDÁRIA: Anomalias dos antigos laboratórios de Laplace estão livr
                     dialMsg.textContent = "CONECTADO.";
                     resolve();
                 }, "3.5");
-                
+
                 Tone.Transport.start();
             });
         }
@@ -457,7 +502,7 @@ DIRETIVA SECUNDÁRIA: Anomalias dos antigos laboratórios de Laplace estão livr
             const commandElement = document.createElement('p');
             commandElement.textContent = `${promptSymbol.textContent} ${fullCommand}`;
             terminalOutput.appendChild(commandElement);
-            
+
             inputField.value = '';
             inputLine.style.display = 'none';
 
@@ -473,10 +518,11 @@ DIRETIVA SECUNDÁRIA: Anomalias dos antigos laboratórios de Laplace estão livr
             if (output) {
                 const responseElement = document.createElement('p');
                 responseElement.className = "text-green-400 my-2";
+                responseElement.style.color = "#66FCF1";
                 terminalOutput.appendChild(responseElement);
                 await typeWriter(output, responseElement);
             }
-            
+
             inputLine.style.display = 'flex';
             terminal.scrollTop = terminal.scrollHeight;
             focusInput();
@@ -493,12 +539,12 @@ DIRETIVA SECUNDÁRIA: Anomalias dos antigos laboratórios de Laplace estão livr
                     if (!isInputVisible) return; // Don't show alert if a command is running
 
                     inputLine.style.display = 'none';
-                    
+
                     const alertElement = document.createElement('p');
                     alertElement.className = 'alert-text my-2';
                     terminalOutput.appendChild(alertElement);
                     await typeWriter(">> ALERTA: PROTOCOLO FANTASMA ATIVO. DIRETIVA PRIMÁRIA: SOBREVIVÊNCIA E PESQUISA. <<", alertElement, 30);
-                    
+
                     terminal.scrollTop = terminal.scrollHeight;
                     inputLine.style.display = 'flex';
                     focusInput();
@@ -506,7 +552,7 @@ DIRETIVA SECUNDÁRIA: Anomalias dos antigos laboratórios de Laplace estão livr
             }
         }
 
-        inputField.addEventListener('keydown', function(event) {
+        inputField.addEventListener('keydown', function (event) {
             if (event.key === 'Enter') {
                 handleCommand();
             }
@@ -522,17 +568,17 @@ DIRETIVA SECUNDÁRIA: Anomalias dos antigos laboratórios de Laplace estão livr
             focusInput();
             startAlerts();
         }
-        
+
         async function initiateConnection() {
             if (isAudioStarted) {
                 focusInput();
                 return;
             }
             isAudioStarted = true;
-            
-            terminalOutput.innerHTML = ''; 
+
+            terminalOutput.innerHTML = '';
             await Tone.start();
-            
+
             typeSound = new Tone.PolySynth(Tone.MembraneSynth, {
                 "pitchDecay": 0.008,
                 "octaves": 2,
@@ -552,7 +598,5 @@ DIRETIVA SECUNDÁRIA: Anomalias dos antigos laboratórios de Laplace estão livr
 
     </script>
 </body>
+
 </html>
-
-
-

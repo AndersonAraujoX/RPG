@@ -5,35 +5,50 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Portal da Campanha: Kuar-Tor</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              rpg: {
+                black: '#0B0C10',
+                cyan: '#66FCF1',
+                slate: '#1F2833',
+                silver: '#C5C6C7',
+              }
+            }
+          }
+        }
+      }
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Roboto+Slab:wght@400;700&display=swap" rel="stylesheet">
     <style>
         body {
             font-family: 'Roboto Slab', serif;
-            background-color: #0a0a0a;
-            color: #d1d5db;
+            /* background-color replaced by Tailwind class */
             background-image: url('https://images.unsplash.com/photo-1597873819455-90031846b6c3?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D');
             background-size: cover;
             background-position: center;
             background-attachment: fixed;
         }
         .main-container {
-            background-color: rgba(10, 10, 10, 0.9);
+            background-color: rgba(11, 12, 16, 0.95); /* Obsidian with opacity */
             backdrop-filter: blur(8px);
         }
         h1, h2 {
             font-family: 'Cinzel', serif;
         }
         .resource-card {
-            background-color: rgba(23, 23, 23, 0.7);
+            background-color: #1F2833; /* rpg-slate */
             border: 1px solid #404040;
             transition: all 0.3s ease;
         }
         .resource-card:hover {
-            border-color: #ef4444;
+            border-color: #66FCF1; /* rpg-cyan */
             transform: translateY(-5px);
-            box-shadow: 0 10px 15px -3px rgba(239, 68, 68, 0.1), 0 4px 6px -2px rgba(239, 68, 68, 0.05);
+            box-shadow: 0 10px 15px -3px rgba(102, 252, 241, 0.1), 0 4px 6px -2px rgba(102, 252, 241, 0.05); /* cyan shadow */
         }
         .btn-theme {
             transition: all 0.2s ease-in-out;
@@ -44,14 +59,14 @@
         }
     </style>
 </head>
-<body class="flex items-center justify-center min-h-screen p-4">
+<body class="bg-rpg-black text-rpg-silver flex items-center justify-center min-h-screen p-4">
 
     <div class="main-container w-full max-w-5xl p-8 rounded-xl shadow-2xl border border-gray-800">
         <header class="flex justify-between items-center mb-10">
             <div class="flex-1"></div>
             <div class="flex-1 text-center">
-                <h1 class="text-5xl md:text-6xl font-bold text-red-500" style="text-shadow: 0 0 10px rgba(153, 27, 27, 0.7);">Portal de Kuar-Tor</h1>
-                <p class="text-xl text-gray-300 mt-2">Recursos para a campanha "A Última Expedição"</p>
+                <h1 class="text-5xl md:text-6xl font-bold text-rpg-cyan" style="text-shadow: 0 0 10px rgba(102, 252, 241, 0.5);">Portal de Kuar-Tor</h1>
+                <p class="text-xl text-rpg-silver mt-2">Recursos para a campanha "A Última Expedição"</p>
             </div>
             <div class="flex-1 flex justify-end" id="user-session">
                 <!-- This will be shown to logged-out users -->
@@ -68,45 +83,45 @@
         <main class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
 
             <div class="resource-card rounded-lg p-6 flex flex-col">
-                <h2 class="text-2xl font-bold text-white mb-3">O Mundo de Kuar-Tor</h2>
-                <p class="text-gray-400 mb-6 flex-grow">Descubra a história, regras do sistema +2d6, e os segredos da ilha amaldiçoada. Essencial para todos os jogadores.</p>
-                <a href="Site/siteV1.1.html" class="btn-theme mt-auto block w-full text-center bg-red-700 hover:bg-red-600 text-white font-semibold py-3 rounded-md">Explorar a Campanha</a>
+                <h2 class="text-2xl font-bold text-rpg-cyan mb-3">O Mundo de Kuar-Tor</h2>
+                <p class="text-rpg-silver mb-6 flex-grow">Descubra a história, regras do sistema +2d6, e os segredos da ilha amaldiçoada. Essencial para todos os jogadores.</p>
+                <a href="Site/siteV1.1.html" class="btn-theme mt-auto block w-full text-center bg-rpg-slate border border-rpg-cyan text-rpg-cyan hover:bg-rpg-cyan hover:text-rpg-black font-semibold py-3 rounded-md">Explorar a Campanha</a>
             </div>
 
             <div class="resource-card rounded-lg p-6 flex flex-col">
-                <h2 class="text-2xl font-bold text-white mb-3">Gerador de Fichas</h2>
-                <p class="text-gray-400 mb-6 flex-grow">Forje seu personagem para a expedição. Salve, importe e gerencie suas fichas de forma prática e rápida.</p>
-                <a href="Forms/formV6.html" class="btn-theme mt-auto block w-full text-center bg-amber-600 hover:bg-amber-500 text-white font-semibold py-3 rounded-md">Criar Personagem</a>
+                <h2 class="text-2xl font-bold text-rpg-cyan mb-3">Gerador de Fichas</h2>
+                <p class="text-rpg-silver mb-6 flex-grow">Forje seu personagem para a expedição. Salve, importe e gerencie suas fichas de forma prática e rápida.</p>
+                <a href="Forms/formV6.html" class="btn-theme mt-auto block w-full text-center bg-rpg-slate border border-rpg-cyan text-rpg-cyan hover:bg-rpg-cyan hover:text-rpg-black font-semibold py-3 rounded-md">Criar Personagem</a>
             </div>
 
             <div class="resource-card rounded-lg p-6 flex flex-col">
-                <h2 class="text-2xl font-bold text-white mb-3">Tomo das Estatísticas</h2>
-                <p class="text-gray-400 mb-6 flex-grow">Utilize este grimório para rolar dados, adicionar valores personalizados e consultar as estatísticas arcanas de seus lançamentos.</p>
-                <a href="Dados/dados.html" class="btn-theme mt-auto block w-full text-center bg-indigo-700 hover:bg-indigo-600 text-white font-semibold py-3 rounded-md">Rolar os Dados</a>
+                <h2 class="text-2xl font-bold text-rpg-cyan mb-3">Tomo das Estatísticas</h2>
+                <p class="text-rpg-silver mb-6 flex-grow">Utilize este grimório para rolar dados, adicionar valores personalizados e consultar as estatísticas arcanas de seus lançamentos.</p>
+                <a href="Dados/dados.html" class="btn-theme mt-auto block w-full text-center bg-rpg-slate border border-rpg-cyan text-rpg-cyan hover:bg-rpg-cyan hover:text-rpg-black font-semibold py-3 rounded-md">Rolar os Dados</a>
             </div>
             
             <div class="resource-card rounded-lg p-6 flex flex-col">
-                <h2 class="text-2xl font-bold text-white mb-3">Gerenciador de Itens</h2>
-                <p class="text-gray-400 mb-6 flex-grow">Cadastre, organize e consulte os itens dos personagens de forma individual e segura.</p>
-                <a href="items.html" class="btn-theme mt-auto block w-full text-center bg-green-700 hover:bg-green-600 text-white font-semibold py-3 rounded-md">Acessar Inventário</a>
+                <h2 class="text-2xl font-bold text-rpg-cyan mb-3">Gerenciador de Itens</h2>
+                <p class="text-rpg-silver mb-6 flex-grow">Cadastre, organize e consulte os itens dos personagens de forma individual e segura.</p>
+                <a href="items.html" class="btn-theme mt-auto block w-full text-center bg-rpg-slate border border-rpg-cyan text-rpg-cyan hover:bg-rpg-cyan hover:text-rpg-black font-semibold py-3 rounded-md">Acessar Inventário</a>
             </div>
 
             <div class="resource-card rounded-lg p-6 flex flex-col">
-                <h2 class="text-2xl font-bold text-white mb-3">O Nexo</h2>
-                <p class="text-gray-400 mb-6 flex-grow">Acesse o ponto de encontro social, onde missões são aceitas, rumores são ouvidos e a sorte é testada.</p>
-                <a href="nexo.html" class="btn-theme mt-auto block w-full text-center bg-purple-700 hover:bg-purple-600 text-white font-semibold py-3 rounded-md">Entrar no Nexo</a>
+                <h2 class="text-2xl font-bold text-rpg-cyan mb-3">O Nexo</h2>
+                <p class="text-rpg-silver mb-6 flex-grow">Acesse o ponto de encontro social, onde missões são aceitas, rumores são ouvidos e a sorte é testada.</p>
+                <a href="nexo.html" class="btn-theme mt-auto block w-full text-center bg-rpg-slate border border-rpg-cyan text-rpg-cyan hover:bg-rpg-cyan hover:text-rpg-black font-semibold py-3 rounded-md">Entrar no Nexo</a>
             </div>
 
             <div class="resource-card rounded-lg p-6 flex flex-col relative overflow-hidden">
-                <h2 class="text-2xl font-bold text-white mb-3">Computador de Kuar-Tor</h2>
-                <p class="text-gray-400 mb-6 flex-grow">Acesse ferramentas e recursos de inteligência da campanha, incluindo mapas, cofres e arquivos de Kuar-Tor.</p>
-                <a href="computador_de_kuar_tor.html" class="btn-theme mt-auto block w-full text-center bg-gray-700 hover:bg-gray-600 text-white font-semibold py-3 rounded-md">Acessar Computador</a>
+                <h2 class="text-2xl font-bold text-rpg-cyan mb-3">Computador de Kuar-Tor</h2>
+                <p class="text-rpg-silver mb-6 flex-grow">Acesse ferramentas e recursos de inteligência da campanha, incluindo mapas, cofres e arquivos de Kuar-Tor.</p>
+                <a href="computador_de_kuar_tor.html" class="btn-theme mt-auto block w-full text-center bg-rpg-slate border border-rpg-cyan text-rpg-cyan hover:bg-rpg-cyan hover:text-rpg-black font-semibold py-3 rounded-md">Acessar Computador</a>
             </div>
 
             <div class="resource-card rounded-lg p-6 flex flex-col">
-                <h2 class="text-2xl font-bold text-white mb-3">Mesa de Operações</h2>
-                <p class="text-gray-400 mb-6 flex-grow">Acompanhe o andamento das missões e o status dos operativos em tempo real.</p>
-                <a href="Rascunhos/mesa_oper.html" class="btn-theme mt-auto block w-full text-center bg-red-800 hover:bg-red-700 text-white font-semibold py-3 rounded-md">Acessar Mesa</a>
+                <h2 class="text-2xl font-bold text-rpg-cyan mb-3">Mesa de Operações</h2>
+                <p class="text-rpg-silver mb-6 flex-grow">Acompanhe o andamento das missões e o status dos operativos em tempo real.</p>
+                <a href="Rascunhos/mesa_oper.html" class="btn-theme mt-auto block w-full text-center bg-rpg-slate border border-rpg-cyan text-rpg-cyan hover:bg-rpg-cyan hover:text-rpg-black font-semibold py-3 rounded-md">Acessar Mesa</a>
             </div>
         </main>
         

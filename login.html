@@ -1,71 +1,115 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Kuar-Tor</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        rpg: {
+                            black: '#0B0C10',
+                            cyan: '#66FCF1',
+                            slate: '#1F2833',
+                            silver: '#C5C6C7',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Inter:wght@400;500&display=swap"
+        rel="stylesheet">
     <style>
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #0c0c0c;
             background-image: url('https://www.transparenttextures.com/patterns/dark-matter.png');
-            color: #d1d5db;
         }
-        .font-cinzel { font-family: 'Cinzel', serif; }
+
+        .font-cinzel {
+            font-family: 'Cinzel', serif;
+        }
+
         .login-container {
-            background-color: rgba(10, 10, 10, 0.7);
+            background-color: rgba(31, 40, 51, 0.95);
+            /* rpg-slate */
             backdrop-filter: blur(5px);
-            border: 1px solid rgba(220, 38, 38, 0.2);
-            box-shadow: 0 0 15px rgba(220, 38, 38, 0.2);
+            border: 1px solid rgba(102, 252, 241, 0.2);
+            /* cyan border */
+            box-shadow: 0 0 15px rgba(102, 252, 241, 0.1);
         }
+
         .form-input {
-            background-color: #1f2937;
+            background-color: #0B0C10;
+            /* rpg-black */
             border: 1px solid #4b5563;
+            color: #C5C6C7;
         }
+
         .form-input:focus {
-            border-color: #ef4444;
-            box-shadow: 0 0 0 2px #ef444460;
+            border-color: #66FCF1;
+            box-shadow: 0 0 0 2px rgba(102, 252, 241, 0.3);
             outline: none;
         }
+
         .btn {
             transition: all 0.2s ease-in-out;
             font-family: 'Cinzel', serif;
         }
+
         .btn:hover {
-            transform: scale(1.05);
+            transform: scale(1.02);
+            box-shadow: 0 0 10px rgba(102, 252, 241, 0.2);
         }
     </style>
 </head>
-<body class="min-h-screen flex items-center justify-center p-4">
+
+<body class="bg-rpg-black text-rpg-silver min-h-screen flex items-center justify-center p-4">
 
     <div class="login-container w-full max-w-md p-8 rounded-lg">
-        <h1 class="font-cinzel text-4xl text-center text-red-500 mb-6">Portal de Kuar-Tor</h1>
-        
+        <h1 class="font-cinzel text-4xl text-center text-rpg-cyan mb-6"
+            style="text-shadow: 0 0 10px rgba(102, 252, 241, 0.5);">Portal de Kuar-Tor</h1>
+
         <div id="login-view">
-            <h2 class="text-2xl text-center text-gray-300 mb-8">Login</h2>
+            <h2 class="text-2xl text-center text-rpg-silver mb-8">Login</h2>
             <div class="space-y-4">
-                <input id="email-input" type="email" placeholder="Email" class="form-input w-full p-3 rounded text-white">
-                <input id="password-input" type="password" placeholder="Senha" class="form-input w-full p-3 rounded text-white">
-                <button id="login-button" class="btn w-full bg-red-700 hover:bg-red-600 text-white font-semibold py-3 rounded-md">Entrar</button>
+                <input id="email-input" type="email" placeholder="Email" class="form-input w-full p-3 rounded">
+                <input id="password-input" type="password" placeholder="Senha" class="form-input w-full p-3 rounded">
+                <button id="login-button"
+                    class="btn w-full bg-rpg-cyan text-rpg-black hover:bg-white font-bold py-3 rounded-md">Entrar</button>
             </div>
             <div class="mt-6 text-center">
-                <p class="text-gray-400">Não tem uma conta? <a href="#" id="show-signup" class="text-red-400 hover:underline">Registre-se</a></p>
-                 <button id="google-login-button" class="btn mt-4 w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-3 rounded-md">Login com Google</button>
+                <p class="text-gray-400">Não tem uma conta? <a href="#" id="show-signup"
+                        class="text-rpg-cyan hover:underline">Registre-se</a></p>
+                <button id="google-login-button"
+                    class="btn mt-4 w-full bg-white text-gray-900 hover:bg-gray-200 font-semibold py-3 rounded-md flex justify-center items-center gap-2">
+                    <svg class="w-5 h-5" viewBox="0 0 24 24">
+                        <path fill="currentColor"
+                            d="M12.545,10.239v3.821h5.445c-0.712,2.315-2.647,3.972-5.445,3.972c-3.332,0-6.033-2.701-6.033-6.032s2.701-6.032,6.033-6.032c1.498,0,2.866,0.549,3.921,1.453l2.814-2.814C17.503,2.988,15.139,2,12.545,2C7.021,2,2.543,6.477,2.543,12s4.478,10,10.002,10c8.396,0,10.249-7.85,9.426-11.748L12.545,10.239z" />
+                    </svg>
+                    Login com Google
+                </button>
             </div>
         </div>
-        
+
         <div id="signup-view" class="hidden">
-            <h2 class="text-2xl text-center text-gray-300 mb-8">Registrar</h2>
+            <h2 class="text-2xl text-center text-rpg-silver mb-8">Registrar</h2>
             <div class="space-y-4">
-                <input id="signup-email-input" type="email" placeholder="Email" class="form-input w-full p-3 rounded text-white">
-                <input id="signup-password-input" type="password" placeholder="Senha" class="form-input w-full p-3 rounded text-white">
-                <input id="signup-confirm-password-input" type="password" placeholder="Confirmar Senha" class="form-input w-full p-3 rounded text-white">
-                <button id="signup-button" class="btn w-full bg-red-700 hover:bg-red-600 text-white font-semibold py-3 rounded-md">Registrar</button>
+                <input id="signup-email-input" type="email" placeholder="Email" class="form-input w-full p-3 rounded">
+                <input id="signup-password-input" type="password" placeholder="Senha"
+                    class="form-input w-full p-3 rounded">
+                <input id="signup-confirm-password-input" type="password" placeholder="Confirmar Senha"
+                    class="form-input w-full p-3 rounded">
+                <button id="signup-button"
+                    class="btn w-full bg-rpg-cyan text-rpg-black hover:bg-white font-bold py-3 rounded-md">Registrar</button>
             </div>
             <div class="mt-6 text-center">
-                <p class="text-gray-400">Já tem uma conta? <a href="#" id="show-login" class="text-red-400 hover:underline">Faça Login</a></p>
+                <p class="text-gray-400">Já tem uma conta? <a href="#" id="show-login"
+                        class="text-rpg-cyan hover:underline">Faça Login</a></p>
             </div>
         </div>
 
@@ -73,8 +117,9 @@
 
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
-    
+
     <script src="firebase-config.js"></script>
     <script src="auth.js"></script>
 </body>
+
 </html>

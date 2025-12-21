@@ -1,120 +1,173 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Estatísticas de Dados Arcanos</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=MedievalSharp&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=MedievalSharp&family=Inter:wght@400;600&display=swap"
+        rel="stylesheet">
     <style>
         :root {
-            --rpg-bg: #D2B48C; /* Tan - Fundo da página (pergaminho claro) */
-            --rpg-container-bg: #F5E8C8; /* Bege/Papiro - Área de conteúdo principal */
-            --rpg-text-primary: #5D4037; /* Marrom Escuro - Texto principal */
-            --rpg-text-secondary: #795548; /* Marrom Médio */
-            --rpg-header-text: #4A2E20; /* Marrom Muito Escuro para cabeçalhos */
-            
-            --rpg-button-bg: #8B4513;       /* SaddleBrown - Botão primário */
-            --rpg-button-text: #FFF8DC;     /* Cornsilk - Texto do botão */
-            --rpg-button-hover-bg: #A0522D; /* Sienna - Hover do botão primário */
-            --rpg-button-border: #5D4037;   /* Marrom Escuro - Borda do botão */
+            --rpg-bg: #0B0C10;
+            /* Obsidian */
+            --rpg-container-bg: #1F2833;
+            /* Slate */
+            --rpg-text-primary: #C5C6C7;
+            /* Silver */
+            --rpg-text-secondary: #9CA3AF;
+            /* Gray-400 */
+            --rpg-header-text: #66FCF1;
+            /* Cyan */
 
-            --rpg-button-add-bg: #556B2F;      /* DarkOliveGreen */
-            --rpg-button-add-hover-bg: #6B8E23; /* OliveDrab */
-            
-            --rpg-button-clear-bg: #8B0000;    /* DarkRed */
-            --rpg-button-clear-hover-bg: #A52A2A;/* Brown (avermelhado) */
+            --rpg-button-bg: #66FCF1;
+            /* Cyan */
+            --rpg-button-text: #0B0C10;
+            /* Black */
+            --rpg-button-hover-bg: #45EBE0;
+            /* Light Cyan */
+            --rpg-button-border: #66FCF1;
+            /* Cyan */
 
-            --rpg-button-multi-bg: #483D8B;   /* DarkSlateBlue */
-            --rpg-button-multi-hover-bg: #6A5ACD;/* SlateBlue */
+            --rpg-button-add-bg: #1F2833;
+            /* Slate */
+            --rpg-button-add-hover-bg: #374151;
+            /* Gray-700 */
 
-            --rpg-accent-gold: #DAA520;     /* Goldenrod - Destaques */
-            --rpg-input-bg: #FFF8DC;        /* Cornsilk - Fundo do input */
-            --rpg-input-border: #B8860B;    /* DarkGoldenrod - Borda do input */
-            --rpg-input-text: #4A2E20;      /* Texto do input */
-            
-            --rpg-stat-card-bg: #E8D8C0;    /* Tan/Pergaminho Claro - Card de estatística */
-            --rpg-stat-card-border: #C8AD7F;/* Pergaminho Mais Escuro - Borda do card */
-            
-            --rpg-list-bg: #F0E6D0;         /* Pergaminho Muito Claro - Fundo da lista */
-            --rpg-list-border: #D2B48C;    /* Borda da lista */
-            --rpg-list-item-border: #C8AD7F; /* Borda do item da lista */
-            
-            --rpg-error-text: #8B0000;      /* DarkRed - Texto de erro */
-            
+            --rpg-button-clear-bg: #1F2833;
+            /* Slate */
+            --rpg-button-clear-hover-bg: #EF4444;
+            /* Red (for danger/clear) */
+
+            --rpg-button-multi-bg: #1F2833;
+            /* Slate */
+            --rpg-button-multi-hover-bg: #66FCF1;
+            /* Cyan */
+
+            --rpg-accent-gold: #66FCF1;
+            /* Cyan (replacing gold) */
+            --rpg-input-bg: #0B0C10;
+            /* Black */
+            --rpg-input-border: #4B5563;
+            /* Gray */
+            --rpg-input-text: #C5C6C7;
+            /* Silver */
+
+            --rpg-stat-card-bg: #111827;
+            /* Darker Slate/Gray */
+            --rpg-stat-card-border: #374151;
+            /* Gray Border */
+
+            --rpg-list-bg: #111827;
+            /* Darker Slate */
+            --rpg-list-border: #374151;
+            /* Gray Border */
+            --rpg-list-item-border: #374151;
+            /* Gray Border */
+
+            --rpg-error-text: #EF4444;
+            /* Red */
+
             --rpg-font-primary: 'MedievalSharp', cursive;
-            --rpg-font-secondary: 'Inter', sans-serif; /* Para textos menores ou menos temáticos */
+            --rpg-font-secondary: 'Inter', sans-serif;
         }
 
         body {
             font-family: var(--rpg-font-secondary);
             background-color: var(--rpg-bg);
             color: var(--rpg-text-primary);
-            background-image: url("data:image/svg+xml,%3Csvg width='52' height='26' viewBox='0 0 52 26' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill-rule='evenodd'%3E%3Cg fill='%23a08060' fill-opacity='0.2'%3E%3Cpath d='M10 10c0-2.21-1.79-4-4-4-3.314 0-6-2.686-6-6h2c0 2.21 1.79 4 4 4 3.314 0 6 2.686 6 6 0 2.21 1.79 4 4 4 3.314 0 6 2.686 6 6 0 2.21 1.79 4 4 4v2c-3.314 0-6-2.686-6-6 0-2.21-1.79-4-4-4-3.314 0-6-2.686-6-6zm25.464-1.95l8.486 8.486-1.414 1.414-8.486-8.486 1.414-1.414z' /%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+            background-image: url('https://www.transparenttextures.com/patterns/dark-matter.png');
         }
 
         .rpg-container {
             background-color: var(--rpg-container-bg);
-            border: 3px ridge var(--rpg-button-border);
-            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            border: 1px solid var(--rpg-header-text);
+            box-shadow: 0 0 20px rgba(102, 252, 241, 0.1);
         }
 
-        h1, h2 {
+        h1,
+        h2 {
             font-family: var(--rpg-font-primary);
             color: var(--rpg-header-text);
-            text-shadow: 1px 1px 2px var(--rpg-bg);
+            text-shadow: 0 0 5px rgba(102, 252, 241, 0.3);
         }
-        
+
         .btn-theme {
             font-family: var(--rpg-font-primary);
             color: var(--rpg-button-text);
-            border: 2px outset var(--rpg-button-border);
-            padding: 0.6rem 1rem; /* Aumentado um pouco para a fonte */
-            border-radius: 3px; /* Bordas mais nítidas */
-            text-shadow: 1px 1px 1px rgba(0,0,0,0.4);
-            transition: background-color 0.2s, transform 0.1s, box-shadow 0.2s;
-            font-size: 1.1rem; /* Aumenta o tamanho da fonte nos botões */
-            box-shadow: 0 2px 3px rgba(0,0,0,0.3);
+            border: 1px solid var(--rpg-button-border);
+            padding: 0.6rem 1rem;
+            border-radius: 0.375rem;
+            text-shadow: none;
+            transition: all 0.2s;
+            font-size: 1.1rem;
+            box-shadow: 0 0 5px rgba(102, 252, 241, 0.2);
         }
+
         .btn-theme:hover {
             transform: translateY(-1px);
-            box-shadow: 0 3px 5px rgba(0,0,0,0.4);
+            box-shadow: 0 3px 5px rgba(0, 0, 0, 0.4);
         }
+
         .btn-theme:active {
             transform: translateY(0px);
-            box-shadow: 0 1px 2px rgba(0,0,0,0.3);
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
         }
 
-        .btn-roll-individual { background-color: var(--rpg-button-bg); }
-        .btn-roll-individual:hover { background-color: var(--rpg-button-hover-bg); }
-        
-        .btn-add-custom { background-color: var(--rpg-button-add-bg); }
-        .btn-add-custom:hover { background-color: var(--rpg-button-add-hover-bg); }
+        .btn-roll-individual {
+            background-color: var(--rpg-button-bg);
+        }
 
-        .btn-roll-multiple { background-color: var(--rpg-button-multi-bg); }
-        .btn-roll-multiple:hover { background-color: var(--rpg-button-multi-hover-bg); }
-        
-        .btn-clear-data { background-color: var(--rpg-button-clear-bg); }
-        .btn-clear-data:hover { background-color: var(--rpg-button-clear-hover-bg); }
+        .btn-roll-individual:hover {
+            background-color: var(--rpg-button-hover-bg);
+        }
+
+        .btn-add-custom {
+            background-color: var(--rpg-button-add-bg);
+        }
+
+        .btn-add-custom:hover {
+            background-color: var(--rpg-button-add-hover-bg);
+        }
+
+        .btn-roll-multiple {
+            background-color: var(--rpg-button-multi-bg);
+        }
+
+        .btn-roll-multiple:hover {
+            background-color: var(--rpg-button-multi-hover-bg);
+        }
+
+        .btn-clear-data {
+            background-color: var(--rpg-button-clear-bg);
+        }
+
+        .btn-clear-data:hover {
+            background-color: var(--rpg-button-clear-hover-bg);
+        }
 
         .input-theme {
-            font-family: var(--rpg-font-secondary); /* Fonte mais legível para inputs */
+            font-family: var(--rpg-font-secondary);
+            /* Fonte mais legível para inputs */
             background-color: var(--rpg-input-bg);
             border: 1px solid var(--rpg-input-border);
             color: var(--rpg-input-text);
             border-radius: 3px;
             padding: 0.5rem;
         }
+
         .input-theme:focus {
             outline: none;
             border-color: var(--rpg-accent-gold);
             box-shadow: 0 0 5px var(--rpg-accent-gold);
         }
+
         .input-theme::placeholder {
             color: var(--rpg-text-secondary);
             opacity: 0.8;
         }
-        
+
         label {
             font-family: var(--rpg-font-primary);
             color: var(--rpg-header-text);
@@ -122,10 +175,12 @@
         }
 
         .section-box {
-            background-color: rgba(255,255,255,0.1); /* Leve transparência sobre o container */
+            background-color: rgba(11, 12, 16, 0.5);
+            /* Leve transparência sobre o container */
             border: 1px solid var(--rpg-list-border);
             padding: 1.5rem;
-            border-radius: 0.375rem; /* rounded-md */
+            border-radius: 0.375rem;
+            /* rounded-md */
         }
 
         #rollsListContainer {
@@ -136,33 +191,41 @@
             padding: 0.5rem;
             border-radius: 3px;
         }
+
         #rollsListContainer::-webkit-scrollbar {
             width: 10px;
         }
+
         #rollsListContainer::-webkit-scrollbar-track {
             background: var(--rpg-list-border);
             border-radius: 3px;
         }
+
         #rollsListContainer::-webkit-scrollbar-thumb {
             background: var(--rpg-text-secondary);
             border-radius: 3px;
             border: 1px solid var(--rpg-button-border);
         }
+
         #rollsListContainer::-webkit-scrollbar-thumb:hover {
             background: var(--rpg-text-primary);
         }
+
         #rollsList li {
             font-family: var(--rpg-font-secondary);
             color: var(--rpg-text-primary);
             padding: 0.3rem 0.5rem;
             border-bottom: 1px dashed var(--rpg-list-item-border);
         }
+
         #rollsList li:last-child {
             border-bottom: none;
         }
-        #rollsList .italic { /* Para "Nenhuma rolagem ainda." */
-             font-family: var(--rpg-font-primary);
-             color: var(--rpg-text-secondary);
+
+        #rollsList .italic {
+            /* Para "Nenhuma rolagem ainda." */
+            font-family: var(--rpg-font-primary);
+            color: var(--rpg-text-secondary);
         }
 
 
@@ -173,39 +236,45 @@
             border-radius: 0.25rem;
             padding: 0.75rem;
             margin-bottom: 0.5rem;
-            box-shadow: 2px 2px 3px rgba(0,0,0,0.1);
+            box-shadow: 2px 2px 3px rgba(0, 0, 0, 0.1);
         }
+
         .stat-label {
             font-family: var(--rpg-font-primary);
-            font-weight: normal; /* MedievalSharp já é "bold" */
+            font-weight: normal;
+            /* MedievalSharp já é "bold" */
             color: var(--rpg-header-text);
             font-size: 1.15rem;
         }
+
         .stat-value {
             font-family: var(--rpg-font-secondary);
             font-weight: 600;
             color: var(--rpg-text-primary);
             font-size: 1.1rem;
         }
+
         #inputError {
             color: var(--rpg-error-text);
             font-family: var(--rpg-font-primary);
             font-size: 1.1rem;
             text-shadow: 1px 1px 1px #fff;
         }
+
         .small-text {
-             font-family: var(--rpg-font-secondary);
-             font-size: 0.8rem;
-             color: var(--rpg-text-secondary);
-        }
-        .title-text {
-             font-family: var(--rpg-font-secondary);
-             font-size: 0.9rem;
-             color: var(--rpg-text-secondary);
+            font-family: var(--rpg-font-secondary);
+            font-size: 0.8rem;
+            color: var(--rpg-text-secondary);
         }
 
+        .title-text {
+            font-family: var(--rpg-font-secondary);
+            font-size: 0.9rem;
+            color: var(--rpg-text-secondary);
+        }
     </style>
 </head>
+
 <body class="flex flex-col items-center justify-center min-h-screen p-4">
 
     <div class="w-full max-w-2xl p-6 md:p-8 rounded-xl rpg-container">
@@ -214,7 +283,7 @@
         <!-- Seção de Adicionar Rolagens -->
         <div class="mb-8 section-box">
             <h2 class="text-xl font-semibold mb-4">Conjurar Rolagens</h2>
-            
+
             <p class="title-text mb-1 font-medium">Dados Comuns:</p>
             <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 mb-4">
                 <button onclick="rollDie(6)" class="btn-theme btn-roll-individual">D6</button>
@@ -242,7 +311,7 @@
                 </div>
                 <button onclick="rollMultipleDice()" class="btn-theme btn-roll-multiple sm:col-span-1">Lançar!</button>
             </div>
-            <p id="inputError" class="mt-2 h-5 text-center"></p> 
+            <p id="inputError" class="mt-2 h-5 text-center"></p>
         </div>
 
         <!-- Seção de Dados e Estatísticas -->
@@ -260,17 +329,24 @@
             <div>
                 <h2 class="text-xl font-semibold mb-3">Augúrios Estatísticos</h2>
                 <div id="statsContainer">
-                    <div class="stat-card"><span class="stat-label">Soma Total:</span> <span id="sumStat" class="stat-value">-</span></div>
-                    <div class="stat-card"><span class="stat-label">Média Arcana:</span> <span id="meanStat" class="stat-value">-</span></div>
-                    <div class="stat-card"><span class="stat-label">Mediana Astral:</span> <span id="medianStat" class="stat-value">-</span></div>
-                    <div class="stat-card"><span class="stat-label">Moda Predominante:</span> <span id="modeStat" class="stat-value">-</span></div>
-                    <div class="stat-card"><span class="stat-label">Valor Ínfimo:</span> <span id="minStat" class="stat-value">-</span></div>
-                    <div class="stat-card"><span class="stat-label">Valor Supremo:</span> <span id="maxStat" class="stat-value">-</span></div>
-                    <div class="stat-card"><span class="stat-label">Desvio Rúnico:</span> <span id="stdDevStat" class="stat-value">-</span></div>
+                    <div class="stat-card"><span class="stat-label">Soma Total:</span> <span id="sumStat"
+                            class="stat-value">-</span></div>
+                    <div class="stat-card"><span class="stat-label">Média Arcana:</span> <span id="meanStat"
+                            class="stat-value">-</span></div>
+                    <div class="stat-card"><span class="stat-label">Mediana Astral:</span> <span id="medianStat"
+                            class="stat-value">-</span></div>
+                    <div class="stat-card"><span class="stat-label">Moda Predominante:</span> <span id="modeStat"
+                            class="stat-value">-</span></div>
+                    <div class="stat-card"><span class="stat-label">Valor Ínfimo:</span> <span id="minStat"
+                            class="stat-value">-</span></div>
+                    <div class="stat-card"><span class="stat-label">Valor Supremo:</span> <span id="maxStat"
+                            class="stat-value">-</span></div>
+                    <div class="stat-card"><span class="stat-label">Desvio Rúnico:</span> <span id="stdDevStat"
+                            class="stat-value">-</span></div>
                 </div>
             </div>
         </div>
-         <p class="text-center small-text mt-8">
+        <p class="text-center small-text mt-8">
             Forjado nas entranhas da masmorra por um Mestre de Jogo anônimo.
         </p>
     </div>
@@ -282,8 +358,8 @@
         const rollsList = document.getElementById('rollsList');
         const rollCountDisplay = document.getElementById('rollCountDisplay');
         const customRollInput = document.getElementById('customRollInput');
-        const quantityInput = document.getElementById('quantityInput'); 
-        const sidesInput = document.getElementById('sidesInput'); 
+        const quantityInput = document.getElementById('quantityInput');
+        const sidesInput = document.getElementById('sidesInput');
         const inputError = document.getElementById('inputError');
 
         const sumStat = document.getElementById('sumStat');
@@ -311,7 +387,7 @@
                 return;
             }
             addRoll(value);
-            customRollInput.value = ''; 
+            customRollInput.value = '';
         }
 
         // Função para rolar múltiplos dados
@@ -325,23 +401,23 @@
                 quantityInput.focus();
                 return;
             }
-            if (isNaN(sides) || sides <= 1) { 
+            if (isNaN(sides) || sides <= 1) {
                 showError('Um dado deve ter ao menos duas faces, como a sorte!');
                 sidesInput.focus();
                 return;
             }
             if (quantity > 1000) { // Limite para evitar sobrecarga
-                 showError('Não mais que 1000 dados por vez, para não sobrecarregar os ventos da magia!');
-                 quantityInput.focus();
-                 return;
+                showError('Não mais que 1000 dados por vez, para não sobrecarregar os ventos da magia!');
+                quantityInput.focus();
+                return;
             }
 
 
             for (let i = 0; i < quantity; i++) {
                 const result = Math.floor(Math.random() * sides) + 1;
-                addRoll(result, false); 
+                addRoll(result, false);
             }
-            updateAll(); 
+            updateAll();
             quantityInput.value = '';
             sidesInput.value = '';
         }
@@ -361,7 +437,7 @@
             updateAll();
             clearInputError();
         }
-        
+
         function showError(message) {
             inputError.textContent = message;
         }
@@ -372,7 +448,7 @@
 
         // Função para atualizar a lista de rolagens na tela
         function updateRollsDisplay() {
-            rollsList.innerHTML = ''; 
+            rollsList.innerHTML = '';
             if (rolls.length === 0) {
                 rollsList.innerHTML = '<li class="italic p-2">Nenhum registro encontrado nos anais.</li>';
             } else {
@@ -434,9 +510,9 @@
         }
 
         function calculateStdDev(data) {
-            if (data.length < 2) return 0; 
+            if (data.length < 2) return 0;
             const mean = calculateMean(data);
-            const variance = data.reduce((acc, val) => acc + Math.pow(val - mean, 2), 0) / (data.length -1); 
+            const variance = data.reduce((acc, val) => acc + Math.pow(val - mean, 2), 0) / (data.length - 1);
             return Math.sqrt(variance);
         }
 
@@ -456,10 +532,10 @@
             sumStat.textContent = calculateSum(rolls);
             meanStat.textContent = calculateMean(rolls).toFixed(2);
             medianStat.textContent = calculateMedian(rolls);
-            
+
             const modes = calculateMode(rolls);
             modeStat.textContent = modes.length > 0 ? modes.join(', ') : (rolls.length > 0 ? '-' : '-'); // Mostra '-' se não houver moda clara
-            
+
             minStat.textContent = calculateMin(rolls);
             maxStat.textContent = calculateMax(rolls);
             stdDevStat.textContent = calculateStdDev(rolls).toFixed(2);
@@ -475,4 +551,5 @@
         updateAll();
     </script>
 </body>
+
 </html>

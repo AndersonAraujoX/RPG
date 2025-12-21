@@ -1,35 +1,63 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mesa de Estratégia: Kuar-Tor</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        rpg: {
+                            black: '#0B0C10',
+                            cyan: '#66FCF1',
+                            slate: '#1F2833',
+                            silver: '#C5C6C7',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Roboto:wght@400;500&family=Inter:wght@400;500;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Roboto:wght@400;500&family=Inter:wght@400;500;700&family=Roboto+Mono:wght@400;700&display=swap"
+        rel="stylesheet">
 
     <style>
         /* Base and Thematic Styles */
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #0c0c0c;
+            background-color: #0B0C10;
             background-image: url('https://www.transparenttextures.com/patterns/dark-matter.png');
-            color: #a1a1aa;
+            color: #C5C6C7;
         }
-        h1, h2, h3, button {
+
+        h1,
+        h2,
+        h3,
+        button {
             font-family: 'Cinzel', serif;
         }
-        .font-roboto-mono { font-family: 'Roboto Mono', monospace; }
-        
+
+        .font-roboto-mono {
+            font-family: 'Roboto Mono', monospace;
+        }
+
         /* Panel Styles */
         .panel {
-            background-color: rgba(17, 24, 39, 0.8);
+            background-color: rgba(31, 40, 51, 0.9);
+            /* rpg-slate */
             backdrop-filter: blur(10px);
-            border: 1px solid #991b1b;
-            box-shadow: inset 0 0 15px rgba(220, 38, 38, 0.2), 0 0 10px rgba(220, 38, 38, 0.4);
+            border: 1px solid rgba(102, 252, 241, 0.2);
+            /* cyan border */
+            box-shadow: inset 0 0 15px rgba(102, 252, 241, 0.05), 0 0 10px rgba(102, 252, 241, 0.1);
         }
 
         /* Map & Pin Styles */
@@ -39,97 +67,194 @@
             height: 24px;
             cursor: pointer;
             transform: translate(-50%, -50%);
-            filter: drop-shadow(0 0 5px #ef4444);
+            filter: drop-shadow(0 0 5px #66FCF1);
             animation: pulse-pin 2s infinite;
         }
+
         .pin:hover {
-            filter: drop-shadow(0 0 10px #fca5a5);
+            filter: drop-shadow(0 0 10px #45EBE0);
             animation-play-state: paused;
         }
+
         @keyframes pulse-pin {
-            0% { transform: translate(-50%, -50%) scale(0.95); }
-            70% { transform: translate(-50%, -50%) scale(1.1); }
-            100% { transform: translate(-50%, -50%) scale(0.95); }
+            0% {
+                transform: translate(-50%, -50%) scale(0.95);
+            }
+
+            70% {
+                transform: translate(-50%, -50%) scale(1.1);
+            }
+
+            100% {
+                transform: translate(-50%, -50%) scale(0.95);
+            }
         }
 
         /* Button Styles */
         .btn {
-            font-weight: bold; padding: 10px 20px; border-radius: 8px;
-            transition: all 0.3s ease; border-style: solid; border-width: 1px;
-            text-transform: uppercase; letter-spacing: 1px;
+            font-weight: bold;
+            padding: 10px 20px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            border-style: solid;
+            border-width: 1px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
+
         .btn-primary {
-            background: linear-gradient(45deg, #991b1b, #7f1d1d); border-color: #dc2626;
-            color: white; box-shadow: 0 0 8px rgba(220, 38, 38, 0.5);
+            background-color: #66FCF1;
+            /* rpg-cyan */
+            border-color: #66FCF1;
+            color: #0B0C10;
+            /* rpg-black */
+            box-shadow: 0 0 8px rgba(102, 252, 241, 0.3);
         }
+
         .btn-primary:hover {
-            background: linear-gradient(45deg, #dc2626, #991b1b); box-shadow: 0 0 15px rgba(220, 38, 38, 0.8);
+            background-color: #45EBE0;
+            box-shadow: 0 0 15px rgba(102, 252, 241, 0.6);
+            transform: scale(1.02);
         }
+
         .btn-danger {
-            background: linear-gradient(45deg, #991b1b, #7f1d1d); border-color: #ef4444;
-            color: white; box-shadow: 0 0 8px rgba(239, 68, 68, 0.5);
+            background: linear-gradient(45deg, #991b1b, #7f1d1d);
+            border-color: #ef4444;
+            color: white;
+            box-shadow: 0 0 8px rgba(239, 68, 68, 0.5);
         }
+
         .btn-danger:hover {
-            background: linear-gradient(45deg, #ef4444, #b91c1c); box-shadow: 0 0 15px rgba(239, 68, 68, 0.8);
+            background: linear-gradient(45deg, #ef4444, #b91c1c);
+            box-shadow: 0 0 15px rgba(239, 68, 68, 0.8);
         }
+
         .btn-secondary {
-            background: linear-gradient(45deg, #4b5563, #374151); border-color: #6b7280;
-            color: #d1d5db; box-shadow: 0 0 8px rgba(107, 114, 128, 0.5);
+            background-color: #1F2833;
+            /* rpg-slate */
+            border-color: #66FCF1;
+            color: #66FCF1;
+            box-shadow: 0 0 8px rgba(31, 40, 51, 0.5);
         }
+
         .btn-secondary:hover {
-            background: linear-gradient(45deg, #6b7280, #4b5563); box-shadow: 0 0 15px rgba(107, 114, 128, 0.8);
+            background-color: #0B0C10;
+            box-shadow: 0 0 15px rgba(102, 252, 241, 0.2);
         }
-        
+
         /* Mission Board */
-        .mission-board { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 1.5rem; }
-        .mission-card { background-color: #1f2937; border-radius: 0.5rem; border: 1px solid #4b5563; padding: 1.5rem; }
-        .mission-card h3 { color: #fca5a5; }
-        .character-entry {
-            display: flex; justify-content: space-between; align-items: center; padding: 0.5rem;
-            border-bottom: 1px solid #374151; cursor: pointer; transition: background-color 0.2s;
+        .mission-board {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 1.5rem;
         }
-        .character-entry:hover { background-color: rgba(239, 68, 68, 0.1); }
-        .character-entry:last-child { border-bottom: none; }
-        
+
+        .mission-card {
+            background-color: rgba(31, 40, 51, 0.8);
+            border-radius: 0.5rem;
+            border: 1px solid rgba(102, 252, 241, 0.2);
+            padding: 1.5rem;
+        }
+
+        .mission-card h3 {
+            color: #66FCF1;
+        }
+
+        .character-entry {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem;
+            border-bottom: 1px solid rgba(102, 252, 241, 0.1);
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .character-entry:hover {
+            background-color: rgba(102, 252, 241, 0.1);
+        }
+
+        .character-entry:last-child {
+            border-bottom: none;
+        }
+
         /* Modal Styles */
-        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.7); }
-        .modal-content { background-color: #18181b; margin: 5% auto; padding: 2rem; border: 1px solid #3f3f46; width: 90%; max-width: 800px; border-radius: 0.5rem; }
-        .modal-close { color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(11, 12, 16, 0.9);
+        }
+
+        .modal-content {
+            background-color: #1F2833;
+            margin: 5% auto;
+            padding: 2rem;
+            border: 1px solid #66FCF1;
+            width: 90%;
+            max-width: 800px;
+            border-radius: 0.5rem;
+            box-shadow: 0 0 20px rgba(102, 252, 241, 0.2);
+        }
+
+        .modal-close {
+            color: #C5C6C7;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .modal-close:hover {
+            color: #66FCF1;
+        }
     </style>
 </head>
-<body class="bg-slate-900 text-gray-300 min-h-screen p-4 md:p-8">
+
+<body class="bg-rpg-black text-rpg-silver min-h-screen p-4 md:p-8">
 
     <div id="main-content">
         <header class="text-center mb-8 flex justify-between items-center">
-            <a href="../index.html" class="bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded transition-colors duration-300">
+            <a href="../index.html"
+                class="bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded transition-colors duration-300">
                 &larr; Voltar ao Portal
             </a>
             <div>
-                <h1 class="text-3xl md:text-5xl font-cinzel font-bold text-red-500 tracking-wider">Mesa de Operações</h1>
-                <p id="user-display" class="text-lg text-gray-500">Aguardando conexão...</p>
+                <h1 class="text-3xl md:text-5xl font-cinzel font-bold text-rpg-cyan tracking-wider">Mesa de Operações
+                </h1>
+                <p id="user-display" class="text-lg text-gray-400">Aguardando conexão...</p>
             </div>
-            <button id="logout-button" class="bg-red-700 hover:bg-red-600 text-white font-bold py-2 px-4 rounded transition-colors duration-300">TERMINAR SESSÃO</button>
+            <button id="logout-button"
+                class="bg-red-700 hover:bg-red-600 text-white font-bold py-2 px-4 rounded transition-colors duration-300">TERMINAR
+                SESSÃO</button>
         </header>
 
         <div class="container mx-auto p-4 sm:p-6 md:p-8">
             <main class="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 <!-- Tactical Map Column -->
                 <div class="panel p-6 rounded-2xl">
-                    <h2 class="text-2xl font-semibold mb-4 text-red-400">Mapa de Guerra: Kuar-Tor</h2>
+                    <h2 class="text-2xl font-semibold mb-4 text-rpg-cyan">Mapa de Guerra: Kuar-Tor</h2>
                     <div id="mapContainer" class="relative w-full aspect-w-16 aspect-h-9 cursor-default">
-                        <img id="originalImage" src="map.png?v=2" alt="Mapa de Kuar-Tor" class="rounded-lg object-cover w-full h-full" onerror="this.onerror=null;this.src='https://placehold.co/600x400/1e2b3b/94a3b8?text=Mapa+Indispon%C3%ADvel';">
+                        <img id="originalImage" src="map.png?v=2" alt="Mapa de Kuar-Tor"
+                            class="rounded-lg object-cover w-full h-full"
+                            onerror="this.onerror=null;this.src='https://placehold.co/600x400/1e2b3b/94a3b8?text=Mapa+Indispon%C3%ADvel';">
                         <div id="pinsContainer" class="absolute top-0 left-0 w-full h-full"></div>
                     </div>
-                    <div class="mt-6 pt-4 border-t border-red-900/50">
-                        <h3 class="font-semibold text-lg text-red-400">Inteligência de Campo</h3>
+                    <div class="mt-6 pt-4 border-t border-rpg-cyan/20">
+                        <h3 class="font-semibold text-lg text-rpg-cyan">Inteligência de Campo</h3>
                         <p id="adminHelpText" class="text-gray-400 mt-2">Passe a senha para editar o mapa.</p>
                         <button id="adminLoginButton" class="btn btn-primary w-full mt-4">Acesso Restrito</button>
                     </div>
                 </div>
-                 <!-- Mission Board Column -->
+                <!-- Mission Board Column -->
                 <div class="panel p-6 rounded-2xl flex flex-col">
-                    <h2 class="text-2xl font-semibold mb-4 text-red-400">Operativos em Missão</h2>
-                     <main id="mission-board" class="mission-board flex-grow">
+                    <h2 class="text-2xl font-semibold mb-4 text-rpg-cyan">Operativos em Missão</h2>
+                    <main id="mission-board" class="mission-board flex-grow">
                         <p class="text-center text-gray-500 col-span-full">Carregando dados da missão...</p>
                     </main>
                 </div>
@@ -138,10 +263,13 @@
     </div>
 
     <!-- Modals -->
-    <div id="passwordModal" class="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center p-4 hidden z-50">
+    <div id="passwordModal"
+        class="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center p-4 hidden z-50">
         <div class="panel rounded-2xl shadow-xl p-6 w-full max-w-sm">
             <h3 class="text-xl font-semibold mb-4 text-red-400">Acesso de Administrador</h3>
-            <input type="password" id="passwordInput" class="w-full bg-slate-700 border border-red-600 text-white rounded-lg p-2.5" placeholder="Palavra-Passe">
+            <input type="password" id="passwordInput"
+                class="w-full bg-slate-700 border border-red-600 text-white rounded-lg p-2.5"
+                placeholder="Palavra-Passe">
             <p id="passwordError" class="text-red-400 text-sm mt-2 hidden">Palavra-passe incorreta.</p>
             <div class="mt-6 flex justify-end gap-4">
                 <button id="cancelPasswordButton" class="btn btn-secondary">Cancelar</button>
@@ -152,15 +280,19 @@
     <div id="pinModal" class="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center p-4 hidden z-50">
         <div class="panel rounded-2xl shadow-xl p-6 w-full max-w-md">
             <h3 class="text-xl font-semibold mb-4 text-red-400">Adicionar Ponto de Interesse</h3>
-            <input type="text" id="pinTitle" class="w-full bg-slate-700 border border-red-600 text-white rounded-lg p-2.5 mb-4" placeholder="Título">
-            <textarea id="pinDescription" rows="3" class="w-full bg-slate-700 border border-red-600 text-white rounded-lg p-2.5" placeholder="Descrição"></textarea>
+            <input type="text" id="pinTitle"
+                class="w-full bg-slate-700 border border-red-600 text-white rounded-lg p-2.5 mb-4" placeholder="Título">
+            <textarea id="pinDescription" rows="3"
+                class="w-full bg-slate-700 border border-red-600 text-white rounded-lg p-2.5"
+                placeholder="Descrição"></textarea>
             <div class="mt-6 flex justify-end gap-4">
                 <button id="cancelPinButton" class="btn btn-secondary">Cancelar</button>
                 <button id="savePinButton" class="btn btn-primary">Salvar Ponto</button>
             </div>
         </div>
     </div>
-    <div id="viewPinModal" class="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center p-4 hidden z-50">
+    <div id="viewPinModal"
+        class="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center p-4 hidden z-50">
         <div class="panel rounded-2xl shadow-xl p-6 w-full max-w-md">
             <h3 id="viewPinTitle" class="text-2xl font-semibold mb-2 text-red-400"></h3>
             <p id="viewPinDescription" class="text-gray-300 mb-6 whitespace-pre-wrap"></p>
@@ -173,7 +305,9 @@
     <div id="character-modal" class="modal">
         <div class="modal-content">
             <span id="modal-close-button" class="modal-close">&times;</span>
-            <div id="modal-body"><p>Carregando ficha...</p></div>
+            <div id="modal-body">
+                <p>Carregando ficha...</p>
+            </div>
         </div>
     </div>
 
@@ -210,7 +344,7 @@
             const userDisplay = document.getElementById('user-display');
             const logoutButton = document.getElementById('logout-button');
             const missionBoard = document.getElementById('mission-board');
-            
+
             // Map & Pins Elements
             const originalImage = document.getElementById('originalImage');
             const mapContainer = document.getElementById('mapContainer');
@@ -272,7 +406,7 @@
                     console.error("Error loading pins: ", error);
                 }
             }
-            
+
             function setAdminMode(isAdmin) {
                 isAdminMode = isAdmin;
                 adminLoginButton.textContent = isAdmin ? "Sair do Modo Admin" : "Acesso Restrito";
@@ -282,7 +416,7 @@
             }
 
             // --- Mission Board Functions ---
-            
+
             async function loadOperationsData() {
                 try {
                     const [signupsSnapshot, charactersSnapshot] = await Promise.all([
@@ -358,7 +492,7 @@
             // --- Event Listeners Setup ---
 
             logoutButton.addEventListener('click', () => auth.signOut());
-            
+
             // Map Listeners
             mapContainer.addEventListener('click', (e) => {
                 if (!isAdminMode) return;
@@ -368,7 +502,7 @@
                 document.getElementById('pinDescription').value = '';
                 pinModal.classList.remove('hidden');
             });
-            
+
             // Modal Button Listeners
             adminLoginButton.addEventListener('click', () => isAdminMode ? setAdminMode(false) : passwordModal.classList.remove('hidden'));
             document.getElementById('cancelPasswordButton').addEventListener('click', () => passwordModal.classList.add('hidden'));
@@ -426,4 +560,5 @@
         });
     </script>
 </body>
+
 </html>

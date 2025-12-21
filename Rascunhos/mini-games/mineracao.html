@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minerador de Cliques</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Press Start 2P', cursive;
+            background-color: #3d2a1d;
+            background-image: url('https://www.transparenttextures.com/patterns/rocky-wall.png');
+            color: #f1e4d3;
+            user-select: none;
+        }
+        .text-shadow {
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+        }
+        .game-container {
+            max-width: 1400px;
+            margin: auto;
+            padding: 20px;
+        }
+        .mine-rock {
+            transition: transform 0.1s ease-in-out;
+            cursor: pointer;
+        }
+        .mine-rock:active {
+            transform: scale(0.95);
+        }
+        .upgrade-item {
+            border: 4px solid #7a5c43;
+            background-color: rgba(0,0,0,0.3);
+            transition: background-color 0.2s;
+        }
+        .upgrade-item.disabled {
+            filter: grayscale(80%);
+            cursor: not-allowed;
+            background-color: rgba(0,0,0,0.5);
+        }
+        .upgrade-item:not(.disabled):hover {
+            background-color: rgba(255,255,255,0.1);
+        }
+        .floating-text {
+            position: absolute;
+            font-size: 20px;
+            font-weight: bold;
+            color: #ffde7d;
+            pointer-events: none;
+            animation: floatUp 1.5s ease-out forwards;
+            text-shadow: 1px 1px 2px black;
+        }
+        .floating-text.rare {
+            color: #9eff7d; /* Cor diferente para drops raros */
+            font-size: 22px;
+            animation-duration: 2s;
+        }
+         .floating-text.passive {
+            color: #a0d2fa;
+            font-size: 18px;
+            animation-duration: 2.5s;
+        }
+        @keyframes floatUp {
+            from {
+                opacity: 1;
+                transform: translateY(0);
+            }
+            to {
+                opacity: 0;
+                transform: translateY(-100px);
+            }
+        }
+    </style>
+</head>
+<body class="overflow-x-hidden">
+
+    <div class="game-container min-h-screen flex flex-col items-center justify-center">
+        <h1 class="text-4xl md:text-5xl text-center mb-6 text-shadow text-[#ffde7d]">Minerador de Cliques</h1>
+
+        <div class="w-full grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            <!-- Seção de Mineração (Esquerda/Centro) -->
+            <div class="lg:col-span-2 flex flex-col items-center justify-start p-6 bg-[#5c4033] rounded-lg border-4 border-[#7a5c43] shadow-2xl relative" id="mine-section">
+                <!-- Painel de Recursos -->
+                <div class="w-full mb-4">
+                    <div class="text-center w-full bg-black/30 p-4 rounded-lg mb-4 border-2 border-[#7a5c43]">
+                        <h2 id="ore-count" class="text-5xl text-white">0</h2>
+                        <p class="text-lg text-[#ffde7d]">Minério Comum</p>
+                        <p id="ops-count" class="text-sm mt-2 text-gray-300">0 por segundo</p>
+                    </div>
+                     <div id="rare-resources-display" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 text-xs">
+                        <!-- Recursos raros serão inseridos aqui -->
+                    </div>
+                </div>
+                
+                <div id="mine-rock" class="mine-rock">
+                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" class="w-64 h-64 md:w-72 md:h-72 drop-shadow-2xl">
+                        <defs>
+                            <filter id="rock-texture" x="-20%" y="-20%" width="140%" height="140%">
+                                <feTurbulence type="fractalNoise" baseFrequency="0.1" numOctaves="3" result="noise"/>
+                                <feDiffuseLighting in="noise" lighting-color="#8a6c52" surfaceScale="2" result="diffuse">
+                                    <feDistantLight azimuth="45" elevation="60"/>
+                                </feDiffuseLighting>
+                                <feComposite operator="in" in2="SourceGraphic" result="textured"/>
+                            </filter>
+                             <radialGradient id="rock-gradient" cx="50%" cy="50%" r="50%" fx="50%" fy="50%">
+                                <stop offset="0%" style="stop-color:#967259" />
+                                <stop offset="100%" style="stop-color:#634832" />
+                            </radialGradient>
+                        </defs>
+                        <path d="M 50,20 Q 80,10 120,30 T 170,50 Q 190,80 175,120 T 130,170 Q 100,190 60,175 T 20,130 Q 10,100 25,70 T 50,20 Z" fill="url(#rock-gradient)" filter="url(#rock-texture)"/>
+                        <!-- Veios de minério -->
+                        <path d="M 70,40 Q 80,50 90,30" stroke="#FFD700" stroke-width="3" fill="none" opacity="0.7"/>
+                        <path d="M 120,60 Q 130,75 140,55" stroke="#C0C0C0" stroke-width="2.5" fill="none" opacity="0.8"/>
+                        <path d="M 50,140 Q 65,150 80,130" stroke="#CD7F32" stroke-width="3" fill="none" opacity="0.6"/>
+                        <path d="M 150,130 Q 140,145 160,150" stroke="#B9F2FF" stroke-width="2" fill="none" opacity="0.9"/>
+                    </svg>
+                </div>
+            </div>
+
+            <!-- Loja de Melhorias (Direita) -->
+            <div class="p-6 bg-[#5c4033] rounded-lg border-4 border-[#7a5c43] shadow-2xl">
+                <h2 class="text-2xl text-center mb-4 text-shadow text-[#ffde7d]">Melhorias</h2>
+                <div id="store" class="space-y-3 overflow-y-auto max-h-[80vh] pr-2">
+                    <!-- Itens da loja serão inseridos aqui pelo JavaScript -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- ESTADO DO JOGO ---
+        let resources = {
+            'Minério Comum': 0, 'Ferrolama': 0, 'Coral-Fantasma': 0, 'Veio Escarlate': 0,
+            'Quartzo Sônico': 0, 'Magnetita Anômala': 0, 'Pirita do Engano': 0, 'Coral-Rocha': 0,
+            'Titânio Crepuscular': 0, 'Obsidiana da Névoa': 0, 'Geodo-Eco': 0,
+            'Basalto Estabilizador': 0, 'Criptometal': 0
+        };
+        let oresPerClick = 1;
+        let oresPerSecond = 0;
+        let passiveDropRemainders = {};
+
+        // --- CONFIGURAÇÕES DO JOGO ---
+        const upgrades = {
+            pickaxe: { level: 0, baseCost: 15, costMultiplier: 1.15, basePower: 1, label: "Picareta Melhor", description: (power) => `+${power} por clique.` },
+            dwarf: { level: 0, baseCost: 100, costMultiplier: 1.2, basePower: 1, label: "Mineiro Anão", description: (power) => `+${power} por seg.` },
+            mineCart: { level: 0, baseCost: 1100, costMultiplier: 1.25, basePower: 8, label: "Carrinho de Mina", description: (power) => `+${power} por seg.` },
+            excavator: { level: 0, baseCost: 12000, costMultiplier: 1.3, basePower: 47, label: "Escavadeira", description: (power) => `+${power} por seg.` },
+            quarry: { level: 0, baseCost: 130000, costMultiplier: 1.35, basePower: 260, label: "Pedreira Automatizada", description: (power) => `+${power} por seg.` },
+            planetDrill: { level: 0, baseCost: 1400000, costMultiplier: 1.4, basePower: 1400, label: "Broca Planetária", description: (power) => `+${power} por seg.` }
+        };
+
+        const rareOreDropTable = [
+            // Nome e chance base para uma curva exponencial
+            { name: 'Ferrolama', baseChance: 0.08, multiplier: 0.65, index: 0 },
+            { name: 'Geodo-Eco', baseChance: 0.008, multiplier: 0.65, index: 1 },
+            { name: 'Coral-Rocha', baseChance: 0.0008, multiplier: 0.65, index: 2 },
+            { name: 'Coral-Fantasma', baseChance: 0.00008, multiplier: 0.65, index: 3 },
+            { name: 'Quartzo Sônico', baseChance: 0.000008, multiplier: 0.65, index: 4 },
+            { name: 'Titânio Crepuscular', baseChance: 0.0000008, multiplier: 0.65, index: 5 },
+            { name: 'Obsidiana da Névoa', baseChance: 0.000000008, multiplier: 0.65, index: 6 },
+            { name: 'Veio Escarlate', baseChance: 0.00000000008, multiplier: 0.65, index: 7 },
+            { name: 'Basalto Estabilizador', baseChance: 0.00000000008, multiplier: 0.65, index: 8 },
+            { name: 'Magnetita Anômala', baseChance: 0.00000000008, multiplier: 0.65, index: 9 },
+            { name: 'Criptometal', baseChance: 0.000000000008, multiplier: 0.65, index: 10 },
+            { name: 'Pirita do Engano', baseChance: 0.00000000000008, multiplier: 0.65, index: 11 }
+        ].map(ore => ({ ...ore, chance: ore.baseChance * Math.pow(ore.multiplier, ore.index) }));
+
+
+        // --- ELEMENTOS DO DOM ---
+        const oreCountElement = document.getElementById('ore-count');
+        const opsCountElement = document.getElementById('ops-count');
+        const mineRockElement = document.getElementById('mine-rock');
+        const mineSectionElement = document.getElementById('mine-section');
+        const storeElement = document.getElementById('store');
+        const rareResourcesDisplay = document.getElementById('rare-resources-display');
+
+        // --- FUNÇÕES DO JOGO ---
+
+        function formatNumber(num) {
+            num = Math.floor(num);
+            if (num < 1000) return num.toString();
+            const suffixes = ["", "mil", "M", "B", "T"];
+            const i = Math.floor(Math.log10(num) / 3);
+            let value = (num / Math.pow(1000, i)).toFixed(2);
+            if (value.endsWith('.00')) value = value.slice(0, -3);
+            return value + suffixes[i];
+        }
+
+        function calculateCost(upgradeKey) {
+            const upgrade = upgrades[upgradeKey];
+            return Math.ceil(upgrade.baseCost * Math.pow(upgrade.costMultiplier, upgrade.level));
+        }
+
+        function updateDisplay() {
+            oreCountElement.textContent = formatNumber(resources['Minério Comum']);
+            opsCountElement.textContent = `${formatNumber(oresPerSecond)} por segundo`;
+            
+            Object.keys(resources).forEach(key => {
+                if (key !== 'Minério Comum') {
+                    const resourceElement = document.getElementById(`resource-${key.replace(/\s/g, '-')}`);
+                    if (resourceElement) {
+                       resourceElement.querySelector('.amount').textContent = formatNumber(resources[key]);
+                    }
+                }
+            });
+
+            const commonOres = resources['Minério Comum'];
+            Object.keys(upgrades).forEach(key => {
+                const itemElement = document.getElementById(`upgrade-${key}`);
+                const cost = calculateCost(key);
+                if (itemElement) {
+                    itemElement.querySelector('.cost').textContent = `Custo: ${formatNumber(cost)}`;
+                    itemElement.querySelector('.level').textContent = upgrades[key].level;
+                    
+                    if (commonOres >= cost) {
+                        itemElement.classList.remove('disabled');
+                        itemElement.querySelector('button').disabled = false;
+                    } else {
+                        itemElement.classList.add('disabled');
+                        itemElement.querySelector('button').disabled = true;
+                    }
+                }
+            });
+        }
+
+        function createFloatingText(text, pos, isRare = false, isPassive = false) {
+            const textEl = document.createElement('div');
+            textEl.className = 'floating-text';
+            if (isPassive) textEl.classList.add('passive');
+            if (isRare) textEl.classList.add('rare');
+            textEl.textContent = text;
+            
+            const rect = mineSectionElement.getBoundingClientRect();
+            textEl.style.left = `${pos.x - rect.left}px`;
+            textEl.style.top = `${pos.y - rect.top}px`;
+            
+            mineSectionElement.appendChild(textEl);
+
+            setTimeout(() => textEl.remove(), isPassive ? 2500 : (isRare ? 2000 : 1500));
+        }
+        
+        function createPassiveFloatingText(text) {
+             const rockRect = mineRockElement.getBoundingClientRect();
+             const x = rockRect.left + (rockRect.width / 2) + (Math.random() - 0.5) * 80;
+             const y = rockRect.top + (rockRect.height / 2) + (Math.random() - 0.5) * 80;
+             createFloatingText(text, { clientX: x, clientY: y }, true, true);
+        }
+
+        function mineOre(event) {
+            resources['Minério Comum'] += oresPerClick;
+            createFloatingText(`+${formatNumber(oresPerClick)}`, { clientX: event.clientX, clientY: event.clientY });
+
+            rareOreDropTable.forEach(ore => {
+                if (Math.random() < ore.chance) {
+                    resources[ore.name]++;
+                    createFloatingText(`+1 ${ore.name}`, { clientX: event.clientX, clientY: event.clientY }, true);
+                }
+            });
+
+            updateDisplay();
+        }
+
+        function buyUpgrade(key) {
+            const upgrade = upgrades[key];
+            const cost = calculateCost(key);
+
+            if (resources['Minério Comum'] >= cost) {
+                resources['Minério Comum'] -= cost;
+                upgrade.level++;
+
+                if (key === 'pickaxe') {
+                    oresPerClick = 1 + upgrades.pickaxe.level * upgrades.pickaxe.basePower;
+                } else {
+                    oresPerSecond = 0;
+                    Object.keys(upgrades).forEach(k => {
+                        if (k !== 'pickaxe') {
+                            oresPerSecond += upgrades[k].level * upgrades[k].basePower;
+                        }
+                    });
+                }
+                
+                updateDisplay();
+            }
+        }
+        
+        function renderStore() {
+            let storeHTML = '';
+            Object.keys(upgrades).forEach(key => {
+                const upgrade = upgrades[key];
+                storeHTML += `
+                    <div id="upgrade-${key}" class="upgrade-item p-3 rounded-lg flex justify-between items-center disabled">
+                        <div>
+                            <h3 class="text-sm font-bold text-white">${upgrade.label} <span class="text-xs text-gray-300">(Nvl <span class="level">0</span>)</span></h3>
+                            <p class="text-xs text-gray-400">${upgrade.description(upgrade.basePower)}</p>
+                            <p class="text-xs text-[#ffde7d] cost">Custo: ${formatNumber(upgrade.baseCost)}</p>
+                        </div>
+                        <button onclick="buyUpgrade('${key}')" class="bg-[#7a5c43] hover:bg-[#967259] text-white font-bold py-2 px-3 text-xs rounded border-b-4 border-[#5c4033] hover:border-[#7a5c43]">
+                            Comprar
+                        </button>
+                    </div>
+                `;
+            });
+            storeElement.innerHTML = storeHTML;
+        }
+
+        function renderRareResources() {
+            let resourcesHTML = '';
+            Object.keys(resources).forEach(key => {
+                if (key !== 'Minério Comum') {
+                    const nameSlug = key.replace(/\s/g, '-');
+                    passiveDropRemainders[key] = 0; // Inicializa os remainders
+                    resourcesHTML += `
+                        <div id="resource-${nameSlug}" class="bg-black/30 p-2 rounded border border-[#7a5c43] flex flex-col items-center text-center">
+                           <span class="font-bold text-[#9eff7d] amount text-base">0</span>
+                           <span class="text-gray-300 leading-tight">${key}</span>
+                        </div>
+                    `;
+                }
+            });
+            rareResourcesDisplay.innerHTML = resourcesHTML;
+        }
+
+        // --- LOOP PRINCIPAL DO JOGO ---
+        function gameLoop() {
+            const passiveChecks = oresPerSecond / 10;
+            resources['Minério Comum'] += passiveChecks;
+
+            rareOreDropTable.forEach(ore => {
+                const potentialDrops = passiveChecks * ore.chance;
+                passiveDropRemainders[ore.name] += potentialDrops;
+
+                if (passiveDropRemainders[ore.name] >= 1) {
+                    const oresFound = Math.floor(passiveDropRemainders[ore.name]);
+                    resources[ore.name] += oresFound;
+                    passiveDropRemainders[ore.name] -= oresFound;
+                    createPassiveFloatingText(`+${oresFound} ${ore.name}`);
+                }
+            });
+
+            updateDisplay();
+        }
+
+        // --- INICIALIZAÇÃO ---
+        mineRockElement.addEventListener('click', mineOre);
+        renderStore();
+        renderRareResources();
+        setInterval(gameLoop, 100);
+    </script>
+</body>
+</html>
+

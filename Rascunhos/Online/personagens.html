@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dossiê da Expedição - Kuar-Tor</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>Crônicas de Kuar-Tor</h1>
+            <nav>
+                <button class="nav-toggle" aria-label="toggle navigation">
+                    <span class="hamburger"></span>
+                </button>
+                <ul class="nav-menu">
+                    <li><a href="index.html">Início</a></li>
+                    <li><a href="lore.html">Conhecimento</a></li>
+                    <li><a href="personagens.html" class="active">Dossiê</a></li>
+                    <li><a href="bestiario.html">Bestiário</a></li>
+                    <li><a href="regras.html">Regras</a></li>
+                    <li><a href="formV5.html">Criador</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <h2>Dossiê dos Recrutas</h2>
+        <p>Estes são os rostos dos que foram considerados dispensáveis. Conheça seus "aliados".</p>
+
+        <div class="char-grid">
+            <div class="char-card" 
+                 data-name="Valdemar, o Exilado" 
+                 data-details="Um ex-nobre da família Yang, desonrado e expulso após a derrota. Busca restaurar a honra de seu nome, mesmo que isso custe sua vida. É um espadachim habilidoso, mas seu orgulho é sua maior fraqueza."
+                 data-image="https://via.placeholder.com/300x400.png/8a0303/f5f5dc?text=Valdemar">
+                <img src="https://via.placeholder.com/300x400.png/8a0303/f5f5dc?text=Valdemar" alt="Retrato de Valdemar">
+                <h3>Valdemar, o Exilado</h3>
+                <p>Um espadachim em busca de honra perdida.</p>
+            </div>
+
+            <div class="char-card" 
+                 data-name="Elara, a Sábia do Vazio" 
+                 data-details="Uma maga da família Zhauw que sobreviveu ao Cataclismo. Carrega o peso do conhecimento que poderia ter evitado a queda de Kuar-Tor. Suas magias são poderosas, mas instáveis, e a proximidade com o Vazio deixou marcas em sua sanidade."
+                 data-image="https://via.placeholder.com/300x400.png/8a0303/f5f5dc?text=Elara">
+                <img src="https://via.placeholder.com/300x400.png/8a0303/f5f5dc?text=Elara" alt="Retrato de Elara">
+                <h3>Elara, a Sábia do Vazio</h3>
+                <p>Uma maga atormentada por segredos arcanos.</p>
+            </div>
+            
+            <div class="char-card" 
+                 data-name="Kael, o Ladrão de Portirus" 
+                 data-details="Nascido e criado nas docas de Portirus, Kael é um sobrevivente nato. Ágil e furtivo, ele conhece cada beco e atalho da cidade arruinada. Não confia em ninguém e sua lealdade pode ser comprada, mas seu conhecimento do terreno é inestimável."
+                 data-image="https://via.placeholder.com/300x400.png/8a0303/f5f5dc?text=Kael">
+                <img src="https://via.placeholder.com/300x400.png/8a0303/f5f5dc?text=Kael" alt="Retrato de Kael">
+                <h3>Kael, o Ladrão de Portirus</h3>
+                <p>Um batedor que sobreviveu nas ruínas.</p>
+            </div>
+        </div>
+    </main>
+
+    <div id="char-modal" class="modal">
+        <div class="modal-content">
+            <button class="close-button">&times;</button>
+            <img id="modal-img" src="" alt="Retrato do Personagem">
+            <h2 id="modal-name"></h2>
+            <p id="modal-details"></p>
+        </div>
+    </div>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2025. A Terceira Expedição. A morte é apenas o começo.</p>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>

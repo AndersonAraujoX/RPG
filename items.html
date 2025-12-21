@@ -1,11 +1,29 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Inventário por Personagem - Kuar-Tor</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        rpg: {
+                            black: '#0B0C10',
+                            cyan: '#66FCF1',
+                            slate: '#1F2833',
+                            silver: '#C5C6C7',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Inter:wght@400;500&display=swap"
+        rel="stylesheet">
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
@@ -13,48 +31,67 @@
     <style>
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #0c0c0c;
+            /* background handled by tailwind */
             background-image: url('https://www.transparenttextures.com/patterns/dark-matter.png');
-            color: #d1d5db;
         }
-        .font-cinzel { font-family: 'Cinzel', serif; }
+
+        .font-cinzel {
+            font-family: 'Cinzel', serif;
+        }
+
         .main-container {
-            background-color: rgba(10, 10, 10, 0.7);
+            background-color: rgba(31, 40, 51, 0.95);
+            /* rpg-slate */
             backdrop-filter: blur(5px);
-            border: 1px solid rgba(220, 38, 38, 0.2);
-            box-shadow: 0 0 15px rgba(220, 38, 38, 0.2);
+            border: 1px solid rgba(102, 252, 241, 0.2);
+            box-shadow: 0 0 15px rgba(102, 252, 241, 0.1);
         }
-        .form-input, .form-select {
-            background-color: #1f2937;
+
+        .form-input,
+        .form-select {
+            background-color: #0B0C10;
+            /* rpg-black */
             border: 1px solid #4b5563;
+            color: #C5C6C7;
         }
-        .form-input:focus, .form-select:focus {
-            border-color: #ef4444;
-            box-shadow: 0 0 0 2px #ef444460;
+
+        .form-input:focus,
+        .form-select:focus {
+            border-color: #66FCF1;
+            box-shadow: 0 0 0 2px rgba(102, 252, 241, 0.3);
             outline: none;
         }
+
         .btn {
-            background-color: #ef4444;
-            color: #ffffff;
-            font-weight: 500;
+            background-color: #66FCF1;
+            /* rpg-cyan */
+            color: #0B0C10;
+            /* rpg-black */
+            font-weight: 700;
             padding: 0.75rem 1.5rem;
             border-radius: 0.375rem;
-            transition: background-color 0.3s ease;
+            transition: all 0.3s ease;
             cursor: pointer;
         }
+
         .btn:hover {
-            background-color: #dc2626;
+            background-color: #45EBE0;
+            transform: scale(1.02);
+            box-shadow: 0 0 10px rgba(102, 252, 241, 0.3);
         }
+
         .btn:disabled {
             background-color: #4b5563;
             cursor: not-allowed;
         }
     </style>
 </head>
-<body class="min-h-screen flex items-center justify-center p-4">
+
+<body class="bg-rpg-black text-rpg-silver min-h-screen flex items-center justify-center p-4">
     <div class="main-container w-full max-w-4xl p-8 rounded-lg">
         <div class="flex justify-between items-center mb-6">
-            <h1 class="font-cinzel text-4xl text-red-500">Inventário de Personagem</h1>
+            <h1 class="font-cinzel text-4xl text-rpg-cyan" style="text-shadow: 0 0 10px rgba(102, 252, 241, 0.5);">
+                Inventário de Personagem</h1>
             <button id="logout-button" class="btn" style="display: none;">Logout</button>
         </div>
 
@@ -68,12 +105,13 @@
         <div id="main-content" class="hidden">
             <!-- Character Selection -->
             <div id="character-selection" class="mb-8">
-                <h2 class="text-2xl font-cinzel text-red-400 mb-4">Selecione um Personagem</h2>
+                <h2 class="text-2xl font-cinzel text-rpg-cyan mb-4">Selecione um Personagem</h2>
                 <div class="flex items-center space-x-4">
                     <select id="character-dropdown" class="form-select w-full p-2 rounded text-white"></select>
                 </div>
                 <p id="no-characters-message" class="text-center text-gray-400 mt-4 hidden">
-                    Nenhum personagem encontrado. Crie um na página de <a href="Forms/formV5.html" class="text-red-400 underline hover:text-red-300">Geração de Fichas</a>.
+                    Nenhum personagem encontrado. Crie um na página de <a href="Forms/formV6.html"
+                        class="text-rpg-cyan underline hover:text-white">Geração de Fichas</a>.
                 </p>
             </div>
 
@@ -81,18 +119,22 @@
             <div id="character-content" class="hidden">
                 <!-- Item Form -->
                 <div id="item-form" class="mb-8">
-                    <h2 class="text-2xl font-cinzel text-red-400 mb-4">Adicionar Novo Item</h2>
+                    <h2 class="text-2xl font-cinzel text-rpg-cyan mb-4">Adicionar Novo Item</h2>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <input type="text" id="itemName" placeholder="Nome do Item" class="form-input w-full p-2 rounded text-white">
-                        <textarea id="itemDescription" placeholder="Descrição" class="form-input w-full md:col-span-2 p-2 rounded text-white h-24"></textarea>
-                        <input type="number" id="itemQuantity" placeholder="Quantidade" class="form-input w-full p-2 rounded text-white" value="1" min="1">
+                        <input type="text" id="itemName" placeholder="Nome do Item"
+                            class="form-input w-full p-2 rounded text-white">
+                        <textarea id="itemDescription" placeholder="Descrição"
+                            class="form-input w-full md:col-span-2 p-2 rounded text-white h-24"></textarea>
+                        <input type="number" id="itemQuantity" placeholder="Quantidade"
+                            class="form-input w-full p-2 rounded text-white" value="1" min="1">
                         <button id="add-item-button" class="btn md:col-span-2">Adicionar Item</button>
                     </div>
                 </div>
 
                 <!-- Items List -->
                 <div>
-                    <h2 class="text-2xl font-cinzel text-red-400 mb-4">Itens de <span id="character-name-display"></span></h2>
+                    <h2 class="text-2xl font-cinzel text-rpg-cyan mb-4">Itens de <span
+                            id="character-name-display"></span></h2>
                     <div id="items-list" class="space-y-4">
                         <!-- Itens serão adicionados aqui via JavaScript -->
                     </div>
@@ -100,11 +142,11 @@
             </div>
         </div>
     </div>
-    
+
     <script>
         // One-time script to unregister any old service workers.
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.getRegistrations().then(function(registrations) {
+            navigator.serviceWorker.getRegistrations().then(function (registrations) {
                 if (registrations.length > 0) {
                     console.log('Unregistering service workers...');
                     for (let registration of registrations) {
@@ -115,7 +157,7 @@
                     alert('Um script de fundo desatualizado foi removido. A página será recarregada para aplicar a correção.');
                     window.location.reload();
                 }
-            }).catch(function(err) {
+            }).catch(function (err) {
                 console.error('Service Worker unregistration failed: ', err);
             });
         }
@@ -124,4 +166,5 @@
     <script src="firebase-config.js"></script>
     <script src="items.js"></script>
 </body>
+
 </html>
