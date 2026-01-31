@@ -159,7 +159,19 @@
         <button class="btn-vtt" onclick="adjustZoom(0.1)">ZOOM +</button>
         <button class="btn-vtt" onclick="adjustZoom(-0.1)">ZOOM -</button>
         <button class="btn-vtt" onclick="toggleGrid()">GRID ON/OFF</button>
+        <button id="spawn-char-btn" class="btn-vtt">ENTRAR COM FICHA</button>
         <a href="main.html" class="btn-vtt no-underline">SAIR</a>
+    </div>
+
+    <!-- Modal para selecionar personagem -->
+    <div id="char-picker-modal" class="fixed inset-0 bg-black/90 flex items-center justify-center p-4 hidden z-[110]">
+        <div class="bg-rpg-slate border border-rpg-cyan p-6 rounded-lg max-w-sm w-full">
+            <h3 class="text-rpg-cyan font-cinzel text-xl mb-4">Escolha seu Operativo</h3>
+            <div id="char-list" class="space-y-2 mb-6 max-h-60 overflow-y-auto">
+                <p class="text-gray-500 italic">Buscando fichas...</p>
+            </div>
+            <button id="close-picker-btn" class="w-full btn-vtt">CANCELAR</button>
+        </div>
     </div>
 
     <div id="gm-panel" class="hidden">
@@ -347,6 +359,64 @@
                 type: 'enemy'
             });
         });
+
+        // --- PLAYER TOKEN SPAWN ---
+        const spawnCharBtn = document.getElementById('spawn-char-btn');
+        const pickerModal = document.getElementById('char-picker-modal');
+        const charList = document.getElementById('char-list');
+
+        spawnCharBtn.addEventListener('click', async () => {
+            pickerModal.classList.remove('hidden');
+            charList.innerHTML = '<p class="text-gray-500 italic">Buscando fichas...</p>';
+
+            try {
+                // Fetch characters from the subcollection structure
+                const snapshot = await db.collection(`users/${auth.currentUser.uid}/characters`).get();
+                if (snapshot.empty) {
+                    charList.innerHTML = '<p class="text-red-400">Nenhuma ficha encontrada. Crie uma no portal primeiro!</p>';
+                    return;
+                }
+
+                charList.innerHTML = '';
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    const btn = document.createElement('button');
+                    btn.className = 'w-full p-3 bg-black/50 border border-gray-700 text-left hover:border-rpg-cyan rounded transition-all mb-2';
+                    btn.innerHTML = `<div class="font-bold text-rpg-cyan">${data.name || 'Sem Nome'}</div><div class="text-[10px] text-gray-500">ID: ${doc.id}</div>`;
+                    btn.onclick = () => spawnToken(doc.id, data.name || 'Operativo');
+                    charList.appendChild(btn);
+                });
+            } catch (e) {
+                console.error(e);
+                charList.innerHTML = '<p class="text-red-500">Erro ao carregar fichas.</p>';
+            }
+        });
+
+        document.getElementById('close-picker-btn').onclick = () => pickerModal.classList.add('hidden');
+
+        async function spawnToken(charId, name) {
+            pickerModal.classList.add('hidden');
+            try {
+                // Check if already on board
+                const existing = await db.collection('vtt_tokens').where('charId', '==', charId).get();
+                if (!existing.empty) {
+                    alert("Seu operativo já está no campo de batalha!");
+                    return;
+                }
+
+                await db.collection('vtt_tokens').add({
+                    charId: charId,
+                    name: name,
+                    ownerId: auth.currentUser.uid,
+                    x: 250,
+                    y: 250,
+                    color: '#66FCF1',
+                    type: 'hero'
+                });
+            } catch (err) {
+                alert("Erro ao entrar: " + err.message);
+            }
+        }
 
     </script>
 </body>
