@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diário de Expedição: Kuar-Tor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        rpg: {
+                            black: '#0B0C10',
+                            cyan: '#66FCF1',
+                            slate: '#1F2833',
+                            silver: '#C5C6C7',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Roboto+Slab:wght@400;700&display=swap"
+        rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Roboto Slab', serif;
+            background-color: #0B0C10;
+            background-image: url('https://www.transparenttextures.com/patterns/dark-matter.png');
+            color: #C5C6C7;
+        }
+
+        h1,
+        h2,
+        h3 {
+            font-family: 'Cinzel', serif;
+        }
+
+        .journal-card {
+            background: rgba(31, 40, 51, 0.8);
+            border-left: 4px solid #66FCF1;
+            transition: all 0.3s ease;
+        }
+
+        .journal-card:hover {
+            transform: translateX(10px);
+            background: rgba(31, 40, 51, 1);
+        }
+
+        .input-dark {
+            background: #0B0C10;
+            border: 1px solid #404040;
+            color: #C5C6C7;
+        }
+
+        .input-dark:focus {
+            border-color: #66FCF1;
+            outline: none;
+        }
+    </style>
+</head>
+
+<body class="p-4 md:p-8 min-h-screen">
+    <div class="max-w-4xl mx-auto">
+        <header
+            class="flex flex-col md:flex-row justify-between items-center mb-12 gap-6 bg-rpg-slate/50 p-6 rounded-lg border border-gray-800">
+            <div>
+                <h1 class="text-4xl font-bold text-rpg-cyan mb-2">Diário de Expedição</h1>
+                <p class="text-rpg-silver italic">Anote os avanços, horrores e descobertas da 3ª Expedição.</p>
+            </div>
+            <div class="flex gap-4">
+                <a href="main.html"
+                    class="bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-6 rounded transition-colors no-underline">
+                    ← Portal
+                </a>
+            </div>
+        </header>
+
+        <section id="auth-check" class="mb-12 hidden">
+            <div class="bg-rpg-slate p-6 rounded-lg border border-rpg-cyan/30 text-center">
+                <h2 class="text-2xl text-rpg-cyan mb-4">Novo Registro</h2>
+                <div class="text-left space-y-4">
+                    <div>
+                        <label class="block text-sm font-bold text-rpg-cyan mb-1">Título do Relato:</label>
+                        <input type="text" id="log-title" class="w-full p-2 input-dark rounded"
+                            placeholder="Ex: A Fenda de Portirus">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-rpg-cyan mb-1">O que aconteceu?</label>
+                        <textarea id="log-content" rows="4" class="w-full p-2 input-dark rounded"
+                            placeholder="Descreva os eventos do dia..."></textarea>
+                    </div>
+                    <button id="save-log-btn"
+                        class="w-full bg-rpg-cyan text-rpg-black font-bold py-3 rounded hover:bg-white transition-colors">
+                        Selar Registro no Arquivo
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <div id="logs-container" class="space-y-6">
+            <p class="text-center text-gray-500 animate-pulse">Lendo pergaminhos arcanos...</p>
+        </div>
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <script src="firebase-config.js"></script>
+
+    <script>
+        const db = firebase.firestore();
+        const auth = firebase.auth();
+        const logsContainer = document.getElementById('logs-container');
+        const authCheck = document.getElementById('auth-check');
+        const saveBtn = document.getElementById('save-log-btn');
+
+        let currentUserNickname = "Anônimo";
+
+        auth.onAuthStateChanged(async (user) => {
+            if (user) {
+                authCheck.classList.remove('hidden');
+                // Fetch nickname
+                try {
+                    const doc = await db.collection('users').doc(user.uid).get();
+                    if (doc.exists && doc.data().nickname) {
+                        currentUserNickname = doc.data().nickname;
+                    }
+                } catch (e) {
+                    console.log("Nickname fallback used");
+                }
+            }
+        });
+
+        // Real-time listener for logs
+        db.collection('expedition_logs').orderBy('timestamp', 'desc')
+            .onSnapshot((snapshot) => {
+                logsContainer.innerHTML = '';
+                if (snapshot.empty) {
+                    logsContainer.innerHTML = '<p class="text-center text-gray-600 italic py-10">O diário está em branco. Comece a história.</p>';
+                }
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    const date = data.timestamp ? data.timestamp.toDate().toLocaleDateString('pt-BR') : 'Recentemente';
+
+                    const logDiv = document.createElement('div');
+                    logDiv.className = 'journal-card p-6 rounded-lg shadow-xl';
+                    logDiv.innerHTML = `
+                        <div class="flex justify-between items-start mb-4">
+                            <h3 class="text-2xl text-rpg-cyan">${data.title}</h3>
+                            <span class="text-xs text-gray-500 font-bold">${date}</span>
+                        </div>
+                        <p class="text-gray-300 leading-relaxed mb-4 whitespace-pre-wrap">${data.content}</p>
+                        <div class="text-sm text-rpg-silver">
+                            <span class="text-gray-500">Relatado por:</span> <span class="text-rpg-cyan font-bold">${data.author}</span>
+                        </div>
+                    `;
+                    logsContainer.appendChild(logDiv);
+                });
+            });
+
+        saveBtn.addEventListener('click', async () => {
+            const title = document.getElementById('log-title').value.trim();
+            const content = document.getElementById('log-content').value.trim();
+
+            if (!title || !content) {
+                alert("O título e o conteúdo são obrigatórios.");
+                return;
+            }
+
+            saveBtn.disabled = true;
+            saveBtn.innerText = "Selando...";
+
+            try {
+                await db.collection('expedition_logs').add({
+                    title: title,
+                    content: content,
+                    author: currentUserNickname,
+                    authorId: auth.currentUser.uid,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+
+                document.getElementById('log-title').value = '';
+                document.getElementById('log-content').value = '';
+                alert("Registro arquivado com sucesso!");
+            } catch (err) {
+                console.error("Error saving log:", err);
+                alert("Erro ao salvar: " + err.message);
+            } finally {
+                saveBtn.disabled = false;
+                saveBtn.innerText = "Selar Registro no Arquivo";
+            }
+        });
+    </script>
+</body>
+
+</html>
