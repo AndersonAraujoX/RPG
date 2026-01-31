@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mesa Virtual: Kuar-Tor VTT</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        rpg: {
+                            black: '#0B0C10',
+                            cyan: '#66FCF1',
+                            slate: '#1F2833',
+                            silver: '#C5C6C7',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Roboto+Mono:wght@400;700&display=swap"
+        rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0B0C10;
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+            user-select: none;
+        }
+
+        #vtt-viewport {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            cursor: grab;
+            overflow: hidden;
+        }
+
+        #vtt-viewport:active {
+            cursor: grabbing;
+        }
+
+        #vtt-map-container {
+            position: absolute;
+            transform-origin: 0 0;
+            transition: transform 0.1s ease-out;
+        }
+
+        #grid-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            background-size: 50px 50px;
+            background-image: linear-gradient(to right, rgba(102, 252, 241, 0.1) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(102, 252, 241, 0.1) 1px, transparent 1px);
+        }
+
+        .token {
+            position: absolute;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background-size: cover;
+            background-position: center;
+            border: 2px solid #66FCF1;
+            box-shadow: 0 0 10px rgba(102, 252, 241, 0.5);
+            cursor: move;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 10px;
+            text-shadow: 1px 1px 2px black;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .token:hover {
+            border-color: white;
+            box-shadow: 0 0 20px rgba(102, 252, 241, 0.8);
+        }
+
+        .token-label {
+            position: absolute;
+            bottom: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            padding: 2px 6px;
+            border-radius: 4px;
+            white-space: nowrap;
+            font-size: 10px;
+            border: 1px solid #66FCF1;
+        }
+
+        #vtt-controls {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 10px;
+            z-index: 100;
+        }
+
+        .btn-vtt {
+            background: rgba(31, 40, 51, 0.9);
+            border: 1px solid #66FCF1;
+            color: #66FCF1;
+            padding: 8px 16px;
+            border-radius: 4px;
+            font-family: 'Cinzel', serif;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+
+        .btn-vtt:hover {
+            background: #66FCF1;
+            color: #0B0C10;
+        }
+
+        #gm-panel {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 250px;
+            background: rgba(31, 40, 51, 0.95);
+            border: 1px solid #66FCF1;
+            padding: 15px;
+            border-radius: 8px;
+            z-index: 100;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="vtt-viewport">
+        <div id="vtt-map-container" style="transform: scale(1) translate(0px, 0px);">
+            <img id="vtt-map-img" src="Rascunhos/map.png" alt="Map" style="pointer-events: none;">
+            <div id="grid-overlay"></div>
+            <div id="tokens-layer"></div>
+        </div>
+    </div>
+
+    <div id="vtt-controls">
+        <button class="btn-vtt" onclick="adjustZoom(0.1)">ZOOM +</button>
+        <button class="btn-vtt" onclick="adjustZoom(-0.1)">ZOOM -</button>
+        <button class="btn-vtt" onclick="toggleGrid()">GRID ON/OFF</button>
+        <a href="main.html" class="btn-vtt no-underline">SAIR</a>
+    </div>
+
+    <div id="gm-panel" class="hidden">
+        <h3 class="text-rpg-cyan mb-4 border-b border-rpg-cyan pb-2">PAINEL DO MESTRE</h3>
+        <button id="add-enemy-btn"
+            class="w-full bg-red-900 border border-red-500 text-white p-2 rounded mb-2 text-xs">ADD INIMIGO</button>
+        <input type="text" id="map-url-input" placeholder="URL do Novo Mapa"
+            class="w-full bg-black border border-gray-600 p-2 text-xs text-white mb-2">
+        <button id="update-map-btn" class="w-full btn-vtt mb-4">TROCAR MAPA</button>
+        <div id="user-list" class="text-xs text-gray-400">
+            <strong>Jogadores Online:</strong>
+            <ul id="online-players" class="mt-2"></ul>
+        </div>
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <script src="firebase-config.js"></script>
+
+    <script>
+        const db = firebase.firestore();
+        const auth = firebase.auth();
+
+        const viewport = document.getElementById('vtt-viewport');
+        const container = document.getElementById('vtt-map-container');
+        const tokensLayer = document.getElementById('tokens-layer');
+        const gridOverlay = document.getElementById('grid-overlay');
+        const gmPanel = document.getElementById('gm-panel');
+
+        let scale = 1;
+        let originX = 0;
+        let originY = 0;
+        let isPanning = false;
+        let startX, startY;
+        let isAdmin = false;
+
+        // --- AUTH & ROLES ---
+        auth.onAuthStateChanged(async user => {
+            if (!user) { window.location.href = 'login.html'; return; }
+
+            // Check if user is admin (using the simple 'fungus' logic or checking a role)
+            // For now, let's look for a flag in the 'users' collection or allow a password
+            const userDoc = await db.collection('users').doc(user.uid).get();
+            if (userDoc.exists && userDoc.data().role === 'gm') {
+                isAdmin = true;
+                gmPanel.classList.remove('hidden');
+            }
+
+            initVTT();
+        });
+
+        function initVTT() {
+            // Listen for map updates
+            db.collection('vtt_config').doc('map').onSnapshot(doc => {
+                if (doc.exists) {
+                    document.getElementById('vtt-map-img').src = doc.data().url;
+                }
+            });
+
+            // Listen for token updates
+            db.collection('vtt_tokens').onSnapshot(snapshot => {
+                snapshot.docChanges().forEach(change => {
+                    if (change.type === 'added' || change.type === 'modified') {
+                        updateTokenUI(change.doc.id, change.doc.data());
+                    }
+                    if (change.type === 'removed') {
+                        const el = document.getElementById(`token-${change.doc.id}`);
+                        if (el) el.remove();
+                    }
+                });
+            });
+        }
+
+        // --- NAVIGATION (ZOOM/PAN) ---
+        viewport.addEventListener('mousedown', e => {
+            if (e.target === viewport || e.target.id === 'vtt-map-img') {
+                isPanning = true;
+                startX = e.clientX - originX;
+                startY = e.clientY - originY;
+            }
+        });
+
+        window.addEventListener('mousemove', e => {
+            if (isPanning) {
+                originX = e.clientX - startX;
+                originY = e.clientY - startY;
+                applyTransform();
+            }
+        });
+
+        window.addEventListener('mouseup', () => isPanning = false);
+
+        viewport.addEventListener('wheel', e => {
+            e.preventDefault();
+            const delta = e.deltaY > 0 ? -0.1 : 0.1;
+            adjustZoom(delta);
+        });
+
+        function adjustZoom(delta) {
+            scale = Math.min(Math.max(0.1, scale + delta), 3);
+            applyTransform();
+        }
+
+        function applyTransform() {
+            container.style.transform = `translate(${originX}px, ${originY}px) scale(${scale})`;
+        }
+
+        function toggleGrid() {
+            gridOverlay.style.display = gridOverlay.style.display === 'none' ? 'block' : 'none';
+        }
+
+        // --- TOKEN LOGIC ---
+        function updateTokenUI(id, data) {
+            let token = document.getElementById(`token-${id}`);
+            if (!token) {
+                token = document.createElement('div');
+                token.id = `token-${id}`;
+                token.className = 'token';
+                token.innerHTML = `<div class="token-label">${data.name}</div>`;
+                tokensLayer.appendChild(token);
+
+                // DRAG LOGIC
+                token.addEventListener('mousedown', e => {
+                    e.stopPropagation();
+                    let tStartX = e.clientX;
+                    let tStartY = e.clientY;
+                    let initialX = data.x;
+                    let initialY = data.y;
+
+                    function onMove(me) {
+                        const dx = (me.clientX - tStartX) / scale;
+                        const dy = (me.clientY - tStartY) / scale;
+                        const newX = initialX + dx;
+                        const newY = initialY + dy;
+
+                        // Local update for smoothness
+                        token.style.left = newX + 'px';
+                        token.style.top = newY + 'px';
+
+                        // Throttled Firestore update would be better here, but for simplicity:
+                    }
+
+                    function onUp(ue) {
+                        const finalX = parseFloat(token.style.left);
+                        const finalY = parseFloat(token.style.top);
+
+                        // SNAP TO GRID (50px)
+                        const snappedX = Math.round(finalX / 50) * 50;
+                        const snappedY = Math.round(finalY / 50) * 50;
+
+                        db.collection('vtt_tokens').doc(id).update({
+                            x: snappedX,
+                            y: snappedY
+                        });
+
+                        window.removeEventListener('mousemove', onMove);
+                        window.removeEventListener('mouseup', onUp);
+                    }
+
+                    window.addEventListener('mousemove', onMove);
+                    window.addEventListener('mouseup', onUp);
+                });
+            }
+
+            token.style.left = data.x + 'px';
+            token.style.top = data.y + 'px';
+            token.style.backgroundColor = data.color || '#66FCF1';
+            if (data.img) token.style.backgroundImage = `url(${data.img})`;
+        }
+
+        // --- GM PANEL LOGIC ---
+        document.getElementById('update-map-btn').addEventListener('click', () => {
+            const url = document.getElementById('map-url-input').value;
+            if (url) db.collection('vtt_config').doc('map').set({ url });
+        });
+
+        document.getElementById('add-enemy-btn').addEventListener('click', () => {
+            db.collection('vtt_tokens').add({
+                name: "Inimigo " + Math.floor(Math.random() * 100),
+                x: 100,
+                y: 100,
+                color: "#ef4444",
+                type: 'enemy'
+            });
+        });
+
+    </script>
+</body>
+
+</html>
