@@ -179,8 +179,100 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
 
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
     <script src="firebase-config.js"></script>
     <script src="auth.js"></script>
-</body>
+
+    <!-- Modal de Nickname Global -->
+    <div id="nickname-modal"
+        class="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center p-4 hidden z-50">
+        <div
+            class="bg-gray-800 border border-rpg-cyan p-8 rounded-lg max-w-md w-full shadow-[0_0_20px_rgba(102,252,241,0.2)]">
+            <h2 class="text-2xl font-bold text-rpg-cyan mb-4 text-center font-cinzel">Identificação Necessária</h2>
+            <p class="text-gray-300 mb-6 text-center">Para prosseguir em Kuar-Tor, você deve escolher um codinome global
+                que será visto por todos os operativos.</p>
+
+            <div class="mb-4">
+                <label for="global-nickname-input" class="block text-sm font-bold text-rpg-cyan mb-2">Seu
+                    Codinome:</label>
+                <input type="text" id="global-nickname-input"
+                    class="w-full bg-gray-900 border border-gray-600 rounded p-2 text-white focus:outline-none focus:border-rpg-cyan focus:ring-1 focus:ring-rpg-cyan"
+                    placeholder="Ex: Caçador de Sombras">
+                <p id="nickname-error" class="text-red-500 text-sm mt-2 hidden">O codinome é obrigatório.</p>
+            </div>
+
+            <button id="save-nickname-btn"
+                class="w-full bg-rpg-cyan text-black font-bold py-2 rounded hover:bg-cyan-400 transition-colors">
+                Confirmar Identidade
+            </button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof firebase !== 'undefined' && firebase.apps.length) {
+                const db = firebase.firestore();
+                const auth = firebase.auth();
+                const nicknameModal = document.getElementById('nickname-modal');
+                const nicknameInput = document.getElementById('global-nickname-input');
+                const saveBtn = document.getElementById('save-nickname-btn');
+                const errorMsg = document.getElementById('nickname-error');
+                const userEmailSpan = document.getElementById('user-email');
+
+                auth.onAuthStateChanged(async (user) => {
+                    if (user) {
+                        try {
+                            const userDocRef = db.collection('users').doc(user.uid);
+                            const doc = await userDocRef.get();
+
+                            if (doc.exists && doc.data().nickname) {
+                                // User has nickname, update header
+                                if (userEmailSpan) userEmailSpan.textContent = `${doc.data().nickname} (${user.email})`;
+                            } else {
+                                // Missing nickname, show modal
+                                nicknameModal.classList.remove('hidden');
+                            }
+                        } catch (e) {
+                            console.error("Error fetching user profile:", e);
+                            // If user document doesn't exist yet, we definitely need to show modal (unless it's a permission error)
+                            // Assuming it's a new user without a document
+                            nicknameModal.classList.remove('hidden');
+                        }
+                    }
+                });
+
+                saveBtn.addEventListener('click', async () => {
+                    const nick = nicknameInput.value.trim();
+                    if (!nick) {
+                        errorMsg.classList.remove('hidden');
+                        return;
+                    }
+
+                    const user = auth.currentUser;
+                    if (user) {
+                        saveBtn.innerText = "Salvando...";
+                        saveBtn.disabled = true;
+                        try {
+                            await db.collection('users').doc(user.uid).set({
+                                nickname: nick,
+                                email: user.email,
+                                lastLogin: firebase.firestore.FieldValue.serverTimestamp()
+                            }, { merge: true });
+
+                            // Success
+                            nicknameModal.classList.add('hidden');
+                            if (userEmailSpan) userEmailSpan.textContent = `${nick} (${user.email})`;
+                            alert("Identidade confirmada. Bem-vindo, " + nick + ".");
+                        } catch (error) {
+                            console.error("Error saving nickname:", error);
+                            alert("Erro ao salvar codinome: " + error.message);
+                            saveBtn.innerText = "Confirmar Identidade";
+                            saveBtn.disabled = false;
+                        }
+                    }
+                });
+            }
+        });
+    </script>
 
 </html>
