@@ -52,7 +52,7 @@ function signOut() {
 // Runs after the DOM is fully loaded to ensure all elements are available.
 // =================================================================================
 
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     // Check if Firebase is initialized. If not, stop execution.
     if (typeof firebase === 'undefined' || !firebase.apps.length) {
         console.error("Firebase not initialized. Check that firebase-config.js is loaded correctly.");
@@ -67,13 +67,13 @@ document.addEventListener('DOMContentLoaded', function() {
     const userInfoDiv = document.getElementById('user-info');
     const userEmailSpan = document.getElementById('user-email');
     const loginLink = document.getElementById('login-link');
-    
+
     // Login Page Specific
     const loginView = document.getElementById('login-view');
     const signupView = document.getElementById('signup-view');
     const showSignupLink = document.getElementById('show-signup');
     const showLoginLink = document.getElementById('show-login');
-    
+
     const emailInput = document.getElementById('email-input');
     const passwordInput = document.getElementById('password-input');
     const loginButton = document.getElementById('login-button');
@@ -87,7 +87,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // --- Auth State Change Listener ---
     // This is the core logic that updates the UI based on whether a user is logged in.
-    auth.onAuthStateChanged(function(user) {
+    auth.onAuthStateChanged(function (user) {
         if (user) {
             // --- User is Logged In ---
             // If we are on the login page, redirect to main.
@@ -99,7 +99,19 @@ document.addEventListener('DOMContentLoaded', function() {
             if (loginLink) loginLink.style.display = 'none';
             if (userInfoDiv) {
                 userInfoDiv.style.display = 'flex';
-                if (userEmailSpan) userEmailSpan.textContent = user.email;
+                if (userEmailSpan) {
+                    userEmailSpan.textContent = user.email; // Fallback
+
+                    // Fetch global nickname if Firestore is available
+                    if (typeof firebase !== 'undefined' && firebase.firestore) {
+                        firebase.firestore().collection('users').doc(user.uid).get()
+                            .then(doc => {
+                                if (doc.exists && doc.data().nickname) {
+                                    userEmailSpan.textContent = `${doc.data().nickname} (${user.email})`;
+                                }
+                            }).catch(err => console.log("Profile not found or error:", err));
+                    }
+                }
             }
         } else {
             // --- User is Logged Out ---
@@ -111,8 +123,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
     // --- Event Listeners for login.html ---
-    if(loginView) { // Only add these listeners if we are on the login page
-        
+    if (loginView) { // Only add these listeners if we are on the login page
+
         // Switch between login and signup views
         showSignupLink.addEventListener('click', (e) => {
             e.preventDefault();
@@ -161,7 +173,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     alert("Falha no registro: " + error.message);
                 });
         });
-        
+
         // Google Login Button on login page
         googleLoginButton.addEventListener('click', signInWithGoogle);
     }
