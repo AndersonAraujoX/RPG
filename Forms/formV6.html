@@ -1,27 +1,60 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gerador de Ficha +2D6 Dark Fantasy - Kuar-Tor Final (Online)</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        rpg: {
+                            black: '#0B0C10',
+                            cyan: '#66FCF1',
+                            slate: '#1F2833',
+                            silver: '#C5C6C7',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Inter:wght@400;500;700&family=MedievalSharp&display=swap" rel="stylesheet">
-    
-    <style>
-        body { 
-            font-family: 'Inter', sans-serif;
-            background-color: #111827;
-            color: #d1d5db;
-        }
-        .title-font { font-family: 'Cinzel', serif; }
-        .content-font { font-family: 'MedievalSharp', cursive; }
+    <link
+        href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Inter:wght@400;500;700&family=MedievalSharp&display=swap"
+        rel="stylesheet">
 
-        input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-        input[type=number] { -moz-appearance: textfield; }
-        
-        .attribute-input { 
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0B0C10;
+            color: #C5C6C7;
+            background-image: url('https://www.transparenttextures.com/patterns/dark-matter.png');
+        }
+
+        .title-font {
+            font-family: 'Cinzel', serif;
+        }
+
+        .content-font {
+            font-family: 'MedievalSharp', cursive;
+        }
+
+        input::-webkit-outer-spin-button,
+        input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        input[type=number] {
+            -moz-appearance: textfield;
+        }
+
+        .attribute-input {
             width: 60px;
             background-color: #1f2937;
             border: 1px solid #4b5563;
@@ -30,18 +63,20 @@
             border-radius: 0.375rem;
             padding: 0.5rem;
         }
+
         .attribute-input:focus {
             outline: none;
             border-color: #ef4444;
             box-shadow: 0 0 0 2px #ef444460;
         }
-        
+
         .section-card {
-            background-color: #1f2937;
+            background-color: rgba(31, 40, 51, 0.95);
+            /* rpg-slate */
             padding: 1.5rem;
             border-radius: 0.5rem;
-            border: 1px solid #374151;
-            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            border: 1px solid rgba(102, 252, 241, 0.2);
+            box-shadow: 0 4px 6px -1px rgba(102, 252, 241, 0.1);
         }
 
         .section-title {
@@ -53,53 +88,209 @@
             margin-bottom: 1rem;
         }
 
-        .action-button { border: 1px solid #52525b; transition: background-color 0.2s, border-color 0.2s; border-radius: 0.375rem; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); }
-        .action-button-primary { background-color: #7f1d1d; color: #fecaca; border-color: #991b1b; }
-        .action-button-primary:hover { background-color: #991b1b; }
-        .action-button-secondary { background-color: #52525b; color: #d4d4d8; border-color: #71717a; }
-        .action-button-secondary:hover { background-color: #71717a; }
-        .action-button-main { background-color: #047857; color: #d1fae5; font-weight: 600; border: 1px solid #065f46; }
-        .action-button-main:hover { background-color: #065f46; }
-        .action-button-import { background-color: #4338ca; color: #e0e7ff; font-weight: 600; border: 1px solid #3730a3; }
-        .action-button-import:hover { background-color: #3730a3; }
-        .action-button-resource { background-color: #1e40af; color: #dbeafe; font-weight: 500; border: 1px solid #1d4ed8; }
-        .action-button-resource:hover { background-color: #1d4ed8; }
+        .action-button {
+            border: 1px solid rgba(102, 252, 241, 0.2);
+            transition: all 0.2s;
+            border-radius: 0.375rem;
+        }
 
-        .points-counter { background-color: rgba(0,0,0,0.2); border: 1px solid #3f3f46; border-radius: 0.5rem; padding: 0.75rem 1rem; margin-bottom: 1.5rem; display: flex; justify-content: space-around; flex-wrap: wrap; gap: 1rem; }
-        .points-block { text-align: center; }
-        .points-label { font-size: 0.8rem; color: #a1a1aa; text-transform: uppercase; }
-        .points-value { font-family: 'Cinzel', serif; font-size: 1.5rem; font-weight: bold; color: #f5f5f5; }
-        .points-value.negative { color: #ef4444; }
+        .action-button-primary {
+            background-color: #66FCF1;
+            color: #0B0C10;
+            border-color: #66FCF1;
+            font-weight: 700;
+        }
 
-        .modal { position: fixed; inset: 0; background-color: rgba(10, 10, 10, 0.85); display: flex; align-items: center; justify-content: center; padding: 1rem; z-index: 1000; }
-        .modal-content { background-color: #18181b; border: 1px solid #3f3f46; padding: 1.5rem; border-radius: 0.5rem; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5), 0 10px 10px -5px rgba(0,0,0,0.4); max-width: 48rem; width: 100%; color: #a3a3a3; }
-        .modal-title { font-family: 'Cinzel', serif; font-size: 1.5rem; font-weight: 700; color: #f5f5f5; }
-        .modal-close-button { color: #a3a3a3; background: none; border: none; font-size: 1.75rem; cursor: pointer; line-height: 1; }
-        .modal-close-button:hover { color: #e5e5e5; }
-        .modal-body { max-height: 70vh; overflow-y: auto; }
+        .action-button-primary:hover {
+            background-color: #45EBE0;
+            transform: scale(1.02);
+        }
 
-        .pvd-item { display: flex; align-items: flex-start; justify-content: space-between; padding: 0.5rem; border-bottom: 1px solid #3f3f46; }
-        .pvd-item:last-child { border-bottom: none; }
-        .pvd-item-details strong { color: #e5e7eb; }
-        .pvd-item-details .description { display: block; font-size: 0.8rem; color: #a1a1aa; margin-top: 0.25rem; white-space: normal; }
+        .action-button-secondary {
+            background-color: #1F2833;
+            color: #66FCF1;
+            border-color: #66FCF1;
+        }
+
+        .action-button-secondary:hover {
+            background-color: #0B0C10;
+        }
+
+        .action-button-main {
+            background-color: #047857;
+            color: #d1fae5;
+            font-weight: 600;
+            border: 1px solid #065f46;
+        }
+
+        .action-button-main:hover {
+            background-color: #065f46;
+        }
+
+        .action-button-import {
+            background-color: #4338ca;
+            color: #e0e7ff;
+            font-weight: 600;
+            border: 1px solid #3730a3;
+        }
+
+        .action-button-import:hover {
+            background-color: #3730a3;
+        }
+
+        .action-button-resource {
+            background-color: #1e40af;
+            color: #dbeafe;
+            font-weight: 500;
+            border: 1px solid #1d4ed8;
+        }
+
+        .action-button-resource:hover {
+            background-color: #1d4ed8;
+        }
+
+        .points-counter {
+            background-color: rgba(0, 0, 0, 0.2);
+            border: 1px solid #3f3f46;
+            border-radius: 0.5rem;
+            padding: 0.75rem 1rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .points-block {
+            text-align: center;
+        }
+
+        .points-label {
+            font-size: 0.8rem;
+            color: #a1a1aa;
+            text-transform: uppercase;
+        }
+
+        .points-value {
+            font-family: 'Cinzel', serif;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #f5f5f5;
+        }
+
+        .points-value.negative {
+            color: #ef4444;
+        }
+
+        .modal {
+            position: fixed;
+            inset: 0;
+            background-color: rgba(10, 10, 10, 0.85);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background-color: #18181b;
+            border: 1px solid #3f3f46;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.4);
+            max-width: 48rem;
+            width: 100%;
+            color: #a3a3a3;
+        }
+
+        .modal-title {
+            font-family: 'Cinzel', serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #f5f5f5;
+        }
+
+        .modal-close-button {
+            color: #a3a3a3;
+            background: none;
+            border: none;
+            font-size: 1.75rem;
+            cursor: pointer;
+            line-height: 1;
+        }
+
+        .modal-close-button:hover {
+            color: #e5e5e5;
+        }
+
+        .modal-body {
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+
+        .pvd-item {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            padding: 0.5rem;
+            border-bottom: 1px solid #3f3f46;
+        }
+
+        .pvd-item:last-child {
+            border-bottom: none;
+        }
+
+        .pvd-item-details strong {
+            color: #e5e7eb;
+        }
+
+        .pvd-item-details .description {
+            display: block;
+            font-size: 0.8rem;
+            color: #a1a1aa;
+            margin-top: 0.25rem;
+            white-space: normal;
+        }
 
         @media print {
-            body { background-color: #ffffff !important; color: #000 !important; font-family: 'Times New Roman', Times, serif; font-size: 10pt; }
-            .no-print, #rpgSheetForm, #mainTitle, #savedSheetsSection, #firebase-status { display: none !important; }
-            #generatedSheet { display: block !important; box-shadow: none !important; border: none !important; color: #000 !important; background-color: #fff !important; }
-            
+            body {
+                background-color: #ffffff !important;
+                color: #000 !important;
+                font-family: 'Times New Roman', Times, serif;
+                font-size: 10pt;
+            }
+
+            .no-print,
+            #rpgSheetForm,
+            #mainTitle,
+            #savedSheetsSection,
+            #firebase-status {
+                display: none !important;
+            }
+
+            #generatedSheet {
+                display: block !important;
+                box-shadow: none !important;
+                border: none !important;
+                color: #000 !important;
+                background-color: #fff !important;
+            }
+
             #sheetContent {
                 display: grid;
                 grid-template-columns: 1fr 1fr;
                 gap: 15px;
                 color: #000 !important;
             }
+
             .print-section {
                 border: 1px solid #000;
                 padding: 10px;
                 border-radius: 5px;
                 page-break-inside: avoid;
             }
+
             .print-section h3 {
                 font-family: 'Cinzel', serif;
                 font-size: 14pt;
@@ -109,38 +300,89 @@
                 padding-bottom: 5px;
                 color: #000 !important;
             }
-            .print-full-width { grid-column: 1 / -1; }
-            .print-attributes-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; text-align: center; }
-            .print-attribute-box { border: 1px solid #000; padding: 5px; }
-            .print-attribute-box strong { font-size: 8pt; display: block; }
-            .print-attribute-box span { font-size: 12pt; font-weight: bold; }
-            .print-pvd-list { list-style-type: none; padding: 0; margin: 0; }
-            .print-pvd-item { margin-bottom: 8px; }
-            .print-pvd-item strong { font-weight: bold; }
-            .print-pvd-item span { font-size: 9pt; }
-            .print-pvd-item .description { font-style: italic; font-size: 8pt; margin-left: 10px; display: block; color: #333 !important; }
-            .print-text-area { min-height: 50px; padding: 5px; border: 1px solid #ccc; }
+
+            .print-full-width {
+                grid-column: 1 / -1;
+            }
+
+            .print-attributes-grid {
+                display: grid;
+                grid-template-columns: repeat(4, 1fr);
+                gap: 5px;
+                text-align: center;
+            }
+
+            .print-attribute-box {
+                border: 1px solid #000;
+                padding: 5px;
+            }
+
+            .print-attribute-box strong {
+                font-size: 8pt;
+                display: block;
+            }
+
+            .print-attribute-box span {
+                font-size: 12pt;
+                font-weight: bold;
+            }
+
+            .print-pvd-list {
+                list-style-type: none;
+                padding: 0;
+                margin: 0;
+            }
+
+            .print-pvd-item {
+                margin-bottom: 8px;
+            }
+
+            .print-pvd-item strong {
+                font-weight: bold;
+            }
+
+            .print-pvd-item span {
+                font-size: 9pt;
+            }
+
+            .print-pvd-item .description {
+                font-style: italic;
+                font-size: 8pt;
+                margin-left: 10px;
+                display: block;
+                color: #333 !important;
+            }
+
+            .print-text-area {
+                min-height: 50px;
+                padding: 5px;
+                border: 1px solid #ccc;
+            }
         }
     </style>
 </head>
-<body class="bg-neutral-900 text-neutral-300 min-h-screen flex flex-col items-center pt-8 pb-12 px-4">
+
+<body class="bg-rpg-black text-rpg-silver min-h-screen flex flex-col items-center pt-8 pb-12 px-4">
 
     <div class="w-full max-w-3xl">
         <header class="text-center mb-8 no-print">
-            <h1 id="mainTitle" class="text-4xl md:text-5xl title-font text-red-500">Kuar-Tor: Ecos do Vazio</h1>
+            <h1 id="mainTitle" class="text-4xl md:text-5xl title-font text-rpg-cyan">Kuar-Tor: Ecos do Vazio</h1>
             <p class="content-font text-xl text-gray-400 mt-2">Ficha de Personagem Unificada (Online)</p>
         </header>
 
         <!-- Status do Firebase -->
-        <div id="firebase-status" class="text-center mb-4 p-3 rounded-md border border-neutral-700 bg-neutral-800 no-print">
+        <div id="firebase-status"
+            class="text-center mb-4 p-3 rounded-md border border-rpg-cyan/20 bg-rpg-slate no-print">
             <p id="auth-status">Conectando aos arquivos arcanos...</p>
         </div>
 
-        <div class="w-full bg-neutral-800 p-6 sm:p-8 rounded-lg shadow-2xl border border-neutral-700 no-print">
+        <div
+            class="w-full bg-rpg-slate/90 backdrop-blur-sm p-6 sm:p-8 rounded-lg shadow-2xl border border-rpg-cyan/20 no-print">
             <div class="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
-                <h1 class="title-font text-3xl sm:text-4xl font-bold text-center text-amber-500">Gerador de Fichas</h1>
+                <h1 class="title-font text-3xl sm:text-4xl font-bold text-center text-rpg-cyan">Gerador de Fichas</h1>
                 <div class="flex space-x-3">
-                    <button type="button" id="importSheetButton" class="px-5 py-2.5 action-button-import rounded-md shadow-md text-sm">Importar Ficha</button>
+                    <button type="button" id="importSheetButton"
+                        class="px-5 py-2.5 action-button-import rounded-md shadow-md text-sm">Importar Ficha</button>
                 </div>
             </div>
             <input type="file" id="fileInput" accept=".json" class="hidden">
@@ -149,46 +391,80 @@
             <div class="mb-6 no-print">
                 <h3 class="text-lg font-semibold text-amber-500 text-center mb-3">Recursos Rápidos</h3>
                 <div class="flex justify-center flex-wrap gap-3">
-                    <a href="https://andersonaraujox.github.io/RPG/Arquivos/Vantagens.pdf" target="_blank" class="px-4 py-2 action-button action-button-resource rounded-md text-sm">Vantagens (PDF)</a>
-                    <a href="https://andersonaraujox.github.io/RPG/Arquivos/desvantagens.pdf" target="_blank" class="px-4 py-2 action-button action-button-resource rounded-md text-sm">Desvantagens (PDF)</a>
-                    <a href="https://andersonaraujox.github.io/RPG/Arquivos/medieval2d6-livreto.pdf" target="_blank" class="px-4 py-2 action-button action-button-resource rounded-md text-sm">Livreto +2D6 (PDF)</a>
+                    <a href="https://andersonaraujox.github.io/RPG/Arquivos/Vantagens.pdf" target="_blank"
+                        class="px-4 py-2 action-button action-button-resource rounded-md text-sm">Vantagens (PDF)</a>
+                    <a href="https://andersonaraujox.github.io/RPG/Arquivos/desvantagens.pdf" target="_blank"
+                        class="px-4 py-2 action-button action-button-resource rounded-md text-sm">Desvantagens (PDF)</a>
+                    <a href="https://andersonaraujox.github.io/RPG/Arquivos/medieval2d6-livreto.pdf" target="_blank"
+                        class="px-4 py-2 action-button action-button-resource rounded-md text-sm">Livreto +2D6 (PDF)</a>
                 </div>
             </div>
 
             <!-- Contador de Pontos -->
             <div id="pointCounterSection" class="points-counter">
-                <div class="points-block"><div class="points-label">Atributos</div><div id="attributePointsValue" class="points-value">0/14</div></div>
-                <div class="points-block"><div class="points-label">Perícias</div><div id="skillPointsValue" class="points-value">0/10</div></div>
-                <div class="points-block"><div class="points-label">Vantagens</div><div id="advantagePointsValue" class="points-value">0/5</div></div>
+                <div class="points-block">
+                    <div class="points-label">Atributos</div>
+                    <div id="attributePointsValue" class="points-value">0/14</div>
+                </div>
+                <div class="points-block">
+                    <div class="points-label">Perícias</div>
+                    <div id="skillPointsValue" class="points-value">0/10</div>
+                </div>
+                <div class="points-block">
+                    <div class="points-label">Vantagens</div>
+                    <div id="advantagePointsValue" class="points-value">0/5</div>
+                </div>
             </div>
 
             <form id="rpgSheetForm" class="space-y-6">
                 <!-- Informações Básicas -->
                 <fieldset class="border border-neutral-700 p-4 rounded-md">
-                    <legend class="text-lg px-2 section-title !border-none !mb-0 !pb-0 !text-amber-500">Identidade</legend>
+                    <legend class="text-lg px-2 section-title !border-none !mb-0 !pb-0 !text-amber-500">Identidade
+                    </legend>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                          <div><label for="charName" class="block text-sm font-medium mb-1">Nome:</label><input type="text" id="charName" name="charName" required class="w-full p-2 bg-neutral-900 border-neutral-600 rounded-md"></div>
-                          <div><label for="charRace" class="block text-sm font-medium mb-1">Raça:</label><input type="text" id="charRace" name="charRace" class="w-full p-2 bg-neutral-900 border-neutral-600 rounded-md"></div>
-                          <div><label for="charClass" class="block text-sm font-medium mb-1">Classe:</label><input type="text" id="charClass" name="charClass" class="w-full p-2 bg-neutral-900 border-neutral-600 rounded-md"></div>
+                        <div><label for="charName" class="block text-sm font-medium mb-1">Nome:</label><input
+                                type="text" id="charName" name="charName" required
+                                class="w-full p-2 bg-neutral-900 border-neutral-600 rounded-md"></div>
+                        <div><label for="charRace" class="block text-sm font-medium mb-1">Raça:</label><input
+                                type="text" id="charRace" name="charRace"
+                                class="w-full p-2 bg-neutral-900 border-neutral-600 rounded-md"></div>
+                        <div><label for="charClass" class="block text-sm font-medium mb-1">Classe:</label><input
+                                type="text" id="charClass" name="charClass"
+                                class="w-full p-2 bg-neutral-900 border-neutral-600 rounded-md"></div>
                     </div>
                 </fieldset>
-                
+
                 <!-- Evolução -->
-                 <fieldset class="border border-neutral-700 p-4 rounded-md">
-                    <legend class="text-lg px-2 section-title !border-none !mb-0 !pb-0 !text-amber-500">Evolução & Experiência</legend>
+                <fieldset class="border border-neutral-700 p-4 rounded-md">
+                    <legend class="text-lg px-2 section-title !border-none !mb-0 !pb-0 !text-amber-500">Evolução &
+                        Experiência</legend>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
                         <div>
-                            <label for="expPoints" class="block text-sm font-medium mb-1">Pontos de Experiência (EXP):</label>
-                            <input type="number" id="expPoints" name="expPoints" min="0" value="0" class="w-full p-2 bg-neutral-900 border-neutral-600 rounded-md">
+                            <label for="expPoints" class="block text-sm font-medium mb-1">Pontos de Experiência
+                                (EXP):</label>
+                            <input type="number" id="expPoints" name="expPoints" min="0" value="0"
+                                class="w-full p-2 bg-neutral-900 border-neutral-600 rounded-md">
                         </div>
                         <div class="bg-neutral-900/50 p-3 rounded-md border border-neutral-700 space-y-2">
-                            <div class="flex justify-between text-sm"><span class="text-neutral-400">Pontos de Atributo Ganhos:</span><span id="earnedAttributePoints" class="font-bold text-amber-400">0</span></div>
-                            <div class="flex justify-between text-sm"><span class="text-neutral-400">Pontos de Evolução Ganhos:</span><span id="earnedEvolutionPoints" class="font-bold text-amber-400">0</span></div>
+                            <div class="flex justify-between text-sm"><span class="text-neutral-400">Pontos de Atributo
+                                    Ganhos:</span><span id="earnedAttributePoints"
+                                    class="font-bold text-amber-400">0</span></div>
+                            <div class="flex justify-between text-sm"><span class="text-neutral-400">Pontos de Evolução
+                                    Ganhos:</span><span id="earnedEvolutionPoints"
+                                    class="font-bold text-amber-400">0</span></div>
                             <hr class="border-neutral-700">
-                            <div class="flex justify-between text-sm"><span class="text-neutral-400">Pontos de Evolução Disponíveis:</span><span id="availableEvolutionPoints" class="font-bold text-green-400">0</span></div>
+                            <div class="flex justify-between text-sm"><span class="text-neutral-400">Pontos de Evolução
+                                    Disponíveis:</span><span id="availableEvolutionPoints"
+                                    class="font-bold text-green-400">0</span></div>
                             <div class="flex justify-center space-x-2 pt-2">
-                                <button type="button" id="spendOnSkillButton" class="text-xs action-button action-button-secondary px-2 py-1 disabled:opacity-50 disabled:cursor-not-allowed" title="Gasta 1 Ponto de Evolução para ganhar +1 Ponto de Perícia.">+1 para Perícias</button>
-                                <button type="button" id="spendOnAdvantageButton" class="text-xs action-button action-button-secondary px-2 py-1 disabled:opacity-50 disabled:cursor-not-allowed" title="Gasta 1 Ponto de Evolução para ganhar +1 Ponto para Vantagens.">+1 para Vantagens</button>
+                                <button type="button" id="spendOnSkillButton"
+                                    class="text-xs action-button action-button-secondary px-2 py-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    title="Gasta 1 Ponto de Evolução para ganhar +1 Ponto de Perícia.">+1 para
+                                    Perícias</button>
+                                <button type="button" id="spendOnAdvantageButton"
+                                    class="text-xs action-button action-button-secondary px-2 py-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    title="Gasta 1 Ponto de Evolução para ganhar +1 Ponto para Vantagens.">+1 para
+                                    Vantagens</button>
                             </div>
                         </div>
                     </div>
@@ -198,50 +474,89 @@
 
                 <!-- Atributos -->
                 <fieldset class="border border-neutral-700 p-4 rounded-md">
-                    <legend class="text-lg px-2 section-title !border-none !mb-0 !pb-0 !text-amber-500">Atributos</legend>
+                    <legend class="text-lg px-2 section-title !border-none !mb-0 !pb-0 !text-amber-500">Atributos
+                    </legend>
                     <div class="grid grid-cols-3 md:grid-cols-7 gap-4 justify-items-center text-center">
-                        <div><label for="for" class="block text-lg font-bold title-font text-gray-300">FOR</label><input type="number" id="for" name="for" class="attribute-input mt-1" value="2" min="1" max="5"></div>
-                        <div><label for="des" class="block text-lg font-bold title-font text-gray-300">DES</label><input type="number" id="des" name="des" class="attribute-input mt-1" value="2" min="1" max="5"></div>
-                        <div><label for="con" class="block text-lg font-bold title-font text-gray-300">CON</label><input type="number" id="con" name="con" class="attribute-input mt-1" value="2" min="1" max="5"></div>
-                        <div><label for="int" class="block text-lg font-bold title-font text-gray-300">INT</label><input type="number" id="int" name="int" class="attribute-input mt-1" value="2" min="1" max="5"></div>
-                        <div><label for="sab" class="block text-lg font-bold title-font text-gray-300">SAB</label><input type="number" id="sab" name="sab" class="attribute-input mt-1" value="2" min="1" max="5"></div>
-                        <div><label for="pod" class="block text-lg font-bold title-font text-gray-300">POD</label><input type="number" id="pod" name="pod" class="attribute-input mt-1" value="2" min="1" max="5"></div>
-                        <div><label for="car" class="block text-lg font-bold title-font text-gray-300">CAR</label><input type="number" id="car" name="car" class="attribute-input mt-1" value="2" min="1" max="5"></div>
+                        <div><label for="for" class="block text-lg font-bold title-font text-gray-300">FOR</label><input
+                                type="number" id="for" name="for" class="attribute-input mt-1" value="2" min="1"
+                                max="5"></div>
+                        <div><label for="des" class="block text-lg font-bold title-font text-gray-300">DES</label><input
+                                type="number" id="des" name="des" class="attribute-input mt-1" value="2" min="1"
+                                max="5"></div>
+                        <div><label for="con" class="block text-lg font-bold title-font text-gray-300">CON</label><input
+                                type="number" id="con" name="con" class="attribute-input mt-1" value="2" min="1"
+                                max="5"></div>
+                        <div><label for="int" class="block text-lg font-bold title-font text-gray-300">INT</label><input
+                                type="number" id="int" name="int" class="attribute-input mt-1" value="2" min="1"
+                                max="5"></div>
+                        <div><label for="sab" class="block text-lg font-bold title-font text-gray-300">SAB</label><input
+                                type="number" id="sab" name="sab" class="attribute-input mt-1" value="2" min="1"
+                                max="5"></div>
+                        <div><label for="pod" class="block text-lg font-bold title-font text-gray-300">POD</label><input
+                                type="number" id="pod" name="pod" class="attribute-input mt-1" value="2" min="1"
+                                max="5"></div>
+                        <div><label for="car" class="block text-lg font-bold title-font text-gray-300">CAR</label><input
+                                type="number" id="car" name="car" class="attribute-input mt-1" value="2" min="1"
+                                max="5"></div>
                     </div>
                 </fieldset>
 
                 <!-- Recursos de Combate -->
                 <fieldset class="border border-neutral-700 p-4 rounded-md">
-                    <legend class="text-lg px-2 section-title !border-none !mb-0 !pb-0 !text-amber-500">Recursos de Combate</legend>
+                    <legend class="text-lg px-2 section-title !border-none !mb-0 !pb-0 !text-amber-500">Recursos de
+                        Combate</legend>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-center">
                         <div>
-                            <label for="pontosVida" class="block text-lg font-bold title-font text-gray-300">Pontos de Vida (PV)</label>
-                            <input type="number" id="pontosVida" name="pontosVida" class="attribute-input mt-1 w-24" value="10">
+                            <label for="pontosVida" class="block text-lg font-bold title-font text-gray-300">Pontos de
+                                Vida (PV)</label>
+                            <input type="number" id="pontosVida" name="pontosVida" class="attribute-input mt-1 w-24"
+                                value="10">
                         </div>
                         <div>
-                            <label for="pontosEnergia" class="block text-lg font-bold title-font text-gray-300">Pontos de Energia (PE)</label>
-                            <input type="number" id="pontosEnergia" name="pontosEnergia" class="attribute-input mt-1 w-24" value="10">
+                            <label for="pontosEnergia" class="block text-lg font-bold title-font text-gray-300">Pontos
+                                de Energia (PE)</label>
+                            <input type="number" id="pontosEnergia" name="pontosEnergia"
+                                class="attribute-input mt-1 w-24" value="10">
                         </div>
                     </div>
                 </fieldset>
 
                 <!-- Habilidades -->
                 <fieldset class="border border-neutral-700 p-4 rounded-md">
-                    <legend class="text-lg px-2 section-title !border-none !mb-0 !pb-0 !text-amber-500">Habilidades & Peculiaridades</legend>
+                    <legend class="text-lg px-2 section-title !border-none !mb-0 !pb-0 !text-amber-500">Habilidades &
+                        Peculiaridades</legend>
                     <div class="space-y-4">
                         <div>
-                            <div class="flex justify-between items-center mb-1"><label class="block text-sm font-medium">Perícias:</label><button type="button" id="manageSkillsButton" class="text-sm action-button action-button-secondary px-3 py-1">Gerir Perícias</button></div>
-                            <div id="displaySkills" class="p-2 min-h-[40px] bg-neutral-900/50 rounded-md border border-neutral-600 text-sm italic text-neutral-400">Nenhuma perícia.</div>
+                            <div class="flex justify-between items-center mb-1"><label
+                                    class="block text-sm font-medium">Perícias:</label><button type="button"
+                                    id="manageSkillsButton"
+                                    class="text-sm action-button action-button-secondary px-3 py-1">Gerir
+                                    Perícias</button></div>
+                            <div id="displaySkills"
+                                class="p-2 min-h-[40px] bg-neutral-900/50 rounded-md border border-neutral-600 text-sm italic text-neutral-400">
+                                Nenhuma perícia.</div>
                             <input type="hidden" name="pericias" id="periciasInput" value="[]">
                         </div>
                         <div>
-                            <div class="flex justify-between items-center mb-1"><label class="block text-sm font-medium">Vantagens:</label><button type="button" id="manageAdvantagesButton" class="text-sm action-button action-button-secondary px-3 py-1">Gerir Vantagens</button></div>
-                            <div id="displayAdvantages" class="p-2 min-h-[40px] bg-neutral-900/50 rounded-md border border-neutral-600 text-sm italic text-neutral-400">Nenhuma vantagem.</div>
+                            <div class="flex justify-between items-center mb-1"><label
+                                    class="block text-sm font-medium">Vantagens:</label><button type="button"
+                                    id="manageAdvantagesButton"
+                                    class="text-sm action-button action-button-secondary px-3 py-1">Gerir
+                                    Vantagens</button></div>
+                            <div id="displayAdvantages"
+                                class="p-2 min-h-[40px] bg-neutral-900/50 rounded-md border border-neutral-600 text-sm italic text-neutral-400">
+                                Nenhuma vantagem.</div>
                             <input type="hidden" name="vantagens" id="vantagensInput" value="[]">
                         </div>
                         <div>
-                            <div class="flex justify-between items-center mb-1"><label class="block text-sm font-medium">Desvantagens:</label><button type="button" id="manageDisadvantagesButton" class="text-sm action-button action-button-secondary px-3 py-1">Gerir Desvantagens</button></div>
-                            <div id="displayDisadvantages" class="p-2 min-h-[40px] bg-neutral-900/50 rounded-md border border-neutral-600 text-sm italic text-neutral-400">Nenhuma desvantagem.</div>
+                            <div class="flex justify-between items-center mb-1"><label
+                                    class="block text-sm font-medium">Desvantagens:</label><button type="button"
+                                    id="manageDisadvantagesButton"
+                                    class="text-sm action-button action-button-secondary px-3 py-1">Gerir
+                                    Desvantagens</button></div>
+                            <div id="displayDisadvantages"
+                                class="p-2 min-h-[40px] bg-neutral-900/50 rounded-md border border-neutral-600 text-sm italic text-neutral-400">
+                                Nenhuma desvantagem.</div>
                             <input type="hidden" name="desvantagens" id="desvantagensInput" value="[]">
                         </div>
                     </div>
@@ -249,22 +564,26 @@
 
                 <!-- Seção de Magia -->
                 <fieldset id="secao-magia" class="border border-neutral-700 p-4 rounded-md">
-                    <legend class="text-lg px-2 section-title !border-none !mb-0 !pb-0 !text-amber-500">🔮 Magia & Rituais</legend>
+                    <legend class="text-lg px-2 section-title !border-none !mb-0 !pb-0 !text-amber-500">🔮 Magia &
+                        Rituais</legend>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 my-4">
                         <div>
-                            <label for="tradicaoMagica" class="block text-sm font-medium text-gray-400 mb-1">Tradição Mágica</label>
-                            <select id="tradicaoMagica" name="tradicaoMagica" class="w-full bg-neutral-900 border-neutral-600 rounded-md p-2 h-[42px]">
+                            <label for="tradicaoMagica" class="block text-sm font-medium text-gray-400 mb-1">Tradição
+                                Mágica</label>
+                            <select id="tradicaoMagica" name="tradicaoMagica"
+                                class="w-full bg-neutral-900 border-neutral-600 rounded-md p-2 h-[42px]">
                                 <option value="INT">Arcana (INT)</option>
                                 <option value="SAB">Divina/Primal (SAB)</option>
                                 <option value="POD">Inata (POD)</option>
                             </select>
-                             <p class="text-xs text-gray-500 mt-1">Atributo chave.</p>
+                            <p class="text-xs text-gray-500 mt-1">Atributo chave.</p>
                         </div>
                     </div>
 
                     <!-- Tabela de Magia -->
                     <div class="mt-6 mb-4">
-                        <h4 class="text-lg content-font text-gray-300 mb-2 text-center">Tabela de Efeitos Mágicos (Referência)</h4>
+                        <h4 class="text-lg content-font text-gray-300 mb-2 text-center">Tabela de Efeitos Mágicos
+                            (Referência)</h4>
                         <div class="overflow-x-auto rounded-lg border border-neutral-700">
                             <table class="min-w-full bg-neutral-900 text-sm text-center">
                                 <thead class="bg-neutral-800">
@@ -328,39 +647,52 @@
                             </table>
                         </div>
                     </div>
-                    
+
                     <div>
-                        <h3 class="text-xl content-font text-gray-300 mb-3 border-t border-gray-700 pt-4">Caminhos de Magia</h3>
+                        <h3 class="text-xl content-font text-gray-300 mb-3 border-t border-gray-700 pt-4">Caminhos de
+                            Magia</h3>
                         <div id="caminhosContainer" class="space-y-3"></div>
                         <input type="hidden" name="caminhosMagia" id="caminhosMagiaInput" value="[]">
-                        <button type="button" id="addCaminhoBtn" class="mt-4 text-sm bg-red-800 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-md shadow-lg transition-colors duration-200">+ Adicionar Caminho</button>
+                        <button type="button" id="addCaminhoBtn"
+                            class="mt-4 text-sm bg-red-800 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-md shadow-lg transition-colors duration-200">+
+                            Adicionar Caminho</button>
                     </div>
                 </fieldset>
 
-                 <!-- Equipamento e Narrativa -->
+                <!-- Equipamento e Narrativa -->
                 <fieldset class="border border-neutral-700 p-4 rounded-md">
-                    <legend class="text-lg px-2 section-title !border-none !mb-0 !pb-0 !text-amber-500">Equipamento & Narrativa</legend>
+                    <legend class="text-lg px-2 section-title !border-none !mb-0 !pb-0 !text-amber-500">Equipamento &
+                        Narrativa</legend>
                     <div class="space-y-4">
                         <div>
-                            <label for="equipment" class="block text-sm font-medium mb-1">Equipamento e Relíquias:</label>
-                            <textarea id="equipment" name="equipment" rows="4" class="w-full p-2 bg-neutral-900 border-neutral-600 rounded-md" placeholder="Adaga ritualística, tomo esquecido, armadura de placas enferrujada..."></textarea>
+                            <label for="equipment" class="block text-sm font-medium mb-1">Equipamento e
+                                Relíquias:</label>
+                            <textarea id="equipment" name="equipment" rows="4"
+                                class="w-full p-2 bg-neutral-900 border-neutral-600 rounded-md"
+                                placeholder="Adaga ritualística, tomo esquecido, armadura de placas enferrujada..."></textarea>
                         </div>
                         <div>
-                             <label for="backstory" class="block text-sm font-medium mb-1">Passado Sombrio:</label>
-                            <textarea id="backstory" name="backstory" rows="6" class="w-full p-2 bg-neutral-900 border-neutral-600 rounded-md" placeholder="Nascido sob uma lua de sangue, marcado por uma tragédia indizível..."></textarea>
+                            <label for="backstory" class="block text-sm font-medium mb-1">Passado Sombrio:</label>
+                            <textarea id="backstory" name="backstory" rows="6"
+                                class="w-full p-2 bg-neutral-900 border-neutral-600 rounded-md"
+                                placeholder="Nascido sob uma lua de sangue, marcado por uma tragédia indizível..."></textarea>
                         </div>
                     </div>
                 </fieldset>
 
                 <div class="flex justify-end mt-6 space-x-4">
-                    <button type="button" id="clearFormButton" class="px-6 py-2 action-button action-button-secondary rounded-md shadow-md">Limpar</button>
-                    <button type="submit" class="px-6 py-2 action-button action-button-primary rounded-md shadow-md">Salvar e Visualizar</button>
+                    <button type="button" id="clearFormButton"
+                        class="px-6 py-2 action-button action-button-secondary rounded-md shadow-md">Limpar</button>
+                    <button type="submit"
+                        class="px-6 py-2 action-button action-button-primary rounded-md shadow-md">Salvar e
+                        Visualizar</button>
                 </div>
             </form>
         </div>
-        
+
         <!-- Seção de Fichas Salvas -->
-        <div id="savedSheetsSection" class="w-full bg-neutral-800 p-6 sm:p-8 rounded-lg shadow-2xl mt-10 border border-neutral-700 no-print">
+        <div id="savedSheetsSection"
+            class="w-full bg-neutral-800 p-6 sm:p-8 rounded-lg shadow-2xl mt-10 border border-neutral-700 no-print">
             <h2 class="title-font text-2xl font-bold text-center text-amber-600 mb-4">Crônicas Salvas na Nuvem</h2>
             <div id="savedSheetsList" class="space-y-2 max-h-96 overflow-y-auto pr-2">
                 <p class="text-neutral-500 text-center">Nenhuma crônica registrada ainda.</p>
@@ -369,27 +701,34 @@
 
         <!-- Div para exibir a ficha gerada -->
         <div id="generatedSheet" class="w-full mt-8 hidden">
-             <div id="sheetContent"></div>
-             <div class="no-print mt-4 flex justify-center space-x-4">
+            <div id="sheetContent"></div>
+            <div class="no-print mt-4 flex justify-center space-x-4">
                 <button id="printSheetButton" class="px-6 py-2 action-button action-button-primary">Imprimir</button>
-                <button id="exportJsonButton" class="px-6 py-2 action-button action-button-secondary">Exportar JSON</button>
-                <button id="exportMarkdownButton" class="px-6 py-2 action-button action-button-secondary">Exportar Markdown</button>
-             </div>
+                <button id="exportJsonButton" class="px-6 py-2 action-button action-button-secondary">Exportar
+                    JSON</button>
+                <button id="exportMarkdownButton" class="px-6 py-2 action-button action-button-secondary">Exportar
+                    Markdown</button>
+            </div>
         </div>
     </div>
 
     <!-- Modal Genérico para Perícias, Vantagens, Desvantagens -->
     <div id="pvdModal" class="modal hidden">
         <div class="modal-content">
-            <div class="flex justify-between items-center mb-4"><h3 id="pvdModalTitle" class="modal-title">Gerir Itens</h3><button id="closePvdModal" class="modal-close-button" title="Fechar">&times;</button></div>
+            <div class="flex justify-between items-center mb-4">
+                <h3 id="pvdModalTitle" class="modal-title">Gerir Itens</h3><button id="closePvdModal"
+                    class="modal-close-button" title="Fechar">&times;</button>
+            </div>
             <div class="modal-body space-y-4">
                 <div id="pvdFormContainer"></div>
-                <div id="pvdListContainer" class="max-h-60 overflow-y-auto border border-neutral-700 rounded-md p-2 bg-neutral-800/50"></div>
+                <div id="pvdListContainer"
+                    class="max-h-60 overflow-y-auto border border-neutral-700 rounded-md p-2 bg-neutral-800/50"></div>
             </div>
-            <div class="mt-6 text-right"><button id="savePvdButton" class="action-button action-button-primary px-4 py-2">Concluir Edição</button></div>
+            <div class="mt-6 text-right"><button id="savePvdButton"
+                    class="action-button action-button-primary px-4 py-2">Concluir Edição</button></div>
         </div>
     </div>
-    
+
     <!-- Modal de Confirmação -->
     <div id="custom-confirm-modal" class="modal hidden">
         <div class="modal-content">
@@ -401,12 +740,14 @@
                 <p id="custom-confirm-message"></p>
             </div>
             <div class="mt-6 text-right space-x-2">
-                <button id="custom-cancel-button-footer" class="action-button action-button-secondary px-4 py-2">Cancelar</button>
-                <button id="custom-confirm-button" class="action-button action-button-primary px-4 py-2">Confirmar</button>
+                <button id="custom-cancel-button-footer"
+                    class="action-button action-button-secondary px-4 py-2">Cancelar</button>
+                <button id="custom-confirm-button"
+                    class="action-button action-button-primary px-4 py-2">Confirmar</button>
             </div>
         </div>
     </div>
-    
+
     <!-- Modal de Alerta -->
     <div id="alert-modal" class="modal hidden">
         <div class="modal-content">
@@ -440,7 +781,7 @@
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
-        
+
         // --- VARIÁVEIS GLOBAIS DE ESTADO ---
         let currentUserId = null;
         let currentSheetId = null;
@@ -458,7 +799,7 @@
                 authStatusEl.textContent = "Autenticando...";
                 console.log("Nenhum usuário logado. Tentando login anônimo.");
                 try {
-                     if (typeof __initial_auth_token !== 'undefined') {
+                    if (typeof __initial_auth_token !== 'undefined') {
                         await signInWithCustomToken(auth, __initial_auth_token);
                     } else {
                         await signInAnonymously(auth);
@@ -485,11 +826,11 @@
             const pontosVidaInput = document.getElementById('pontosVida');
             const addCaminhoBtn = document.getElementById('addCaminhoBtn');
             const caminhosContainer = document.getElementById('caminhosContainer');
-            
+
             const attributePointsValueDiv = document.getElementById('attributePointsValue');
             const skillPointsValueDiv = document.getElementById('skillPointsValue');
             const advantagePointsValueDiv = document.getElementById('advantagePointsValue');
-            
+
             const expInput = document.getElementById('expPoints');
             const earnedAttributePointsDiv = document.getElementById('earnedAttributePoints');
             const earnedEvolutionPointsDiv = document.getElementById('earnedEvolutionPoints');
@@ -498,14 +839,14 @@
             const spendOnAdvantageButton = document.getElementById('spendOnAdvantageButton');
             const pontosPericiaAdicionaisInput = document.getElementById('pontosPericiaAdicionais');
             const pontosVantagemAdicionaisInput = document.getElementById('pontosVantagemAdicionais');
-            
+
             const manageSkillsButton = document.getElementById('manageSkillsButton');
             const manageAdvantagesButton = document.getElementById('manageAdvantagesButton');
             const manageDisadvantagesButton = document.getElementById('manageDisadvantagesButton');
             const displaySkillsDiv = document.getElementById('displaySkills');
             const displayAdvantagesDiv = document.getElementById('displayAdvantages');
             const displayDisadvantagesDiv = document.getElementById('displayDisadvantages');
-            
+
             const pvdModal = document.getElementById('pvdModal');
             const pvdModalTitle = document.getElementById('pvdModalTitle');
             const closePvdModalButton = document.getElementById('closePvdModal');
@@ -530,7 +871,7 @@
             const caminhosDisponiveis = ["Magia (Fogo)", "Magia (Água)", "Magia (Ar)", "Magia (Terra)", "Magia (Luz)", "Magia (Trevas)", "Magia (Animais)", "Magia (Plantas)", "Magia (Humanos)", "Magia (Spiritum)", "Magia (Arkanum)", "Magia (Metamagia)"];
 
             // --- FUNÇÕES ---
-            
+
             function updateAllStats() {
                 const exp = parseInt(expInput.value) || 0;
                 const pontosPericiaAdd = parseInt(pontosPericiaAdicionaisInput.value) || 0;
@@ -559,7 +900,7 @@
 
                 const advantages = JSON.parse(document.getElementById('vantagensInput').value || '[]');
                 const disadvantages = JSON.parse(document.getElementById('desvantagensInput').value || '[]');
-                
+
                 let pontosGastosCaminho = 0;
                 caminhosContainer.querySelectorAll('input[type="number"]').forEach(input => {
                     pontosGastosCaminho += parseInt(input.value) || 0;
@@ -576,10 +917,10 @@
                 const id = Date.now();
                 const div = document.createElement('div');
                 div.className = 'grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-2 items-center p-2 bg-neutral-900/50 rounded-md border border-neutral-700';
-                
+
                 let optionsHtml = caminhosDisponiveis.map(c => `<option value="${c}" ${c === caminhoData.nome ? 'selected' : ''}>${c}</option>`).join('');
                 optionsHtml += `<option value="OUTRO" ${caminhoData.nome === 'OUTRO' ? 'selected' : ''}>Outro (Secundário)...</option>`;
-                
+
                 div.innerHTML = `
                     <div class="col-span-1 md:col-span-1">
                         <select name="caminho-nome-${id}" class="w-full bg-neutral-700 border border-neutral-600 rounded-md h-10 px-2 text-sm">
@@ -605,7 +946,7 @@
                 const customInput = div.querySelector(`input[name="caminho-custom-${id}"]`);
                 const nivelInput = div.querySelector(`input[name="caminho-nivel-${id}"]`);
                 const formasDisplay = div.querySelector(`p[name="caminho-formas-${id}"]`);
-                
+
                 select.addEventListener('change', () => {
                     customInput.classList.toggle('hidden', select.value !== 'OUTRO');
                 });
@@ -622,7 +963,7 @@
                     div.remove();
                     updateAllStats();
                 });
-                
+
                 atualizarFormas(nivelInput, formasDisplay);
             }
 
@@ -686,7 +1027,7 @@
                 let name, value, cost, bonus, description, atributo;
                 const nameInput = document.getElementById('pvdName');
                 const descInput = document.getElementById('pvdDescription');
-                
+
                 if (currentEditingPVDType === 'pericias') {
                     const skillSelect = document.getElementById('pvdSkillSelect');
                     name = skillSelect.value === 'OUTRA' ? nameInput.value.trim() : skillSelect.value;
@@ -725,14 +1066,14 @@
                 }).join('') || `<p class="text-sm text-neutral-500">Nenhum item.</p>`;
                 pvdListContainer.querySelectorAll('.remove-pvd-item-btn').forEach(btn => btn.addEventListener('click', e => removePvdItem(e.target.dataset.id)));
             }
-            
+
             function savePVDChanges() {
                 document.getElementById(currentEditingPVDType + 'Input').value = JSON.stringify(tempPVDList);
                 pvdModal.classList.add('hidden');
                 updateDisplayPVDs();
                 updateAllStats();
             }
-            
+
             function updateDisplayPVDs() {
                 const pericias = JSON.parse(document.getElementById('periciasInput').value || '[]');
                 const vantagens = JSON.parse(document.getElementById('vantagensInput').value || '[]');
@@ -771,7 +1112,7 @@
 
             function loadFormFromJson(data) {
                 for (const key in data) {
-                    if(key === 'pericias' || key === 'vantagens' || key === 'desvantagens' || key === 'caminhosMagia') continue;
+                    if (key === 'pericias' || key === 'vantagens' || key === 'desvantagens' || key === 'caminhosMagia') continue;
                     const element = form.elements[key];
                     if (element) {
                         if (element.type === 'checkbox') element.checked = data[key];
@@ -781,7 +1122,7 @@
                 document.getElementById('periciasInput').value = JSON.stringify(data.pericias || []);
                 document.getElementById('vantagensInput').value = JSON.stringify(data.vantagens || []);
                 document.getElementById('desvantagensInput').value = JSON.stringify(data.desvantagens || []);
-                
+
                 caminhosContainer.innerHTML = '';
                 if (data.caminhosMagia) {
                     data.caminhosMagia.forEach(caminho => adicionarCaminho(caminho));
@@ -797,12 +1138,12 @@
                     showModalMessage('Erro', 'Você precisa estar conectado para salvar. Tente recarregar a página.');
                     return;
                 }
-                
+
                 const sheetIdToSave = currentSheetId || crypto.randomUUID();
                 const sheetData = getFormAsJson();
-                
+
                 const sheetDocRef = doc(db, `users/${currentUserId}/characters`, sheetIdToSave);
-                
+
                 try {
                     await setDoc(sheetDocRef, {
                         name: sheetData.charName || 'Sem Nome',
@@ -816,14 +1157,14 @@
                     showModalMessage('Erro', 'Falha ao salvar a ficha. Verifique sua conexão e tente novamente.');
                 }
             }
-            
+
             function loadSavedSheetsFromFirestore() {
                 if (!currentUserId) return;
-                
+
                 if (unsubscribeFromSheets) {
                     unsubscribeFromSheets();
                 }
-                
+
                 const sheetsCollectionRef = collection(db, `users/${currentUserId}/characters`);
                 const q = query(sheetsCollectionRef);
 
@@ -832,7 +1173,7 @@
                     snapshot.forEach(doc => {
                         sheets.push({ id: doc.id, ...doc.data() });
                     });
-                    
+
                     savedSheetsListDiv.innerHTML = sheets.map(item => `
                         <div class="flex justify-between items-center p-2 bg-neutral-700 rounded-md">
                             <span>${item.name}</span>
@@ -873,12 +1214,12 @@
 
             function deleteSheetFromFirestore(sheetId) {
                 if (!currentUserId || !sheetId) return;
-                
+
                 const confirmModal = document.getElementById('custom-confirm-modal');
                 const confirmButton = document.getElementById('custom-confirm-button');
                 const cancelButton = document.getElementById('custom-cancel-button');
                 const messageText = document.getElementById('custom-confirm-message');
-                
+
                 messageText.textContent = 'Tem certeza que deseja excluir esta ficha da nuvem? Esta ação não pode ser desfeita.';
                 confirmModal.classList.remove('hidden');
 
@@ -887,7 +1228,7 @@
                     try {
                         await deleteDoc(sheetDocRef);
                         console.log(`Ficha ${sheetId} excluída.`);
-                        if(currentSheetId === sheetId) {
+                        if (currentSheetId === sheetId) {
                             clearFormButton.click();
                         }
                         confirmModal.classList.add('hidden');
@@ -956,7 +1297,7 @@
                     currentSheetId = crypto.randomUUID();
                 }
                 saveSheetToFirestore();
-                
+
                 const data = getFormAsJson();
                 let sheetHtml = `
                     <div class="print-section print-full-width"><h3>Identidade</h3><p><strong>Nome:</strong> ${data.charName || 'N/A'} | <strong>Raça:</strong> ${data.charRace || 'N/A'} | <strong>Classe:</strong> ${data.charClass || 'N/A'}</p></div>
@@ -1041,7 +1382,7 @@
                     try {
                         const data = JSON.parse(event.target.result);
                         loadFormFromJson(data);
-                        currentSheetId = crypto.randomUUID(); 
+                        currentSheetId = crypto.randomUUID();
                         await saveSheetToFirestore();
                         showModalMessage('Importação Concluída', 'A ficha foi importada com sucesso e salva na nuvem.');
                     } catch (error) {
@@ -1060,7 +1401,7 @@
                 if (!sheetItem) return;
 
                 const id = target.dataset.id;
-                
+
                 if (target.classList.contains('load-sheet-btn')) {
                     await loadSheetFromFirestore(id);
                 } else if (target.classList.contains('delete-sheet-btn')) {
@@ -1089,7 +1430,7 @@
             document.body.insertAdjacentHTML('beforeend', modalHtml);
             document.getElementById('custom-cancel-button').addEventListener('click', () => document.getElementById('custom-confirm-modal').classList.add('hidden'));
             document.getElementById('custom-cancel-button-footer').addEventListener('click', () => document.getElementById('custom-confirm-modal').classList.add('hidden'));
-            
+
             const alertModalHtml = `
                 <div id="alert-modal" class="modal hidden">
                     <div class="modal-content">
@@ -1105,11 +1446,12 @@
             `;
             document.body.insertAdjacentHTML('beforeend', alertModalHtml);
             document.getElementById('alert-modal-close').addEventListener('click', () => document.getElementById('alert-modal').classList.add('hidden'));
-            
+
             // Inicia o carregamento das fichas após a autenticação ser estabelecida.
             loadSavedSheetsFromFirestore();
             updateAllStats();
         }
     </script>
 </body>
+
 </html>

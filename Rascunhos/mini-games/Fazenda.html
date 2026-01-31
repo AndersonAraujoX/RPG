@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Colheita Sombria</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        rpg: {
+                            black: '#0B0C10',
+                            cyan: '#66FCF1',
+                            slate: '#1F2833',
+                            silver: '#C5C6C7',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Inter:wght@400;600&display=swap"
+        rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0B0C10;
+            background-image: url('https://www.transparenttextures.com/patterns/dark-matter.png');
+        }
+
+        h1,
+        h2 {
+            font-family: 'Cinzel', serif;
+        }
+
+        .farm-plot {
+            width: 80px;
+            height: 80px;
+            background-color: #1F2833;
+            /* rpg-slate */
+            border: 2px solid #66FCF1;
+            /* rpg-cyan */
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 10px rgba(102, 252, 241, 0.1);
+            position: relative;
+            color: #C5C6C7;
+        }
+
+        .farm-plot:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 0 15px rgba(102, 252, 241, 0.3);
+            background-color: rgba(102, 252, 241, 0.1);
+        }
+
+        .farm-plot:active {
+            transform: scale(0.95);
+        }
+
+        .seed-button {
+            transition: all 0.3s ease;
+            border: 1px solid #4B5563;
+        }
+
+        .seed-button:hover {
+            border-color: #66FCF1;
+            transform: translateY(-2px);
+            box-shadow: 0 0 10px rgba(102, 252, 241, 0.2);
+        }
+
+        .seed-button.selected {
+            background-color: rgba(102, 252, 241, 0.2) !important;
+            border-color: #66FCF1 !important;
+            box-shadow: 0 0 15px rgba(102, 252, 241, 0.4);
+        }
+
+        .progress-bar {
+            position: absolute;
+            bottom: 5px;
+            left: 10%;
+            width: 80%;
+            height: 4px;
+            background-color: #0B0C10;
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background-color: #66FCF1;
+            width: 0%;
+            transition: width 1s linear;
+            box-shadow: 0 0 5px #66FCF1;
+        }
+
+        .popup {
+            animation: fadeIn 0.3s ease-out;
+            backdrop-filter: blur(8px);
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+
+<body class="flex items-center justify-center min-h-screen text-rpg-silver">
+
+    <div id="game-container"
+        class="w-full max-w-2xl mx-auto bg-rpg-slate/90 p-8 rounded-2xl shadow-2xl border border-rpg-cyan/30 backdrop-blur-sm">
+        <header class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-rpg-cyan mb-2" style="text-shadow: 0 0 10px rgba(102, 252, 241, 0.5);">
+                Colheita do Vazio</h1>
+
+            <div class="flex justify-between items-center mt-6">
+                <a href="index.html" class="text-sm text-gray-500 hover:text-rpg-cyan transition-colors">&larr;
+                    Voltar</a>
+                <div id="money-display"
+                    class="text-xl bg-black/50 px-6 py-2 rounded-full border border-rpg-cyan/50 text-rpg-cyan font-bold shadow-[0_0_10px_rgba(102,252,241,0.2)]">
+                    🔮 Essência: <span id="money">100</span>
+                </div>
+                <div class="w-16"></div> <!-- Spacer for centering -->
+            </div>
+        </header>
+
+        <!-- Altar de Rituais -->
+        <div id="seed-shop" class="mb-8 bg-black/40 p-6 rounded-xl border border-gray-700">
+            <h2
+                class="text-xl text-center mb-4 text-rpg-silver font-cinzel tracking-wider border-b border-gray-700 pb-2">
+                Grimório de Cultivo</h2>
+            <div id="seed-buttons" class="flex justify-center gap-4 flex-wrap">
+                <!-- Botões de sementes serão inseridos aqui pelo JS -->
+            </div>
+        </div>
+
+        <!-- Terreno Amaldiçoado -->
+        <div id="farm-grid" class="grid grid-cols-4 gap-4 p-4 bg-black/20 rounded-xl border border-gray-800">
+            <!-- Lotes de fazenda serão inseridos aqui pelo JS -->
+        </div>
+
+        <!-- Pop-up de Notificação -->
+        <div id="popup"
+            class="popup hidden fixed bottom-10 right-10 bg-rpg-slate p-4 rounded-lg shadow-2xl border border-rpg-cyan z-50 max-w-sm">
+            <p id="popup-message" class="text-center font-semibold"></p>
+        </div>
+    </div>
+
+    <script>
+        const farmGrid = document.getElementById('farm-grid');
+        const moneyDisplay = document.getElementById('money');
+        const seedButtonsContainer = document.getElementById('seed-buttons');
+        const popup = document.getElementById('popup');
+        const popupMessage = document.getElementById('popup-message');
+
+        // Definições das plantas profanas
+        const PLANTS = {
+            bloodroot: { name: 'Raiz de Sangue', icon: '🩸', cost: 10, revenue: 25, growthTime: 10 },
+            ghostherb: { name: 'Erva Espectral', icon: '🌿', cost: 20, revenue: 50, growthTime: 20 },
+            nightmarefruit: { name: 'Fruto do Pesadelo', icon: '🍇', cost: 50, revenue: 120, growthTime: 60 },
+            abysseye: { name: 'Olho de Abismo', icon: '👁️', cost: 80, revenue: 200, growthTime: 120 },
+        };
+
+        let gameState = {
+            money: 100, // Agora representa almas
+            selectedSeed: null,
+            plots: Array(12).fill(null)
+        };
+
+        function showPopup(message, isSuccess = true) {
+            popupMessage.textContent = message;
+            popup.classList.remove('hidden');
+            popup.className = `popup fixed top-5 right-5 bg-gray-800 p-4 rounded-lg shadow-lg text-lg ${isSuccess ? 'border-green-400 text-green-300' : 'border-red-400 text-red-300'}`;
+
+            setTimeout(() => {
+                popup.classList.add('hidden');
+            }, 3000);
+        }
+
+        function render() {
+            moneyDisplay.textContent = gameState.money;
+
+            farmGrid.innerHTML = '';
+            gameState.plots.forEach((plot, index) => {
+                const plotElement = document.createElement('div');
+                plotElement.classList.add('farm-plot');
+                plotElement.dataset.index = index;
+
+                let content = ''; // Terra vazia
+                let progressBar = '';
+
+                if (plot) {
+                    const elapsedTime = (Date.now() - plot.startTime) / 1000;
+                    const growthPercentage = Math.min(100, (elapsedTime / plot.details.growthTime) * 100);
+
+                    if (growthPercentage < 100) {
+                        content = '🌱'; // Broto profano
+                        progressBar = `
+                            <div class="progress-bar">
+                                <div class="progress-bar-fill" style="width: ${growthPercentage}%"></div>
+                            </div>
+                        `;
+                    } else {
+                        content = plot.details.icon;
+                    }
+                }
+
+                plotElement.innerHTML = content + progressBar;
+                plotElement.addEventListener('click', () => handlePlotClick(index));
+                farmGrid.appendChild(plotElement);
+            });
+
+            document.querySelectorAll('.seed-button').forEach(button => {
+                if (button.dataset.seed === gameState.selectedSeed) {
+                    button.classList.add('selected');
+                } else {
+                    button.classList.remove('selected');
+                }
+            });
+        }
+
+        function handlePlotClick(index) {
+            const plot = gameState.plots[index];
+
+            if (plot) {
+                const elapsedTime = (Date.now() - plot.startTime) / 1000;
+                if (elapsedTime >= plot.details.growthTime) {
+                    gameState.money += plot.details.revenue;
+                    gameState.plots[index] = null;
+                    showPopup(`+${plot.details.revenue} almas! A ${plot.details.name} foi ceifada!`, true);
+                } else {
+                    const remainingTime = Math.ceil(plot.details.growthTime - elapsedTime);
+                    showPopup(`${plot.details.name} ainda corrompe o solo. Faltam ${remainingTime}s.`, false);
+                }
+            } else {
+                if (gameState.selectedSeed) {
+                    const seedDetails = PLANTS[gameState.selectedSeed];
+                    if (gameState.money >= seedDetails.cost) {
+                        gameState.money -= seedDetails.cost;
+                        gameState.plots[index] = {
+                            details: seedDetails,
+                            startTime: Date.now()
+                        };
+                        showPopup(`${seedDetails.name} semeada por ${seedDetails.cost} almas.`, true);
+                    } else {
+                        showPopup('Almas insuficientes para este ritual!', false);
+                    }
+                }
+            }
+            render();
+        }
+
+        function selectSeed(seedType) {
+            if (gameState.selectedSeed === seedType) {
+                gameState.selectedSeed = null;
+            } else {
+                gameState.selectedSeed = seedType;
+            }
+            render();
+        }
+
+        function initializeShop() {
+            for (const seed in PLANTS) {
+                const details = PLANTS[seed];
+                const button = document.createElement('button');
+                button.classList.add('seed-button', 'p-3', 'bg-[#7971a6]', 'rounded-lg', 'border-4', 'border-[#362f5e]', 'text-[#e0ddeb]');
+                button.dataset.seed = seed;
+                button.innerHTML = `
+                    <div class="text-3xl">${details.icon}</div>
+                    <div class="text-xs">${details.name}</div>
+                    <div class="text-xs font-bold">${details.cost}💀</div>
+                `;
+                button.addEventListener('click', () => selectSeed(seed));
+                seedButtonsContainer.appendChild(button);
+            }
+        }
+
+        function gameLoop() {
+            render();
+        }
+
+        initializeShop();
+        setInterval(gameLoop, 1000);
+        render();
+    </script>
+
+</body>
+
+</html>

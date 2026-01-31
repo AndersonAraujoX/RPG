@@ -1,58 +1,96 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mesa de Estratégia: Kuar-Tor</title>
-    <!-- Tailwind CSS para estilização -->
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Fontes do Google Fonts para o tema Dark Fantasy -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        rpg: {
+                            black: '#0B0C10',
+                            cyan: '#66FCF1',
+                            slate: '#1F2833',
+                            silver: '#C5C6C7',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Roboto:wght@400;500&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Roboto+Mono:wght@400;700&family=Cinzel:wght@400;700&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Roboto:wght@400;500&family=Inter:wght@400;500;700&family=Roboto+Mono:wght@400;700&display=swap"
+        rel="stylesheet">
+
     <style>
-        /* Estilização base com fontes temáticas */
+        /* Base and Thematic Styles */
         body {
-            font-family: 'Roboto', sans-serif;
-            background-color: #111827;
-            background-image: url("https://www.transparenttextures.com/patterns/tactile-noise.png");
+            font-family: 'Inter', sans-serif;
+            background-color: #0B0C10;
+            background-image: url('https://www.transparenttextures.com/patterns/dark-matter.png');
+            color: #C5C6C7;
         }
-        h1, h2, h3, button {
+
+        h1,
+        h2,
+        h3,
+        button {
             font-family: 'Cinzel', serif;
         }
-        /* Painéis com novo estilo */
+
+        .font-roboto-mono {
+            font-family: 'Roboto Mono', monospace;
+        }
+
+        /* Panel Styles */
         .panel {
-            background-color: rgba(17, 24, 39, 0.8);
+            background-color: rgba(31, 40, 51, 0.9);
+            /* rpg-slate */
             backdrop-filter: blur(10px);
-            border: 1px solid #991b1b;
-            box-shadow: inset 0 0 15px rgba(220, 38, 38, 0.2), 0 0 10px rgba(220, 38, 38, 0.4);
+            border: 1px solid rgba(102, 252, 241, 0.2);
+            /* cyan border */
+            box-shadow: inset 0 0 15px rgba(102, 252, 241, 0.05), 0 0 10px rgba(102, 252, 241, 0.1);
         }
-        canvas {
-            max-width: 100%;
-            height: auto;
-            cursor: crosshair;
-        }
-        /* Estilo para os pontos de interesse (SVG) */
+
+        /* Map & Pin Styles */
         .pin {
             position: absolute;
             width: 24px;
             height: 24px;
             cursor: pointer;
             transform: translate(-50%, -50%);
-            filter: drop-shadow(0 0 5px #ef4444);
+            filter: drop-shadow(0 0 5px #66FCF1);
             animation: pulse-pin 2s infinite;
         }
+
         .pin:hover {
-            filter: drop-shadow(0 0 10px #fca5a5);
+            filter: drop-shadow(0 0 10px #45EBE0);
             animation-play-state: paused;
         }
+
         @keyframes pulse-pin {
-            0% { transform: translate(-50%, -50%) scale(0.95); }
-            70% { transform: translate(-50%, -50%) scale(1.1); }
-            100% { transform: translate(-50%, -50%) scale(0.95); }
+            0% {
+                transform: translate(-50%, -50%) scale(0.95);
+            }
+
+            70% {
+                transform: translate(-50%, -50%) scale(1.1);
+            }
+
+            100% {
+                transform: translate(-50%, -50%) scale(0.95);
+            }
         }
-        /* Botões com gradiente */
+
+        /* Button Styles */
         .btn {
             font-weight: bold;
             padding: 10px 20px;
@@ -63,181 +101,207 @@
             text-transform: uppercase;
             letter-spacing: 1px;
         }
+
         .btn-primary {
-            background: linear-gradient(45deg, #991b1b, #7f1d1d);
-            border-color: #dc2626;
-            color: white;
-            box-shadow: 0 0 8px rgba(220, 38, 38, 0.5);
+            background-color: #66FCF1;
+            /* rpg-cyan */
+            border-color: #66FCF1;
+            color: #0B0C10;
+            /* rpg-black */
+            box-shadow: 0 0 8px rgba(102, 252, 241, 0.3);
         }
+
         .btn-primary:hover {
-            background: linear-gradient(45deg, #dc2626, #991b1b);
-            box-shadow: 0 0 15px rgba(220, 38, 38, 0.8);
+            background-color: #45EBE0;
+            box-shadow: 0 0 15px rgba(102, 252, 241, 0.6);
+            transform: scale(1.02);
         }
+
         .btn-danger {
             background: linear-gradient(45deg, #991b1b, #7f1d1d);
             border-color: #ef4444;
             color: white;
             box-shadow: 0 0 8px rgba(239, 68, 68, 0.5);
         }
+
         .btn-danger:hover {
             background: linear-gradient(45deg, #ef4444, #b91c1c);
             box-shadow: 0 0 15px rgba(239, 68, 68, 0.8);
         }
+
         .btn-secondary {
-            background: linear-gradient(45deg, #4b5563, #374151);
-            border-color: #6b7280;
-            color: #d1d5db;
-            box-shadow: 0 0 8px rgba(107, 114, 128, 0.5);
+            background-color: #1F2833;
+            /* rpg-slate */
+            border-color: #66FCF1;
+            color: #66FCF1;
+            box-shadow: 0 0 8px rgba(31, 40, 51, 0.5);
         }
+
         .btn-secondary:hover {
-            background: linear-gradient(45deg, #6b7280, #4b5563);
-            box-shadow: 0 0 15px rgba(107, 114, 128, 0.8);
+            background-color: #0B0C10;
+            box-shadow: 0 0 15px rgba(102, 252, 241, 0.2);
         }
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #0c0c0c;
-            background-image: url('https://www.transparenttextures.com/patterns/dark-matter.png');
-            color: #a1a1aa;
+
+        /* Mission Board */
+        .mission-board {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 1.5rem;
         }
-        .font-roboto-mono { font-family: 'Roboto Mono', monospace; }
-        .font-cinzel { font-family: 'Cinzel', serif; }
-        .terminal-card { background-color: rgba(10, 10, 10, 0.7); backdrop-filter: blur(5px); border: 1px solid #374151; }
-        .mission-board { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 1.5rem; }
-        .mission-card { background-color: #1f2937; border-radius: 0.5rem; border: 1px solid #4b5563; padding: 1.5rem; }
-        .mission-card h3 { color: #fca5a5; }
+
+        .mission-card {
+            background-color: rgba(31, 40, 51, 0.8);
+            border-radius: 0.5rem;
+            border: 1px solid rgba(102, 252, 241, 0.2);
+            padding: 1.5rem;
+        }
+
+        .mission-card h3 {
+            color: #66FCF1;
+        }
+
         .character-entry {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 0.5rem; border-bottom: 1px solid #374151;
-            cursor: pointer; transition: background-color 0.2s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem;
+            border-bottom: 1px solid rgba(102, 252, 241, 0.1);
+            cursor: pointer;
+            transition: background-color 0.2s;
         }
-        .character-entry:hover { background-color: rgba(239, 68, 68, 0.1); }
-        .character-entry:last-child { border-bottom: none; }
-        
+
+        .character-entry:hover {
+            background-color: rgba(102, 252, 241, 0.1);
+        }
+
+        .character-entry:last-child {
+            border-bottom: none;
+        }
+
         /* Modal Styles */
-        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.7); }
-        .modal-content { background-color: #18181b; margin: 5% auto; padding: 2rem; border: 1px solid #3f3f46; width: 90%; max-width: 800px; border-radius: 0.5rem; }
-        .modal-close { color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(11, 12, 16, 0.9);
+        }
+
+        .modal-content {
+            background-color: #1F2833;
+            margin: 5% auto;
+            padding: 2rem;
+            border: 1px solid #66FCF1;
+            width: 90%;
+            max-width: 800px;
+            border-radius: 0.5rem;
+            box-shadow: 0 0 20px rgba(102, 252, 241, 0.2);
+        }
+
+        .modal-close {
+            color: #C5C6C7;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .modal-close:hover {
+            color: #66FCF1;
+        }
     </style>
 </head>
-<body class="bg-slate-900 text-gray-300 min-h-screen p-4 md:p-8">
 
-    <div class="container mx-auto p-4 sm:p-6 md:p-8">
-        <header class="text-center mb-8">
-            <h1 class="text-4xl sm:text-5xl font-bold text-red-400 drop-shadow-[0_2px_2px_rgba(0,0,0,0.7)]">Campanha Kuar-Tor</h1>
-            <p class="text-md text-gray-400 mt-2">Kuar-Tor é uma ilha senciente, um organismo vivo remanescente de um ser primordial. Expedições do mundo exterior estabeleceram reinos e facções que agora lutam pelo controle de seus segredos e recursos, enfrentando não apenas uns aos outros, mas a própria ilha e suas defesas naturais.</p>
+<body class="bg-rpg-black text-rpg-silver min-h-screen p-4 md:p-8">
+
+    <div id="main-content">
+        <header class="text-center mb-8 flex justify-between items-center">
+            <a href="../index.html"
+                class="bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded transition-colors duration-300">
+                &larr; Voltar ao Portal
+            </a>
+            <div>
+                <h1 class="text-3xl md:text-5xl font-cinzel font-bold text-rpg-cyan tracking-wider">Mesa de Operações
+                </h1>
+                <p id="user-display" class="text-lg text-gray-400">Aguardando conexão...</p>
+            </div>
+            <button id="logout-button"
+                class="bg-red-700 hover:bg-red-600 text-white font-bold py-2 px-4 rounded transition-colors duration-300">TERMINAR
+                SESSÃO</button>
         </header>
 
-        <main class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <!-- Coluna do Canvas para Desenho -->
-            <div class="panel p-6 rounded-2xl flex flex-col">
-                <h2 class="text-2xl font-semibold mb-4 text-red-400">Rascunho Tático</h2>
-                <div class="relative w-full aspect-w-16 aspect-h-9 flex-grow">
-                    <canvas id="drawingCanvas" class="border border-red-800/50 rounded-lg w-full h-full"></canvas>
-                </div>
-                <!-- Controles de Desenho -->
-                <div class="mt-6 pt-4 border-t border-red-900/50">
-                    <div class="flex flex-wrap items-center justify-between gap-4">
-                        <div class="flex items-center gap-4">
-                            <div>
-                                <label for="colorPicker" class="block text-sm font-medium text-gray-300 mb-1">Cor do Giz</label>
-                                <input type="color" id="colorPicker" value="#ef4444" class="w-10 h-10 p-1 bg-slate-700 border border-red-600 rounded-md cursor-pointer">
-                            </div>
-                            <div class="flex-grow">
-                                <label for="brushSize" class="block text-sm font-medium text-gray-300 mb-1">Espessura: <span id="brushSizeValue">5</span></label>
-                                <input type="range" id="brushSize" min="1" max="50" value="5" class="w-full h-2 bg-slate-600 rounded-lg appearance-none cursor-pointer accent-red-500">
-                            </div>
-                        </div>
-                        <button id="clearButton" class="btn btn-danger">
-                            Apagar
-                        </button>
+        <div class="container mx-auto p-4 sm:p-6 md:p-8">
+            <main class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- Tactical Map Column -->
+                <div class="panel p-6 rounded-2xl">
+                    <h2 class="text-2xl font-semibold mb-4 text-rpg-cyan">Mapa de Guerra: Kuar-Tor</h2>
+                    <div id="mapContainer" class="relative w-full aspect-w-16 aspect-h-9 cursor-default">
+                        <img id="originalImage" src="map.png" alt="Mapa de Kuar-Tor"
+                            class="rounded-lg object-cover w-full h-full"
+                            onerror="this.onerror=null;this.src='https://placehold.co/600x400/1e2b3b/94a3b8?text=Mapa+Indispon%C3%ADvel';">
+                        <div id="pinsContainer" class="absolute top-0 left-0 w-full h-full"></div>
+                    </div>
+                    <div class="mt-6 pt-4 border-t border-rpg-cyan/20">
+                        <h3 class="font-semibold text-lg text-rpg-cyan">Inteligência de Campo</h3>
+                        <p id="adminHelpText" class="text-gray-400 mt-2">Passe a senha para editar o mapa.</p>
+                        <button id="adminLoginButton" class="btn btn-primary w-full mt-4">Acesso Restrito</button>
                     </div>
                 </div>
-            </div>
-
-            <!-- Coluna da Imagem Estática -->
-            <div class="panel p-6 rounded-2xl">
-                <h2 class="text-2xl font-semibold mb-4 text-red-400">Mapa de Guerra: Kuar-Tor</h2>
-                <div id="mapContainer" class="relative w-full aspect-w-16 aspect-h-9 cursor-default">
-                    <!-- MAPA DA CAMPANHA -->
-                    <img id="originalImage" src="map.png?v=2" alt="Mapa de Kuar-Tor" class="rounded-lg object-cover w-full h-full" onerror="this.onerror=null;this.src='https://placehold.co/600x400/1e2b3b/94a3b8?text=Mapa+Indispon%C3%ADvel';">
-                    <div id="pinsContainer" class="absolute top-0 left-0 w-full h-full"></div>
+                <!-- Mission Board Column -->
+                <div class="panel p-6 rounded-2xl flex flex-col">
+                    <h2 class="text-2xl font-semibold mb-4 text-rpg-cyan">Operativos em Missão</h2>
+                    <main id="mission-board" class="mission-board flex-grow">
+                        <p class="text-center text-gray-500 col-span-full">Carregando dados da missão...</p>
+                    </main>
                 </div>
-                <div class="mt-6 pt-4 border-t border-red-900/50">
-                    <h3 class="font-semibold text-lg text-red-400">Inteligência de Campo</h3>
-                    <p id="adminHelpText" class="text-gray-400 mt-2">Passe a senha para editar o mapa.</p>
-                    <button id="adminLoginButton" class="btn btn-primary w-full mt-4">
-                        Acesso Restrito
-                    </button>
-                </div>
-            </div>
-        </main>
+            </main>
+        </div>
     </div>
 
-    <!-- Modal de Senha -->
-    <div id="passwordModal" class="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center p-4 hidden z-50">
+    <!-- Modals -->
+    <div id="passwordModal"
+        class="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center p-4 hidden z-50">
         <div class="panel rounded-2xl shadow-xl p-6 w-full max-w-sm">
             <h3 class="text-xl font-semibold mb-4 text-red-400">Acesso de Administrador</h3>
-            <div>
-                <label for="passwordInput" class="block text-sm font-medium text-gray-300 mb-1">Palavra-Passe</label>
-                <input type="password" id="passwordInput" class="w-full bg-slate-700 border border-red-600 text-white rounded-lg p-2.5 focus:ring-red-500 focus:border-red-500">
-                <p id="passwordError" class="text-red-400 text-sm mt-2 hidden">Palavra-passe incorreta.</p>
-            </div>
+            <input type="password" id="passwordInput"
+                class="w-full bg-slate-700 border border-red-600 text-white rounded-lg p-2.5"
+                placeholder="Palavra-Passe">
+            <p id="passwordError" class="text-red-400 text-sm mt-2 hidden">Palavra-passe incorreta.</p>
             <div class="mt-6 flex justify-end gap-4">
                 <button id="cancelPasswordButton" class="btn btn-secondary">Cancelar</button>
                 <button id="submitPasswordButton" class="btn btn-primary">Entrar</button>
             </div>
         </div>
     </div>
-
-    <!-- Modal para ADICIONAR/EDITAR um Ponto de Interesse -->
     <div id="pinModal" class="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center p-4 hidden z-50">
         <div class="panel rounded-2xl shadow-xl p-6 w-full max-w-md">
             <h3 class="text-xl font-semibold mb-4 text-red-400">Adicionar Ponto de Interesse</h3>
-            <div>
-                <label for="pinTitle" class="block text-sm font-medium text-gray-300 mb-1">Título</label>
-                <input type="text" id="pinTitle" class="w-full bg-slate-700 border border-red-600 text-white rounded-lg p-2.5 focus:ring-red-500 focus:border-red-500">
-            </div>
-            <div class="mt-4">
-                <label for="pinDescription" class="block text-sm font-medium text-gray-300 mb-1">Descrição</label>
-                <textarea id="pinDescription" rows="3" class="w-full bg-slate-700 border border-red-600 text-white rounded-lg p-2.5 focus:ring-red-500 focus:border-red-500"></textarea>
-            </div>
+            <input type="text" id="pinTitle"
+                class="w-full bg-slate-700 border border-red-600 text-white rounded-lg p-2.5 mb-4" placeholder="Título">
+            <textarea id="pinDescription" rows="3"
+                class="w-full bg-slate-700 border border-red-600 text-white rounded-lg p-2.5"
+                placeholder="Descrição"></textarea>
             <div class="mt-6 flex justify-end gap-4">
                 <button id="cancelPinButton" class="btn btn-secondary">Cancelar</button>
                 <button id="savePinButton" class="btn btn-primary">Salvar Ponto</button>
             </div>
         </div>
     </div>
-    
-    <!-- Modal para EXIBIR um Ponto de Interesse -->
-    <div id="viewPinModal" class="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center p-4 hidden z-50">
+    <div id="viewPinModal"
+        class="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center p-4 hidden z-50">
         <div class="panel rounded-2xl shadow-xl p-6 w-full max-w-md">
-            <h3 id="viewPinTitle" class="text-2xl font-semibold mb-2 text-red-400">Título do Ponto</h3>
-            <p id="viewPinDescription" class="text-gray-300 mb-6 whitespace-pre-wrap">Descrição do ponto de interesse aqui.</p>
+            <h3 id="viewPinTitle" class="text-2xl font-semibold mb-2 text-red-400"></h3>
+            <p id="viewPinDescription" class="text-gray-300 mb-6 whitespace-pre-wrap"></p>
             <div class="flex justify-between items-center">
                 <button id="removePinButton" class="btn btn-danger hidden">Remover</button>
                 <button id="closeViewPinButton" class="btn btn-primary">Fechar</button>
             </div>
         </div>
     </div>
-
-    <div id="main-content" class="hidden">
-        <header class="text-center mb-8 flex justify-between items-center">
-            <a href="../index.html" class="bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded transition-colors duration-300">
-                &larr; Voltar ao Portal
-            </a>
-            <div>
-                <h1 class="text-3xl md:text-5xl font-cinzel font-bold text-red-500 tracking-wider">Mesa de Operações</h1>
-                <p id="user-display" class="text-lg text-gray-500">Operativo Mestre Conectado</p>
-            </div>
-            <button id="logout-button" class="bg-red-700 hover:bg-red-600 text-white font-bold py-2 px-4 rounded transition-colors duration-300">TERMINAR SESSÃO</button>
-        </header>
-
-        <main id="mission-board" class="mission-board">
-            <p class="text-center text-gray-500 col-span-full">Carregando dados da missão...</p>
-        </main>
-    </div>
-
-    <!-- Character Sheet Modal -->
     <div id="character-modal" class="modal">
         <div class="modal-content">
             <span id="modal-close-button" class="modal-close">&times;</span>
@@ -247,242 +311,234 @@
         </div>
     </div>
 
-    <!-- Firebase Core SDKs -->
+    <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
     <script>
-        const firebaseConfig = {
-            apiKey: "AIzaSyC-awoLK4cc0XtLtNppibqgYnNLclUeeI4",
-            authDomain: "kuar-tor-portal.firebaseapp.com",
-            projectId: "kuar-tor-portal",
-            storageBucket: "kuar-tor-portal.appspot.com",
-            messagingSenderId: "438781244189",
-            appId: "1:438781244189:web:99ea6a25fc459b14f567f4"
-        };
-        
-        if (!firebase.apps.length) {
-            firebase.initializeApp(firebaseConfig);
-        }
-        const auth = firebase.auth();
-        const db = firebase.firestore();
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- Firebase Initialization ---
+            const firebaseConfig = {
+                apiKey: "AIzaSyC-awoLK4cc0XtLtNppibqgYnNLclUeeI4",
+                authDomain: "kuar-tor-portal.firebaseapp.com",
+                projectId: "kuar-tor-portal",
+                storageBucket: "kuar-tor-portal.appspot.com",
+                messagingSenderId: "438781244189",
+                appId: "1:438781244189:web:99ea6a25fc459b14f567f4"
+            };
+            if (!firebase.apps.length) {
+                firebase.initializeApp(firebaseConfig);
+            }
+            const auth = firebase.auth();
+            const db = firebase.firestore();
 
-        window.addEventListener('load', () => {
-            // --- Constantes e Variáveis Globais ---
+            // --- Global Variables & State ---
             const ADMIN_PASSWORD = 'fungus';
             let isAdminMode = false;
-            // PONTOS DE INTERESSE DA CAMPANHA KUAR-TOR
             let pointsOfInterest = [];
             let currentPinCoords = { x: 0, y: 0 };
-            let isImageLoaded = false;
 
-            // --- Elementos do DOM ---
-            const canvas = document.getElementById('drawingCanvas');
-            const ctx = canvas.getContext('2d');
-            const colorPicker = document.getElementById('colorPicker');
-            const brushSize = document.getElementById('brushSize');
-            const brushSizeValue = document.getElementById('brushSizeValue');
-            const clearButton = document.getElementById('clearButton');
+            // --- DOM Element References ---
+            const mainContent = document.getElementById('main-content');
+            const userDisplay = document.getElementById('user-display');
+            const logoutButton = document.getElementById('logout-button');
+            const missionBoard = document.getElementById('mission-board');
+
+            // Map & Pins Elements
             const originalImage = document.getElementById('originalImage');
             const mapContainer = document.getElementById('mapContainer');
             const pinsContainer = document.getElementById('pinsContainer');
             const adminLoginButton = document.getElementById('adminLoginButton');
             const adminHelpText = document.getElementById('adminHelpText');
 
-            // Modais
+            // Modal Elements
             const passwordModal = document.getElementById('passwordModal');
             const pinModal = document.getElementById('pinModal');
             const viewPinModal = document.getElementById('viewPinModal');
+            const characterModal = document.getElementById('character-modal');
+            const modalBody = document.getElementById('modal-body');
             const removePinButton = document.getElementById('removePinButton');
 
-            // --- Lógica de Desenho no Canvas ---
-            let isDrawing = false, lastX = 0, lastY = 0;
-            const backgroundImage = new Image();
-            backgroundImage.crossOrigin = "Anonymous";
-            backgroundImage.src = originalImage.src;
-            
-            const drawFallbackText = () => {
-                ctx.fillStyle = '#1e293b';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                ctx.fillStyle = '#94a3b8';
-                ctx.textAlign = 'center';
-                ctx.font = '16px Roboto';
-                ctx.fillText('Imagem não pôde ser carregada.', canvas.width / 2, canvas.height / 2);
-            };
+            // --- Main Application Logic ---
 
-            backgroundImage.onerror = () => {
-                isImageLoaded = false;
-                console.error("Erro ao carregar a imagem de fundo.");
-                drawFallbackText();
-            };
-            backgroundImage.onload = () => {
-                isImageLoaded = true;
-                resizeCanvas();
-                redrawBackgroundImage();
-            };
-            
-            function resizeCanvas() {
-                const container = canvas.parentElement;
-                if (!container) return;
-                const containerWidth = container.clientWidth;
-                const scale = containerWidth / (backgroundImage.naturalWidth || containerWidth);
-                canvas.width = backgroundImage.naturalWidth || containerWidth;
-                canvas.height = backgroundImage.naturalHeight || (containerWidth * 0.5625);
-                canvas.style.width = `${containerWidth}px`;
-                canvas.style.height = `${canvas.height * scale}px`;
-            }
-
-            function redrawBackgroundImage() {
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                if (isImageLoaded) {
-                    ctx.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height);
+            auth.onAuthStateChanged(user => {
+                if (user) {
+                    mainContent.style.display = 'block';
+                    userDisplay.textContent = `Operativo Mestre Conectado: ${user.displayName || user.email}`;
+                    loadOperationsData();
+                    loadPins();
                 } else {
-                    drawFallbackText();
+                    window.location.href = '../login.html';
                 }
-            }
-            function draw(e) { if (!isDrawing) return; e.preventDefault(); const { x, y } = getMousePos(canvas, e); ctx.strokeStyle = colorPicker.value; ctx.lineWidth = brushSize.value; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.beginPath(); ctx.moveTo(lastX, lastY); ctx.lineTo(x, y); ctx.stroke();[lastX, lastY] = [x, y]; }
-            function getMousePos(canvasEl, event) { const rect = canvasEl.getBoundingClientRect(); const scaleX = canvasEl.width / rect.width; const scaleY = canvasEl.height / rect.height; let clientX = event.touches ? event.touches[0].clientX : event.clientX; let clientY = event.touches ? event.touches[0].clientY : event.clientY; return { x: (clientX - rect.left) * scaleX, y: (clientY - rect.top) * scaleY }; }
-            function startDrawing(e) { isDrawing = true;[lastX, lastY] = Object.values(getMousePos(canvas, e)); }
-            function stopDrawing() { isDrawing = false; }
-            canvas.addEventListener('mousedown', startDrawing); canvas.addEventListener('mousemove', draw); canvas.addEventListener('mouseup', stopDrawing); canvas.addEventListener('mouseout', stopDrawing); canvas.addEventListener('touchstart', startDrawing); canvas.addEventListener('touchmove', draw); canvas.addEventListener('touchend', stopDrawing);
-            brushSize.addEventListener('input', (e) => { brushSizeValue.textContent = e.target.value; });
-            clearButton.addEventListener('click', redrawBackgroundImage);
-            
-            // --- Lógica dos Pontos de Interesse (Pins) ---
+            });
+
+            // --- Map & Pins Functions ---
+
             function renderPins() {
                 pinsContainer.innerHTML = '';
-                const pinSVG = `
-                    <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-                        <defs>
-                            <radialGradient id="grad1" cx="50%" cy="50%" r="50%" fx="50%" fy="50%">
-                                <stop offset="0%" style="stop-color:rgb(254, 202, 202);stop-opacity:1" />
-                                <stop offset="60%" style="stop-color:rgb(252, 165, 165);stop-opacity:1" />
-                                <stop offset="100%" style="stop-color:rgb(239, 68, 68);stop-opacity:1" />
-                            </radialGradient>
-                        </defs>
-                        <path d="M50 0 L61.8 38.2 L100 38.2 L69.1 61.8 L80.9 100 L50 76.4 L19.1 100 L30.9 61.8 L0 38.2 L38.2 38.2 Z" fill="url(#grad1)" stroke="#7f1d1d" stroke-width="5"/>
-                    </svg>
-                `;
-
-                pointsOfInterest.forEach((point) => {
+                const pinSVG = `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="grad1" cx="50%" cy="50%" r="50%" fx="50%" fy="50%"><stop offset="0%" style="stop-color:rgb(254, 202, 202);stop-opacity:1" /><stop offset="60%" style="stop-color:rgb(252, 165, 165);stop-opacity:1" /><stop offset="100%" style="stop-color:rgb(239, 68, 68);stop-opacity:1" /></radialGradient></defs><path d="M50 0 L61.8 38.2 L100 38.2 L69.1 61.8 L80.9 100 L50 76.4 L19.1 100 L30.9 61.8 L0 38.2 L38.2 38.2 Z" fill="url(#grad1)" stroke="#7f1d1d" stroke-width="5"/></svg>`;
+                pointsOfInterest.forEach(point => {
                     const pinWrapper = document.createElement('div');
                     pinWrapper.className = 'pin';
                     pinWrapper.style.left = `${point.x * 100}%`;
                     pinWrapper.style.top = `${point.y * 100}%`;
                     pinWrapper.dataset.id = point.id;
                     pinWrapper.innerHTML = pinSVG;
-                    
-                    pinWrapper.addEventListener('click', (e) => {
+                    pinWrapper.addEventListener('click', e => {
                         e.stopPropagation();
-                        const viewPinTitle = document.getElementById('viewPinTitle');
-                        const viewPinDescription = document.getElementById('viewPinDescription');
-                        viewPinTitle.textContent = point.title;
-                        viewPinDescription.textContent = point.description;
-                        
-                        if (isAdminMode) {
-                            removePinButton.classList.remove('hidden');
-                            removePinButton.dataset.id = point.id;
-                        } else {
-                            removePinButton.classList.add('hidden');
-                        }
-                        
+                        document.getElementById('viewPinTitle').textContent = point.title;
+                        document.getElementById('viewPinDescription').textContent = point.description;
+                        removePinButton.classList.toggle('hidden', !isAdminMode);
+                        removePinButton.dataset.id = point.id;
                         viewPinModal.classList.remove('hidden');
                     });
-                    
                     pinsContainer.appendChild(pinWrapper);
                 });
             }
 
+            async function loadPins() {
+                try {
+                    const querySnapshot = await db.collection("map_pins").get();
+                    pointsOfInterest = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    renderPins();
+                } catch (error) {
+                    console.error("Error loading pins: ", error);
+                }
+            }
+
+            function setAdminMode(isAdmin) {
+                isAdminMode = isAdmin;
+                adminLoginButton.textContent = isAdmin ? "Sair do Modo Admin" : "Acesso Restrito";
+                adminHelpText.textContent = isAdmin ? "Modo de edição ativo. Clique no mapa para adicionar." : "Passe a senha para editar o mapa.";
+                mapContainer.style.cursor = isAdmin ? 'crosshair' : 'default';
+                renderPins();
+            }
+
+            // --- Mission Board Functions ---
+
+            async function loadOperationsData() {
+                try {
+                    const [signupsSnapshot, charactersSnapshot] = await Promise.all([
+                        db.collection('mission_signups').orderBy('timestamp', 'asc').get(),
+                        db.collection('personagens').get()
+                    ]);
+                    const allCharacters = charactersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    const signupsByMission = {};
+                    signupsSnapshot.docs.forEach(doc => {
+                        const signup = doc.data();
+                        const characterData = allCharacters.find(c => c.userId === signup.userId && c.nome === signup.characterName);
+                        if (!signupsByMission[signup.missionName]) {
+                            signupsByMission[signup.missionName] = [];
+                        }
+                        signupsByMission[signup.missionName].push({ ...signup, characterSheet: characterData });
+                    });
+                    renderMissionBoard(signupsByMission);
+                } catch (err) {
+                    console.error("Error loading operations data:", err);
+                    missionBoard.innerHTML = `<p class="text-red-500 col-span-full">Erro ao carregar dados.</p>`;
+                }
+            }
+
+            function renderMissionBoard(signupsByMission) {
+                if (Object.keys(signupsByMission).length === 0) {
+                    missionBoard.innerHTML = `<p class="text-center text-gray-500 col-span-full">Nenhum operativo inscrito.</p>`;
+                    return;
+                }
+                missionBoard.innerHTML = '';
+                for (const missionName in signupsByMission) {
+                    const missionCard = document.createElement('div');
+                    missionCard.className = 'mission-card';
+                    const charactersHtml = signupsByMission[missionName].map(signup => {
+                        const characterId = signup.characterSheet ? signup.characterSheet.id : null;
+                        return `<div class="character-entry" data-character-id="${characterId}"><span>${signup.characterName}</span><span class="text-gray-400 text-sm">${signup.userNickname}</span></div>`;
+                    }).join('');
+                    missionCard.innerHTML = `<h3 class="text-xl font-cinzel mb-4">${missionName}</h3><div class="space-y-2">${charactersHtml}</div>`;
+                    missionBoard.appendChild(missionCard);
+                }
+                missionBoard.querySelectorAll('.character-entry').forEach(entry => {
+                    entry.addEventListener('click', () => {
+                        const characterId = entry.dataset.characterId;
+                        if (characterId && characterId !== 'null') showCharacterSheet(characterId);
+                        else alert('Ficha de personagem não encontrada.');
+                    });
+                });
+            }
+
+            async function showCharacterSheet(characterId) {
+                modalBody.innerHTML = '<p>Carregando ficha...</p>';
+                characterModal.style.display = "block";
+                try {
+                    const charDoc = await db.collection('personagens').doc(characterId).get();
+                    if (!charDoc.exists) {
+                        modalBody.innerHTML = '<p class="text-red-500">Erro: Ficha não encontrada.</p>';
+                        return;
+                    }
+                    const char = charDoc.data();
+                    let sheetHtml = `<h2 class="text-3xl font-cinzel text-red-400 mb-4">${char.nome}</h2><div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">`;
+                    for (const key in char) {
+                        if (key !== 'userId' && key !== 'createdAt' && typeof char[key] !== 'object') {
+                            sheetHtml += `<div><strong>${key.charAt(0).toUpperCase() + key.slice(1)}:</strong> ${char[key]}</div>`;
+                        }
+                    }
+                    sheetHtml += '</div>';
+                    modalBody.innerHTML = sheetHtml;
+                } catch (error) {
+                    console.error("Error fetching character sheet:", error);
+                    modalBody.innerHTML = '<p class="text-red-500">Ocorreu um erro ao buscar a ficha.</p>';
+                }
+            }
+
+            // --- Event Listeners Setup ---
+
+            logoutButton.addEventListener('click', () => auth.signOut());
+
+            // Map Listeners
             mapContainer.addEventListener('click', (e) => {
                 if (!isAdminMode) return;
                 const rect = mapContainer.getBoundingClientRect();
-                const x = (e.clientX - rect.left) / rect.width;
-                const y = (e.clientY - rect.top) / rect.height;
-                currentPinCoords = { x, y };
+                currentPinCoords = { x: (e.clientX - rect.left) / rect.width, y: (e.clientY - rect.top) / rect.height };
                 document.getElementById('pinTitle').value = '';
                 document.getElementById('pinDescription').value = '';
                 pinModal.classList.remove('hidden');
             });
 
-            // --- Lógica dos Modais ---
-            const passwordInput = document.getElementById('passwordInput');
-            const passwordError = document.getElementById('passwordError');
-            
-            function setAdminMode(isAdmin) {
-                if (isAdmin && !auth.currentUser) {
-                    alert("Você precisa estar logado para entrar no modo de administrador.");
-                    return;
-                }
-                isAdminMode = isAdmin;
-                if (isAdmin) {
-                    adminLoginButton.textContent = "Sair do Modo Admin";
-                    adminHelpText.textContent = "Modo de edição ativo. Clique no mapa para adicionar um ponto.";
-                    mapContainer.style.cursor = 'crosshair';
-                } else {
-                    adminLoginButton.textContent = "Acesso Restrito";
-                    adminHelpText.textContent = "Passe a senha para editar o mapa.";
-                    mapContainer.style.cursor = 'default';
-                }
-                 renderPins(); // Re-renderiza para mostrar/ocultar botão de remover
-            }
-            
-            adminLoginButton.addEventListener('click', () => {
-                if (isAdminMode) {
-                    setAdminMode(false);
-                } else {
-                    passwordModal.classList.remove('hidden');
-                }
-            });
-            
+            // Modal Button Listeners
+            adminLoginButton.addEventListener('click', () => isAdminMode ? setAdminMode(false) : passwordModal.classList.remove('hidden'));
             document.getElementById('cancelPasswordButton').addEventListener('click', () => passwordModal.classList.add('hidden'));
             document.getElementById('submitPasswordButton').addEventListener('click', () => {
+                const passwordInput = document.getElementById('passwordInput');
                 if (passwordInput.value === ADMIN_PASSWORD) {
                     setAdminMode(true);
                     passwordModal.classList.add('hidden');
                     passwordInput.value = '';
-                    passwordError.classList.add('hidden');
+                    document.getElementById('passwordError').classList.add('hidden');
                 } else {
-                    passwordError.classList.remove('hidden');
+                    document.getElementById('passwordError').classList.remove('hidden');
                     passwordInput.value = '';
                 }
             });
 
             document.getElementById('cancelPinButton').addEventListener('click', () => pinModal.classList.add('hidden'));
-            
             document.getElementById('savePinButton').addEventListener('click', async () => {
-                if (!auth.currentUser) {
-                    alert("Você precisa estar logado para salvar um ponto.");
-                    return;
-                }
                 const title = document.getElementById('pinTitle').value;
                 const description = document.getElementById('pinDescription').value;
                 if (title && description) {
                     const newPin = { ...currentPinCoords, title, description };
                     try {
                         const docRef = await db.collection("map_pins").add(newPin);
-                        newPin.id = docRef.id;
-                        pointsOfInterest.push(newPin);
+                        pointsOfInterest.push({ id: docRef.id, ...newPin });
                         renderPins();
                         pinModal.classList.add('hidden');
                     } catch (error) {
-                        console.error("Error adding document: ", error);
-                        alert("Erro ao salvar o ponto. Verifique as permissões do banco de dados.");
+                        console.error("Error adding pin: ", error);
+                        alert("Erro ao salvar o ponto.");
                     }
-                } else {
-                    const pinModalElement = document.getElementById('pinModal').querySelector('div');
-                    pinModalElement.classList.add('animate-shake');
-                    setTimeout(() => pinModalElement.classList.remove('animate-shake'), 500);
                 }
             });
 
             document.getElementById('closeViewPinButton').addEventListener('click', () => viewPinModal.classList.add('hidden'));
-            
             removePinButton.addEventListener('click', async () => {
-                if (!auth.currentUser) {
-                    alert("Você precisa estar logado para remover um ponto.");
-                    return;
-                }
                 const pinIdToRemove = removePinButton.dataset.id;
                 if (pinIdToRemove) {
                     try {
@@ -491,159 +547,18 @@
                         renderPins();
                         viewPinModal.classList.add('hidden');
                     } catch (error) {
-                        console.error("Error removing document: ", error);
-                        alert("Erro ao remover o ponto. Verifique as permissões do banco de dados.");
+                        console.error("Error removing pin: ", error);
+                        alert("Erro ao remover o ponto.");
                     }
                 }
             });
 
-            async function loadPins() {
-                if (!auth.currentUser) {
-                    return;
-                }
-                try {
-                    const querySnapshot = await db.collection("map_pins").get();
-                    pointsOfInterest = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                    renderPins();
-                } catch (error) {
-                    console.log("Error getting documents: ", error);
-                }
-            }
-            
-            window.addEventListener('resize', () => {
-                resizeCanvas();
-                redrawBackgroundImage();
-                renderPins();
-            });
-        });
-
-        auth.onAuthStateChanged(user => {
-            if (user) {
-                mainContent.style.display = 'block';
-                userDisplay.textContent = `Operativo Mestre Conectado: ${user.displayName || user.email}`;
-                loadOperationsData();
-                loadPins();
-            } else {
-                window.location.href = '../login.html';
-            }
-        });
-
-        document.addEventListener('DOMContentLoaded', () => {
-            const mainContent = document.getElementById('main-content');
-            const userDisplay = document.getElementById('user-display');
-            const logoutButton = document.getElementById('logout-button');
-            const missionBoard = document.getElementById('mission-board');
-            const modal = document.getElementById('character-modal');
-            const modalBody = document.getElementById('modal-body');
-            const modalCloseButton = document.getElementById('modal-close-button');
-
-            logoutButton.addEventListener('click', () => auth.signOut());
-            modalCloseButton.addEventListener('click', () => modal.style.display = "none");
+            document.getElementById('modal-close-button').addEventListener('click', () => characterModal.style.display = "none");
             window.addEventListener('click', (event) => {
-                if (event.target == modal) {
-                    modal.style.display = "none";
-                }
+                if (event.target == characterModal) characterModal.style.display = "none";
             });
-
-            async function loadOperationsData() {
-                try {
-                    // Fetch all signups and all characters in parallel
-                    const [signupsSnapshot, charactersSnapshot] = await Promise.all([
-                        db.collection('mission_signups').orderBy('timestamp', 'asc').get(),
-                        db.collection('personagens').get()
-                    ]);
-
-                    const allCharacters = charactersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                    const signupsByMission = {};
-
-                    signupsSnapshot.docs.forEach(doc => {
-                        const signup = doc.data();
-                        // Find the full character sheet for this signup
-                        const characterData = allCharacters.find(c => c.userId === signup.userId && c.nome === signup.characterName);
-                        
-                        if (!signupsByMission[signup.missionName]) {
-                            signupsByMission[signup.missionName] = [];
-                        }
-                        signupsByMission[signup.missionName].push({ ...signup, characterSheet: characterData });
-                    });
-
-                    renderMissionBoard(signupsByMission);
-
-                } catch (err) {
-                    console.error("Error loading operations data:", err);
-                    missionBoard.innerHTML = '<p class="text-red-500 col-span-full">Erro ao carregar dados. Verifique as permissões do banco de dados.</p>';
-                }
-            }
-            
-            function renderMissionBoard(signupsByMission) {
-                if (Object.keys(signupsByMission).length === 0) {
-                    missionBoard.innerHTML = '<p class="text-center text-gray-500 col-span-full">Nenhum operativo inscrito em missões ainda.</p>';
-                    return;
-                }
-
-                missionBoard.innerHTML = ''; // Clear loading message
-                for (const missionName in signupsByMission) {
-                    const missionCard = document.createElement('div');
-                    missionCard.className = 'mission-card';
-                    
-                    let charactersHtml = signupsByMission[missionName].map(signup => {
-                        const characterId = signup.characterSheet ? signup.characterSheet.id : null;
-                        return `
-                            <div class="character-entry" data-character-id="${characterId}">
-                                <span>${signup.characterName}</span>
-                                <span class="text-gray-400 text-sm">${signup.userNickname}</span>
-                            </div>
-                        `;
-                    }).join('');
-
-                    missionCard.innerHTML = `
-                        <h3 class="text-xl font-cinzel mb-4">${missionName}</h3>
-                        <div class="space-y-2">${charactersHtml}</div>
-                    `;
-                    missionBoard.appendChild(missionCard);
-                }
-                
-                // Add event listeners after rendering
-                missionBoard.querySelectorAll('.character-entry').forEach(entry => {
-                    entry.addEventListener('click', () => {
-                        const characterId = entry.dataset.characterId;
-                        if (characterId && characterId !== 'null') {
-                            showCharacterSheet(characterId);
-                        } else {
-                            alert('Ficha de personagem não encontrada para este operativo.');
-                        }
-                    });
-                });
-            }
-
-            async function showCharacterSheet(characterId) {
-                modalBody.innerHTML = '<p>Carregando ficha...</p>';
-                modal.style.display = "block";
-                
-                try {
-                    const characterDoc = await db.collection('personagens').doc(characterId).get();
-                    if (!characterDoc.exists) {
-                        modalBody.innerHTML = '<p class="text-red-500">Erro: Ficha de personagem não encontrada.</p>';
-                        return;
-                    }
-                    
-                    const char = characterDoc.data();
-                    let sheetHtml = `<h2 class="text-3xl font-cinzel text-red-400 mb-4">${char.nome}</h2>`;
-                    sheetHtml += '<div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">';
-                    for (const key in char) {
-                        if (key !== 'userId' && key !== 'createdAt' && typeof char[key] !== 'object') {
-                           sheetHtml += `<div><strong>${key.charAt(0).toUpperCase() + key.slice(1)}:</strong> ${char[key]}</div>`;
-                        }
-                    }
-                    sheetHtml += '</div>';
-                    modalBody.innerHTML = sheetHtml;
-
-                } catch (error) {
-                    console.error("Error fetching character sheet:", error);
-                    modalBody.innerHTML = '<p class="text-red-500">Ocorreu um erro ao buscar a ficha.</p>';
-                }
-            }
         });
     </script>
 </body>
+
 </html>

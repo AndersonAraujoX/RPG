@@ -3,11 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gerador de Ficha +2D6 Dark Fantasy - Kuar-Tor Final</title>
+    <title>Gerador de Ficha +2D6 Dark Fantasy - Kuar-Tor Final (Online)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Inter:wght@400;500;700&family=MedievalSharp&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    
     <style>
         body { 
             font-family: 'Inter', sans-serif;
@@ -84,7 +86,7 @@
 
         @media print {
             body { background-color: #ffffff !important; color: #000 !important; font-family: 'Times New Roman', Times, serif; font-size: 10pt; }
-            .no-print, #rpgSheetForm, #mainTitle, #savedSheetsSection { display: none !important; }
+            .no-print, #rpgSheetForm, #mainTitle, #savedSheetsSection, #firebase-status { display: none !important; }
             #generatedSheet { display: block !important; box-shadow: none !important; border: none !important; color: #000 !important; background-color: #fff !important; }
             
             #sheetContent {
@@ -124,238 +126,34 @@
 </head>
 <body class="bg-neutral-900 text-neutral-300 min-h-screen flex flex-col items-center pt-8 pb-12 px-4">
 
+    <header>
+        <div class="container">
+            <h1>Crônicas de Kuar-Tor</h1>
+            <nav>
+                <button class="nav-toggle" aria-label="toggle navigation">
+                    <span class="hamburger"></span>
+                </button>
+                <ul class="nav-menu">
+                    <li><a href="index.html">Início</a></li>
+                    <li><a href="lore.html">Conhecimento</a></li>
+                    <li><a href="personagens.html">Dossiê</a></li>
+                    <li><a href="bestiario.html">Bestiário</a></li>
+                    <li><a href="regras.html">Regras</a></li>
+                    <li><a href="formV5.html" class="active">Criador</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
     <div class="w-full max-w-3xl">
         <header class="text-center mb-8 no-print">
             <h1 id="mainTitle" class="text-4xl md:text-5xl title-font text-red-500">Kuar-Tor: Ecos do Vazio</h1>
-            <p class="content-font text-xl text-gray-400 mt-2">Ficha de Personagem Unificada</p>
+            <p class="content-font text-xl text-gray-400 mt-2">Ficha de Personagem Unificada (Online)</p>
         </header>
-
-        <div class="w-full bg-neutral-800 p-6 sm:p-8 rounded-lg shadow-2xl border border-neutral-700 no-print">
-            <div class="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
-                <h1 class="title-font text-3xl sm:text-4xl font-bold text-center text-amber-500">Gerador de Fichas</h1>
-                <div class="flex space-x-3">
-                    <button type="button" id="importSheetButton" class="px-5 py-2.5 action-button-import rounded-md shadow-md text-sm">Importar Ficha</button>
-                </div>
-            </div>
-            <input type="file" id="fileInput" accept=".json" class="hidden">
-
-            <!-- Seção de Recursos -->
-            <div class="mb-6 no-print">
-                <h3 class="text-lg font-semibold text-amber-500 text-center mb-3">Recursos Rápidos</h3>
-                <div class="flex justify-center flex-wrap gap-3">
-                    <a href="https://andersonaraujox.github.io/RPG/Arquivos/Vantagens.pdf" target="_blank" class="px-4 py-2 action-button action-button-resource rounded-md text-sm">Vantagens (PDF)</a>
-                    <a href="https://andersonaraujox.github.io/RPG/Arquivos/desvantagens.pdf" target="_blank" class="px-4 py-2 action-button action-button-resource rounded-md text-sm">Desvantagens (PDF)</a>
-                    <a href="https://andersonaraujox.github.io/RPG/Arquivos/medieval2d6-livreto.pdf" target="_blank" class="px-4 py-2 action-button action-button-resource rounded-md text-sm">Livreto +2D6 (PDF)</a>
-                </div>
-            </div>
-
-            <!-- Contador de Pontos -->
-            <div id="pointCounterSection" class="points-counter">
-                <div class="points-block"><div class="points-label">Atributos</div><div id="attributePointsValue" class="points-value">0/14</div></div>
-                <div class="points-block"><div class="points-label">Perícias</div><div id="skillPointsValue" class="points-value">0/10</div></div>
-                <div class="points-block"><div class="points-label">Vantagens</div><div id="advantagePointsValue" class="points-value">0/5</div></div>
-            </div>
-
-            <form id="rpgSheetForm" class="space-y-6">
-                <!-- Informações Básicas -->
-                <fieldset class="border border-neutral-700 p-4 rounded-md">
-                    <legend class="text-lg px-2 section-title !border-none !mb-0 !pb-0 !text-amber-500">Identidade</legend>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                          <div><label for="charName" class="block text-sm font-medium mb-1">Nome:</label><input type="text" id="charName" name="charName" required class="w-full p-2 bg-neutral-900 border-neutral-600 rounded-md"></div>
-                          <div><label for="charRace" class="block text-sm font-medium mb-1">Raça:</label><input type="text" id="charRace" name="charRace" class="w-full p-2 bg-neutral-900 border-neutral-600 rounded-md"></div>
-                          <div><label for="charClass" class="block text-sm font-medium mb-1">Classe:</label><input type="text" id="charClass" name="charClass" class="w-full p-2 bg-neutral-900 border-neutral-600 rounded-md"></div>
-                    </div>
-                </fieldset>
-                
-                <!-- Evolução -->
-                 <fieldset class="border border-neutral-700 p-4 rounded-md">
-                    <legend class="text-lg px-2 section-title !border-none !mb-0 !pb-0 !text-amber-500">Evolução & Experiência</legend>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
-                        <div>
-                            <label for="expPoints" class="block text-sm font-medium mb-1">Pontos de Experiência (EXP):</label>
-                            <input type="number" id="expPoints" name="expPoints" min="0" value="0" class="w-full p-2 bg-neutral-900 border-neutral-600 rounded-md">
-                        </div>
-                        <div class="bg-neutral-900/50 p-3 rounded-md border border-neutral-700 space-y-2">
-                            <div class="flex justify-between text-sm"><span class="text-neutral-400">Pontos de Atributo Ganhos:</span><span id="earnedAttributePoints" class="font-bold text-amber-400">0</span></div>
-                            <div class="flex justify-between text-sm"><span class="text-neutral-400">Pontos de Evolução Ganhos:</span><span id="earnedEvolutionPoints" class="font-bold text-amber-400">0</span></div>
-                            <hr class="border-neutral-700">
-                            <div class="flex justify-between text-sm"><span class="text-neutral-400">Pontos de Evolução Disponíveis:</span><span id="availableEvolutionPoints" class="font-bold text-green-400">0</span></div>
-                            <div class="flex justify-center space-x-2 pt-2">
-                                <button type="button" id="spendOnSkillButton" class="text-xs action-button action-button-secondary px-2 py-1 disabled:opacity-50 disabled:cursor-not-allowed" title="Gasta 1 Ponto de Evolução para ganhar +1 Ponto de Perícia.">+1 para Perícias</button>
-                                <button type="button" id="spendOnAdvantageButton" class="text-xs action-button action-button-secondary px-2 py-1 disabled:opacity-50 disabled:cursor-not-allowed" title="Gasta 1 Ponto de Evolução para ganhar +1 Ponto para Vantagens.">+1 para Vantagens</button>
-                            </div>
-                        </div>
-                    </div>
-                    <input type="hidden" name="pontosPericiaAdicionais" id="pontosPericiaAdicionais" value="0">
-                    <input type="hidden" name="pontosVantagemAdicionais" id="pontosVantagemAdicionais" value="0">
-                </fieldset>
-
-                <!-- Atributos -->
-                <fieldset class="border border-neutral-700 p-4 rounded-md">
-                    <legend class="text-lg px-2 section-title !border-none !mb-0 !pb-0 !text-amber-500">Atributos</legend>
-                    <div class="grid grid-cols-3 md:grid-cols-7 gap-4 justify-items-center text-center">
-                        <div><label for="for" class="block text-lg font-bold title-font text-gray-300">FOR</label><input type="number" id="for" name="for" class="attribute-input mt-1" value="2" min="1" max="5"></div>
-                        <div><label for="des" class="block text-lg font-bold title-font text-gray-300">DES</label><input type="number" id="des" name="des" class="attribute-input mt-1" value="2" min="1" max="5"></div>
-                        <div><label for="con" class="block text-lg font-bold title-font text-gray-300">CON</label><input type="number" id="con" name="con" class="attribute-input mt-1" value="2" min="1" max="5"></div>
-                        <div><label for="int" class="block text-lg font-bold title-font text-gray-300">INT</label><input type="number" id="int" name="int" class="attribute-input mt-1" value="2" min="1" max="5"></div>
-                        <div><label for="sab" class="block text-lg font-bold title-font text-gray-300">SAB</label><input type="number" id="sab" name="sab" class="attribute-input mt-1" value="2" min="1" max="5"></div>
-                        <div><label for="pod" class="block text-lg font-bold title-font text-gray-300">POD</label><input type="number" id="pod" name="pod" class="attribute-input mt-1" value="2" min="1" max="5"></div>
-                        <div><label for="car" class="block text-lg font-bold title-font text-gray-300">CAR</label><input type="number" id="car" name="car" class="attribute-input mt-1" value="2" min="1" max="5"></div>
-                    </div>
-                </fieldset>
-
-                <!-- Recursos de Combate -->
-                <fieldset class="border border-neutral-700 p-4 rounded-md">
-                    <legend class="text-lg px-2 section-title !border-none !mb-0 !pb-0 !text-amber-500">Recursos de Combate</legend>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-center">
-                        <div>
-                            <label for="pontosVida" class="block text-lg font-bold title-font text-gray-300">Pontos de Vida (PV)</label>
-                            <input type="number" id="pontosVida" name="pontosVida" class="attribute-input mt-1 w-24" value="10">
-                        </div>
-                        <div>
-                            <label for="pontosEnergia" class="block text-lg font-bold title-font text-gray-300">Pontos de Energia (PE)</label>
-                            <input type="number" id="pontosEnergia" name="pontosEnergia" class="attribute-input mt-1 w-24" value="10">
-                        </div>
-                    </div>
-                </fieldset>
-
-                <!-- Habilidades -->
-                <fieldset class="border border-neutral-700 p-4 rounded-md">
-                    <legend class="text-lg px-2 section-title !border-none !mb-0 !pb-0 !text-amber-500">Habilidades & Peculiaridades</legend>
-                    <div class="space-y-4">
-                        <div>
-                            <div class="flex justify-between items-center mb-1"><label class="block text-sm font-medium">Perícias:</label><button type="button" id="manageSkillsButton" class="text-sm action-button action-button-secondary px-3 py-1">Gerir Perícias</button></div>
-                            <div id="displaySkills" class="p-2 min-h-[40px] bg-neutral-900/50 rounded-md border border-neutral-600 text-sm italic text-neutral-400">Nenhuma perícia.</div>
-                            <input type="hidden" name="pericias" id="periciasInput" value="[]">
-                        </div>
-                        <div>
-                            <div class="flex justify-between items-center mb-1"><label class="block text-sm font-medium">Vantagens:</label><button type="button" id="manageAdvantagesButton" class="text-sm action-button action-button-secondary px-3 py-1">Gerir Vantagens</button></div>
-                            <div id="displayAdvantages" class="p-2 min-h-[40px] bg-neutral-900/50 rounded-md border border-neutral-600 text-sm italic text-neutral-400">Nenhuma vantagem.</div>
-                            <input type="hidden" name="vantagens" id="vantagensInput" value="[]">
-                        </div>
-                        <div>
-                            <div class="flex justify-between items-center mb-1"><label class="block text-sm font-medium">Desvantagens:</label><button type="button" id="manageDisadvantagesButton" class="text-sm action-button action-button-secondary px-3 py-1">Gerir Desvantagens</button></div>
-                            <div id="displayDisadvantages" class="p-2 min-h-[40px] bg-neutral-900/50 rounded-md border border-neutral-600 text-sm italic text-neutral-400">Nenhuma desvantagem.</div>
-                            <input type="hidden" name="desvantagens" id="desvantagensInput" value="[]">
-                        </div>
-                    </div>
-                </fieldset>
-
-                <!-- Seção de Magia -->
-                <fieldset id="secao-magia" class="border border-neutral-700 p-4 rounded-md">
-                    <legend class="text-lg px-2 section-title !border-none !mb-0 !pb-0 !text-amber-500">🔮 Magia & Rituais</legend>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 my-4">
-                        <div>
-                            <label for="tradicaoMagica" class="block text-sm font-medium text-gray-400 mb-1">Tradição Mágica</label>
-                            <select id="tradicaoMagica" name="tradicaoMagica" class="w-full bg-neutral-900 border-neutral-600 rounded-md p-2 h-[42px]">
-                                <option value="INT">Arcana (INT)</option>
-                                <option value="SAB">Divina/Primal (SAB)</option>
-                                <option value="POD">Inata (POD)</option>
-                            </select>
-                             <p class="text-xs text-gray-500 mt-1">Atributo chave.</p>
-                        </div>
-                    </div>
-
-                    <!-- Tabela de Magia -->
-                    <div class="mt-6 mb-4">
-                        <h4 class="text-lg content-font text-gray-300 mb-2 text-center">Tabela de Efeitos Mágicos (Referência)</h4>
-                        <div class="overflow-x-auto rounded-lg border border-neutral-700">
-                            <table class="min-w-full bg-neutral-900 text-sm text-center">
-                                <thead class="bg-neutral-800">
-                                    <tr class="text-amber-500 title-font">
-                                        <th class="p-3 border-b border-r border-neutral-700">Nível</th>
-                                        <th class="p-3 border-b border-r border-neutral-700">PE</th>
-                                        <th class="p-3 border-b border-r border-neutral-700">Dano</th>
-                                        <th class="p-3 border-b border-r border-neutral-700">Bônus/RD</th>
-                                        <th class="p-3 border-b border-r border-neutral-700">Alcance/Área</th>
-                                        <th class="p-3 border-b border-r border-neutral-700">Duração</th>
-                                        <th class="p-3 border-b border-neutral-700">CD</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="text-neutral-300">
-                                    <tr>
-                                        <td class="p-2 border-b border-r border-neutral-700 font-bold">2</td>
-                                        <td class="p-2 border-b border-r border-neutral-700">2</td>
-                                        <td class="p-2 border-b border-r border-neutral-700">2d6+4</td>
-                                        <td class="p-2 border-b border-r border-neutral-700">RD 4</td>
-                                        <td class="p-2 border-b border-r border-neutral-700">10m / 2x2m</td>
-                                        <td class="p-2 border-b border-r border-neutral-700">2d6 Rod.</td>
-                                        <td class="p-2 border-b border-neutral-700">10</td>
-                                    </tr>
-                                    <tr class="bg-neutral-800/30">
-                                        <td class="p-2 border-b border-r border-neutral-700 font-bold">3</td>
-                                        <td class="p-2 border-b border-r border-neutral-700">3</td>
-                                        <td class="p-2 border-b border-r border-neutral-700">3d6+6</td>
-                                        <td class="p-2 border-b border-r border-neutral-700">RD 6</td>
-                                        <td class="p-2 border-b border-r border-neutral-700">25m / 5x5m</td>
-                                        <td class="p-2 border-b border-r border-neutral-700">3d6 Rod.</td>
-                                        <td class="p-2 border-b border-neutral-700">12</td>
-                                    </tr>
-                                    <tr>
-                                        <td class="p-2 border-b border-r border-neutral-700 font-bold">4</td>
-                                        <td class="p-2 border-b border-r border-neutral-700">4</td>
-                                        <td class="p-2 border-b border-r border-neutral-700">4d6+8</td>
-                                        <td class="p-2 border-b border-r border-neutral-700">RD 8</td>
-                                        <td class="p-2 border-b border-r border-neutral-700">50m / 10x10m</td>
-                                        <td class="p-2 border-b border-r border-neutral-700">4d6 Rod.</td>
-                                        <td class="p-2 border-b border-neutral-700">14</td>
-                                    </tr>
-                                    <tr class="bg-neutral-800/30">
-                                        <td class="p-2 border-b border-r border-neutral-700 font-bold">5</td>
-                                        <td class="p-2 border-b border-r border-neutral-700">5</td>
-                                        <td class="p-2 border-b border-r border-neutral-700">5d6+10</td>
-                                        <td class="p-2 border-b border-r border-neutral-700">RD 10</td>
-                                        <td class="p-2 border-b border-r border-neutral-700">100m / 20x20m</td>
-                                        <td class="p-2 border-b border-r border-neutral-700">5d6 Rod.</td>
-                                        <td class="p-2 border-b border-neutral-700">16</td>
-                                    </tr>
-                                    <tr>
-                                        <td class="p-2 border-r border-neutral-700 font-bold">6+</td>
-                                        <td class="p-2 border-r border-neutral-700">6+</td>
-                                        <td class="p-2 border-r border-neutral-700">6d6+12</td>
-                                        <td class="p-2 border-r border-neutral-700">RD 12+</td>
-                                        <td class="p-2 border-r border-neutral-700">200m+</td>
-                                        <td class="p-2 border-r border-neutral-700">Sustentado</td>
-                                        <td class="p-2">18+</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                    
-                    <div>
-                        <h3 class="text-xl content-font text-gray-300 mb-3 border-t border-gray-700 pt-4">Caminhos de Magia</h3>
-                        <div id="caminhosContainer" class="space-y-3"></div>
-                        <input type="hidden" name="caminhosMagia" id="caminhosMagiaInput" value="[]">
-                        <button type="button" id="addCaminhoBtn" class="mt-4 text-sm bg-red-800 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-md shadow-lg transition-colors duration-200">+ Adicionar Caminho</button>
-                    </div>
-                </fieldset>
-
-                 <!-- Equipamento e Narrativa -->
-                <fieldset class="border border-neutral-700 p-4 rounded-md">
-                    <legend class="text-lg px-2 section-title !border-none !mb-0 !pb-0 !text-amber-500">Equipamento & Narrativa</legend>
-                    <div class="space-y-4">
-                        <div>
-                            <label for="equipment" class="block text-sm font-medium mb-1">Equipamento e Relíquias:</label>
-                            <textarea id="equipment" name="equipment" rows="4" class="w-full p-2 bg-neutral-900 border-neutral-600 rounded-md" placeholder="Adaga ritualística, tomo esquecido, armadura de placas enferrujada..."></textarea>
-                        </div>
-                        <div>
-                             <label for="backstory" class="block text-sm font-medium mb-1">Passado Sombrio:</label>
-                            <textarea id="backstory" name="backstory" rows="6" class="w-full p-2 bg-neutral-900 border-neutral-600 rounded-md" placeholder="Nascido sob uma lua de sangue, marcado por uma tragédia indizível..."></textarea>
-                        </div>
-                    </div>
-                </fieldset>
-
-                <div class="flex justify-end mt-6 space-x-4">
-                    <button type="button" id="clearFormButton" class="px-6 py-2 action-button action-button-secondary rounded-md shadow-md">Limpar</button>
-                    <button type="submit" class="px-6 py-2 action-button action-button-primary rounded-md shadow-md">Salvar e Visualizar</button>
-                </div>
-            </form>
-        </div>
         
         <!-- Seção de Fichas Salvas -->
         <div id="savedSheetsSection" class="w-full bg-neutral-800 p-6 sm:p-8 rounded-lg shadow-2xl mt-10 border border-neutral-700 no-print">
-            <h2 class="title-font text-2xl font-bold text-center text-amber-600 mb-4">Crônicas Salvas</h2>
+            <h2 class="title-font text-2xl font-bold text-center text-amber-600 mb-4">Crônicas Salvas Localmente</h2>
             <div id="savedSheetsList" class="space-y-2 max-h-96 overflow-y-auto pr-2">
                 <p class="text-neutral-500 text-center">Nenhuma crônica registrada ainda.</p>
             </div>
@@ -368,7 +166,7 @@
                 <button id="printSheetButton" class="px-6 py-2 action-button action-button-primary">Imprimir</button>
                 <button id="exportJsonButton" class="px-6 py-2 action-button action-button-secondary">Exportar JSON</button>
                 <button id="exportMarkdownButton" class="px-6 py-2 action-button action-button-secondary">Exportar Markdown</button>
-             </div>
+            </div>
         </div>
     </div>
 
@@ -394,16 +192,16 @@
             sab: document.getElementById('sab'), pod: document.getElementById('pod'),
             car: document.getElementById('car')
         };
+        const poderesMagicosInput = document.getElementById('poderesMagicos');
         const tradicaoMagicaSelect = document.getElementById('tradicaoMagica');
         const pontosEnergiaInput = document.getElementById('pontosEnergia');
-        const pontosVidaInput = document.getElementById('pontosVida');
         const addCaminhoBtn = document.getElementById('addCaminhoBtn');
         const caminhosContainer = document.getElementById('caminhosContainer');
-        const caminhosMagiaInput = document.getElementById('caminhosMagiaInput');
         
         const attributePointsValueDiv = document.getElementById('attributePointsValue');
         const skillPointsValueDiv = document.getElementById('skillPointsValue');
         const advantagePointsValueDiv = document.getElementById('advantagePointsValue');
+        const magicPathPointsValueDiv = document.getElementById('magicPathPointsValue');
         
         const expInput = document.getElementById('expPoints');
         const earnedAttributePointsDiv = document.getElementById('earnedAttributePoints');
@@ -439,16 +237,81 @@
         const fileInput = document.getElementById('fileInput');
 
         // --- ESTADO E CONSTANTES ---
-        const LOCAL_STORAGE_INDEX_KEY = 'rpgFichasIndex_kuar_tor_v3';
-        const LOCAL_STORAGE_SHEET_PREFIX = 'rpgFicha_kuar_tor_v3_';
         let currentSheetId = null;
         let currentEditingPVDType = null;
         let tempPVDList = [];
         const listaPericiasMedieval2D6 = ["Acadêmico", "Acrobata", "Arqueiro", "Artífice", "Atletismo", "Cavalgar", "Curandeiro", "Disciplina", "Dissimular", "Domador", "Empatia", "Erudição", "Expressão", "Furtivo", "Guerreiro", "Ladino", "Linguística", "Manha", "Manipulação", "Mecânico", "Navegador", "Ocultismo", "Percepção", "Performance", "Presença", "Sobrevivência"];
         const caminhosDisponiveis = ["Magia (Fogo)", "Magia (Água)", "Magia (Ar)", "Magia (Terra)", "Magia (Luz)", "Magia (Trevas)", "Magia (Animais)", "Magia (Plantas)", "Magia (Humanos)", "Magia (Spiritum)", "Magia (Arkanum)", "Magia (Metamagia)"];
 
-        // --- FUNÇÕES ---
-        
+        // --- FUNÇÕES DE ARMAZENAMENTO LOCAL ---
+        function getSheetsFromStorage() {
+            return JSON.parse(localStorage.getItem('kuarTorSheets') || '[]');
+        }
+
+        function saveSheetsToStorage(sheets) {
+            localStorage.setItem('kuarTorSheets', JSON.stringify(sheets));
+        }
+
+        function saveSheetToLocalStorage() {
+            const sheetData = getFormAsJson();
+            if (!sheetData.charName) {
+                alert('Por favor, insira um nome para o personagem antes de salvar.');
+                return;
+            }
+
+            let sheets = getSheetsFromStorage();
+            const sheetIdToSave = currentSheetId || Date.now().toString();
+            sheetData.id = sheetIdToSave;
+
+            const existingIndex = sheets.findIndex(sheet => sheet.id === sheetIdToSave);
+
+            if (existingIndex > -1) {
+                sheets[existingIndex] = sheetData;
+            } else {
+                sheets.push(sheetData);
+            }
+
+            saveSheetsToStorage(sheets);
+            currentSheetId = sheetIdToSave;
+            alert(`Ficha '${sheetData.charName}' salva localmente!`);
+            loadSavedSheetsFromLocalStorage();
+        }
+
+        function loadSavedSheetsFromLocalStorage() {
+            const sheets = getSheetsFromStorage();
+            savedSheetsListDiv.innerHTML = sheets.map(item => `
+                <div class="flex justify-between items-center p-2 bg-neutral-700 rounded-md">
+                    <span class="truncate pr-2">${item.charName}</span>
+                    <div class="flex-shrink-0">
+                        <button class="load-sheet-btn text-xs action-button action-button-secondary px-2 py-1" data-id="${item.id}">Carregar</button>
+                        <button class="delete-sheet-btn text-xs action-button action-button-primary px-2 py-1" data-id="${item.id}">Excluir</button>
+                    </div>
+                </div>
+            `).join('') || '<p class="text-neutral-500 text-center">Nenhuma crônica registrada localmente.</p>';
+        }
+
+        function loadSheetFromLocalStorage(sheetId) {
+            const sheets = getSheetsFromStorage();
+            const sheetData = sheets.find(sheet => sheet.id === sheetId);
+            if (sheetData) {
+                loadFormFromJson(sheetData);
+                currentSheetId = sheetId;
+            }
+        }
+
+        function deleteSheetFromLocalStorage(sheetId) {
+            if (confirm('Tem certeza que deseja excluir esta ficha? Esta ação não pode ser desfeita.')) {
+                let sheets = getSheetsFromStorage();
+                sheets = sheets.filter(sheet => sheet.id !== sheetId);
+                saveSheetsToStorage(sheets);
+                if (currentSheetId === sheetId) {
+                   clearFormButton.click();
+                }
+                loadSavedSheetsFromLocalStorage();
+            }
+        }
+
+        // --- FUNÇÕES PRINCIPAIS (a maioria permanece a mesma) ---
         function updateAllStats() {
             const exp = parseInt(expInput.value) || 0;
             const pontosPericiaAdd = parseInt(pontosPericiaAdicionaisInput.value) || 0;
@@ -463,7 +326,7 @@
             spendOnSkillButton.disabled = evolutionPointsAvailable <= 0;
             spendOnAdvantageButton.disabled = evolutionPointsAvailable <= 0;
 
-            const totalAttributePoints = 14 + attributePointsEarned;
+            const totalAttributePoints = 12 + attributePointsEarned;
             let attributesSpent = 0;
             Object.values(allAtributosInputs).forEach(input => { attributesSpent += parseInt(input.value) || 0; });
             attributePointsValueDiv.textContent = `${attributesSpent}/${totalAttributePoints}`;
@@ -477,17 +340,27 @@
 
             const advantages = JSON.parse(document.getElementById('vantagensInput').value || '[]');
             const disadvantages = JSON.parse(document.getElementById('desvantagensInput').value || '[]');
+            const advantagesSpent = advantages.reduce((total, adv) => total + (adv.custo || 0), 0);
+            const disadvantagesBonus = disadvantages.reduce((total, dis) => total + (dis.bonus || 0), 0);
+            const advantagePointsPool = Math.min(disadvantagesBonus, 3) + pontosVantagemAdd;
+            advantagePointsValueDiv.textContent = `${advantagesSpent}/${advantagePointsPool}`;
+            advantagePointsValueDiv.classList.toggle('negative', advantagesSpent > advantagePointsPool);
+
+            const con = parseInt(allAtributosInputs.con.value) || 0;
+            const tradicao = tradicaoMagicaSelect.value;
+            let atributoMagicoVal = 0;
+            if (tradicao === 'INT') atributoMagicoVal = parseInt(allAtributosInputs.int.value) || 0;
+            else if (tradicao === 'SAB') atributoMagicoVal = parseInt(allAtributosInputs.sab.value) || 0;
+            else if (tradicao === 'POD') atributoMagicoVal = parseInt(allAtributosInputs.pod.value) || 0;
+            pontosEnergiaInput.value = atributoMagicoVal + con + 10;
             
+            const pontosDisponiveisCaminho = parseInt(poderesMagicosInput.value) || 0;
             let pontosGastosCaminho = 0;
             caminhosContainer.querySelectorAll('input[type="number"]').forEach(input => {
                 pontosGastosCaminho += parseInt(input.value) || 0;
             });
-
-            const advantagesSpent = advantages.reduce((total, adv) => total + (adv.custo || 0), 0) + pontosGastosCaminho;
-            const disadvantagesBonus = disadvantages.reduce((total, dis) => total + (dis.bonus || 0), 0);
-            const advantagePointsPool = 5 + Math.min(disadvantagesBonus, 3) + pontosVantagemAdd;
-            advantagePointsValueDiv.textContent = `${advantagesSpent}/${advantagePointsPool}`;
-            advantagePointsValueDiv.classList.toggle('negative', advantagesSpent > advantagePointsPool);
+            magicPathPointsValueDiv.textContent = `${pontosGastosCaminho}/${pontosDisponiveisCaminho}`;
+            magicPathPointsValueDiv.classList.toggle('negative', pontosGastosCaminho > pontosDisponiveisCaminho);
         }
 
         function adicionarCaminho(caminhoData = { nome: '', nivel: 0, customName: '' }) {
@@ -509,7 +382,7 @@
                     <input type="text" name="caminho-custom-${id}" class="w-full bg-neutral-700 border border-neutral-600 rounded-md h-10 px-2 text-sm ${caminhoData.nome === 'OUTRO' ? '' : 'hidden'}" placeholder="Nome do Caminho Secundário" value="${caminhoData.customName || ''}">
                 </div>
                 <div class="flex items-center space-x-2">
-                    <label class="text-sm">Nível (Custo):</label>
+                    <label class="text-sm">Nível:</label>
                     <input type="number" name="caminho-nivel-${id}" class="attribute-input w-16" placeholder="Nvl" min="0" value="${caminhoData.nivel || 0}">
                 </div>
                 <p name="caminho-formas-${id}" class="text-sm text-gray-400">Formas: -</p>
@@ -624,7 +497,9 @@
                 tempPVDList.push(item);
             }
             renderPVDList();
-            pvdFormContainer.querySelector('input[type="text"]')?.form.reset();
+            // Limpa apenas os campos de texto e número, mantém selects
+            pvdFormContainer.querySelectorAll('input[type=text], input[type=number], textarea').forEach(input => input.value = '');
+            pvdFormContainer.querySelector('input[type=number]').value = 1;
         }
 
         function removePvdItem(id) {
@@ -684,13 +559,12 @@
             data.pericias = JSON.parse(data.pericias || '[]');
             data.vantagens = JSON.parse(data.vantagens || '[]');
             data.desvantagens = JSON.parse(data.desvantagens || '[]');
-            return JSON.stringify(data);
+            return data;
         }
-
-        function loadFormFromJson(jsonString) {
-            const data = JSON.parse(jsonString);
+        
+        function loadFormFromJson(data) {
             for (const key in data) {
-                if(key === 'pericias' || key === 'vantagens' || key === 'desvantagens' || key === 'caminhosMagia') continue;
+                if(key === 'pericias' || key === 'vantagens' || key === 'desvantagens' || key === 'caminhosMagia' || key === 'id') continue;
                 const element = form.elements[key];
                 if (element) {
                     if (element.type === 'checkbox') element.checked = data[key];
@@ -708,53 +582,19 @@
             updateDisplayPVDs();
             updateAllStats();
         }
-        
-        function saveSheetToLocalStorage(id) {
-            const data = getFormAsJson();
-            localStorage.setItem(LOCAL_STORAGE_SHEET_PREFIX + id, data);
-            let index = JSON.parse(localStorage.getItem(LOCAL_STORAGE_INDEX_KEY) || '[]');
-            const entry = { id, name: form.elements.charName.value || 'Sem Nome', date: new Date().toISOString() };
-            const existingIndex = index.findIndex(i => i.id === id);
-            if (existingIndex > -1) index[existingIndex] = entry;
-            else index.push(entry);
-            localStorage.setItem(LOCAL_STORAGE_INDEX_KEY, JSON.stringify(index));
-            loadSavedSheets();
-        }
 
-        function loadSavedSheets() {
-            let index = JSON.parse(localStorage.getItem(LOCAL_STORAGE_INDEX_KEY) || '[]');
-            savedSheetsListDiv.innerHTML = index.map(item => `
-                <div class="flex justify-between items-center p-2 bg-neutral-700 rounded-md">
-                    <span>${item.name}</span>
-                    <div>
-                        <button class="load-sheet-btn text-xs action-button action-button-secondary px-2 py-1" data-id="${item.id}">Carregar</button>
-                        <button class="delete-sheet-btn text-xs action-button action-button-primary px-2 py-1" data-id="${item.id}">Excluir</button>
-                    </div>
-                </div>
-            `).join('') || '<p class="text-neutral-500 text-center">Nenhuma crônica registrada.</p>';
-        }
-
+        // --- EVENT LISTENERS ---
         savedSheetsListDiv.addEventListener('click', e => {
             const id = e.target.dataset.id;
             if (e.target.classList.contains('load-sheet-btn')) {
-                const data = localStorage.getItem(LOCAL_STORAGE_SHEET_PREFIX + id);
-                if (data) {
-                    currentSheetId = id;
-                    loadFormFromJson(data);
-                }
+                loadSheetFromLocalStorage(id);
             } else if (e.target.classList.contains('delete-sheet-btn')) {
-                if (confirm('Tem certeza que deseja excluir esta ficha?')) {
-                    localStorage.removeItem(LOCAL_STORAGE_SHEET_PREFIX + id);
-                    let index = JSON.parse(localStorage.getItem(LOCAL_STORAGE_INDEX_KEY) || '[]');
-                    index = index.filter(i => i.id !== id);
-                    localStorage.setItem(LOCAL_STORAGE_INDEX_KEY, JSON.stringify(index));
-                    loadSavedSheets();
-                }
+                deleteSheetFromLocalStorage(id);
             }
         });
-
-        // --- EVENT LISTENERS ---
+        
         Object.values(allAtributosInputs).forEach(input => input.addEventListener('input', updateAllStats));
+        poderesMagicosInput.addEventListener('input', updateAllStats);
         tradicaoMagicaSelect.addEventListener('input', updateAllStats);
         addCaminhoBtn.addEventListener('click', () => adicionarCaminho());
         expInput.addEventListener('input', updateAllStats);
@@ -768,21 +608,19 @@
 
         form.addEventListener('submit', (e) => {
             e.preventDefault();
-            if (!currentSheetId) currentSheetId = Date.now().toString();
-            saveSheetToLocalStorage(currentSheetId);
-
-            const data = JSON.parse(getFormAsJson());
+            saveSheetToLocalStorage();
+            
+            const data = getFormAsJson();
             let sheetHtml = `
                 <div class="print-section print-full-width"><h3>Identidade</h3><p><strong>Nome:</strong> ${data.charName || 'N/A'} | <strong>Raça:</strong> ${data.charRace || 'N/A'} | <strong>Classe:</strong> ${data.charClass || 'N/A'}</p></div>
                 <div class="print-section"><h3>Atributos</h3><div class="print-attributes-grid">${Object.keys(allAtributosInputs).map(attr => `<div class="print-attribute-box"><strong>${attr.toUpperCase()}</strong><span>${data[attr] || 0}</span></div>`).join('')}</div></div>
-                 <div class="print-section"><h3>Recursos</h3><p><strong>Pontos de Vida:</strong> ${data.pontosVida} | <strong>Pontos de Energia:</strong> ${data.pontosEnergia}</p></div>
                 <div class="print-section"><h3>Habilidades</h3>
                     <h4>Perícias</h4><ul class="print-pvd-list">${data.pericias.map(p => `<li class="print-pvd-item"><strong>${p.nome} (${p.atributo}: ${p.valor})</strong><span class="description">${p.descricao || ''}</span></li>`).join('') || '<li>Nenhuma</li>'}</ul>
                     <h4>Vantagens</h4><ul class="print-pvd-list">${data.vantagens.map(v => `<li class="print-pvd-item"><strong>${v.nome} (${v.custo}pts)</strong><span class="description">${v.descricao || ''}</span></li>`).join('') || '<li>Nenhuma</li>'}</ul>
                     <h4>Desvantagens</h4><ul class="print-pvd-list">${data.desvantagens.map(d => `<li class="print-pvd-item"><strong>${d.nome} (${d.bonus}pts)</strong><span class="description">${d.descricao || ''}</span></li>`).join('') || '<li>Nenhuma</li>'}</ul>
                 </div>
                 <div class="print-section print-full-width"><h3>Magia & Rituais</h3>
-                    <p><strong>Tradição:</strong> ${data.tradicaoMagica}</p>
+                    <p><strong>Tradição:</strong> ${data.tradicaoMagica} | <strong>PEs:</strong> ${data.pontosEnergia}</p>
                     <h4>Caminhos de Magia</h4><ul class="print-pvd-list">${data.caminhosMagia.map(c => `<li class="print-pvd-item"><strong>${c.nome === 'OUTRO' ? c.customName : c.nome} (Nível ${c.nivel})</strong></li>`).join('') || '<li>Nenhum</li>'}</ul>
                 </div>
                 <div class="print-section print-full-width"><h3>Equipamento</h3><div class="print-text-area">${(data.equipment || 'Nenhum').replace(/\n/g, '<br>')}</div></div>
@@ -804,7 +642,8 @@
 
         printSheetButton.addEventListener('click', () => window.print());
         exportJsonButton.addEventListener('click', () => {
-            const json = getFormAsJson();
+            const data = getFormAsJson();
+            const json = JSON.stringify(data, null, 2);
             const blob = new Blob([json], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
@@ -814,20 +653,19 @@
             URL.revokeObjectURL(url);
         });
         exportMarkdownButton.addEventListener('click', () => {
-            const data = JSON.parse(getFormAsJson());
+            const data = getFormAsJson();
             let md = `# Ficha de Personagem: ${data.charName || 'Sem Nome'}\n\n`;
             md += `**Raça:** ${data.charRace || ''} | **Classe:** ${data.charClass || ''}\n\n`;
             md += `## Atributos\n`;
             md += `| FOR | DES | CON | INT | SAB | POD | CAR |\n`;
             md += `|:---:|:---:|:---:|:---:|:---:|:---:|:---:|\n`;
             md += `| ${data.for} | ${data.des} | ${data.con} | ${data.int} | ${data.sab} | ${data.pod} | ${data.car} |\n\n`;
-            md += `**PV:** ${data.pontosVida} | **PE:** ${data.pontosEnergia}\n\n`;
             md += `## Habilidades\n\n`;
             md += `### Perícias\n${data.pericias.map(p => `- **${p.nome}** (${p.atributo}: ${p.valor}) ${p.descricao ? `*${p.descricao}*` : ''}`).join('\n') || '- Nenhuma'}\n\n`;
             md += `### Vantagens\n${data.vantagens.map(v => `- **${v.nome}** (${v.custo}pts) ${v.descricao ? `*${v.descricao}*` : ''}`).join('\n') || '- Nenhuma'}\n\n`;
             md += `### Desvantagens\n${data.desvantagens.map(d => `- **${d.nome}** (${d.bonus}pts) ${d.descricao ? `*${d.descricao}*` : ''}`).join('\n') || '- Nenhuma'}\n\n`;
             md += `## Magia\n\n`;
-            md += `**Tradição:** ${data.tradicaoMagica}\n\n`;
+            md += `**Tradição:** ${data.tradicaoMagica} | **PEs:** ${data.pontosEnergia}\n\n`;
             md += `### Caminhos de Magia\n${data.caminhosMagia.map(c => `- **${c.nome === 'OUTRO' ? c.customName : c.nome}** (Nível ${c.nivel})`).join('\n') || '- Nenhum'}\n\n`;
             md += `## Equipamento\n\n${data.equipment || 'Nenhum'}\n\n`;
             md += `## Histórico\n\n${data.backstory || 'Nenhum'}\n`;
@@ -846,24 +684,31 @@
             if (file) {
                 const reader = new FileReader();
                 reader.onload = (event) => {
-                    const id = Date.now().toString();
-                    localStorage.setItem(LOCAL_STORAGE_SHEET_PREFIX + id, event.target.result);
-                    let index = JSON.parse(localStorage.getItem(LOCAL_STORAGE_INDEX_KEY) || '[]');
-                    const data = JSON.parse(event.target.result);
-                    index.push({id, name: data.charName || 'Ficha Importada', date: new Date().toISOString()});
-                    localStorage.setItem(LOCAL_STORAGE_INDEX_KEY, JSON.stringify(index));
-                    loadFormFromJson(event.target.result);
-                    currentSheetId = id;
-                    loadSavedSheets();
+                    try {
+                        const data = JSON.parse(event.target.result);
+                        loadFormFromJson(data);
+                        currentSheetId = Date.now().toString();
+                        saveSheetToLocalStorage();
+                    } catch (error) {
+                        alert('Erro ao ler o arquivo JSON. Verifique o formato.');
+                        console.error("JSON Parse Error:", error);
+                    }
                 };
                 reader.readAsText(file);
             }
         });
 
         // --- INICIALIZAÇÃO ---
-        loadSavedSheets();
+        loadSavedSheetsFromLocalStorage();
         updateAllStats();
     });
     </script>
+    <footer>
+        <div class="container">
+            <p>&copy; 2025. A Terceira Expedição. A morte é apenas o começo.</p>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
 </body>
 </html>
