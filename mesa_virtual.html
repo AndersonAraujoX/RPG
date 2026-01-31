@@ -293,6 +293,21 @@
                 token.id = `token-${id}`;
                 token.className = 'token';
                 token.innerHTML = `<div class="token-label">${data.name}</div>`;
+
+                // Delete button logic
+                if (isAdmin || data.ownerId === auth.currentUser.uid) {
+                    const delBtn = document.createElement('div');
+                    delBtn.className = 'token-delete';
+                    delBtn.innerHTML = '×';
+                    delBtn.onclick = (e) => {
+                        e.stopPropagation();
+                        if (confirm(`Remover ${data.name} da mesa?`)) {
+                            db.collection('vtt_tokens').doc(id).delete();
+                        }
+                    };
+                    token.appendChild(delBtn);
+                }
+
                 tokensLayer.appendChild(token);
 
                 // DRAG LOGIC
