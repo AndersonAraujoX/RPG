@@ -421,13 +421,29 @@
                 try {
                     const [signupsSnapshot, charactersSnapshot] = await Promise.all([
                         db.collection('mission_signups').orderBy('timestamp', 'asc').get(),
-                        db.collection('personagens').get()
+                        db.collectionGroup('characters').get()
                     ]);
-                    const allCharacters = charactersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+                    const allCharacters = charactersSnapshot.docs.map(doc => {
+                        const data = doc.data();
+                        // Support both new formV6 structure and legacy structure
+                        return {
+                            id: doc.id,
+                            userId: doc.ref.parent.parent ? doc.ref.parent.parent.id : data.userId, // Extract userId from path if subcollection
+                            nome: data.name || data.nome, // formV6 uses 'name' at root
+                            ...data
+                        };
+                    });
+
                     const signupsByMission = {};
                     signupsSnapshot.docs.forEach(doc => {
                         const signup = doc.data();
-                        const characterData = allCharacters.find(c => c.userId === signup.userId && c.nome === signup.characterName);
+                        // Match by name, loosely handling case sensitive issues if needed
+                        const characterData = allCharacters.find(c =>
+                            (c.userId === signup.userId) &&
+                            (c.nome === signup.characterName || (c.sheetData && c.sheetData.charName === signup.characterName))
+                        );
+
                         if (!signupsByMission[signup.missionName]) {
                             signupsByMission[signup.missionName] = [];
                         }
@@ -436,7 +452,7 @@
                     renderMissionBoard(signupsByMission);
                 } catch (err) {
                     console.error("Error loading operations data:", err);
-                    missionBoard.innerHTML = `<p class="text-red-500 col-span-full">Erro ao carregar dados.</p>`;
+                    missionBoard.innerHTML = `<p class="text-red-500 col-span-full">Erro ao carregar dados: ${err.message}</p>`;
                 }
             }
 
