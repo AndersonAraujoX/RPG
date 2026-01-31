@@ -382,7 +382,7 @@
                 <h1 class="text-3xl font-bold text-amber-500 title-font text-center md:text-left mb-4 md:mb-0"
                     style="text-shadow: 2px 2px 4px #000;">Ficha de Personagem +2D6</h1>
                 <div class="flex gap-2 items-center">
-                    <a href="../../main.html"
+                    <a href="../main.html"
                         class="action-button action-button-secondary px-4 py-2 font-bold no-underline text-center">Voltar
                         ao Menu</a>
                     <button type="button" id="importSheetButton"
@@ -804,7 +804,6 @@
 
                 // Get nickname from global users collection
                 try {
-                    const { doc, getDoc } = await import("https://www.gstatic.com/firebasejs/11.2.0/firebase-firestore.js");
                     const userDocRef = doc(db, "users", currentUserId);
                     const userDoc = await getDoc(userDocRef);
                     if (userDoc.exists() && userDoc.data().nickname) {
