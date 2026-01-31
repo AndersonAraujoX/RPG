@@ -1,12 +1,11 @@
 const firebaseConfig = {
-    apiKey: "AIzaSyC-awoLK4cc0XtLtNppibqgYnNLclUeeI4",
-    authDomain: "kuar-tor-portal.firebaseapp.com",
-    databaseURL: "https://kuar-tor-portal-default-rtdb.firebaseio.com",
-    projectId: "kuar-tor-portal",
-    storageBucket: "kuar-tor-portal.appspot.com",
-    messagingSenderId: "438781244189",
-    appId: "1:438781244189:web:99ea6a25fc459b14f567f4",
-    measurementId: "G-X5GTEY10VZ"
+    apiKey: "AIzaSyDzdmWbibdIDwd1VkgOzne1Nd8l4WVBDXw",
+    authDomain: "rpg---mesa.firebaseapp.com",
+    projectId: "rpg---mesa",
+    storageBucket: "rpg---mesa.firebasestorage.app",
+    messagingSenderId: "724621847047",
+    appId: "1:724621847047:web:cb561e9792b26b80ab98a2",
+    measurementId: "G-E9YVLZMB0W"
 };
 
 // Initialize Firebase

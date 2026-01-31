@@ -115,28 +115,95 @@
                 </p>
             </div>
 
+
             <!-- Character-specific content, hidden until a character is selected -->
             <div id="character-content" class="hidden">
                 <!-- Item Form -->
-                <div id="item-form" class="mb-8">
-                    <h2 class="text-2xl font-cinzel text-rpg-cyan mb-4">Adicionar Novo Item</h2>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <input type="text" id="itemName" placeholder="Nome do Item"
-                            class="form-input w-full p-2 rounded text-white">
-                        <textarea id="itemDescription" placeholder="Descrição"
-                            class="form-input w-full md:col-span-2 p-2 rounded text-white h-24"></textarea>
-                        <input type="number" id="itemQuantity" placeholder="Quantidade"
-                            class="form-input w-full p-2 rounded text-white" value="1" min="1">
-                        <button id="add-item-button" class="btn md:col-span-2">Adicionar Item</button>
+                <div id="item-form" class="mb-8 p-6 bg-gray-900 rounded-lg border border-gray-800 shadow-lg">
+                    <h2 class="text-2xl font-cinzel text-rpg-cyan mb-4 border-b border-gray-700 pb-2">Adicionar Novo Item</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
+                        <!-- Nome -->
+                        <div class="md:col-span-5">
+                            <label class="block text-gray-400 text-sm mb-1">Nome do Item</label>
+                            <input type="text" id="itemName" placeholder="Ex: Espada Longa"
+                                class="form-input w-full p-2 rounded text-white bg-gray-800 border-gray-700 focus:border-rpg-cyan">
+                        </div>
+                        
+                        <!-- Tipo -->
+                        <div class="md:col-span-4">
+                            <label class="block text-gray-400 text-sm mb-1">Tipo</label>
+                            <select id="itemType" class="form-select w-full p-2 rounded text-white bg-gray-800 border-gray-700 focus:border-rpg-cyan">
+                                <option value="weapon">Arma</option>
+                                <option value="armor">Armadura</option>
+                                <option value="accessory">Acessório</option>
+                                <option value="consumable">Consumível</option>
+                                <option value="other">Outro</option>
+                            </select>
+                        </div>
+
+                        <!-- Quantidade -->
+                        <div class="md:col-span-3">
+                            <label class="block text-gray-400 text-sm mb-1">Qtd.</label>
+                            <input type="number" id="itemQuantity" placeholder="1"
+                                class="form-input w-full p-2 rounded text-white bg-gray-800 border-gray-700 focus:border-rpg-cyan" value="1" min="1">
+                        </div>
+
+                        <!-- Descrição -->
+                        <div class="md:col-span-12">
+                            <label class="block text-gray-400 text-sm mb-1">Descrição / Efeitos</label>
+                            <textarea id="itemDescription" placeholder="Ex: +2 de Dano; Brilha no escuro."
+                                class="form-input w-full p-2 rounded text-white bg-gray-800 border-gray-700 focus:border-rpg-cyan h-20"></textarea>
+                        </div>
+
+                        <!-- Botão -->
+                        <div class="md:col-span-12">
+                            <button id="add-item-button" class="btn w-full bg-rpg-cyan hover:bg-cyan-400 text-black font-bold py-3 rounded transition shadow-lg hover:shadow-cyan-500/50">
+                                Adicionar ao Inventário
+                            </button>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Items List -->
+                <!-- Items Display List -->
                 <div>
-                    <h2 class="text-2xl font-cinzel text-rpg-cyan mb-4">Itens de <span
-                            id="character-name-display"></span></h2>
-                    <div id="items-list" class="space-y-4">
-                        <!-- Itens serão adicionados aqui via JavaScript -->
+                    <h2 class="text-3xl font-cinzel text-center text-rpg-silver mb-8">Inventário de <span id="character-name-display" class="text-rpg-cyan"></span></h2>
+                    
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <!-- Armas -->
+                        <div class="inventory-section bg-gray-900/50 p-4 rounded-lg border border-red-900/30">
+                            <h3 class="text-xl font-cinzel text-red-500 mb-4 flex items-center border-b border-red-900/50 pb-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                                Armas
+                            </h3>
+                            <div id="list-weapon" class="space-y-3 min-h-[100px]"></div>
+                        </div>
+
+                        <!-- Armaduras -->
+                        <div class="inventory-section bg-gray-900/50 p-4 rounded-lg border border-blue-900/30">
+                            <h3 class="text-xl font-cinzel text-blue-500 mb-4 flex items-center border-b border-blue-900/50 pb-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
+                                Armaduras
+                            </h3>
+                            <div id="list-armor" class="space-y-3 min-h-[100px]"></div>
+                        </div>
+
+                        <!-- Acessórios -->
+                        <div class="inventory-section bg-gray-900/50 p-4 rounded-lg border border-purple-900/30">
+                            <h3 class="text-xl font-cinzel text-purple-500 mb-4 flex items-center border-b border-purple-900/50 pb-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" /></svg>
+                                Acessórios
+                            </h3>
+                            <div id="list-accessory" class="space-y-3 min-h-[100px]"></div>
+                        </div>
+
+                        <!-- Consumíveis & Outros -->
+                        <div class="inventory-section bg-gray-900/50 p-4 rounded-lg border border-green-900/30">
+                            <h3 class="text-xl font-cinzel text-green-500 mb-4 flex items-center border-b border-green-900/50 pb-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" /></svg>
+                                Consumíveis & Outros
+                            </h3>
+                            <div id="list-consumable" class="space-y-3 min-h-[100px]"></div>
+                        </div>
                     </div>
                 </div>
             </div>

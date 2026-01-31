@@ -28,7 +28,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return false;
         }
         auth = firebase.auth();
-        db = firebase.firestore(); 
+        db = firebase.firestore();
         rtdb = firebase.database();
         return true;
     }
@@ -50,12 +50,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 noCharactersMessage.classList.remove('hidden');
                 return;
             }
-            
+
             snapshot.forEach(doc => {
                 const character = doc.data();
                 const option = document.createElement('option');
                 option.value = doc.id;
-                option.textContent = character.name || 'Personagem sem nome'; 
+                option.textContent = character.name || 'Personagem sem nome';
                 characterDropdown.appendChild(option);
             });
         } catch (error) {
@@ -80,32 +80,62 @@ document.addEventListener('DOMContentLoaded', () => {
             characterContent.classList.add('hidden');
         }
     }
-    
+
     /**
-     * Mostra os itens do personagem selecionado.
+     * Mostra os itens do personagem selecionado, separados por categoria.
      */
     function displayItems(snapshot) {
-        itemsList.innerHTML = '';
+        // Limpar todas as listas
+        const sections = {
+            weapon: document.getElementById('list-weapon'),
+            armor: document.getElementById('list-armor'),
+            accessory: document.getElementById('list-accessory'),
+            consumable: document.getElementById('list-consumable')
+        };
+
+        Object.values(sections).forEach(el => el.innerHTML = '');
+
         if (!snapshot.exists()) {
-            itemsList.innerHTML = '<p class="text-center text-gray-400">Este personagem ainda não possui itens.</p>';
+            // Mostrar mensagem de vazio em todas as seções ou centralizado? 
+            // Por enquanto deixamos vazio.
             return;
         }
 
         snapshot.forEach(childSnapshot => {
             const itemId = childSnapshot.key;
             const item = childSnapshot.val();
+
+            // Determinar a seção correta (default para consumível/outros se undefined ou 'other')
+            let type = item.type;
+            if (!type || type === 'other') type = 'consumable';
+
+            // Safety check se o tipo for desconhecido
+            if (!sections[type]) type = 'consumable';
+
             const itemElement = document.createElement('div');
-            itemElement.classList.add('bg-gray-800', 'p-4', 'rounded-lg', 'flex', 'justify-between', 'items-center', 'shadow-md');
+            itemElement.classList.add('bg-gray-800', 'p-4', 'rounded-lg', 'flex', 'justify-between', 'items-start', 'shadow-md', 'border', 'border-gray-700', 'hover:border-rpg-cyan', 'transition-colors');
             itemElement.innerHTML = `
-                <div>
-                    <h3 class="text-xl font-bold text-red-400">${item.name} <span class="text-sm font-normal text-gray-400">(${item.quantity}x)</span></h3>
-                    <p class="text-gray-300">${item.description || 'Sem descrição.'}</p>
+                <div class="flex-grow pr-4">
+                    <h3 class="text-lg font-bold text-white mb-1 flex items-center justify-between">
+                        ${item.name} 
+                        <span class="text-xs font-normal bg-gray-700 text-gray-300 px-2 py-1 rounded-full">${item.quantity}x</span>
+                    </h3>
+                    <p class="text-gray-400 text-sm italic whitespace-pre-wrap">${item.description || 'Sem descrição.'}</p>
                 </div>
-                <button data-id="${itemId}" class="delete-item-btn bg-red-800 hover:bg-red-700 text-white font-bold py-1 px-3 rounded text-sm">
-                    Excluir
+                <button data-id="${itemId}" class="delete-item-btn text-red-500 hover:text-red-400 p-1 rounded hover:bg-red-900/20 transition-colors" title="Excluir Item">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
                 </button>
             `;
-            itemsList.appendChild(itemElement);
+            sections[type].appendChild(itemElement);
+        });
+
+        // Adicionar mensagem se vazio em cada seção
+        Object.entries(sections).forEach(([key, element]) => {
+            if (element.children.length === 0) {
+                element.innerHTML = `<p class="text-gray-600 text-sm italic text-center py-2">Nenhum item nesta categoria.</p>`;
+            }
         });
     }
 
@@ -114,6 +144,7 @@ document.addEventListener('DOMContentLoaded', () => {
      */
     async function addItem() {
         const itemName = document.getElementById('itemName').value.trim();
+        const itemType = document.getElementById('itemType').value;
         const itemDescription = document.getElementById('itemDescription').value.trim();
         const itemQuantity = parseInt(document.getElementById('itemQuantity').value, 10);
 
@@ -124,6 +155,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const newItem = {
             name: itemName,
+            type: itemType,
             description: itemDescription,
             quantity: itemQuantity,
             createdAt: firebase.database.ServerValue.TIMESTAMP
@@ -132,7 +164,8 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const itemsRef = rtdb.ref(`items/${currentUser.uid}/${selectedCharacterId}`);
             await itemsRef.push(newItem);
-            
+
+            // Limpar formulário (mantendo o tipo anterior para agilidade)
             document.getElementById('itemName').value = '';
             document.getElementById('itemDescription').value = '';
             document.getElementById('itemQuantity').value = '1';
@@ -141,7 +174,7 @@ document.addEventListener('DOMContentLoaded', () => {
             alert("Falha ao adicionar o item. Verifique sua conexão e tente novamente.");
         }
     }
-    
+
     /**
      * Deleta um item do inventário do personagem selecionado.
      */
@@ -187,7 +220,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (selectedCharacterId) {
             characterContent.classList.remove('hidden');
             characterNameDisplay.textContent = characterDropdown.options[characterDropdown.selectedIndex].text;
-            
+
             const itemsRef = rtdb.ref(`items/${currentUser.uid}/${selectedCharacterId}`);
             itemsListener = itemsRef.orderByChild('createdAt');
             itemsListener.on('value', displayItems, (error) => {
@@ -199,7 +232,7 @@ document.addEventListener('DOMContentLoaded', () => {
             itemsList.innerHTML = '';
         }
     });
-    
+
     // Ações de Itens
     addItemButton.addEventListener('click', addItem);
     itemsList.addEventListener('click', (e) => {
