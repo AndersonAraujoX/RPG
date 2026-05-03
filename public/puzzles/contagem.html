@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A Contagem Regressiva Para Nada - Kuar-Tor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: { extend: { colors: { rpg: { black: '#0B0C10', cyan: '#66FCF1', slate: '#1F2833', silver: '#C5C6C7' } } } }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../../src/styles/theme.css">
+    <style>
+        body { 
+            background-image: url('https://www.transparenttextures.com/patterns/dark-matter.png'); 
+            overflow: hidden;
+        }
+        .puzzle-container {
+            background-color: rgba(11, 12, 16, 0.85);
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(239, 68, 68, 0.3);
+            box-shadow: 0 0 30px rgba(239, 68, 68, 0.1);
+        }
+        
+        .timer-display {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 5rem;
+            color: #ef4444; /* Red */
+            text-shadow: 0 0 20px rgba(239, 68, 68, 0.8);
+            letter-spacing: 0.2em;
+        }
+
+        .timer-success {
+            color: #66FCF1 !important;
+            text-shadow: 0 0 20px rgba(102, 252, 241, 0.8) !important;
+        }
+
+        .lever-btn {
+            background: linear-gradient(145deg, #1F2833, #0B0C10);
+            border: 1px solid #404040;
+            color: #C5C6C7;
+            font-family: 'Cinzel', serif;
+            font-weight: bold;
+            font-size: 1.5rem;
+            transition: all 0.1s;
+            box-shadow: 3px 3px 10px rgba(0,0,0,0.5), inset 1px 1px 2px rgba(255,255,255,0.1);
+        }
+
+        .lever-btn:active, .lever-btn.pressed {
+            transform: translateY(4px);
+            box-shadow: 1px 1px 2px rgba(0,0,0,0.5), inset 2px 2px 5px rgba(0,0,0,0.5);
+            background: linear-gradient(145deg, #0B0C10, #1F2833);
+            border-color: #66FCF1;
+            color: #66FCF1;
+            text-shadow: 0 0 5px #66FCF1;
+        }
+
+        .wall-panel {
+            background: url('https://www.transparenttextures.com/patterns/aged-paper.png');
+            background-color: #1a1a1a;
+            background-blend-mode: multiply;
+        }
+    </style>
+</head>
+<body class="bg-rpg-black text-rpg-silver min-h-screen flex items-center justify-center p-4">
+
+    <!-- Tela Inicial do Mestre/Jogador -->
+    <div id="start-screen" class="w-full max-w-2xl p-8 rounded-lg glass-card text-center">
+        <h1 class="font-cinzel text-4xl text-red-500 mb-6 text-glow-cyan">A Câmara das Alavancas</h1>
+        <p class="text-xl mb-8 text-gray-300">Vocês entram na sala e a pesada porta de pedra se fecha abruptamente atrás de vocês. Há furos nas paredes, cheirando a gás venenoso ou dardos, e uma contagem regressiva nefasta no teto.</p>
+        <button id="start-btn" class="btn-rpg bg-red-900 border-red-500 text-white py-4 px-8 text-xl hover:bg-red-700">A porta se trancou!</button>
+    </div>
+
+    <!-- Interface do Puzzle -->
+    <div id="puzzle-screen" class="hidden w-full max-w-6xl h-[80vh] flex flex-col md:flex-row gap-6">
+        
+        <!-- Parede Esquerda -->
+        <div class="wall-panel flex-1 rounded-xl border border-gray-700 p-6 flex flex-col justify-center items-center shadow-2xl relative">
+            <h3 class="font-cinzel text-gray-500 mb-6 tracking-widest uppercase">Parede Oeste</h3>
+            <div class="grid grid-cols-2 gap-4 w-full max-w-[200px]" id="left-wall">
+                <!-- Botões gerados via JS -->
+            </div>
+        </div>
+
+        <!-- Parede Central (Porta e Cronômetro) -->
+        <div class="puzzle-container flex-[2] rounded-xl flex flex-col items-center justify-center p-8 relative">
+            
+            <div class="absolute top-8 w-full text-center px-4">
+                <p class="font-cinzel text-gray-400 text-lg italic border-b border-gray-700 pb-4 inline-block">
+                    "O caminho se revela não para aquele que age com pressa, mas para aquele que compreende o vazio do desespero."
+                </p>
+            </div>
+
+            <div id="door" class="w-64 h-96 border-4 border-gray-800 bg-gray-900 mt-16 flex flex-col items-center justify-center relative overflow-hidden transition-all duration-1000">
+                <!-- Textura da porta -->
+                <div class="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/black-scales.png')] opacity-50"></div>
+                
+                <!-- Cronômetro na porta -->
+                <div class="z-10 bg-black/80 px-6 py-2 rounded border border-red-900/50">
+                    <span id="timer" class="timer-display">60</span>
+                </div>
+                
+                <!-- Feedback Falso -->
+                <p id="fake-feedback" class="z-10 mt-8 text-sm font-mono text-gray-600 h-6"></p>
+                
+                <!-- Mensagem de Sucesso -->
+                <div id="success-msg" class="hidden z-20 absolute inset-0 bg-black/90 flex flex-col items-center justify-center">
+                    <h2 class="font-cinzel text-3xl text-rpg-cyan mb-4 text-glow-cyan">A Porta se Abre</h2>
+                    <p class="text-center text-gray-300 px-6 mb-6">O mecanismo clica ruidosamente. Os buracos na parede se fecham. Era um teste de paciência.</p>
+                    <a href="index.html" class="btn-rpg">Retornar ao Hub</a>
+                </div>
+            </div>
+            
+        </div>
+
+        <!-- Parede Direita -->
+        <div class="wall-panel flex-1 rounded-xl border border-gray-700 p-6 flex flex-col justify-center items-center shadow-2xl relative">
+            <h3 class="font-cinzel text-gray-500 mb-6 tracking-widest uppercase">Parede Leste</h3>
+            <div class="grid grid-cols-2 gap-4 w-full max-w-[200px]" id="right-wall">
+                <!-- Botões gerados via JS -->
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Efeitos Sonoros Opcionais (Descomentar caso tenha os arquivos) -->
+    <!-- <audio id="tick-sound" src="../../assets/audio/tick.mp3" preload="auto"></audio> -->
+    <!-- <audio id="open-sound" src="../../assets/audio/stone_door.mp3" preload="auto"></audio> -->
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const startBtn = document.getElementById('start-btn');
+            const startScreen = document.getElementById('start-screen');
+            const puzzleScreen = document.getElementById('puzzle-screen');
+            const timerDisplay = document.getElementById('timer');
+            const leftWall = document.getElementById('left-wall');
+            const rightWall = document.getElementById('right-wall');
+            const fakeFeedback = document.getElementById('fake-feedback');
+            const successMsg = document.getElementById('success-msg');
+            const door = document.getElementById('door');
+
+            let timeLeft = 60;
+            let timerInterval;
+            
+            // Alfabeto para os botões (20 botões no total)
+            const letters = ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T'];
+            
+            // Gerar Botões
+            function createButtons() {
+                letters.forEach((letter, index) => {
+                    const btn = document.createElement('button');
+                    btn.className = 'lever-btn w-full aspect-square rounded flex items-center justify-center cursor-pointer';
+                    btn.textContent = letter;
+                    btn.dataset.letter = letter;
+                    
+                    // Adiciona efeito de click falso
+                    btn.addEventListener('click', () => {
+                        // Efeito visual
+                        btn.classList.add('pressed');
+                        setTimeout(() => btn.classList.remove('pressed'), 200);
+                        
+                        // Mensagens falsas para causar pânico
+                        const messages = [
+                            "Engrenagens rangem...",
+                            `Runa ${letter} ativada.`,
+                            "O cronômetro parece não ser afetado.",
+                            "Um clique oco ecoa.",
+                            "Nada aconteceu...",
+                            "Você ouve um silvo de ar."
+                        ];
+                        fakeFeedback.textContent = messages[Math.floor(Math.random() * messages.length)];
+                        fakeFeedback.style.color = '#C5C6C7';
+                        setTimeout(() => { fakeFeedback.textContent = ''; }, 2000);
+                    });
+
+                    if(index < 10) leftWall.appendChild(btn);
+                    else rightWall.appendChild(btn);
+                });
+            }
+
+            // Iniciar Puzzle
+            startBtn.addEventListener('click', () => {
+                startScreen.classList.add('hidden');
+                puzzleScreen.classList.remove('hidden');
+                puzzleScreen.classList.add('flex');
+                
+                // Iniciar Cronômetro
+                timerInterval = setInterval(() => {
+                    timeLeft--;
+                    
+                    // Atualiza display com zeros à esquerda
+                    timerDisplay.textContent = timeLeft.toString().padStart(2, '0');
+                    
+                    // Efeito de pulso quando o tempo está acabando (causar pânico)
+                    if (timeLeft <= 10) {
+                        timerDisplay.style.transform = `scale(${1 + (10 - timeLeft)*0.02})`;
+                        document.querySelector('.puzzle-container').style.borderColor = `rgba(239, 68, 68, ${0.3 + (10-timeLeft)*0.07})`;
+                    }
+
+                    if (timeLeft <= 0) {
+                        clearInterval(timerInterval);
+                        triggerSuccess();
+                    }
+                }, 1000);
+            });
+
+            // Resolução do "Puzzle" (O tempo acabou)
+            function triggerSuccess() {
+                timerDisplay.classList.add('timer-success');
+                timerDisplay.textContent = "00";
+                
+                fakeFeedback.textContent = "";
+                
+                // Abre a porta visualmente
+                door.style.borderColor = "#66FCF1";
+                door.style.boxShadow = "0 0 50px rgba(102, 252, 241, 0.4)";
+                
+                setTimeout(() => {
+                    successMsg.classList.remove('hidden');
+                }, 1500);
+            }
+
+            // Inicialização
+            createButtons();
+        });
+    </script>
+</body>
+</html>

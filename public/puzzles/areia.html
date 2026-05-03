@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Linhas na Areia - Kuar-Tor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: { extend: { colors: { rpg: { black: '#0B0C10', cyan: '#66FCF1', slate: '#1F2833', silver: '#C5C6C7' } } } }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../../src/styles/theme.css">
+    <style>
+        body { 
+            background-image: url('https://www.transparenttextures.com/patterns/sandbag.png'); 
+            background-color: #1a1510; /* Tom de areia escura */
+        }
+        
+        .puzzle-container {
+            background-color: rgba(20, 15, 10, 0.85);
+            backdrop-filter: blur(8px);
+            border: 2px solid rgba(217, 119, 6, 0.3); /* Amber/Sand */
+            box-shadow: 0 0 40px rgba(217, 119, 6, 0.1);
+        }
+
+        .svg-board {
+            width: 100%;
+            max-width: 500px;
+            aspect-ratio: 4/5;
+            margin: 0 auto;
+            touch-action: none;
+            filter: drop-shadow(0 0 10px rgba(0,0,0,0.8));
+        }
+
+        .edge {
+            stroke: #453520; /* Rastro vazio na areia */
+            stroke-width: 15;
+            stroke-linecap: round;
+            transition: all 0.3s;
+        }
+
+        .edge.drawn {
+            stroke: #66FCF1; /* Caminho percorrido com brilho arcano */
+            filter: drop-shadow(0 0 5px #66FCF1);
+        }
+
+        .node {
+            fill: #d97706; /* Pedras/Marcadores cor de areia */
+            stroke: #2d2010;
+            stroke-width: 4;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .node:hover {
+            fill: #fbbf24;
+            transform: scale(1.1);
+        }
+
+        .node.active {
+            fill: #66FCF1;
+            filter: drop-shadow(0 0 10px #66FCF1);
+        }
+
+        /* Efeito de tremor para quando não há mais movimentos e ainda não ganhou */
+        .shake {
+            animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+        }
+
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-2px, 0, 0); }
+            20%, 80% { transform: translate3d(4px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-6px, 0, 0); }
+            40%, 60% { transform: translate3d(6px, 0, 0); }
+        }
+    </style>
+</head>
+<body class="text-rpg-silver min-h-screen p-4 flex flex-col items-center">
+
+    <header class="w-full max-w-4xl flex justify-between items-center mb-8 mt-4">
+        <h1 class="font-cinzel text-3xl text-amber-500 text-glow-cyan drop-shadow-[0_0_10px_rgba(217,119,6,0.8)]">O Golem do Deserto</h1>
+        <a href="index.html" class="btn-rpg bg-gray-800 border-gray-600 text-white">Retornar</a>
+    </header>
+
+    <div class="max-w-4xl w-full puzzle-container rounded-xl p-8 text-center" id="game-board">
+        
+        <p class="text-amber-200 mb-2 italic font-cinzel text-lg">"Arraste a laje pesada para desenhar o selo na areia. A linha não pode ser quebrada e os seus rastros desaparecem atrás de você, não permitindo refazer o caminho."</p>
+        <p class="text-gray-400 mb-8 text-sm">Clique em um ponto para começar. Depois, clique nos pontos adjacentes para traçar as linhas.</p>
+
+        <!-- SVG Game Board -->
+        <svg viewBox="0 0 400 500" class="svg-board" id="svg-board">
+            <!-- Linhas (Arestas) -->
+            <!-- Os IDs das arestas devem estar em ordem alfabética dos nós para facilitar (ex: 0-1) -->
+            <line class="edge" id="edge-0-1" x1="200" y1="50" x2="50" y2="200" />
+            <line class="edge" id="edge-0-2" x1="200" y1="50" x2="350" y2="200" />
+            
+            <line class="edge" id="edge-1-2" x1="50" y1="200" x2="350" y2="200" />
+            <line class="edge" id="edge-1-3" x1="50" y1="200" x2="50" y2="450" />
+            <line class="edge" id="edge-1-4" x1="50" y1="200" x2="350" y2="450" />
+            
+            <line class="edge" id="edge-2-3" x1="350" y1="200" x2="50" y2="450" />
+            <line class="edge" id="edge-2-4" x1="350" y1="200" x2="350" y2="450" />
+            
+            <line class="edge" id="edge-3-4" x1="50" y1="450" x2="350" y2="450" />
+
+            <!-- Marcador Atual Dinâmico -->
+            <line id="drawing-line" x1="0" y1="0" x2="0" y2="0" stroke="#66FCF1" stroke-width="15" stroke-linecap="round" opacity="0" pointer-events="none" />
+
+            <!-- Pontos (Nós) -->
+            <circle class="node" id="node-0" data-id="0" cx="200" cy="50" r="20" />
+            <circle class="node" id="node-1" data-id="1" cx="50" cy="200" r="20" />
+            <circle class="node" id="node-2" data-id="2" cx="350" cy="200" r="20" />
+            <circle class="node" id="node-3" data-id="3" cx="50" cy="450" r="20" />
+            <circle class="node" id="node-4" data-id="4" cx="350" cy="450" r="20" />
+        </svg>
+
+        <div class="mt-8 flex justify-center gap-4">
+            <button id="reset-btn" class="btn-rpg bg-amber-900 border-amber-600 text-white">Resetar Areia</button>
+        </div>
+
+    </div>
+
+    <!-- Modal de Vitória -->
+    <div id="game-win" class="fixed inset-0 bg-black/90 hidden flex-col items-center justify-center z-50">
+        <h2 class="font-cinzel text-5xl text-amber-500 mb-6 drop-shadow-[0_0_20px_orange]">Selo Desenhado</h2>
+        <p class="text-gray-300 text-xl mb-8 max-w-lg text-center">A divindade acena lentamente. A areia afunda em um redemoinho revelando escadas antigas descendo para fora do deserto.</p>
+        <div class="flex gap-4">
+            <button onclick="location.reload()" class="btn-rpg bg-amber-900 border-amber-500 text-white">Jogar Novamente</button>
+            <a href="index.html" class="btn-rpg bg-rpg-slate border-rpg-cyan text-rpg-cyan">Avançar</a>
+        </div>
+    </div>
+
+    <script>
+        const graph = {
+            0: [1, 2],
+            1: [0, 2, 3, 4],
+            2: [0, 1, 3, 4],
+            3: [1, 2, 4],
+            4: [1, 2, 3]
+        };
+
+        let currentNode = null;
+        let drawnEdges = new Set();
+        const totalEdges = 8; // Número total de linhas
+
+        const nodes = document.querySelectorAll('.node');
+        const edges = document.querySelectorAll('.edge');
+        const resetBtn = document.getElementById('reset-btn');
+        const board = document.getElementById('svg-board');
+
+        function getEdgeId(n1, n2) {
+            const min = Math.min(n1, n2);
+            const max = Math.max(n1, n2);
+            return `edge-${min}-${max}`;
+        }
+
+        function highlightValidNodes() {
+            nodes.forEach(node => {
+                const id = parseInt(node.dataset.id);
+                // Se nenhum nó selecionado, todos podem ser o primeiro
+                if (currentNode === null) {
+                    node.style.cursor = 'pointer';
+                    return;
+                }
+                
+                // Se for o atual
+                if (id === currentNode) {
+                    node.style.cursor = 'default';
+                    return;
+                }
+
+                // Checa se tem conexão válida e não desenhada
+                const isConnected = graph[currentNode].includes(id);
+                const edgeId = getEdgeId(currentNode, id);
+                const isDrawn = drawnEdges.has(edgeId);
+
+                if (isConnected && !isDrawn) {
+                    node.style.cursor = 'pointer';
+                    node.setAttribute('opacity', '1');
+                } else {
+                    node.style.cursor = 'not-allowed';
+                    node.setAttribute('opacity', '0.5'); // Escurece nós inatingíveis
+                }
+            });
+        }
+
+        nodes.forEach(node => {
+            node.addEventListener('click', () => {
+                const id = parseInt(node.dataset.id);
+
+                // Primeiro Clique (Escolhendo inicio)
+                if (currentNode === null) {
+                    currentNode = id;
+                    node.classList.add('active');
+                    highlightValidNodes();
+                    return;
+                }
+
+                // Cliques subsequentes
+                if (id !== currentNode) {
+                    // Verifica se o movimento é válido (existe aresta e não foi desenhada)
+                    const edgeId = getEdgeId(currentNode, id);
+                    if (graph[currentNode].includes(id) && !drawnEdges.has(edgeId)) {
+                        
+                        // Desenhar a aresta
+                        drawnEdges.add(edgeId);
+                        document.getElementById(edgeId).classList.add('drawn');
+
+                        // Atualiza Nó
+                        document.getElementById(`node-${currentNode}`).classList.remove('active');
+                        currentNode = id;
+                        node.classList.add('active');
+
+                        highlightValidNodes();
+                        checkWinOrStuck();
+                    }
+                }
+            });
+        });
+
+        function checkWinOrStuck() {
+            if (drawnEdges.size === totalEdges) {
+                // Vitória
+                document.getElementById('game-win').style.display = 'flex';
+            } else {
+                // Checar se não tem mais movimentos
+                let hasMoves = false;
+                graph[currentNode].forEach(neighbor => {
+                    const edgeId = getEdgeId(currentNode, neighbor);
+                    if (!drawnEdges.has(edgeId)) {
+                        hasMoves = true;
+                    }
+                });
+
+                if (!hasMoves) {
+                    // Preso! O jogador falhou
+                    board.classList.remove('shake');
+                    void board.offsetWidth; // trigger reflow
+                    board.classList.add('shake');
+                    
+                    // Mostra visualmente que deu erro
+                    document.getElementById(`node-${currentNode}`).style.fill = '#ef4444'; // Fica vermelho
+                }
+            }
+        }
+
+        resetBtn.addEventListener('click', () => {
+            currentNode = null;
+            drawnEdges.clear();
+            
+            edges.forEach(e => e.classList.remove('drawn'));
+            nodes.forEach(n => {
+                n.classList.remove('active');
+                n.style.fill = '';
+                n.setAttribute('opacity', '1');
+                n.style.cursor = 'pointer';
+            });
+            
+            board.classList.remove('shake');
+        });
+
+        // Init
+        highlightValidNodes();
+
+    </script>
+</body>
+</html>

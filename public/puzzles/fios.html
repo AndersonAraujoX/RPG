@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alavancas e Fios - Kuar-Tor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: { extend: { colors: { rpg: { black: '#0B0C10', cyan: '#66FCF1', slate: '#1F2833', silver: '#C5C6C7' } } } }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../../src/styles/theme.css">
+    <style>
+        body { 
+            background-image: url('https://www.transparenttextures.com/patterns/dark-matter.png'); 
+        }
+        
+        .lab-container {
+            background-color: rgba(11, 12, 16, 0.95);
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(102, 252, 241, 0.2);
+            box-shadow: 0 0 40px rgba(0, 0, 0, 0.9), inset 0 0 20px rgba(102, 252, 241, 0.05);
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        .node-source {
+            box-shadow: 0 0 15px #66FCF1, inset 0 0 10px #66FCF1;
+            animation: pulse-node 2s infinite;
+        }
+
+        .node-fake {
+            box-shadow: inset 0 0 5px rgba(255,255,255,0.2);
+            background-color: #1F2833;
+        }
+
+        @keyframes pulse-node {
+            0% { box-shadow: 0 0 15px #66FCF1, inset 0 0 10px #66FCF1; }
+            50% { box-shadow: 0 0 30px #66FCF1, inset 0 0 20px #66FCF1; }
+            100% { box-shadow: 0 0 15px #66FCF1, inset 0 0 10px #66FCF1; }
+        }
+
+        .lever {
+            transition: all 0.2s;
+            cursor: pointer;
+            background: linear-gradient(180deg, #1F2833, #0B0C10);
+            border: 2px solid #4a5568;
+            position: relative;
+        }
+
+        .lever::after {
+            content: '';
+            position: absolute;
+            top: 10%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 10px;
+            height: 40px;
+            background: #C5C6C7;
+            border-radius: 5px;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.8);
+            transition: all 0.2s;
+        }
+
+        .lever:hover {
+            border-color: #66FCF1;
+            box-shadow: 0 0 15px rgba(102, 252, 241, 0.3);
+        }
+
+        .lever.pulled::after {
+            top: 50%;
+            background: #ef4444;
+        }
+
+        .lever.pulled-correct::after {
+            top: 50%;
+            background: #66FCF1;
+            box-shadow: 0 0 15px #66FCF1;
+        }
+
+        /* Scanline effect para dar ar de laboratório sci-fi mágico */
+        .scanlines {
+            background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.1) 50%, rgba(0,0,0,0.1));
+            background-size: 100% 4px;
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            pointer-events: none;
+            z-index: 10;
+        }
+    </style>
+</head>
+<body class="bg-rpg-black text-rpg-silver min-h-screen p-4 flex flex-col items-center">
+
+    <header class="w-full max-w-5xl flex justify-between items-center mb-6 mt-2">
+        <h1 class="font-cinzel text-3xl text-rpg-cyan text-glow-cyan">Confinamento do Laboratório</h1>
+        <a href="index.html" class="btn-rpg bg-gray-800 text-white">Retornar</a>
+    </header>
+
+    <div class="max-w-5xl w-full lab-container rounded-xl p-6 text-center relative overflow-hidden flex flex-col" style="height: 75vh;">
+        <div class="scanlines"></div>
+        
+        <p class="text-gray-300 mb-2 italic font-cinzel text-lg relative z-20">"Os sistemas foram corrompidos. Trace o conduíte mágico primário até a alavanca correta para resetar a segurança. Um erro liberará as cobaias."</p>
+
+        <!-- Area do Jogo -->
+        <div class="flex-grow flex justify-between items-stretch mt-6 relative z-20">
+            
+            <!-- Painel de Força (Esquerda) -->
+            <div class="w-24 bg-gray-900 border-2 border-gray-700 rounded-lg flex flex-col justify-around py-8 items-center shadow-2xl relative z-20">
+                <div class="text-xs text-gray-500 font-mono mb-2 uppercase">Mainframe</div>
+                <!-- Nodes gerados via JS -->
+                <div id="source-nodes" class="flex flex-col gap-8 w-full items-center"></div>
+            </div>
+
+            <!-- Area dos Fios (Canvas) -->
+            <div class="flex-grow mx-4 relative" id="canvas-container">
+                <canvas id="wireCanvas"></canvas>
+            </div>
+
+            <!-- Painel de Alavancas (Direita) -->
+            <div class="w-32 bg-gray-900 border-2 border-gray-700 rounded-lg flex flex-col justify-around py-8 items-center shadow-2xl relative z-20">
+                <div class="text-xs text-gray-500 font-mono mb-2 uppercase">Controles</div>
+                <!-- Alavancas geradas via JS -->
+                <div id="lever-nodes" class="flex flex-col gap-6 w-full items-center px-4"></div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Modais -->
+    <div id="modal-container" class="fixed inset-0 bg-black/90 hidden flex-col items-center justify-center z-50 transition-opacity">
+        <div id="modal-content" class="text-center p-8 border-2 rounded-lg bg-gray-900 shadow-2xl max-w-xl">
+            <h2 id="modal-title" class="font-cinzel text-4xl mb-4"></h2>
+            <p id="modal-desc" class="text-gray-300 text-lg mb-8"></p>
+            <div class="flex gap-4 justify-center">
+                <button onclick="location.reload()" class="btn-rpg bg-gray-800 text-white">Gerar Novo Emaranhado</button>
+                <a href="index.html" class="btn-rpg bg-rpg-slate text-rpg-cyan border-rpg-cyan">Sair do Laboratório</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('wireCanvas');
+        const ctx = canvas.getContext('2d');
+        const container = document.getElementById('canvas-container');
+        
+        const numNodes = 6; // Dificuldade: 6 fios cruzados
+        let sourceY = [];
+        let targetY = [];
+        let wireMapping = []; // mapeia índice do source para índice do target
+        let correctSourceIndex = 0;
+        let correctLeverIndex = 0;
+
+        // Elementos DOM
+        const sourceContainer = document.getElementById('source-nodes');
+        const leverContainer = document.getElementById('lever-nodes');
+        const modal = document.getElementById('modal-container');
+        const modalTitle = document.getElementById('modal-title');
+        const modalDesc = document.getElementById('modal-desc');
+        const modalContent = document.getElementById('modal-content');
+
+        function init() {
+            resizeCanvas();
+            window.addEventListener('resize', () => {
+                resizeCanvas();
+                drawWires();
+            });
+
+            // Randomizar qual é o node de segurança (correto)
+            correctSourceIndex = Math.floor(Math.random() * numNodes);
+
+            // Criar mapeamento aleatório (0 a 5)
+            let targets = Array.from({length: numNodes}, (_, i) => i);
+            targets.sort(() => Math.random() - 0.5);
+            wireMapping = targets;
+
+            correctLeverIndex = wireMapping[correctSourceIndex];
+
+            buildUI();
+            
+            // Aguarda um frame para pegar as posições corretas do DOM e desenhar
+            setTimeout(drawWires, 100);
+        }
+
+        function resizeCanvas() {
+            canvas.width = container.clientWidth;
+            canvas.height = container.clientHeight;
+        }
+
+        function buildUI() {
+            // Construir Painel Esquerdo (Sources)
+            for(let i = 0; i < numNodes; i++) {
+                const node = document.createElement('div');
+                const isCorrect = (i === correctSourceIndex);
+                node.className = `w-6 h-6 rounded-full border-2 ${isCorrect ? 'node-source border-rpg-cyan bg-rpg-cyan' : 'node-fake border-gray-600'}`;
+                node.id = `source-${i}`;
+                
+                const wrapper = document.createElement('div');
+                wrapper.className = "flex items-center w-full px-2";
+                
+                const label = document.createElement('span');
+                label.className = `text-xs font-mono mr-2 ${isCorrect ? 'text-rpg-cyan font-bold' : 'text-gray-600'}`;
+                label.textContent = `SYS-${i+1}`;
+
+                wrapper.appendChild(label);
+                wrapper.appendChild(node);
+                sourceContainer.appendChild(wrapper);
+            }
+
+            // Construir Painel Direito (Alavancas)
+            for(let i = 0; i < numNodes; i++) {
+                const lever = document.createElement('div');
+                lever.className = 'lever w-full h-12 rounded';
+                lever.id = `lever-${i}`;
+                lever.dataset.index = i;
+                
+                lever.addEventListener('click', () => {
+                    handleLeverPull(lever, i);
+                });
+
+                leverContainer.appendChild(lever);
+            }
+        }
+
+        function drawWires() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Calcular posições Y baseadas nos elementos HTML reais
+            const containerRect = container.getBoundingClientRect();
+            
+            for(let i = 0; i < numNodes; i++) {
+                const sourceEl = document.getElementById(`source-${i}`);
+                const targetEl = document.getElementById(`lever-${wireMapping[i]}`);
+                
+                const sRect = sourceEl.getBoundingClientRect();
+                const tRect = targetEl.getBoundingClientRect();
+
+                // Posições relativas ao canvas
+                const startX = 0;
+                const startY = sRect.top - containerRect.top + (sRect.height / 2);
+                
+                const endX = canvas.width;
+                const endY = tRect.top - containerRect.top + (tRect.height / 2);
+
+                drawTangledWire(startX, startY, endX, endY, i === correctSourceIndex);
+            }
+        }
+
+        function drawTangledWire(startX, startY, endX, endY, isCorrect) {
+            ctx.beginPath();
+            ctx.moveTo(startX, startY);
+
+            // Adicionar pontos de controle para embaralhar os fios
+            // A ideia é criar curvas Bezier que cruzam o eixo central randomicamente
+            const cp1X = startX + (canvas.width * 0.3);
+            const cp1Y = startY + (Math.random() * 200 - 100); // Sobe ou desce
+            
+            const cp2X = startX + (canvas.width * 0.7);
+            const cp2Y = endY + (Math.random() * 200 - 100);
+
+            // Desenhar sombra
+            ctx.shadowColor = 'black';
+            ctx.shadowBlur = 5;
+            ctx.shadowOffsetX = 2;
+            ctx.shadowOffsetY = 2;
+
+            ctx.bezierCurveTo(cp1X, cp1Y, cp2X, cp2Y, endX, endY);
+            
+            // Cor do fio (todos cinzas escuros para dificultar, exceto se quiser dar dica)
+            // ctx.strokeStyle = isCorrect ? 'rgba(102, 252, 241, 0.8)' : '#374151'; // (Fácil)
+            ctx.strokeStyle = '#4b5563'; // Fios da mesma cor (Difícil)
+            
+            ctx.lineWidth = 4;
+            ctx.lineCap = 'round';
+            ctx.stroke();
+
+            // Resetar sombra
+            ctx.shadowColor = 'transparent';
+            
+            // Desenhar detalhe interno do fio
+            ctx.beginPath();
+            ctx.moveTo(startX, startY);
+            ctx.bezierCurveTo(cp1X, cp1Y, cp2X, cp2Y, endX, endY);
+            ctx.strokeStyle = '#9ca3af';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+        }
+
+        function handleLeverPull(leverEl, index) {
+            // Desabilitar todas as alavancas
+            document.querySelectorAll('.lever').forEach(l => l.style.pointerEvents = 'none');
+
+            if(index === correctLeverIndex) {
+                // Acertou
+                leverEl.classList.add('pulled-correct');
+                
+                // Mostrar qual era o fio real para o jogador ver
+                drawHighlightWire();
+
+                setTimeout(() => {
+                    modalTitle.textContent = "Sistemas Restaurados";
+                    modalTitle.className = "font-cinzel text-4xl mb-4 text-rpg-cyan text-glow-cyan";
+                    modalContent.style.borderColor = "#66FCF1";
+                    modalDesc.textContent = "A alavanca trava no lugar e o laboratório é banhado por uma luz azul reconfortante. As portas de confinamento se abrem.";
+                    modal.classList.remove('hidden');
+                    modal.classList.add('flex');
+                }, 1000);
+
+            } else {
+                // Errou
+                leverEl.classList.add('pulled');
+                
+                // Piscar tela em vermelho
+                const lab = document.querySelector('.lab-container');
+                lab.style.borderColor = "#ef4444";
+                lab.style.boxShadow = "0 0 50px rgba(239, 68, 68, 0.5)";
+
+                setTimeout(() => {
+                    modalTitle.textContent = "Alarme Disparado!";
+                    modalTitle.className = "font-cinzel text-4xl mb-4 text-red-500 drop-shadow-[0_0_15px_red]";
+                    modalContent.style.borderColor = "#ef4444";
+                    modalDesc.textContent = "Um som ensurdecedor rasga o silêncio. Vocês ouvem o som de vidro quebrando e rosnados bestiais ecoando dos tubos de ensaio. As cobaias foram soltas.";
+                    modal.classList.remove('hidden');
+                    modal.classList.add('flex');
+                }, 1000);
+            }
+        }
+
+        function drawHighlightWire() {
+            // Redesenha os fios, mas ilumina o correto
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            const containerRect = container.getBoundingClientRect();
+            
+            for(let i = 0; i < numNodes; i++) {
+                const sourceEl = document.getElementById(`source-${i}`);
+                const targetEl = document.getElementById(`lever-${wireMapping[i]}`);
+                const sRect = sourceEl.getBoundingClientRect();
+                const tRect = targetEl.getBoundingClientRect();
+
+                const startX = 0;
+                const startY = sRect.top - containerRect.top + (sRect.height / 2);
+                const endX = canvas.width;
+                const endY = tRect.top - containerRect.top + (tRect.height / 2);
+
+                if(i === correctSourceIndex) {
+                    // Desenha o fio correto brilhando
+                    ctx.beginPath();
+                    ctx.moveTo(startX, startY);
+                    
+                    // Nota: Devido a falta de persistencia de pontos de controle nesta implementação simples,
+                    // o fio brilhante será uma curva diferente. Para um projeto maior, salvaríamos as coordenadas.
+                    // Mas para o feedback final é suficiente desenhar uma linha de conexão direta grossa.
+                    ctx.bezierCurveTo(startX + 200, startY, endX - 200, endY, endX, endY);
+                    
+                    ctx.strokeStyle = '#66FCF1';
+                    ctx.lineWidth = 6;
+                    ctx.shadowColor = '#66FCF1';
+                    ctx.shadowBlur = 15;
+                    ctx.stroke();
+                } else {
+                    // Fios errados ficam escuros
+                    ctx.beginPath();
+                    ctx.moveTo(startX, startY);
+                    ctx.bezierCurveTo(startX + 100, startY, endX - 100, endY, endX, endY);
+                    ctx.strokeStyle = '#1f2937';
+                    ctx.lineWidth = 2;
+                    ctx.shadowColor = 'transparent';
+                    ctx.stroke();
+                }
+            }
+        }
+
+        // Iniciar
+        init();
+
+    </script>
+</body>
+</html>
