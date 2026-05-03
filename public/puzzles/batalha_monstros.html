@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Torneio das Feras - Kuar-Tor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: { extend: { colors: { rpg: { black: '#0B0C10', cyan: '#66FCF1', slate: '#1F2833', silver: '#C5C6C7' } } } }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../../src/styles/theme.css">
+    <style>
+        body { 
+            background-color: #0B0C10;
+            background-image: radial-gradient(circle at center, #1F2833 0%, #0B0C10 100%);
+        }
+        
+        .puzzle-container {
+            background-color: rgba(11, 12, 16, 0.8);
+            backdrop-filter: blur(8px);
+            border: 2px solid rgba(234, 179, 8, 0.2);
+            box-shadow: 0 0 40px rgba(234, 179, 8, 0.1);
+        }
+
+        .arena {
+            background: url('https://www.transparenttextures.com/patterns/black-scales.png');
+            background-color: #1a202c;
+            border-radius: 50%;
+            width: 400px;
+            height: 400px;
+            position: relative;
+            margin: 0 auto;
+            border: 4px dashed #4b5563;
+            box-shadow: inset 0 0 50px rgba(0,0,0,0.8);
+        }
+
+        .monster-card {
+            width: 100px;
+            height: 100px;
+            position: absolute;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            user-select: none;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+            border: 3px solid;
+            background-color: #2d3748;
+            z-index: 10;
+        }
+
+        .monster-card:hover {
+            transform: scale(1.1);
+        }
+
+        .monster-card.selected-attacker {
+            transform: scale(1.2) translateY(-10px);
+            box-shadow: 0 0 30px #66FCF1, 0 10px 20px rgba(0,0,0,0.8);
+            border-color: #66FCF1 !important;
+            z-index: 20;
+        }
+
+        .monster-card.dead {
+            transform: scale(0);
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        /* Posicionamento em Círculo (5 monstros) */
+        .pos-0 { top: 5%; left: 50%; margin-left: -50px; }
+        .pos-1 { top: 35%; left: 85%; margin-left: -50px; }
+        .pos-2 { top: 80%; left: 70%; margin-left: -50px; }
+        .pos-3 { top: 80%; left: 30%; margin-left: -50px; }
+        .pos-4 { top: 35%; left: 15%; margin-left: -50px; }
+
+        /* Temas Elementais */
+        .type-fire { border-color: #ef4444; text-shadow: 0 0 10px #ef4444; }
+        .type-water { border-color: #3b82f6; text-shadow: 0 0 10px #3b82f6; }
+        .type-plant { border-color: #22c55e; text-shadow: 0 0 10px #22c55e; }
+        .type-earth { border-color: #b45309; text-shadow: 0 0 10px #b45309; }
+        .type-lightning { border-color: #eab308; text-shadow: 0 0 10px #eab308; }
+
+        /* Animação de ataque (Simulação rápida) */
+        .attacking {
+            animation: clash 0.5s ease-in-out;
+        }
+
+        @keyframes clash {
+            0% { transform: scale(1.2); }
+            50% { transform: scale(1.5) translate(20px, 20px); filter: brightness(2); }
+            100% { transform: scale(1); }
+        }
+
+        .action-log {
+            height: 120px;
+            overflow-y: auto;
+            background: rgba(0,0,0,0.5);
+            border: 1px solid #4b5563;
+            border-radius: 8px;
+            padding: 10px;
+            font-family: monospace;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .log-entry { animation: fadeIn 0.3s; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: translateX(0); } }
+
+    </style>
+</head>
+<body class="text-rpg-silver min-h-screen p-4 flex flex-col items-center">
+
+    <header class="w-full max-w-4xl flex justify-between items-center mb-8 mt-4">
+        <h1 class="font-cinzel text-3xl text-yellow-500 text-glow-cyan drop-shadow-[0_0_10px_rgba(234,179,8,0.8)]">Torneio das Feras</h1>
+        <a href="index.html" class="btn-rpg bg-gray-800 border-gray-600 text-white">Retornar</a>
+    </header>
+
+    <div class="max-w-4xl w-full grid grid-cols-1 md:grid-cols-3 gap-8">
+        
+        <!-- Painel Lateral -->
+        <div class="col-span-1 puzzle-container rounded-xl p-6 flex flex-col h-fit">
+            <h2 class="font-cinzel text-xl text-yellow-400 mb-4 border-b border-gray-700 pb-2">O Torneio</h2>
+            <p class="text-gray-300 text-sm mb-4">
+                O salão principal está bloqueado por bestas elementais formidáveis. Você não pode derrotar todas sozinho, mas elas possuem fraquezas naturais entre si.
+            </p>
+            <p class="text-gray-300 text-sm mb-6">
+                <strong>Objetivo:</strong> Iscas táticas! Selecione um monstro para "provocar" e então clique no monstro alvo para que eles lutem. O vencedor devora o perdedor. Elimine os monstros até que reste apenas <strong>um sobrevivente exausto</strong> que você possa despachar.
+            </p>
+            
+            <div class="bg-gray-900 border border-gray-700 p-4 rounded text-xs text-gray-400 mb-6 shadow-inner">
+                <h3 class="text-rpg-cyan mb-2 font-bold uppercase">Guia de Sobrevivência (Rasgado)</h3>
+                <ul class="list-disc pl-4 space-y-1">
+                    <li><span class="text-blue-400">Água</span> afoga o <span class="text-red-400">Fogo</span>.</li>
+                    <li><span class="text-red-400">Fogo</span> queima a <span class="text-green-400">Planta</span>.</li>
+                    <li><span class="text-green-400">Planta</span> quebra a <span class="text-orange-600">Terra</span>.</li>
+                    <li><span class="text-orange-600">Terra</span> aterra o <span class="text-yellow-400">Trovão</span>.</li>
+                    <li><span class="text-yellow-400">Trovão</span> eletrocuta a <span class="text-blue-400">Água</span>.</li>
+                </ul>
+            </div>
+
+            <button onclick="initGame()" class="btn-rpg bg-gray-800 border-gray-500 text-white w-full">Reiniciar Torneio</button>
+        </div>
+
+        <!-- Arena Central -->
+        <div class="col-span-2 puzzle-container rounded-xl p-8 flex flex-col items-center">
+            
+            <div class="arena mb-8" id="arena-board">
+                <!-- Monstros gerados via JS -->
+            </div>
+
+            <!-- Log de Combate -->
+            <div class="w-full">
+                <h3 class="font-cinzel text-rpg-cyan mb-2 text-sm">Registro de Combate:</h3>
+                <div class="action-log" id="action-log">
+                    <!-- Logs entram aqui -->
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- Modal de Fim de Jogo -->
+    <div id="end-modal" class="fixed inset-0 bg-black/90 hidden flex-col items-center justify-center z-50 transition-opacity">
+        <div id="modal-content" class="text-center p-8 border-2 rounded-lg bg-gray-900 shadow-2xl max-w-xl">
+            <h2 id="modal-title" class="font-cinzel text-4xl mb-4"></h2>
+            <p id="modal-desc" class="text-gray-300 text-lg mb-8"></p>
+            <div class="flex gap-4 justify-center">
+                <button onclick="initGame()" class="btn-rpg bg-gray-800 text-white">Tentar Novamente</button>
+                <a href="index.html" class="btn-rpg bg-yellow-900 border-yellow-600 text-white">Salão Principal</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Dados dos monstros e cadeia de fraquezas
+        // Cada monstro 'beats' (vence) um outro tipo
+        const MONSTERS = [
+            { id: 'water', name: 'Kraken de Água', icon: '🦑', typeClass: 'type-water', posClass: 'pos-0', beats: 'fire' },
+            { id: 'fire', name: 'Dragão de Fogo', icon: '🐉', typeClass: 'type-fire', posClass: 'pos-1', beats: 'plant' },
+            { id: 'plant', name: 'Ent Ancião', icon: '🌳', typeClass: 'type-plant', posClass: 'pos-2', beats: 'earth' },
+            { id: 'earth', name: 'Golem de Terra', icon: '🗿', typeClass: 'type-earth', posClass: 'pos-3', beats: 'lightning' },
+            { id: 'lightning', name: 'Pássaro Trovão', icon: '⚡', typeClass: 'type-lightning', posClass: 'pos-4', beats: 'water' }
+        ];
+
+        let activeMonsters = {};
+        let attackerId = null;
+        let aliveCount = 0;
+
+        const arena = document.getElementById('arena-board');
+        const actionLog = document.getElementById('action-log');
+        const modal = document.getElementById('end-modal');
+        const modalTitle = document.getElementById('modal-title');
+        const modalDesc = document.getElementById('modal-desc');
+        const modalContent = document.getElementById('modal-content');
+
+        function initGame() {
+            arena.innerHTML = '';
+            actionLog.innerHTML = '';
+            activeMonsters = {};
+            attackerId = null;
+            aliveCount = MONSTERS.length;
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+
+            MONSTERS.forEach(m => {
+                const el = document.createElement('div');
+                el.className = `monster-card ${m.typeClass} ${m.posClass}`;
+                el.innerHTML = m.icon;
+                el.title = m.name;
+                el.dataset.id = m.id;
+                el.onclick = () => handleMonsterClick(m.id);
+                
+                arena.appendChild(el);
+                
+                activeMonsters[m.id] = { ...m, element: el, alive: true };
+            });
+
+            logMessage("O Torneio das Feras começou. Os caminhos estão bloqueados.", "#C5C6C7");
+        }
+
+        function handleMonsterClick(id) {
+            const clicked = activeMonsters[id];
+            if (!clicked.alive) return;
+
+            // Se não tem ninguém selecionado, seleciona o atacante
+            if (!attackerId) {
+                attackerId = id;
+                clicked.element.classList.add('selected-attacker');
+                logMessage(`Você atrai a atenção do ${clicked.name}...`, "#66FCF1");
+            } 
+            // Se clicou no mesmo, cancela
+            else if (attackerId === id) {
+                clicked.element.classList.remove('selected-attacker');
+                attackerId = null;
+                logMessage(`Você recuou e o ${clicked.name} perdeu o interesse.`, "#9ca3af");
+            }
+            // Realiza o combate!
+            else {
+                const attacker = activeMonsters[attackerId];
+                const defender = clicked;
+                
+                attacker.element.classList.remove('selected-attacker');
+                attackerId = null; // reseta a seleção para a próxima rodada
+
+                resolveCombat(attacker, defender);
+            }
+        }
+
+        function resolveCombat(attacker, defender) {
+            attacker.element.classList.add('attacking');
+            setTimeout(() => attacker.element.classList.remove('attacking'), 500);
+
+            logMessage(`⚔️ O ${attacker.name} investe ferozmente contra o ${defender.name}!`, "#eab308");
+
+            // Verifica as fraquezas
+            if (attacker.beats === defender.id) {
+                // Atacante Vence
+                setTimeout(() => {
+                    defender.alive = false;
+                    defender.element.classList.add('dead');
+                    aliveCount--;
+                    logMessage(`💥 SUCESSO! O ${attacker.name} destruiu o ${defender.name}.`, "#22c55e");
+                    checkWinCondition();
+                }, 600);
+            } else if (defender.beats === attacker.id) {
+                // Defensor se defende e mata o atacante (Erro Crítico do jogador)
+                setTimeout(() => {
+                    attacker.alive = false;
+                    attacker.element.classList.add('dead');
+                    aliveCount--;
+                    logMessage(`💀 ERRO FATAL! O ${defender.name} é imune! Ele contra-ataca e oblitera o ${attacker.name}.`, "#ef4444");
+                    
+                    // Se o monstro que o jogador pretendia usar morreu, o puzzle fica impossível de completar perfeitamente, 
+                    // vamos dar Game Over direto para ensinar a mecânica.
+                    showModal("Estratégia Falha", `Você provocou o monstro errado! O ${attacker.name} foi morto em segundos pelo ${defender.name}. Sem ele, a cadeia de destruição está quebrada.`, "#ef4444");
+                }, 600);
+            } else {
+                // Empate / Sem vantagem óbvia. Eles brigam mas recuam.
+                setTimeout(() => {
+                    logMessage(`🛡️ IMPASSE! O ataque não surtiu efeito e os dois monstros recuaram para suas posições.`, "#f97316");
+                }, 600);
+            }
+        }
+
+        function checkWinCondition() {
+            // Condição de Vitória: Só restou 1 monstro na sala.
+            if (aliveCount === 1) {
+                const survivorId = Object.keys(activeMonsters).find(key => activeMonsters[key].alive);
+                const survivor = activeMonsters[survivorId];
+                
+                setTimeout(() => {
+                    showModal("Caminho Desobstruído!", `Magistral! Você manipulou as feras perfeitamente. O exausto ${survivor.name} é o último de pé, e um único feitiço do seu grupo é suficiente para finalizá-lo. As passagens da masmorra estão abertas.`, "#eab308");
+                }, 1000);
+            }
+        }
+
+        function logMessage(text, color) {
+            const p = document.createElement('p');
+            p.className = 'log-entry';
+            p.style.color = color;
+            p.textContent = text;
+            actionLog.appendChild(p);
+            // Auto scroll to bottom
+            actionLog.scrollTop = actionLog.scrollHeight;
+        }
+
+        function showModal(title, desc, color) {
+            modalTitle.textContent = title;
+            modalTitle.style.color = color;
+            modalTitle.style.textShadow = `0 0 15px ${color}`;
+            modalDesc.textContent = desc;
+            modalContent.style.borderColor = color;
+            
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        // Iniciar
+        initGame();
+
+    </script>
+</body>
+</html>

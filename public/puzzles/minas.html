@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Campo Minado - Kuar-Tor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: { extend: { colors: { rpg: { black: '#0B0C10', cyan: '#66FCF1', slate: '#1F2833', silver: '#C5C6C7' } } } }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../../src/styles/theme.css">
+    <style>
+        body { 
+            background-image: url('https://www.transparenttextures.com/patterns/asfalt-dark.png'); 
+            background-color: #0B0C10;
+        }
+        
+        .puzzle-container {
+            background-color: rgba(31, 40, 51, 0.95);
+            backdrop-filter: blur(8px);
+            border: 2px solid rgba(239, 68, 68, 0.2);
+            box-shadow: 0 0 40px rgba(239, 68, 68, 0.1);
+        }
+
+        .grid-board {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 2px;
+            background-color: #111827;
+            padding: 4px;
+            border-radius: 8px;
+            border: 4px solid #1F2833;
+        }
+
+        .tile {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #4b5563, #374151);
+            border-top: 2px solid #9ca3af;
+            border-left: 2px solid #9ca3af;
+            border-bottom: 2px solid #1f2937;
+            border-right: 2px solid #1f2937;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Inter', sans-serif;
+            font-weight: bold;
+            font-size: 1.2rem;
+            cursor: pointer;
+            user-select: none;
+            transition: filter 0.1s;
+        }
+
+        .tile:hover {
+            filter: brightness(1.2);
+        }
+
+        .tile.revealed {
+            background: #1F2833;
+            border: 1px solid #111827;
+            box-shadow: inset 2px 2px 5px rgba(0,0,0,0.5);
+            cursor: default;
+        }
+
+        .tile.mine-exploded {
+            background: radial-gradient(circle, #ef4444, #7f1d1d);
+            border-color: #ef4444;
+            animation: explode 0.5s ease-out;
+        }
+
+        @keyframes explode {
+            0% { transform: scale(1); filter: brightness(1); }
+            50% { transform: scale(1.3); filter: brightness(2); z-index: 10; box-shadow: 0 0 20px red; }
+            100% { transform: scale(1); filter: brightness(1); }
+        }
+
+        /* Cores dos números das minas adjacentes */
+        .c-1 { color: #66FCF1; text-shadow: 0 0 5px rgba(102, 252, 241, 0.5); }
+        .c-2 { color: #22c55e; text-shadow: 0 0 5px rgba(34, 197, 94, 0.5); }
+        .c-3 { color: #ef4444; text-shadow: 0 0 5px rgba(239, 68, 68, 0.5); }
+        .c-4 { color: #a855f7; text-shadow: 0 0 5px rgba(168, 85, 247, 0.5); }
+        .c-5 { color: #eab308; }
+        .c-6 { color: #06b6d4; }
+        .c-7 { color: #14b8a6; }
+        .c-8 { color: #f97316; }
+
+        .flagged::after {
+            content: '🚩'; /* Pode ser trocado por um rune mágico */
+            font-size: 1.2rem;
+            filter: drop-shadow(0 0 2px red);
+        }
+
+        @media (max-width: 600px) {
+            .tile { width: 35px; height: 35px; }
+        }
+    </style>
+</head>
+<body class="text-rpg-silver min-h-screen p-4 flex flex-col items-center">
+
+    <header class="w-full max-w-2xl flex justify-between items-center mb-8 mt-4">
+        <h1 class="font-cinzel text-3xl text-red-500 text-glow-cyan drop-shadow-[0_0_10px_rgba(239,68,68,0.8)]">O Campo Minado</h1>
+        <a href="index.html" class="btn-rpg bg-gray-800 border-gray-600 text-white">Retornar</a>
+    </header>
+
+    <div class="max-w-2xl w-full puzzle-container rounded-xl p-8 flex flex-col items-center" id="game-board">
+        
+        <p class="text-gray-300 mb-6 italic font-cinzel text-center">"O dispositivo rúnico pulsa em sua mão. Ele sussurra quantas runas explosivas estão escondidas sob as lajes adjacentes, mas não a direção exata."</p>
+        
+        <div class="w-full flex justify-between items-center bg-gray-900 border border-gray-700 px-6 py-4 rounded mb-6 font-mono text-xl">
+            <div class="text-red-500 font-bold">MINAS: <span id="mines-count">10</span></div>
+            <button id="reset-btn" class="text-rpg-cyan hover:text-white transition-colors text-2xl" title="Reiniciar Dispositivo">🔄</button>
+            <div class="text-gray-400">STATUS: <span id="status-text" class="text-yellow-500">CUIDADO</span></div>
+        </div>
+
+        <p class="text-xs text-gray-500 mb-4 text-center">Botão esquerdo: Pisar na laje. Botão direito: Marcar suspeita (🚩).</p>
+
+        <!-- Tabuleiro -->
+        <div class="grid-board" id="grid">
+            <!-- Tiles gerados via JS -->
+        </div>
+
+    </div>
+
+    <!-- Modal Vitória/Derrota -->
+    <div id="end-modal" class="fixed inset-0 bg-black/90 hidden flex-col items-center justify-center z-50">
+        <h2 id="end-title" class="font-cinzel text-5xl mb-6"></h2>
+        <p id="end-desc" class="text-gray-300 text-xl mb-8 max-w-lg text-center"></p>
+        <div class="flex gap-4">
+            <button onclick="initGame()" class="btn-rpg bg-gray-800 border-gray-500 text-white">Tentar Novamente</button>
+            <a href="index.html" class="btn-rpg bg-rpg-slate border-rpg-cyan text-rpg-cyan">Retornar ao Salão</a>
+        </div>
+    </div>
+
+    <script>
+        const ROWS = 8;
+        const COLS = 8;
+        const MINES = 10;
+
+        let grid = [];
+        let flagsCount = 0;
+        let gameOver = false;
+        let tilesRevealed = 0;
+
+        const gridElement = document.getElementById('grid');
+        const minesCountElement = document.getElementById('mines-count');
+        const statusText = document.getElementById('status-text');
+        const resetBtn = document.getElementById('reset-btn');
+        const endModal = document.getElementById('end-modal');
+        const endTitle = document.getElementById('end-title');
+        const endDesc = document.getElementById('end-desc');
+
+        function initGame() {
+            gridElement.innerHTML = '';
+            grid = [];
+            flagsCount = 0;
+            gameOver = false;
+            tilesRevealed = 0;
+            minesCountElement.textContent = MINES;
+            statusText.textContent = "CUIDADO";
+            statusText.className = "text-yellow-500";
+            endModal.classList.add('hidden');
+            endModal.classList.remove('flex');
+
+            // Inicializa a matriz
+            for (let r = 0; r < ROWS; r++) {
+                grid[r] = [];
+                for (let c = 0; c < COLS; c++) {
+                    grid[r][c] = {
+                        isMine: false,
+                        revealed: false,
+                        flagged: false,
+                        neighborMines: 0,
+                        element: null
+                    };
+                }
+            }
+
+            // Coloca as minas aleatoriamente
+            let minesPlaced = 0;
+            while (minesPlaced < MINES) {
+                const r = Math.floor(Math.random() * ROWS);
+                const c = Math.floor(Math.random() * COLS);
+                if (!grid[r][c].isMine) {
+                    grid[r][c].isMine = true;
+                    minesPlaced++;
+                }
+            }
+
+            // Calcula minas vizinhas
+            for (let r = 0; r < ROWS; r++) {
+                for (let c = 0; c < COLS; c++) {
+                    if (!grid[r][c].isMine) {
+                        let count = 0;
+                        // Checa os 8 vizinhos
+                        for (let dr = -1; dr <= 1; dr++) {
+                            for (let dc = -1; dc <= 1; dc++) {
+                                const nr = r + dr;
+                                const nc = c + dc;
+                                if (nr >= 0 && nr < ROWS && nc >= 0 && nc < COLS && grid[nr][nc].isMine) {
+                                    count++;
+                                }
+                            }
+                        }
+                        grid[r][c].neighborMines = count;
+                    }
+                }
+            }
+
+            // Cria o HTML
+            for (let r = 0; r < ROWS; r++) {
+                for (let c = 0; c < COLS; c++) {
+                    const tile = document.createElement('div');
+                    tile.className = 'tile';
+                    tile.dataset.r = r;
+                    tile.dataset.c = c;
+                    
+                    tile.addEventListener('click', (e) => handleLeftClick(r, c));
+                    tile.addEventListener('contextmenu', (e) => handleRightClick(e, r, c));
+                    
+                    grid[r][c].element = tile;
+                    gridElement.appendChild(tile);
+                }
+            }
+        }
+
+        function handleLeftClick(r, c) {
+            if (gameOver || grid[r][c].flagged || grid[r][c].revealed) return;
+
+            const cell = grid[r][c];
+            cell.revealed = true;
+            cell.element.classList.add('revealed');
+            tilesRevealed++;
+
+            if (cell.isMine) {
+                // Game Over - Explodiu
+                gameOver = true;
+                cell.element.classList.add('mine-exploded');
+                cell.element.textContent = '💥';
+                statusText.textContent = "MORTO";
+                statusText.className = "text-red-500 font-bold";
+                
+                // Revela as outras minas
+                revealAllMines();
+
+                setTimeout(() => {
+                    endTitle.textContent = "BOLA DE FOGO!";
+                    endTitle.className = "font-cinzel text-5xl mb-6 text-red-500 drop-shadow-[0_0_20px_red]";
+                    endDesc.textContent = "Você pisou na runa errada. Uma explosão massiva joga o grupo longe, causando danos severos. As ataduras mágicas serão necessárias...";
+                    endModal.classList.remove('hidden');
+                    endModal.classList.add('flex');
+                }, 1000);
+
+            } else {
+                // Se não for mina, mostra número ou propaga (flood fill)
+                if (cell.neighborMines > 0) {
+                    cell.element.textContent = cell.neighborMines;
+                    cell.element.classList.add(`c-${cell.neighborMines}`);
+                } else {
+                    // Propagação para vazios (recursão simples, cuidado com stack em grids muito grandes, mas 8x8 é ok)
+                    for (let dr = -1; dr <= 1; dr++) {
+                        for (let dc = -1; dc <= 1; dc++) {
+                            const nr = r + dr;
+                            const nc = c + dc;
+                            if (nr >= 0 && nr < ROWS && nc >= 0 && nc < COLS) {
+                                if(!grid[nr][nc].revealed && !grid[nr][nc].flagged) {
+                                    handleLeftClick(nr, nc);
+                                }
+                            }
+                        }
+                    }
+                }
+                checkWin();
+            }
+        }
+
+        function handleRightClick(e, r, c) {
+            e.preventDefault();
+            if (gameOver || grid[r][c].revealed) return;
+
+            const cell = grid[r][c];
+            
+            if (!cell.flagged) {
+                if (flagsCount < MINES) {
+                    cell.flagged = true;
+                    cell.element.classList.add('flagged');
+                    flagsCount++;
+                }
+            } else {
+                cell.flagged = false;
+                cell.element.classList.remove('flagged');
+                flagsCount--;
+            }
+            minesCountElement.textContent = MINES - flagsCount;
+        }
+
+        function revealAllMines() {
+            for (let r = 0; r < ROWS; r++) {
+                for (let c = 0; c < COLS; c++) {
+                    const cell = grid[r][c];
+                    if (cell.isMine && !cell.revealed && !cell.flagged) {
+                        cell.element.classList.add('revealed');
+                        cell.element.textContent = '💣';
+                    }
+                }
+            }
+        }
+
+        function checkWin() {
+            // Vitória acontece quando todas as casas não-minadas foram reveladas
+            const safeTiles = ROWS * COLS - MINES;
+            if (tilesRevealed === safeTiles) {
+                gameOver = true;
+                statusText.textContent = "SOBREVIVEU";
+                statusText.className = "text-rpg-cyan font-bold";
+
+                // Coloca bandeira nas minas que sobraram
+                for (let r = 0; r < ROWS; r++) {
+                    for (let c = 0; c < COLS; c++) {
+                        if (grid[r][c].isMine && !grid[r][c].flagged) {
+                            grid[r][c].element.classList.add('flagged');
+                        }
+                    }
+                }
+                minesCountElement.textContent = "0";
+
+                setTimeout(() => {
+                    endTitle.textContent = "CAMINHO SEGURO";
+                    endTitle.className = "font-cinzel text-5xl mb-6 text-rpg-cyan drop-shadow-[0_0_20px_cyan]";
+                    endDesc.textContent = "O grupo pisa com extremo cuidado, seguindo os sussurros do artefato mágico. Vocês atravessam o campo mortal sem acionar nenhuma runa explosiva.";
+                    endModal.classList.remove('hidden');
+                    endModal.classList.add('flex');
+                }, 1000);
+            }
+        }
+
+        resetBtn.addEventListener('click', initGame);
+
+        // Start
+        initGame();
+
+    </script>
+</body>
+</html>

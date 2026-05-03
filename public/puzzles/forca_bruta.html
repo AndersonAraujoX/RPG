@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A Solução Simples - Kuar-Tor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: { extend: { colors: { rpg: { black: '#0B0C10', cyan: '#66FCF1', slate: '#1F2833', silver: '#C5C6C7' } } } }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../../src/styles/theme.css">
+    <style>
+        body { 
+            background-color: #0B0C10;
+            background-image: radial-gradient(circle at top, #1F2833 0%, #0B0C10 100%);
+        }
+        
+        .puzzle-container {
+            background-color: rgba(11, 12, 16, 0.85);
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(156, 163, 175, 0.2);
+            box-shadow: 0 0 40px rgba(156, 163, 175, 0.1);
+        }
+
+        .chest-container {
+            position: relative;
+            width: 250px;
+            height: 200px;
+            margin: 0 auto;
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+
+        .chest-container:active {
+            transform: scale(0.95);
+        }
+
+        .chest-box {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to bottom, #8B4513, #5c2c09);
+            border: 8px solid #b45309;
+            border-radius: 10px 10px 5px 5px;
+            position: relative;
+            box-shadow: inset 0 0 30px rgba(0,0,0,0.8), 0 10px 20px rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        /* Linhas mágicas que cobrem o baú */
+        .magic-lock {
+            position: absolute;
+            inset: 0;
+            background: repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(102, 252, 241, 0.2) 10px, rgba(102, 252, 241, 0.2) 20px);
+            animation: moveMagic 5s linear infinite;
+        }
+        
+        @keyframes moveMagic {
+            0% { background-position: 0 0; }
+            100% { background-position: 50px 50px; }
+        }
+
+        .lock-mechanism {
+            width: 60px;
+            height: 80px;
+            background: #d4af37;
+            border: 4px solid #b8860b;
+            border-radius: 5px;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.8);
+        }
+
+        /* Efeitos de Dano */
+        .crack-1::after {
+            content: ''; position: absolute; top: 20%; left: 10%; width: 50%; height: 2px; background: black; transform: rotate(15deg);
+        }
+        .crack-2::before {
+            content: ''; position: absolute; top: 40%; right: 10%; width: 40%; height: 3px; background: black; transform: rotate(-25deg);
+        }
+        
+        .shake { animation: shake 0.3s cubic-bezier(.36,.07,.19,.97) both; }
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-2px, 0, 0); filter: brightness(1.5); }
+            20%, 80% { transform: translate3d(4px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-6px, 0, 0); }
+            40%, 60% { transform: translate3d(6px, 0, 0); }
+        }
+
+        .chest-broken {
+            background: transparent !important;
+            border-color: transparent !important;
+            box-shadow: none !important;
+        }
+
+        .complex-ui {
+            background: #111827;
+            border: 1px solid #374151;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 0.8rem;
+        }
+
+        .action-log {
+            height: 100px;
+            overflow-y: auto;
+            background: rgba(0,0,0,0.5);
+            border: 1px solid #4b5563;
+            border-radius: 8px;
+            padding: 10px;
+            font-family: monospace;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+    </style>
+</head>
+<body class="text-rpg-silver min-h-screen p-4 flex flex-col items-center">
+
+    <header class="w-full max-w-4xl flex justify-between items-center mb-8 mt-4">
+        <h1 class="font-cinzel text-3xl text-gray-400 text-glow-cyan drop-shadow-[0_0_10px_rgba(156,163,175,0.8)]">A Solução Simples</h1>
+        <a href="index.html" class="btn-rpg bg-gray-800 border-gray-600 text-white">Retornar</a>
+    </header>
+
+    <div class="max-w-4xl w-full grid grid-cols-1 md:grid-cols-2 gap-8">
+        
+        <!-- O Baú -->
+        <div class="col-span-1 puzzle-container rounded-xl p-8 flex flex-col items-center justify-center">
+            
+            <p class="text-center text-gray-400 italic mb-8">"Um baú selado por milhares de camadas de magia. Ele vibra com um conhecimento indescritível."</p>
+
+            <!-- Clicar no baú dá pancada -->
+            <div class="chest-container" id="chest" onclick="hitChest()">
+                <div class="chest-box" id="chest-box">
+                    <div class="magic-lock" id="magic-aura"></div>
+                    <div class="lock-mechanism" id="lock-icon">🔒</div>
+                </div>
+            </div>
+
+            <div class="w-full mt-10">
+                <h3 class="font-cinzel text-rpg-cyan mb-2 text-sm text-center">Registro de Ações:</h3>
+                <div class="action-log text-xs" id="action-log">
+                    <p class="text-gray-400">Você se depara com o Baú Infinito.</p>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- O Painel "Complexo" -->
+        <div class="col-span-1 puzzle-container rounded-xl p-6 flex flex-col" id="complex-panel">
+            <h2 class="font-cinzel text-xl text-rpg-cyan mb-4 border-b border-gray-700 pb-2">Painel de Decodificação Arcana</h2>
+            
+            <p class="text-gray-300 text-sm mb-4">
+                Resolva o enigma trigonométrico da 5ª Esfera para acessar o painel de recalibração rúnica, depois alinhe as estrelas.
+            </p>
+
+            <div class="complex-ui mb-4 flex flex-col gap-3">
+                <div>
+                    <label class="block text-gray-500 mb-1">Matriz Criptográfica A1</label>
+                    <input type="text" class="w-full bg-gray-900 border border-gray-600 rounded px-2 py-1 text-rpg-cyan" value="0x8F9A2B" readonly>
+                </div>
+                <div class="flex gap-2">
+                    <div class="flex-1">
+                        <label class="block text-gray-500 mb-1">Frequência (Hz)</label>
+                        <input type="number" class="w-full bg-gray-900 border border-gray-600 rounded px-2 py-1 text-yellow-500" value="432">
+                    </div>
+                    <div class="flex-1">
+                        <label class="block text-gray-500 mb-1">Eixo Kármico</label>
+                        <select class="w-full bg-gray-900 border border-gray-600 rounded px-2 py-1 text-purple-400">
+                            <option>Norte Verdadeiro</option>
+                            <option>Zênite</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-gray-500 mb-1">Inscrição de Resposta</label>
+                    <input type="text" class="w-full bg-black border border-rpg-cyan rounded px-2 py-1 text-white" placeholder="Digite a palavra de poder...">
+                </div>
+            </div>
+
+            <button onclick="solvePuzzle()" class="btn-rpg bg-blue-900 border-blue-600 text-white w-full mb-4">Submeter Resolução Arcana</button>
+            <button onclick="hitChest()" class="btn-rpg bg-red-900 border-red-600 text-white w-full opacity-50 hover:opacity-100 flex items-center justify-center gap-2">
+                <span>🔨</span> Bater com Força Bruta
+            </button>
+        </div>
+
+    </div>
+
+    <!-- Modal de Fim de Jogo -->
+    <div id="end-modal" class="fixed inset-0 bg-black/90 hidden flex-col items-center justify-center z-50 transition-opacity">
+        <div id="modal-content" class="text-center p-8 border-2 rounded-lg bg-gray-900 shadow-2xl max-w-xl border-yellow-500">
+            <h2 class="font-cinzel text-5xl mb-6 text-yellow-500 drop-shadow-[0_0_15px_rgba(234,179,8,1)]">Baú Despedaçado!</h2>
+            <p class="text-gray-300 text-lg mb-8 leading-relaxed">
+                Apesar de todos os selos cósmicos e enigmas elaborados, alguns golpes precisos com uma arma pesada estilhaçaram a madeira mágica em mil pedaços. <br><br>
+                Sua inteligência retornou ao normal, mas o tesouro brilha entre os destroços.
+            </p>
+            <div class="flex gap-4 justify-center">
+                <button onclick="location.reload()" class="btn-rpg bg-gray-800 text-white">Novo Baú</button>
+                <a href="index.html" class="btn-rpg bg-yellow-900 border-yellow-600 text-white">Retornar ao Salão</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let attempts = 0;
+        let hits = 0;
+        let chestBroken = false;
+
+        const actionLog = document.getElementById('action-log');
+        const chestBox = document.getElementById('chest-box');
+        const lockIcon = document.getElementById('lock-icon');
+        const magicAura = document.getElementById('magic-aura');
+
+        function logMessage(text, color) {
+            const p = document.createElement('p');
+            p.style.color = color;
+            p.textContent = text;
+            actionLog.appendChild(p);
+            actionLog.scrollTop = actionLog.scrollHeight;
+        }
+
+        function solvePuzzle() {
+            if (chestBroken) return;
+            attempts++;
+            
+            // Finge que o puzzle é infinito
+            chestBox.classList.remove('shake');
+            void chestBox.offsetWidth; // trigger reflow
+            chestBox.classList.add('shake');
+
+            logMessage(`Você gasta 10 minutos resolvendo cálculos arcanos complexos. O selo brilha e se desfaz!`, "#3b82f6");
+            
+            setTimeout(() => {
+                logMessage(`...Porém, um novo enigma mecânico emerge. O baú diz: "Selo ${attempts} resolvido. Faltam 9.999 selos."`, "#ef4444");
+            }, 800);
+        }
+
+        function hitChest() {
+            if (chestBroken) return;
+            hits++;
+
+            // Animação de tremor
+            chestBox.classList.remove('shake');
+            void chestBox.offsetWidth;
+            chestBox.classList.add('shake');
+
+            if (hits === 1) {
+                chestBox.classList.add('crack-1');
+                logMessage(`🔨 Você ignora a matemática e dá uma panca no baú! Ele racha.`, "#eab308");
+                logMessage(`🧠 Curiosamente, a onda de choque rúnica aumenta sua Inteligência. Você entende os princípios da física quântica.`, "#a855f7");
+            } 
+            else if (hits === 2) {
+                chestBox.classList.add('crack-2');
+                logMessage(`🔨 Outro golpe estrondoso! A madeira arcana começa a ceder.`, "#eab308");
+                logMessage(`🧠 Sua Inteligência sobe ainda mais. Você agora sabe como a magia do universo foi tecida.`, "#a855f7");
+            } 
+            else if (hits >= 3) {
+                chestBroken = true;
+                magicAura.style.display = 'none';
+                chestBox.classList.add('chest-broken');
+                lockIcon.textContent = '🔓';
+                lockIcon.style.background = '#4ade80';
+                lockIcon.style.borderColor = '#22c55e';
+                
+                logMessage(`💥 CRASH! Você dá o golpe final.`, "#22c55e");
+                logMessage(`O intrincado sistema de segurança de 10.000 selos é completamente destruído pela Força Bruta.`, "#66FCF1");
+                
+                document.getElementById('complex-panel').style.opacity = '0.3';
+                document.getElementById('complex-panel').style.pointerEvents = 'none';
+
+                setTimeout(() => {
+                    document.getElementById('end-modal').classList.remove('hidden');
+                    document.getElementById('end-modal').classList.add('flex');
+                }, 1500);
+            }
+        }
+
+    </script>
+</body>
+</html>

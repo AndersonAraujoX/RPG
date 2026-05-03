@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A Entrada Oportuna - Kuar-Tor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: { extend: { colors: { rpg: { black: '#0B0C10', cyan: '#66FCF1', slate: '#1F2833', silver: '#C5C6C7' } } } }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../../src/styles/theme.css">
+    <style>
+        body { 
+            background-color: #0B0C10;
+        }
+        
+        .puzzle-container {
+            background-color: rgba(11, 12, 16, 0.95);
+            backdrop-filter: blur(8px);
+            border: 2px solid rgba(59, 130, 246, 0.2);
+            box-shadow: 0 0 40px rgba(59, 130, 246, 0.1);
+        }
+
+        .scene-box {
+            position: relative;
+            width: 100%;
+            height: 400px;
+            border: 4px solid #1F2833;
+            border-radius: 8px;
+            overflow: hidden;
+            transition: background-color 0.5s ease;
+            box-shadow: inset 0 0 50px rgba(0,0,0,0.8);
+        }
+
+        /* O Céu e as Estrelas */
+        .sky {
+            position: absolute;
+            inset: 0;
+            z-index: 1;
+            transition: opacity 0.5s ease;
+        }
+
+        .sky-day { background: linear-gradient(to bottom, #3b82f6, #93c5fd); }
+        .sky-dusk { background: linear-gradient(to bottom, #4c1d95, #f43f5e); opacity: 0; }
+        .sky-night { background: linear-gradient(to bottom, #020617, #1e1b4b); opacity: 0; }
+
+        .sun-moon {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            bottom: -60px;
+            left: 50%;
+            margin-left: -30px;
+            transition: all 0.3s ease;
+            z-index: 2;
+        }
+
+        .sun {
+            background: radial-gradient(circle, #fcd34d, #f59e0b);
+            box-shadow: 0 0 50px #f59e0b;
+        }
+
+        .moon {
+            background: radial-gradient(circle, #e2e8f0, #94a3b8);
+            box-shadow: 0 0 30px #e2e8f0;
+            opacity: 0;
+        }
+
+        /* O Cenário Físico */
+        .ground {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 80px;
+            background: #1c1917;
+            border-top: 2px solid #292524;
+            z-index: 5;
+        }
+
+        .wall {
+            position: absolute;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 250px;
+            height: 200px;
+            background: url('https://www.transparenttextures.com/patterns/cubes.png') #44403c;
+            border: 2px solid #292524;
+            border-bottom: none;
+            z-index: 3;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+        }
+
+        /* A Porta Secreta (Invisível no começo) */
+        .secret-door {
+            width: 100px;
+            height: 150px;
+            border: 2px solid #66FCF1;
+            border-bottom: none;
+            border-radius: 50px 50px 0 0;
+            background: rgba(102, 252, 241, 0.1);
+            box-shadow: 0 0 30px #66FCF1, inset 0 0 20px #66FCF1;
+            opacity: 0;
+            transition: opacity 1s ease-in-out;
+            position: relative;
+        }
+
+        .secret-door::after {
+            content: '';
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 40px; height: 40px;
+            border: 2px solid #66FCF1;
+            border-radius: 50%;
+            box-shadow: 0 0 10px #66FCF1;
+        }
+
+        /* Obstáculos Interativos */
+        .tree {
+            position: absolute;
+            bottom: 80px;
+            left: 20%;
+            width: 120px;
+            height: 250px;
+            cursor: pointer;
+            z-index: 6;
+            transition: transform 0.2s;
+        }
+
+        .tree-trunk {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 30px;
+            height: 100px;
+            background: #451a03;
+            border-radius: 5px;
+        }
+
+        .tree-leaves {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 180px;
+            background: #14532d;
+            border-radius: 50%;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+            transition: all 0.5s;
+        }
+
+        .tree.pruned .tree-leaves {
+            transform: scale(0.4); /* Podada */
+            background: #064e3b;
+        }
+
+        .stones {
+            position: absolute;
+            bottom: 20px;
+            right: 30%;
+            display: flex;
+            gap: 10px;
+            cursor: pointer;
+            z-index: 6;
+        }
+
+        .stone {
+            width: 30px;
+            height: 20px;
+            background: #57534e;
+            border-radius: 10px 10px 2px 2px;
+            box-shadow: inset -2px -2px 5px rgba(0,0,0,0.5);
+            transition: transform 0.5s;
+        }
+
+        /* Alinhamento das pedras */
+        .stones.aligned .stone:nth-child(1) { transform: rotate(15deg) translateY(-5px); background: #66FCF1; box-shadow: 0 0 10px #66FCF1; }
+        .stones.aligned .stone:nth-child(2) { transform: rotate(0deg) translateY(-10px); background: #66FCF1; box-shadow: 0 0 10px #66FCF1; }
+        .stones.aligned .stone:nth-child(3) { transform: rotate(-15deg) translateY(-5px); background: #66FCF1; box-shadow: 0 0 10px #66FCF1; }
+
+        /* Feixe de luz */
+        .moon-beam {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 120px;
+            height: 100%;
+            background: linear-gradient(to bottom, rgba(102, 252, 241, 0.4), transparent);
+            z-index: 4;
+            opacity: 0;
+            transition: opacity 1s;
+            pointer-events: none;
+        }
+
+        .slider-container { margin-top: 2rem; width: 100%; }
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 24px;
+            width: 24px;
+            border-radius: 50%;
+            background: #66FCF1;
+            cursor: pointer;
+            margin-top: -10px;
+            box-shadow: 0 0 10px #66FCF1;
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 6px;
+            cursor: pointer;
+            background: #1F2833;
+            border-radius: 3px;
+        }
+
+    </style>
+</head>
+<body class="text-rpg-silver min-h-screen p-4 flex flex-col items-center">
+
+    <header class="w-full max-w-3xl flex justify-between items-center mb-8 mt-4">
+        <h1 class="font-cinzel text-3xl text-blue-400 text-glow-cyan drop-shadow-[0_0_10px_rgba(59,130,246,0.8)]">A Entrada Oportuna</h1>
+        <a href="index.html" class="btn-rpg bg-gray-800 border-gray-600 text-white">Retornar</a>
+    </header>
+
+    <div class="max-w-3xl w-full puzzle-container rounded-xl p-8 flex flex-col items-center">
+        
+        <p class="text-gray-300 text-center mb-2 italic">"A passagem secreta para a Sociedade Esquecida existe... mas não é sobre onde procurar, e sim <strong>quando</strong>."</p>
+        <p class="text-gray-500 text-sm text-center mb-6">Explore o ambiente para desobstruir as condições astrológicas e ajuste a passagem do tempo.</p>
+
+        <!-- Viewport do Puzzle -->
+        <div class="scene-box" id="scene">
+            <div class="sky sky-day" id="sky-day"></div>
+            <div class="sky sky-dusk" id="sky-dusk"></div>
+            <div class="sky sky-night" id="sky-night"></div>
+
+            <div class="sun-moon sun" id="sun"></div>
+            <div class="sun-moon moon" id="moon"></div>
+
+            <div class="moon-beam" id="moon-beam"></div>
+
+            <div class="wall">
+                <div class="secret-door" id="secret-door"></div>
+            </div>
+
+            <div class="tree" id="tree" onclick="toggleTree()" title="Árvore Densa">
+                <div class="tree-trunk"></div>
+                <div class="tree-leaves"></div>
+            </div>
+
+            <div class="ground">
+                <div class="stones" id="stones" onclick="toggleStones()" title="Pedras Antigas">
+                    <div class="stone"></div>
+                    <div class="stone"></div>
+                    <div class="stone"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Controle de Tempo -->
+        <div class="slider-container flex flex-col items-center">
+            <label class="font-cinzel text-rpg-cyan mb-2 text-lg" id="time-label">Horário: 12:00 (Meio-dia)</label>
+            <input type="range" min="0" max="24" value="12" step="0.5" id="time-slider">
+            <div class="flex justify-between w-full text-xs text-gray-500 mt-2">
+                <span>00:00</span>
+                <span>06:00</span>
+                <span>12:00</span>
+                <span>18:00</span>
+                <span>24:00</span>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Modal Vitória -->
+    <div id="end-modal" class="fixed inset-0 bg-black/90 hidden flex-col items-center justify-center z-50">
+        <h2 class="font-cinzel text-5xl mb-6 text-rpg-cyan drop-shadow-[0_0_20px_#66FCF1]">A Entrada Revelada</h2>
+        <p class="text-gray-300 text-xl mb-8 max-w-lg text-center">
+            Quando os astros se alinharam à meia-noite, sem sombras bloqueando o luar e as runas perfeitamente focadas, a parede de pedra ilusória desvaneceu. <br><br>
+            A Sociedade Esquecida o aguarda.
+        </p>
+        <a href="index.html" class="btn-rpg bg-blue-900 border-blue-600 text-white">Prosseguir</a>
+    </div>
+
+    <script>
+        const slider = document.getElementById('time-slider');
+        const timeLabel = document.getElementById('time-label');
+        const sun = document.getElementById('sun');
+        const moon = document.getElementById('moon');
+        const skyDay = document.getElementById('sky-day');
+        const skyDusk = document.getElementById('sky-dusk');
+        const skyNight = document.getElementById('sky-night');
+        
+        const tree = document.getElementById('tree');
+        const stones = document.getElementById('stones');
+        const door = document.getElementById('secret-door');
+        const moonBeam = document.getElementById('moon-beam');
+
+        let isPruned = false;
+        let isAligned = false;
+        let isMidnight = false;
+
+        function toggleTree() {
+            isPruned = !isPruned;
+            if(isPruned) {
+                tree.classList.add('pruned');
+            } else {
+                tree.classList.remove('pruned');
+            }
+            checkConditions();
+        }
+
+        function toggleStones() {
+            isAligned = !isAligned;
+            if(isAligned) {
+                stones.classList.add('aligned');
+            } else {
+                stones.classList.remove('aligned');
+            }
+            checkConditions();
+        }
+
+        function formatTime(val) {
+            const h = Math.floor(val);
+            const m = val % 1 !== 0 ? "30" : "00";
+            return `${h.toString().padStart(2, '0')}:${m}`;
+        }
+
+        function updateSky(time) {
+            timeLabel.textContent = `Horário: ${formatTime(time)}`;
+
+            // Movimento Solar em arco parabólico (baseado na hora do dia 06:00 as 18:00)
+            if (time >= 6 && time <= 18) {
+                const progress = (time - 6) / 12; // 0 to 1
+                const x = (progress * 80) - 40; // -40% to +40% da tela
+                const y = Math.sin(progress * Math.PI) * -180; // Arco para cima
+                
+                sun.style.transform = `translate(${x}vw, ${y}px)`;
+                sun.style.opacity = 1;
+                moon.style.opacity = 0;
+            } else {
+                sun.style.transform = `translate(0, 100px)`; // Escondido
+                sun.style.opacity = 0;
+            }
+
+            // Movimento Lunar (18:00 as 06:00 do dia seguinte)
+            if (time >= 18 || time <= 6) {
+                let progress;
+                if (time >= 18) progress = (time - 18) / 12; // Primeira metade da noite
+                else progress = (time + 6) / 12; // Segunda metade (passou de meia noite)
+                
+                const x = (progress * 80) - 40; 
+                const y = Math.sin(progress * Math.PI) * -180;
+                
+                moon.style.transform = `translate(${x}vw, ${y}px)`;
+                moon.style.opacity = 1;
+            } else {
+                moon.style.transform = `translate(0, 100px)`;
+                moon.style.opacity = 0;
+            }
+
+            // Cores do Céu
+            if (time > 6 && time < 17) {
+                // Dia Claro
+                skyDay.style.opacity = 1; skyDusk.style.opacity = 0; skyNight.style.opacity = 0;
+            } else if ((time >= 17 && time < 19) || (time > 5 && time <= 6)) {
+                // Crepúsculo / Alvorada
+                skyDay.style.opacity = 0; skyDusk.style.opacity = 1; skyNight.style.opacity = 0;
+            } else {
+                // Noite escura
+                skyDay.style.opacity = 0; skyDusk.style.opacity = 0; skyNight.style.opacity = 1;
+            }
+
+            // Condição Especial: Exatamente Meia-Noite (24 ou 0)
+            if (time == 0 || time == 24) {
+                isMidnight = true;
+                moonBeam.style.opacity = 0.5;
+            } else {
+                isMidnight = false;
+                moonBeam.style.opacity = 0;
+            }
+
+            checkConditions();
+        }
+
+        function checkConditions() {
+            // A árvore bloqueia a luz da lua (precisa estar podada)
+            // As pedras focam a luz na parede (precisam estar alinhadas)
+            // A hora precisa ser meia noite
+            if (isMidnight && isPruned && isAligned) {
+                door.style.opacity = 1;
+                moonBeam.style.opacity = 0.8;
+                moonBeam.style.background = 'linear-gradient(to bottom, rgba(102, 252, 241, 0.8), transparent)';
+                
+                // Dispara a vitória após a animação (1.5s)
+                setTimeout(() => {
+                    document.getElementById('end-modal').classList.remove('hidden');
+                    document.getElementById('end-modal').classList.add('flex');
+                }, 1500);
+
+            } else {
+                door.style.opacity = 0;
+                moonBeam.style.background = 'linear-gradient(to bottom, rgba(102, 252, 241, 0.4), transparent)';
+            }
+        }
+
+        // Init listener
+        slider.addEventListener('input', (e) => {
+            updateSky(parseFloat(e.target.value));
+        });
+
+        // Setup inicial (Meio-dia)
+        updateSky(12);
+
+    </script>
+</body>
+</html>

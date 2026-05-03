@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A Porta das Cores - Kuar-Tor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: { extend: { colors: { rpg: { black: '#0B0C10', cyan: '#66FCF1', slate: '#1F2833', silver: '#C5C6C7' } } } }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../../src/styles/theme.css">
+    <style>
+        body { 
+            background-image: url('https://www.transparenttextures.com/patterns/dark-matter.png'); 
+        }
+        
+        .puzzle-container {
+            background-color: rgba(11, 12, 16, 0.95);
+            backdrop-filter: blur(8px);
+            border: 2px solid rgba(139, 92, 246, 0.2);
+            box-shadow: 0 0 40px rgba(139, 92, 246, 0.1);
+        }
+
+        .door-panel {
+            background: url('https://www.transparenttextures.com/patterns/wood-pattern.png');
+            background-color: #2d3748;
+            background-blend-mode: multiply;
+            border: 8px solid #1a202c;
+            border-bottom: none;
+            border-radius: 10px 10px 0 0;
+            box-shadow: inset 0 0 50px rgba(0,0,0,0.8), 0 0 20px rgba(0,0,0,0.5);
+            transition: all 1s ease-in-out;
+        }
+
+        .knob-container {
+            width: 80px;
+            height: 80px;
+            background: radial-gradient(circle, #4a5568, #2d3748);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+            border: 2px solid #1a202c;
+            margin: 10px;
+        }
+
+        .doorknob {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+            box-shadow: inset -5px -5px 15px rgba(0,0,0,0.5), inset 5px 5px 15px rgba(255,255,255,0.3), 0 10px 10px rgba(0,0,0,0.5);
+        }
+
+        .doorknob::before {
+            content: '';
+            position: absolute;
+            top: 15%; left: 15%;
+            width: 15px; height: 15px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.4);
+            filter: blur(2px);
+        }
+
+        .doorknob.pressed {
+            transform: scale(0.9) translateY(5px);
+            box-shadow: inset 5px 5px 20px rgba(0,0,0,0.7), 0 2px 5px rgba(0,0,0,0.5);
+            filter: brightness(0.8);
+        }
+
+        /* Cores Base das Maçanetas */
+        .knob-red { background: #ef4444; }
+        .knob-blue { background: #3b82f6; }
+        .knob-yellow { background: #eab308; }
+        .knob-white { background: #f3f4f6; }
+        .knob-black { background: #111827; }
+
+        /* Animação de Choque */
+        .shock {
+            animation: flash-shock 0.5s ease-in-out;
+        }
+        @keyframes flash-shock {
+            0%, 100% { filter: brightness(1); transform: translateX(0); }
+            25% { filter: brightness(2) drop-shadow(0 0 20px #60a5fa); transform: translateX(-10px); }
+            50% { filter: brightness(3) drop-shadow(0 0 50px #3b82f6); transform: translateX(10px); }
+            75% { filter: brightness(2) drop-shadow(0 0 20px #60a5fa); transform: translateX(-10px); }
+        }
+
+        .door-open {
+            transform: perspective(1000px) rotateY(-80deg);
+            transform-origin: left;
+            box-shadow: inset 0 0 100px rgba(102, 252, 241, 0.8) !important;
+            border-color: #66FCF1;
+        }
+
+    </style>
+</head>
+<body class="text-rpg-silver min-h-screen p-4 flex flex-col items-center">
+
+    <header class="w-full max-w-3xl flex justify-between items-center mb-8 mt-4">
+        <h1 class="font-cinzel text-3xl text-purple-500 text-glow-cyan drop-shadow-[0_0_10px_rgba(168,85,247,0.8)]">A Porta das Cores</h1>
+        <a href="index.html" class="btn-rpg bg-gray-800 border-gray-600 text-white">Retornar</a>
+    </header>
+
+    <div class="max-w-3xl w-full puzzle-container rounded-xl p-8 flex flex-col items-center" id="game-board">
+        
+        <div class="w-full bg-gray-900 border border-purple-900 px-8 py-6 rounded mb-8 text-center shadow-lg relative">
+            <div class="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-gray-900 px-4 text-purple-400 font-cinzel text-sm border border-purple-900 rounded-full">Inscrição Arcana</div>
+            <p id="riddle-text" class="text-gray-300 italic font-cinzel text-xl leading-relaxed">
+                <!-- Preenchido via JS -->
+            </p>
+        </div>
+
+        <p class="text-xs text-gray-500 mb-2">Clique nas maçanetas para travá-las no lugar, depois tente forçar a porta.</p>
+
+        <!-- Porta -->
+        <div id="magic-door" class="w-64 md:w-96 h-96 door-panel relative flex flex-wrap justify-center content-center gap-4">
+            
+            <div class="knob-container">
+                <div class="doorknob knob-red" data-color="red" onclick="toggleKnob(this)"></div>
+            </div>
+            <div class="knob-container">
+                <div class="doorknob knob-blue" data-color="blue" onclick="toggleKnob(this)"></div>
+            </div>
+            <div class="knob-container">
+                <div class="doorknob knob-yellow" data-color="yellow" onclick="toggleKnob(this)"></div>
+            </div>
+            <div class="knob-container">
+                <div class="doorknob knob-white" data-color="white" onclick="toggleKnob(this)"></div>
+            </div>
+            <div class="knob-container">
+                <div class="doorknob knob-black" data-color="black" onclick="toggleKnob(this)"></div>
+            </div>
+
+        </div>
+
+        <!-- Base / Chão da porta -->
+        <div class="w-80 md:w-[28rem] h-4 bg-gray-800 border-t border-gray-600 mb-8 rounded-b-xl shadow-2xl"></div>
+
+        <div class="flex gap-4">
+            <button onclick="checkDoor()" class="btn-rpg bg-purple-900 border-purple-600 text-white hover:bg-purple-700 py-3 px-8 text-lg font-bold">Forçar a Porta</button>
+            <button onclick="randomizeRiddle()" class="btn-rpg bg-gray-800 border-gray-500 text-gray-400" title="Trocar a charada">Nova Inscrição</button>
+        </div>
+
+    </div>
+
+    <!-- Modal de Feedback -->
+    <div id="feedback-modal" class="fixed inset-0 bg-black/90 hidden flex-col items-center justify-center z-50 transition-opacity">
+        <div id="modal-content" class="text-center p-8 border-2 rounded-lg bg-gray-900 shadow-2xl max-w-xl">
+            <h2 id="modal-title" class="font-cinzel text-4xl mb-4"></h2>
+            <p id="modal-desc" class="text-gray-300 text-lg mb-8"></p>
+            <button onclick="closeModal()" class="btn-rpg bg-gray-800 text-white w-full">Continuar</button>
+        </div>
+    </div>
+
+    <script>
+        const riddles = [
+            {
+                text: '"Os indignos ficarão VERDES de inveja daqueles que adentrarem este salão."',
+                solution: ['blue', 'yellow'],
+                name: 'Verde'
+            },
+            {
+                text: '"A majestade da morte veste-se de ROXO profundo no abismo de Kuar-Tor."',
+                solution: ['red', 'blue'],
+                name: 'Roxo'
+            },
+            {
+                text: '"A chave é o LARANJA intenso do sol poente que sangra no deserto."',
+                solution: ['red', 'yellow'],
+                name: 'Laranja'
+            },
+            {
+                text: '"As almas presas vagam na névoa CINZA da eternidade."',
+                solution: ['white', 'black'],
+                name: 'Cinza'
+            },
+            {
+                text: '"A rosa sagrada manchou o algodão puro de ROSA frágil."',
+                solution: ['red', 'white'],
+                name: 'Rosa'
+            }
+        ];
+
+        let currentRiddle = null;
+        let selectedKnobs = new Set();
+        let doorLocked = true;
+
+        const doorElement = document.getElementById('magic-door');
+        const riddleText = document.getElementById('riddle-text');
+        const modal = document.getElementById('feedback-modal');
+        const modalTitle = document.getElementById('modal-title');
+        const modalDesc = document.getElementById('modal-desc');
+
+        function init() {
+            randomizeRiddle();
+        }
+
+        function randomizeRiddle() {
+            if(!doorLocked) return; // Não troca se a porta já abriu
+
+            // Reseta maçanetas
+            selectedKnobs.clear();
+            document.querySelectorAll('.doorknob').forEach(knob => knob.classList.remove('pressed'));
+
+            const randomIndex = Math.floor(Math.random() * riddles.length);
+            currentRiddle = riddles[randomIndex];
+            riddleText.innerHTML = currentRiddle.text.replace(/(VERDES|ROXO|LARANJA|CINZA|ROSA)/, '<span class="text-purple-400 font-bold">$1</span>');
+        }
+
+        function toggleKnob(element) {
+            if(!doorLocked) return; // Ignora se a porta abriu
+
+            const color = element.dataset.color;
+            if (selectedKnobs.has(color)) {
+                selectedKnobs.delete(color);
+                element.classList.remove('pressed');
+            } else {
+                selectedKnobs.add(color);
+                element.classList.add('pressed');
+            }
+        }
+
+        function checkDoor() {
+            if(!doorLocked) return;
+
+            // Se não clicou em nada
+            if(selectedKnobs.size === 0) {
+                showModal("A Porta Permanece Trancada", "Você puxa a porta sem girar nenhuma maçaneta. Ela nem se move.", "#6b7280");
+                return;
+            }
+
+            // Checa a lógica
+            const selectedArray = Array.from(selectedKnobs).sort();
+            const solutionArray = [...currentRiddle.solution].sort();
+
+            const isCorrect = JSON.stringify(selectedArray) === JSON.stringify(solutionArray);
+
+            if (isCorrect) {
+                // Vitória
+                doorLocked = false;
+                doorElement.classList.add('door-open');
+                
+                // Mostrar a passagem
+                doorElement.innerHTML = '<div class="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity duration-1000"><h2 class="font-cinzel text-3xl text-rpg-cyan text-glow-cyan transform rotate-y-[80deg]">Passagem Aberta</h2></div>';
+
+                setTimeout(() => {
+                    showModal("Click! A Tranca Cede...", `Você combinou as maçanetas perfeitamente. A magia rúnica se dissipa e a pesada porta se abre em um ranger poeirento.`, "#66FCF1");
+                }, 1000);
+            } else {
+                // Falha - Choque!
+                doorElement.classList.add('shock');
+                setTimeout(() => doorElement.classList.remove('shock'), 500);
+
+                showModal("ZAAAAAP!", "Você girou as cores erradas. Uma onda de energia elétrica estala pelas maçanetas e percorre seu corpo! Rolem o dano.", "#ef4444");
+                
+                // Reseta maçanetas
+                selectedKnobs.clear();
+                document.querySelectorAll('.doorknob').forEach(knob => knob.classList.remove('pressed'));
+            }
+        }
+
+        function showModal(title, desc, color) {
+            modalTitle.textContent = title;
+            modalTitle.style.color = color;
+            modalTitle.style.textShadow = `0 0 15px ${color}`;
+            modalDesc.textContent = desc;
+            document.getElementById('modal-content').style.borderColor = color;
+            
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeModal() {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        // Setup inicial
+        init();
+
+    </script>
+</body>
+</html>
