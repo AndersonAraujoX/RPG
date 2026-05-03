@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Salão de Puzzles - Kuar-Tor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: { extend: { colors: { rpg: { black: '#0B0C10', cyan: '#66FCF1', slate: '#1F2833', silver: '#C5C6C7' } } } }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../../src/styles/theme.css">
+    <style>
+        body { background-image: url('https://www.transparenttextures.com/patterns/dark-matter.png'); }
+        .main-container {
+            background-color: rgba(31, 40, 51, 0.95);
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(102, 252, 241, 0.2);
+            box-shadow: 0 0 15px rgba(102, 252, 241, 0.1);
+        }
+    </style>
+</head>
+<body class="bg-rpg-black text-rpg-silver min-h-screen p-8">
+
+    <div class="max-w-6xl mx-auto">
+        <header class="flex justify-between items-center mb-10">
+            <h1 class="font-cinzel text-5xl text-rpg-cyan text-glow-cyan">Cofre de Puzzles</h1>
+            <a href="../main.html" class="btn-rpg btn-rpg-danger">Voltar ao Portal</a>
+        </header>
+
+        <p class="text-xl mb-12 text-gray-300">Desafios lógicos e arcanos criados para testar a mente dos operativos da expedição.</p>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            
+            <!-- Puzzle 1 -->
+            <div class="resource-card rounded-lg p-6 flex flex-col">
+                <div class="h-40 bg-black rounded border border-gray-700 flex items-center justify-center mb-4 overflow-hidden relative">
+                    <span class="text-6xl opacity-50">🧩</span>
+                    <div class="absolute inset-0 bg-rpg-cyan opacity-10"></div>
+                </div>
+                <h2 class="text-2xl font-bold text-rpg-cyan mb-2">Decodificador Rúnico</h2>
+                <p class="text-rpg-silver mb-6 flex-grow">Descubra a senha utilizando as pistas lógicas deixadas pelos antigos habitantes de Kuar-Tor.</p>
+                <a href="#" class="btn-rpg mt-auto block w-full text-center">Em Breve</a>
+            </div>
+
+            <!-- Puzzle 2 -->
+            <div class="resource-card rounded-lg p-6 flex flex-col">
+                <div class="h-40 bg-black rounded border border-gray-700 flex items-center justify-center mb-4 overflow-hidden relative">
+                    <span class="text-6xl opacity-50">⚖️</span>
+                    <div class="absolute inset-0 bg-rpg-cyan opacity-10"></div>
+                </div>
+                <h2 class="text-2xl font-bold text-rpg-cyan mb-2">Balança das Almas</h2>
+                <p class="text-rpg-silver mb-6 flex-grow">Equilibre os pesos mágicos para destrancar a porta do cofre principal.</p>
+                <a href="#" class="btn-rpg mt-auto block w-full text-center">Em Breve</a>
+            </div>
+
+            <!-- Adicione novos puzzles copiando o bloco acima -->
+
+        </div>
+    </div>
+
+</body>
+</html>
