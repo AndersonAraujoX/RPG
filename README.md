@@ -1,82 +1,103 @@
-# Portal Kuar-Tor — Arquitetura do Projeto
+# 🌌 Portal Kuar-Tor: A Última Expedição
 
-## 🗂 Estrutura de Pastas (SoC — Separação de Responsabilidades)
+<p align="center">
+  <img src="https://img.shields.io/badge/Status-Em%20Desenvolvimento-66FCF1?style=for-the-badge" alt="Status">
+  <img src="https://img.shields.io/badge/Vers%C3%A3o-2.0.0--SoC-1F2833?style=for-the-badge" alt="Versão">
+  <img src="https://img.shields.io/badge/Licen%C3%A7a-MIT-C5C6C7?style=for-the-badge" alt="Licença">
+</p>
 
-```
-RPG/
-├── public/                   # 📄 Entry Points HTML (deploy direto no Firebase Hosting)
-│   ├── index.html            # Redirecionamento para main.html
-│   ├── main.html             # Portal principal do RPG
-│   ├── login.html            # Página de autenticação
-│   ├── items.html            # Gerenciador de inventário
-│   ├── nexo.html             # Ponto de encontro social
-│   ├── diario.html           # Diário de expedição
-│   ├── arvore_magia.html     # Biblioteca Arcana (Árvore de Magia GURPS)
-│   ├── mesa_virtual.html     # VTT - Mesa Virtual Tática
-│   ├── computador_de_kuar_tor.html
-│   └── cofre.html
-│
-├── src/                      # 🧠 Código Fonte da Aplicação
-│   ├── core/                 # 🔥 Infraestrutura & Serviços externos
-│   │   ├── firebase-config.js   # Configuração do Firebase (1 lugar, sem duplicação)
-│   │   └── auth.js              # Lógica de autenticação global
-│   │
-│   ├── logic/                # ⚙️  Regras de negócio (agnóstico de UI)
-│   │   └── populate_db.js       # Scripts de seed/população do banco
-│   │
-│   ├── ui/                   # 🖥️  Controladores de interface
-│   │   ├── pages/               # Scripts específicos por página
-│   │   │   └── items.js
-│   │   └── components/          # Componentes reutilizáveis (modais, tooltips, etc.)
-│   │
-│   └── styles/               # 🎨 Design System Central
-│       └── theme.css            # Variáveis CSS, utilitários, paleta, tipografia
-│
-├── assets/                   # 🖼️  Recursos Estáticos
-│   └── images/
-│       ├── faixa.png
-│       └── Ferreiro-anão.gif
-│
-├── Forms/                    # Formulários de personagem (legado)
-├── Dados/                    # Dados e rolagem de dados (legado)
-├── Site/                     # Site principal de lore (legado)
-├── Rascunhos/                # Protótipos e mini-games (legado)
-│
-├── firebase.json             # Configuração do Firebase Hosting (aponta para public/)
-├── firestore.rules           # Regras de segurança do Firestore
-├── firestore.indexes.json    # Índices do Firestore
-└── database.rules.json       # Regras do Realtime Database
-```
+> *"Onde a magia antiga encontra a tecnologia proibida. Operativo, bem-vindo ao nexo da sua sobrevivência."*
 
-## 🏛️ Responsabilidade de Cada Camada
+O **Portal Kuar-Tor** é uma plataforma integrada de suporte para campanhas de RPG (GURPS), projetada para oferecer uma experiência imersiva e funcional em um cenário de **Dark Fantasy / Sci-Fi**. Deixe para trás as fichas de papel rasgadas e mergulhe em um sistema centralizado de gestão de heróis, magias e combate.
 
-| Pasta | Responsabilidade |
-|-------|-----------------|
-| `public/` | Apenas HTMLs de entrada. Não contém lógica complexa — só carrega os scripts de `src/`. |
-| `src/core/` | Firebase e autenticação. Se mudar o backend, só mexe aqui. |
-| `src/logic/` | Regras de negócio do RPG (cálculos, dados, seed). Não conhece o HTML. |
-| `src/ui/pages/` | Scripts que manipulam o DOM de cada página específica. |
-| `src/ui/components/` | Componentes reutilizáveis (modais, tooltips, toasts). |
-| `src/styles/theme.css` | Design system único. Cores, tipografia e utilitários em um só lugar. |
-| `assets/` | Imagens, sons e outros recursos estáticos. |
+---
 
-## 🔗 Convenção de Caminhos
+## 🛠️ Funcionalidades de Elite
 
-Dentro dos HTMLs em `public/`, os caminhos para `src/` são sempre relativos:
-```html
-<!-- Firebase Core -->
-<script src="../src/core/firebase-config.js"></script>
-<script src="../src/core/auth.js"></script>
+### 🔮 Biblioteca Arcana (Skill Tree)
+Uma visualização revolucionária de magias baseada em **Matemática Orbital**. Esqueça listas estáticas; explore o nexo de magias através de hexágonos rúnicos dinâmicos que se organizam de forma orgânica.
+- **Progressão Dinâmica:** Invista pontos de personagem (CP) e desbloqueie caminhos arcanos.
+- **Interface SVG:** Renderização nítida em qualquer resolução com efeitos de brilho neon.
 
-<!-- Estilos -->
-<link rel="stylesheet" href="../src/styles/theme.css">
+### 🎒 Inventário em Tempo Real
+Gestão completa de itens e equipamentos integrada ao **Firebase Realtime Database**.
+- **Categorização Automática:** Armas, armaduras, acessórios e consumíveis organizados.
+- **Persistência por Personagem:** Seus itens estão salvos com segurança na nuvem, vinculados ao seu herói.
 
-<!-- Scripts de página -->
-<script src="../src/ui/pages/items.js"></script>
-```
+### 🛡️ Mesa Virtual (VTT) & Combate
+Um campo de batalha tático digital para visualização de posicionamento e estratégia em tempo real, permitindo que mestres e jogadores coordenem a "Última Expedição".
 
-## 🚀 Deploy
-```bash
-firebase deploy --only hosting
-```
-O Firebase Hosting já está configurado em `firebase.json` para servir a pasta `public/`.
+### 🔑 Autenticação Biométrica Digital
+Segurança de dados utilizando **Firebase Auth**.
+- **Login Social:** Entre instantaneamente com sua conta Google.
+- **Perfil Global:** Codinome único vinculado à sua identidade de operativo.
+
+---
+
+## 🏗️ Arquitetura SoC (Separation of Concerns)
+
+O projeto foi recentemente refatorado para seguir padrões modernos de engenharia de software, separando a lógica de negócio da interface do usuário.
+
+| Camada | Diretório | Função |
+| :--- | :--- | :--- |
+| **Ponto de Entrada** | `public/` | Arquivos HTML otimizados para deploy direto. |
+| **Core** | `src/core/` | Infraestrutura, conexões Firebase e lógica de autenticação. |
+| **Logic** | `src/logic/` | Regras de negócio, cálculos de sistema e scripts de dados. |
+| **UI Control** | `src/ui//` | Controladores de página (`pages/`) e componentes reutilizáveis. |
+| **Design System** | `src/styles/` | O coração visual: `theme.css` com todas as variáveis e estilos globais. |
+
+---
+
+## 💻 Stack Tecnológica
+
+| Tecnologia | Uso |
+| :--- | :--- |
+| **HTML5 & JS ES6** | Estrutura e lógica reativa. |
+| **Vanilla CSS & Tailwind** | Estilização premium com Glassmorphism. |
+| **Firebase Firestore** | Banco de dados NoSQL para perfis e fichas. |
+| **Firebase RTDB** | Sincronização em milissegundos para itens e VTT. |
+| **Google Fonts** | Tipografia Cinzel (Épico) e Inter (Funcional). |
+
+---
+
+## 🎨 Estilo Visual: Dark Future
+
+O design do portal utiliza técnicas avançadas de **Glassmorphism**, com superfícies translúcidas e desfoque de fundo (backdrop-filter), garantindo que a interface pareça um terminal de alta tecnologia de uma civilização antiga.
+
+- **Paleta de Cores:**
+  - `RPG Cyan (#66FCF1)` - Energia e Ações.
+  - `RPG Slate (#1F2833)` - Superfícies de Interface.
+  - `RPG Black (#0B0C10)` - Abismo e Fundo.
+
+---
+
+## 🚀 Como Iniciar a Expedição
+
+### Pré-requisitos
+- [Firebase CLI](https://firebase.google.com/docs/cli) instalado.
+- Um navegador moderno (Chrome, Edge ou Firefox).
+
+### Instalação Local
+1. Clone o repositório:
+   ```bash
+   git clone https://github.com/AndersonAraujoX/RPG.git
+   ```
+2. Acesse a pasta do projeto:
+   ```bash
+   cd RPG
+   ```
+3. Inicie o servidor local:
+   ```bash
+   firebase serve
+   ```
+
+---
+
+## 📜 Licença
+Distribuído sob a licença MIT. Veja `LICENSE` para mais informações.
+
+---
+
+<p align="center">
+  Desenvolvido com ⚡ para a campanha <b>Kuar-Tor</b>.
+</p>
