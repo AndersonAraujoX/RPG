@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal da Campanha: Kuar-Tor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: { extend: { colors: { rpg: { black: '#0B0C10', cyan: '#66FCF1', slate: '#1F2833', silver: '#C5C6C7' } } } }
+        }
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Roboto+Slab:wght@400;700&display=swap" rel="stylesheet">
+    <!-- Design System Central -->
+    <link rel="stylesheet" href="../src/styles/theme.css">
+    <style>
+        body {
+            font-family: 'Roboto Slab', serif;
+            background-image: url('https://images.unsplash.com/photo-1597873819455-90031846b6c3?q=80&w=2070&auto=format&fit=crop');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+        }
+        .main-container {
+            background-color: rgba(11, 12, 16, 0.95);
+            backdrop-filter: blur(8px);
+        }
+        h1, h2 { font-family: 'Cinzel', serif; }
+        .btn-theme {
+            transition: all 0.2s ease-in-out;
+            font-family: 'Cinzel', serif;
+        }
+        .btn-theme:hover { transform: scale(1.05); }
+    </style>
+</head>
+
+<body class="bg-rpg-black text-rpg-silver flex items-center justify-center min-h-screen p-4">
+    <div class="main-container w-full max-w-5xl p-8 rounded-xl shadow-2xl border border-gray-800">
+        <header class="flex justify-between items-center mb-10">
+            <div class="flex-1"></div>
+            <div class="flex-1 text-center">
+                <h1 class="text-5xl md:text-6xl font-bold text-rpg-cyan" style="text-shadow: 0 0 10px rgba(102, 252, 241, 0.5);">Portal de Kuar-Tor</h1>
+                <p class="text-xl text-rpg-silver mt-2">Recursos para a campanha "A Última Expedição"</p>
+            </div>
+            <div class="flex-1 flex justify-end" id="user-session">
+                <a href="login.html" id="login-link" class="btn-theme bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2 px-4 rounded-md">Login</a>
+                <div id="user-info" class="hidden items-center">
+                    <span id="user-email" class="text-white mr-4"></span>
+                    <button id="logout-button" class="btn-theme bg-red-700 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-md">Logout</button>
+                </div>
+            </div>
+        </header>
+
+        <main class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+
+            <div class="resource-card rounded-lg p-6 flex flex-col">
+                <h2 class="text-2xl font-bold text-rpg-cyan mb-3">O Mundo de Kuar-Tor</h2>
+                <p class="text-rpg-silver mb-6 flex-grow">Descubra a história, regras do sistema +2d6, e os segredos da ilha amaldiçoada. Essencial para todos os jogadores.</p>
+                <a href="../Site/siteV1.1.html" class="btn-rpg mt-auto block w-full text-center py-3">Explorar a Campanha</a>
+            </div>
+
+            <div class="resource-card rounded-lg p-6 flex flex-col">
+                <h2 class="text-2xl font-bold text-rpg-cyan mb-3">Gerador de Fichas</h2>
+                <p class="text-rpg-silver mb-6 flex-grow">Forje seu personagem para a expedição. Salve, importe e gerencie suas fichas de forma prática e rápida.</p>
+                <a href="../Forms/formV6.html" class="btn-rpg mt-auto block w-full text-center py-3">Criar Personagem</a>
+            </div>
+
+            <div class="resource-card rounded-lg p-6 flex flex-col">
+                <h2 class="text-2xl font-bold text-rpg-cyan mb-3">Tomo das Estatísticas</h2>
+                <p class="text-rpg-silver mb-6 flex-grow">Utilize este grimório para rolar dados, adicionar valores personalizados e consultar as estatísticas arcanas de seus lançamentos.</p>
+                <a href="../Dados/dados.html" class="btn-rpg mt-auto block w-full text-center py-3">Rolar os Dados</a>
+            </div>
+
+            <div class="resource-card rounded-lg p-6 flex flex-col">
+                <h2 class="text-2xl font-bold text-rpg-cyan mb-3">Gerenciador de Itens</h2>
+                <p class="text-rpg-silver mb-6 flex-grow">Cadastre, organize e consulte os itens dos personagens de forma individual e segura.</p>
+                <a href="items.html" class="btn-rpg mt-auto block w-full text-center py-3">Acessar Inventário</a>
+            </div>
+
+            <div class="resource-card rounded-lg p-6 flex flex-col">
+                <h2 class="text-2xl font-bold text-rpg-cyan mb-3">O Nexo</h2>
+                <p class="text-rpg-silver mb-6 flex-grow">Acesse o ponto de encontro social, onde missões são aceitas, rumores são ouvidos e a sorte é testada.</p>
+                <a href="nexo.html" class="btn-rpg mt-auto block w-full text-center py-3">Entrar no Nexo</a>
+            </div>
+
+            <div class="resource-card rounded-lg p-6 flex flex-col border border-amber-500/30">
+                <h2 class="text-2xl font-bold text-amber-500 mb-3">Diário de Expedição</h2>
+                <p class="text-rpg-silver mb-6 flex-grow">Registre as memórias, vitórias e perdas da campanha. Um log compartilhado para todos os operativos.</p>
+                <a href="diario.html" class="btn-theme mt-auto block w-full text-center bg-rpg-slate border border-amber-500 text-amber-500 hover:bg-amber-500 hover:text-rpg-black font-semibold py-3 rounded-md">Abrir Diário</a>
+            </div>
+
+            <div class="resource-card rounded-lg p-6 flex flex-col relative overflow-hidden">
+                <h2 class="text-2xl font-bold text-rpg-cyan mb-3">Computador de Kuar-Tor</h2>
+                <p class="text-rpg-silver mb-6 flex-grow">Acesse ferramentas e recursos de inteligência da campanha, incluindo mapas, cofres e arquivos de Kuar-Tor.</p>
+                <a href="computador_de_kuar_tor.html" class="btn-rpg mt-auto block w-full text-center py-3">Acessar Computador</a>
+            </div>
+
+            <div class="resource-card rounded-lg p-6 flex flex-col">
+                <h2 class="text-2xl font-bold text-rpg-cyan mb-3">Mesa de Operações</h2>
+                <p class="text-rpg-silver mb-6 flex-grow">Acompanhe o andamento das missões e o status dos operativos em tempo real.</p>
+                <a href="../Rascunhos/mesa_oper.html" class="btn-rpg mt-auto block w-full text-center py-3">Acessar Mesa</a>
+            </div>
+
+            <div class="resource-card rounded-lg p-6 flex flex-col border-2 border-red-600 shadow-[0_0_20px_rgba(220,38,38,0.5)] bg-red-900/10">
+                <h2 class="text-2xl font-bold text-red-500 mb-3 flex items-center gap-2">
+                    <span class="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+                    Mesa Virtual (VTT)
+                </h2>
+                <p class="text-rpg-silver mb-6 flex-grow">Acesse o campo de batalha tático. Arraste seus operativos, planeje ataques e visualize o combate em tempo real.</p>
+                <a href="mesa_virtual.html" class="btn-theme mt-auto block w-full text-center bg-red-700 border border-red-500 text-white hover:bg-red-600 hover:scale-105 transition-all font-bold py-3 rounded-md shadow-[0_0_15px_rgba(220,38,38,0.4)]">ENTRAR NA BATALHA</a>
+            </div>
+
+            <div class="resource-card rounded-lg p-6 flex flex-col">
+                <h2 class="text-2xl font-bold text-[#b48ead] mb-3">Biblioteca Arcana</h2>
+                <p class="text-rpg-silver mb-6 flex-grow">Acesse a grande teia mágica. Estude e aprimore novos feitiços investindo seus Pontos (CPs).</p>
+                <a href="arvore_magia.html" class="btn-theme mt-auto block w-full text-center bg-rpg-slate border border-[#b48ead] text-[#b48ead] hover:bg-[#b48ead] hover:text-rpg-black font-semibold py-3 rounded-md">Abrir Biblioteca</a>
+            </div>
+
+            <div class="resource-card rounded-lg p-6 flex flex-col">
+                <h2 class="text-2xl font-bold text-rpg-cyan mb-3">Salão de Jogos</h2>
+                <p class="text-rpg-silver mb-6 flex-grow">Desafie a sorte e a habilidade em mini-games temáticos como a Forja, a Fazenda e a Mineração.</p>
+                <a href="../Rascunhos/mini-games/index.html" class="btn-rpg mt-auto block w-full text-center py-3">Entrar no Salão</a>
+            </div>
+        </main>
+
+        <footer class="text-center mt-12">
+            <p class="text-gray-500 text-sm">São Carlos, SP, Brasil | Portal de Kuar-Tor</p>
+        </footer>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <!-- Caminhos atualizados para a nova estrutura src/ -->
+    <script src="../src/core/firebase-config.js"></script>
+    <script src="../src/core/auth.js"></script>
+
+    <!-- Modal de Nickname Global -->
+    <div id="nickname-modal" class="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center p-4 hidden z-50">
+        <div class="bg-gray-800 border border-rpg-cyan p-8 rounded-lg max-w-md w-full shadow-[0_0_20px_rgba(102,252,241,0.2)]">
+            <h2 class="text-2xl font-bold text-rpg-cyan mb-4 text-center font-cinzel">Identificação Necessária</h2>
+            <p class="text-gray-300 mb-6 text-center">Para prosseguir em Kuar-Tor, você deve escolher um codinome global que será visto por todos os operativos.</p>
+            <div class="mb-4">
+                <label for="global-nickname-input" class="block text-sm font-bold text-rpg-cyan mb-2">Seu Codinome:</label>
+                <input type="text" id="global-nickname-input" class="form-input w-full p-2 rounded" placeholder="Ex: Caçador de Sombras">
+                <p id="nickname-error" class="text-red-500 text-sm mt-2 hidden">O codinome é obrigatório.</p>
+            </div>
+            <button id="save-nickname-btn" class="w-full bg-rpg-cyan text-black font-bold py-2 rounded hover:bg-cyan-400 transition-colors">Confirmar Identidade</button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof firebase !== 'undefined' && firebase.apps.length) {
+                const db = firebase.firestore();
+                const auth = firebase.auth();
+                const nicknameModal = document.getElementById('nickname-modal');
+                const nicknameInput = document.getElementById('global-nickname-input');
+                const saveBtn = document.getElementById('save-nickname-btn');
+                const errorMsg = document.getElementById('nickname-error');
+                const userEmailSpan = document.getElementById('user-email');
+                const logoutButton = document.getElementById('logout-button');
+
+                if (logoutButton) {
+                    logoutButton.addEventListener('click', () => firebase.auth().signOut());
+                }
+
+                auth.onAuthStateChanged(async (user) => {
+                    if (user) {
+                        try {
+                            const userDocRef = db.collection('users').doc(user.uid);
+                            const doc = await userDocRef.get();
+                            if (doc.exists && doc.data().nickname) {
+                                if (userEmailSpan) userEmailSpan.textContent = `${doc.data().nickname} (${user.email})`;
+                            } else {
+                                nicknameModal.classList.remove('hidden');
+                            }
+                        } catch (e) {
+                            console.error("Error fetching user profile:", e);
+                            nicknameModal.classList.remove('hidden');
+                        }
+                    }
+                });
+
+                saveBtn.addEventListener('click', async () => {
+                    const nick = nicknameInput.value.trim();
+                    if (!nick) { errorMsg.classList.remove('hidden'); return; }
+                    const user = auth.currentUser;
+                    if (user) {
+                        saveBtn.innerText = "Salvando...";
+                        saveBtn.disabled = true;
+                        try {
+                            await db.collection('users').doc(user.uid).set({
+                                nickname: nick, email: user.email,
+                                lastLogin: firebase.firestore.FieldValue.serverTimestamp()
+                            }, { merge: true });
+                            nicknameModal.classList.add('hidden');
+                            if (userEmailSpan) userEmailSpan.textContent = `${nick} (${user.email})`;
+                            alert("Identidade confirmada. Bem-vindo, " + nick + ".");
+                        } catch (error) {
+                            console.error("Error saving nickname:", error);
+                            alert("Erro ao salvar codinome: " + error.message);
+                            saveBtn.innerText = "Confirmar Identidade";
+                            saveBtn.disabled = false;
+                        }
+                    }
+                });
+            }
+        });
+    </script>
+</html>

@@ -1,0 +1,112 @@
+/* =============================================================
+   KUAR-TOR — Design System & Theme
+   Fonte central de variáveis CSS e utilitários globais.
+   Importar em todos os HTMLs: <link rel="stylesheet" href="../src/styles/theme.css">
+   ============================================================= */
+
+/* --- Paleta de Cores (Variáveis CSS) --- */
+:root {
+    --rpg-black:  #0B0C10;
+    --rpg-cyan:   #66FCF1;
+    --rpg-slate:  #1F2833;
+    --rpg-silver: #C5C6C7;
+    --rpg-purple: #b48ead;
+    --rpg-amber:  #f59e0b;
+    --rpg-red:    #ef4444;
+
+    --font-display: 'Cinzel', serif;
+    --font-body:    'Inter', sans-serif;
+}
+
+/* --- Reset & Base --- */
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+    font-family: var(--font-body);
+    background-color: var(--rpg-black);
+    color: var(--rpg-silver);
+    margin: 0;
+}
+
+h1, h2, h3, .font-cinzel {
+    font-family: var(--font-display);
+}
+
+/* --- Utilitários de Glassmorphism --- */
+.glass-card {
+    background: rgba(31, 40, 51, 0.92);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(102, 252, 241, 0.15);
+    box-shadow: 0 0 20px rgba(102, 252, 241, 0.06);
+    border-radius: 0.75rem;
+}
+
+/* --- Botão Padrão do Portal --- */
+.btn-rpg {
+    display: inline-block;
+    font-family: var(--font-display);
+    font-weight: 600;
+    padding: 0.625rem 1.25rem;
+    border-radius: 0.375rem;
+    border: 1px solid var(--rpg-cyan);
+    color: var(--rpg-cyan);
+    background-color: var(--rpg-slate);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    text-align: center;
+}
+
+.btn-rpg:hover {
+    background-color: var(--rpg-cyan);
+    color: var(--rpg-black);
+    transform: scale(1.04);
+    box-shadow: 0 0 12px rgba(102, 252, 241, 0.4);
+}
+
+.btn-rpg-danger {
+    border-color: var(--rpg-red);
+    color: var(--rpg-red);
+}
+.btn-rpg-danger:hover {
+    background-color: var(--rpg-red);
+    color: white;
+    box-shadow: 0 0 12px rgba(239, 68, 68, 0.5);
+}
+
+/* --- Cards de Recurso --- */
+.resource-card {
+    background-color: var(--rpg-slate);
+    border: 1px solid #404040;
+    border-radius: 0.5rem;
+    transition: border-color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
+}
+.resource-card:hover {
+    border-color: var(--rpg-cyan);
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(102, 252, 241, 0.1);
+}
+
+/* --- Inputs e Formulários --- */
+.form-input, .form-select {
+    background-color: var(--rpg-black);
+    border: 1px solid #4b5563;
+    color: var(--rpg-silver);
+    border-radius: 0.375rem;
+    padding: 0.5rem 0.75rem;
+    width: 100%;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+.form-input:focus, .form-select:focus {
+    border-color: var(--rpg-cyan);
+    box-shadow: 0 0 0 2px rgba(102, 252, 241, 0.2);
+}
+
+/* --- Glow de Texto --- */
+.text-glow-cyan {
+    text-shadow: 0 0 10px rgba(102, 252, 241, 0.5);
+}
+.text-glow-purple {
+    text-shadow: 0 0 10px rgba(180, 142, 173, 0.5);
+}

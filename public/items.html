@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventário por Personagem - Kuar-Tor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: { extend: { colors: { rpg: { black: '#0B0C10', cyan: '#66FCF1', slate: '#1F2833', silver: '#C5C6C7' } } } }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../src/styles/theme.css">
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <style>
+        body { background-image: url('https://www.transparenttextures.com/patterns/dark-matter.png'); }
+        .font-cinzel { font-family: 'Cinzel', serif; }
+        .main-container {
+            background-color: rgba(31, 40, 51, 0.95);
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(102, 252, 241, 0.2);
+            box-shadow: 0 0 15px rgba(102, 252, 241, 0.1);
+        }
+    </style>
+</head>
+<body class="bg-rpg-black text-rpg-silver min-h-screen flex items-center justify-center p-4">
+    <div class="main-container w-full max-w-4xl p-8 rounded-lg">
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="font-cinzel text-4xl text-rpg-cyan" style="text-shadow: 0 0 10px rgba(102, 252, 241, 0.5);">Inventário de Personagem</h1>
+            <div class="flex gap-2">
+                <a href="main.html" class="btn-rpg btn-rpg-danger">Voltar ao Menu</a>
+                <button id="logout-button" class="btn-rpg" style="display: none;">Logout</button>
+            </div>
+        </div>
+
+        <!-- Login Prompt -->
+        <div id="login-prompt" class="text-center">
+            <p class="mb-4">Por favor, faça login para acessar os inventários.</p>
+            <button id="login-button" class="btn-rpg">Login com Google</button>
+        </div>
+
+        <!-- Main content, hidden by default -->
+        <div id="main-content" class="hidden">
+            <!-- Character Selection -->
+            <div id="character-selection" class="mb-8">
+                <h2 class="text-2xl font-cinzel text-rpg-cyan mb-4">Selecione um Personagem</h2>
+                <div class="flex items-center space-x-4">
+                    <select id="character-dropdown" class="form-select w-full p-2 rounded text-white"></select>
+                </div>
+                <p id="no-characters-message" class="text-center text-gray-400 mt-4 hidden">
+                    Nenhum personagem encontrado. Crie um na página de <a href="../Forms/formV6.html" class="text-rpg-cyan underline hover:text-white">Geração de Fichas</a>.
+                </p>
+            </div>
+
+            <!-- Character-specific content -->
+            <div id="character-content" class="hidden">
+                <!-- Item Form -->
+                <div id="item-form" class="mb-8 p-6 bg-gray-900 rounded-lg border border-gray-800 shadow-lg">
+                    <h2 class="text-2xl font-cinzel text-rpg-cyan mb-4 border-b border-gray-700 pb-2">Adicionar Novo Item</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
+                        <div class="md:col-span-5">
+                            <label class="block text-gray-400 text-sm mb-1">Nome do Item</label>
+                            <input type="text" id="itemName" placeholder="Ex: Espada Longa" class="form-input w-full p-2 rounded">
+                        </div>
+                        <div class="md:col-span-4">
+                            <label class="block text-gray-400 text-sm mb-1">Tipo</label>
+                            <select id="itemType" class="form-select w-full p-2 rounded">
+                                <option value="weapon">Arma</option>
+                                <option value="armor">Armadura</option>
+                                <option value="accessory">Acessório</option>
+                                <option value="consumable">Consumível</option>
+                                <option value="other">Outro</option>
+                            </select>
+                        </div>
+                        <div class="md:col-span-3">
+                            <label class="block text-gray-400 text-sm mb-1">Qtd.</label>
+                            <input type="number" id="itemQuantity" placeholder="1" class="form-input w-full p-2 rounded" value="1" min="1">
+                        </div>
+                        <div class="md:col-span-12">
+                            <label class="block text-gray-400 text-sm mb-1">Descrição / Efeitos</label>
+                            <textarea id="itemDescription" placeholder="Ex: +2 de Dano; Brilha no escuro." class="form-input w-full p-2 rounded h-20"></textarea>
+                        </div>
+                        <div class="md:col-span-12">
+                            <button id="add-item-button" class="btn-rpg w-full block py-3">Adicionar ao Inventário</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Items Display List -->
+                <div>
+                    <h2 class="text-3xl font-cinzel text-center text-rpg-silver mb-8">Inventário de <span id="character-name-display" class="text-rpg-cyan"></span></h2>
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <div class="bg-gray-900/50 p-4 rounded-lg border border-red-900/30">
+                            <h3 class="text-xl font-cinzel text-red-500 mb-4 border-b border-red-900/50 pb-2">⚔ Armas</h3>
+                            <div id="list-weapon" class="space-y-3 min-h-[100px]"></div>
+                        </div>
+                        <div class="bg-gray-900/50 p-4 rounded-lg border border-blue-900/30">
+                            <h3 class="text-xl font-cinzel text-blue-500 mb-4 border-b border-blue-900/50 pb-2">🛡 Armaduras</h3>
+                            <div id="list-armor" class="space-y-3 min-h-[100px]"></div>
+                        </div>
+                        <div class="bg-gray-900/50 p-4 rounded-lg border border-purple-900/30">
+                            <h3 class="text-xl font-cinzel text-purple-500 mb-4 border-b border-purple-900/50 pb-2">✦ Acessórios</h3>
+                            <div id="list-accessory" class="space-y-3 min-h-[100px]"></div>
+                        </div>
+                        <div class="bg-gray-900/50 p-4 rounded-lg border border-green-900/30">
+                            <h3 class="text-xl font-cinzel text-green-500 mb-4 border-b border-green-900/50 pb-2">⚗ Consumíveis & Outros</h3>
+                            <div id="list-consumable" class="space-y-3 min-h-[100px]"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Caminhos atualizados para a nova estrutura src/ -->
+    <script src="../src/core/firebase-config.js"></script>
+    <script src="../src/ui/pages/items.js"></script>
+</body>
+</html>

@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GURPS Magias - Biblioteca Arcana</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Inter:wght@400;600&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <script src="firebase-config.js"></script>
+
+    <style>
+        :root {
+            --rpg-cyan: #66FCF1;
+            --rpg-purple: #b48ead;
+            --rpg-silver: #C5C6C7;
+            --rpg-slate: #151b24;
+            --rpg-black: #0B0C10;
+        }
+
+        /* Estética Aprimorada: Inspirado na imagem base */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #050b14;
+            color: var(--rpg-silver);
+            overflow: hidden;
+            background-image: 
+                radial-gradient(circle at center, transparent 0%, #02040a 100%),
+                url('https://www.transparenttextures.com/patterns/stardust.png'); /* Overlay estrelado leve */
+        }
+
+        h1, h2, h3, .font-cinzel { font-family: 'Cinzel', serif; }
+
+        header {
+            background: linear-gradient(180deg, rgba(5, 11, 20, 0.95), transparent);
+            border-bottom: 1px solid rgba(102, 252, 241, 0.2);
+            z-index: 100;
+        }
+
+        /* Fundo Rúnico Central (Efeito Anel) */
+        #rune-ring {
+            position: absolute;
+            top: 50%; left: 50%;
+            width: 800px; height: 800px;
+            transform: translate(-50%, -50%);
+            border: 2px dashed rgba(102, 252, 241, 0.1);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 0;
+            display: flex; align-items: center; justify-content: center;
+        }
+        #rune-ring::before {
+            content: '';
+            position: absolute;
+            width: 600px; height: 600px;
+            border: 1px solid rgba(102, 252, 241, 0.05);
+            border-radius: 50%;
+        }
+
+        /* Hexagonal Styles (Com SVG Base) */
+        .hex-node {
+            position: absolute;
+            width: 64px;
+            height: 74px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 10;
+        }
+
+        /* O shape do hexágono é gerado via SVG background para ter borda */
+        .hex-shape {
+            position: absolute;
+            inset: 0;
+            z-index: -1;
+            transition: all 0.3s;
+        }
+        .hex-shape polygon {
+            stroke-width: 2;
+            fill: #0c1524;
+            stroke: #475569;
+            transition: all 0.3s;
+        }
+
+        .hex-node:hover { transform: scale(1.15); z-index: 50; }
+        .hex-node:hover .hex-shape polygon { fill: #1e293b; }
+
+        /* Statuses */
+        .hex-node.locked { filter: grayscale(100%) opacity(0.6); }
+        .hex-node.locked .hex-shape polygon { fill: #070b12; stroke: #334155; }
+        
+        .hex-node.available .hex-shape polygon { stroke: var(--rpg-silver); }
+        .hex-node.available { animation: float-glow 3s infinite ease-in-out; }
+
+        .hex-node.unlocked .hex-shape polygon { 
+            fill: rgba(102, 252, 241, 0.1);
+            stroke: var(--rpg-cyan); 
+            filter: drop-shadow(0 0 8px var(--rpg-cyan));
+        }
+
+        /* Magery 0 (Core Central Star) */
+        .hex-node.core {
+            width: 100px; height: 115px;
+        }
+        .hex-node.unlocked.core .hex-shape polygon {
+            stroke: #ffd700;
+            fill: rgba(255, 215, 0, 0.15);
+            stroke-width: 3;
+            filter: drop-shadow(0 0 25px rgba(255, 215, 0, 0.8));
+        }
+        .hex-node.unlocked.core .icon { color: #ffd700; font-size: 24px; text-shadow: 0 0 10px #ffd700; }
+        .hex-node.unlocked.core .spell-title { color: #ffd700; }
+
+        .spell-title { font-size: 9px; font-weight: bold; color: #cbd5e1; line-height: 1; margin-top: 4px; text-transform: uppercase; z-index: 2;}
+        .icon { font-size: 20px; color: #94a3b8; z-index: 2; }
+        .hex-node.unlocked .icon { color: var(--rpg-cyan); text-shadow: 0 0 5px var(--rpg-cyan); }
+        .hex-node.unlocked .spell-title { color: white; }
+
+        /* Conexões Espessas e Brilhantes */
+        .tree-line {
+            position: absolute;
+            background-color: #1e293b;
+            z-index: 1;
+            transform-origin: left center;
+            height: 4px; /* Linha mais grossa */
+            border-radius: 2px;
+            opacity: 0.8;
+            transition: all 0.5s ease;
+        }
+        .tree-line.active {
+            background-color: var(--rpg-cyan);
+            box-shadow: 0 0 10px var(--rpg-cyan), 0 0 20px var(--rpg-cyan);
+            opacity: 1;
+        }
+
+        @keyframes float-glow {
+            0%, 100% { filter: drop-shadow(0 0 2px rgba(197, 198, 199, 0.3)); transform: translateY(0); }
+            50% { filter: drop-shadow(0 0 10px rgba(197, 198, 199, 0.8)); transform: translateY(-2px); }
+        }
+
+        /* Tooltip Premium */
+        .tooltip {
+            position: absolute;
+            background: linear-gradient(135deg, rgba(20, 30, 45, 0.95), rgba(10, 15, 25, 0.98));
+            backdrop-filter: blur(10px);
+            border: 1px solid #ef4444;
+            border-left: 4px solid #ef4444;
+            color: #e2e8f0;
+            padding: 16px;
+            border-radius: 6px;
+            font-size: 12px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s, transform 0.2s;
+            transform: translateY(10px);
+            z-index: 100;
+            width: 280px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+        }
+        .tooltip.show { opacity: 1; transform: translateY(0); }
+        .tooltip.good { border-color: var(--rpg-cyan); border-left-color: var(--rpg-cyan); }
+
+        #tree-viewport { width: 100vw; height: calc(100vh - 80px); cursor: grab; position: relative; overflow: hidden; background: radial-gradient(circle at center, rgb(16, 21, 28) 0%, rgb(5, 7, 10) 100%); }
+        #tree-viewport:active { cursor: grabbing; }
+        #tree-canvas { position: absolute; transform-origin: 0 0; width: 0; height: 0; }
+        #center-point { position: absolute; top: 50vh; left: 50vw; }
+        
+        .controls-panel {
+            position: absolute; bottom: 20px; right: 20px;
+            background: rgba(21, 27, 36, 0.9); border: 1px solid var(--rpg-purple);
+            padding: 10px; border-radius: 8px; z-index: 80;
+        }
+    </style>
+</head>
+
+<body>
+    <header class="p-4 flex justify-between items-center relative shadow-[0_5px_15px_rgba(0,0,0,0.5)]">
+        <div>
+            <h1 class="text-2xl md:text-3xl font-cinzel font-bold tracking-wider" style="color:var(--rpg-purple);">Biblioteca Arcana</h1>
+            <p id="user-display" class="text-sm text-gray-400">Teia Universal de Magias</p>
+        </div>
+        <div class="flex items-center gap-6">
+            <div class="text-right">
+                <div class="text-xs text-gray-400 uppercase tracking-widest">Character Points</div>
+                <div class="text-3xl font-bold font-cinzel" style="color:var(--rpg-purple)" id="cp-display">0</div>
+            </div>
+            <a href="main.html" class="bg-rpg-slate border border-gray-500 text-gray-300 hover:bg-gray-700 font-bold py-2 px-4 rounded transition-all">Sair</a>
+        </div>
+    </header>
+
+    <div id="tree-viewport">
+        <div id="tree-canvas">
+            <div id="center-point">
+                <!-- Runic Anel de Fundo -->
+                <div id="rune-ring"></div>
+                <!-- Generated by JS -->
+            </div>
+        </div>
+        <div id="info-tooltip" class="tooltip"></div>
+
+        <!-- Legend and Filters -->
+        <div class="absolute top-4 left-4 bg-black/80 p-4 border border-gray-700 rounded-lg backdrop-blur-md z-50">
+            <h3 class="font-cinzel text-rpg-purple mb-2">Focar Colégio</h3>
+            <div class="grid grid-cols-2 gap-2 text-xs">
+                <button onclick="focusAngle(0)" class="text-left text-orange-400 hover:text-white"><i class="fa-solid fa-fire"></i> Fogo</button>
+                <button onclick="focusAngle(45)" class="text-left text-blue-400 hover:text-white"><i class="fa-solid fa-water"></i> Água</button>
+                <button onclick="focusAngle(90)" class="text-left text-green-600 hover:text-white"><i class="fa-brands fa-pagelines"></i> Terra</button>
+                <button onclick="focusAngle(135)" class="text-left text-gray-400 hover:text-white"><i class="fa-solid fa-wind"></i> Ar</button>
+                <button onclick="focusAngle(180)" class="text-left text-yellow-300 hover:text-white"><i class="fa-solid fa-heart"></i> Cura</button>
+                <button onclick="focusAngle(-135)" class="text-left text-pink-400 hover:text-white"><i class="fa-solid fa-brain"></i> Mente</button>
+                <button onclick="focusAngle(-90)" class="text-left text-indigo-400 hover:text-white"><i class="fa-solid fa-shield-halved"></i> Proteção</button>
+                <button onclick="focusAngle(-45)" class="text-left text-gray-500 hover:text-white"><i class="fa-solid fa-moon"></i> Luz/Trevas</button>
+            </div>
+        </div>
+
+        <div class="controls-panel flex gap-2">
+            <button class="px-3 py-1 bg-gray-800 text-white rounded hover:bg-gray-700 border border-gray-600" onclick="resetView()"><i class="fa-solid fa-crosshairs"></i> Restaurar Câmera</button>
+        </div>
+    </div>
+
+    <!-- Purchase Modal -->
+    <div id="purchase-modal" class="hidden fixed inset-0 bg-black/90 flex items-center justify-center z-[110] backdrop-blur-md">
+        <div class="bg-rpg-slate border-2 border-[var(--rpg-purple)] p-6 rounded-lg max-w-sm w-full shadow-[0_0_30px_rgba(180,142,173,0.3)]">
+            <h3 id="modal-title" class="font-cinzel text-xl text-[var(--rpg-purple)] mb-2">Aprender Feitiço</h3>
+            <p id="modal-desc" class="text-gray-300 text-sm mb-4">Tem certeza que deseja gastar CP para destravar este conhecimento?</p>
+            <div class="flex gap-4">
+                <button id="btn-confirm-buy" class="flex-1 bg-[var(--rpg-purple)] text-black font-bold py-2 rounded hover:bg-white transition-colors">Confirmar</button>
+                <button onclick="closeModal()" class="flex-1 bg-gray-700 text-white font-bold py-2 rounded hover:bg-red-600 transition-colors">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="auth.js"></script>
+    <script>
+        const db = firebase.firestore();
+        let userSpells = {};
+        let userCP = 20; 
+        let currentUserUid = null;
+
+        // -------------------------------------------------------------
+        // Base de Dados de Magias: 60+ Feitiços Principais do GURPS
+        // -------------------------------------------------------------
+        const rawSpells = {
+            // Core
+            "magery_0": { name: "Magery 0", college: "Core", reqs: [], desc: "Aptidão base. Permite sentir magia e é exigida quase sempre.", icon: "fa-solid fa-eye" },
+            "magery_1": { name: "Magery 1", college: "Core", reqs: ["magery_0"], cost: 10, desc: "Aptidão grau 1. Destrava magias mortais e de nível intermediário.", icon: "fa-solid fa-star" },
+            "magery_2": { name: "Magery 2", college: "Core", reqs: ["magery_1"], cost: 10, desc: "Aptidão grau 2. Mestre das artes místicas elementais.", icon: "fa-solid fa-meteor" },
+            "magery_3": { name: "Magery 3", college: "Core", reqs: ["magery_2"], cost: 10, desc: "Aptidão Arconte. Nível mais alto e lendário.", icon: "fa-brands fa-galactic-senate" },
+
+            // Fix/Utility explicitly independent or simple
+            "lend_energy": { name: "Lend Energy", college: "Healing", reqs: ["magery_0"], desc: "Transfere energia de fadiga.", icon: "fa-solid fa-battery-half" },
+            "ignite_fire": { name: "Ignite Fire", college: "Fire", reqs: ["magery_0"], desc: "Cria uma faísca ou chama pequena.", icon: "fa-solid fa-fire-burner" },
+            "seek_water": { name: "Seek Water", college: "Water", reqs: [], desc: "Sente fontes de água natural.", icon: "fa-solid fa-magnifying-glass-location" },
+            "purify_air": { name: "Purify Air", college: "Air", reqs: [], desc: "Limpa toxinas gasosas.", icon: "fa-solid fa-filter" },
+             "seek_earth": { name: "Seek Earth", college: "Earth", reqs: [], desc: "Localiza minerais e solo.", icon: "fa-solid fa-compass" },
+
+            // Fire (Colégio do Fogo)
+            "create_fire": { name: "Create Fire", college: "Fire", reqs: ["ignite_fire"], desc: "Gera chamas no ar sem combustível.", icon: "fa-solid fa-fire" },
+            "shape_fire": { name: "Shape Fire", college: "Fire", reqs: ["create_fire"], desc: "Modela formatos em chamas existentes.", icon: "fa-brands fa-free-code-camp" },
+            "fireball": { name: "Fireball", college: "Fire", reqs: ["magery_1", "create_fire"], desc: "Lança uma esfera densa de chamas.", icon: "fa-solid fa-meteor" },
+            "explosive_fireball": { name: "Explosive Fire", college: "Fire", reqs: ["fireball"], desc: "Explosão em área letal de fogo.", icon: "fa-solid fa-burst" },
+            "extinguish_fire": { name: "Extinguish Fire", college: "Fire", reqs: ["ignite_fire"], desc: "Elimina labaredas da existência.", icon: "fa-solid fa-poop" },
+            "flaming_weapon": { name: "Flaming Weapon", college: "Fire", reqs: ["magery_1", "create_fire"], desc: "Imbui uma arma comum com fogo arcano.", icon: "fa-solid fa-gavel" },
+            "resist_fire": { name: "Resist Fire", college: "Fire", reqs: ["extinguish_fire"], desc: "Protege contra o elemento ardente.", icon: "fa-solid fa-shield" },
+
+            // Water (Colégio da Água)
+            "purify_water": { name: "Purify Water", college: "Water", reqs: ["seek_water"], desc: "Torna qualquer água tratável.", icon: "fa-solid fa-glass-water" },
+            "create_water": { name: "Create Water", college: "Water", reqs: ["purify_water"], desc: "Gera líquido puro do vazio.", icon: "fa-solid fa-droplet" },
+            "destroy_water": { name: "Destroy Water", college: "Water", reqs: ["create_water"], desc: "Vaporiza instantaneamente.", icon: "fa-solid fa-droplet-slash" },
+            "shape_water": { name: "Shape Water", college: "Water", reqs: ["create_water"], desc: "A água ganha a forma que o mago quiser.", icon: "fa-solid fa-hand-holding-droplet" },
+            "fog": { name: "Fog", college: "Water", reqs: ["shape_water"], desc: "Nevoeiro tático e denso.", icon: "fa-solid fa-cloud" },
+            "ice_sphere": { name: "Ice Sphere", college: "Water", reqs: ["magery_1", "shape_water"], desc: "Tiro congelante mortal.", icon: "fa-solid fa-snowflake" },
+            "icy_weapon": { name: "Icy Weapon", college: "Water", reqs: ["ice_sphere"], desc: "Imbui frio cortante à uma arma.", icon: "fa-regular fa-snowflake" },
+            "walk_on_water": { name: "Walk on Water", college: "Water", reqs: ["shape_water"], desc: "O mago ignora o relevo hídrico.", icon: "fa-solid fa-shoe-prints" },
+
+            // Earth (Colégio da Terra)
+            "shape_earth": { name: "Shape Earth", college: "Earth", reqs: ["seek_earth"], desc: "Transforma a topografia levemente.", icon: "fa-solid fa-mound" },
+            "earth_to_stone": { name: "Earth to Stone", college: "Earth", reqs: ["shape_earth"], desc: "Converte terra crua em pedra rígida.", icon: "fa-solid fa-cubes" },
+            "create_earth": { name: "Create Earth", college: "Earth", reqs: ["earth_to_stone"], desc: "Multiplica terra.", icon: "fa-solid fa-hill-rockslide" },
+            "flesh_to_stone": { name: "Flesh to Stone", college: "Earth", reqs: ["magery_2", "earth_to_stone"], desc: "A maldição máxima da petrificação.", icon: "fa-solid fa-person-burst" },
+            "stone_missile": { name: "Stone Missile", college: "Earth", reqs: ["magery_1", "earth_to_stone"], desc: "Tiro contundente brutal.", icon: "fa-solid fa-bowling-ball" },
+            "entombment": { name: "Entombment", college: "Earth", reqs: ["magery_2", "earth_to_stone"], desc: "Sepulta o alvo vivo ao fechar a terra.", icon: "fa-solid fa-skull" },
+
+            // Air (Colégio do Ar)
+            "create_air": { name: "Create Air", college: "Air", reqs: ["purify_air"], desc: "Gera oxigênio novo.", icon: "fa-solid fa-wind" },
+            "shape_air": { name: "Shape Air", college: "Air", reqs: ["create_air"], desc: "Concentrar vento numa direção.", icon: "fa-solid fa-arrows-to-eye" },
+            "breathe_water": { name: "Breathe Water", college: "Air", reqs: ["create_air", "create_water"], desc: "Híbrido - Adaptação subaquática.", icon: "fa-solid fa-fish" },
+            "windstorm": { name: "Windstorm", college: "Air", reqs: ["shape_air"], desc: "Furacão local e caótico.", icon: "fa-solid fa-tornado" },
+            "lightning": { name: "Lightning", college: "Air", reqs: ["magery_1", "windstorm"], desc: "Atinge o inimigo com elétrons em fúria.", icon: "fa-solid fa-bolt" },
+            "explosive_lightning": { name: "Explo Lightning", college: "Air", reqs: ["lightning"], desc: "Versão granada da tempestade.", icon: "fa-solid fa-bolt-lightning" },
+
+            // Healing (Colégio da Cura)
+            "lend_vitality": { name: "Lend Vitality", college: "Healing", reqs: ["lend_energy"], desc: "Transfere pontso de Vida.", icon: "fa-solid fa-heart-pulse" },
+            "minor_healing": { name: "Minor Healing", college: "Healing", reqs: ["lend_vitality"], desc: "Recupera feirmentos leves instantâneos.", icon: "fa-solid fa-kit-medical" },
+            "major_healing": { name: "Major Healing", college: "Healing", reqs: ["magery_1", "minor_healing"], desc: "Salva uma vida da morte.", icon: "fa-solid fa-suitcase-medical" },
+            "great_healing": { name: "Great Healing", college: "Healing", reqs: ["magery_2", "major_healing"], desc: "Recupera integridade completa do alvo.", icon: "fa-solid fa-truck-medical" },
+            "cure_disease": { name: "Cure Disease", college: "Healing", reqs: ["magery_1", "major_healing"], desc: "Purga os vírus e patógenos.", icon: "fa-solid fa-vial-virus" },
+            "relieve_sickness": { name: "Relieve Sick", college: "Healing", reqs: ["lend_energy"], desc: "Remove penalidades de náusea.", icon: "fa-solid fa-bed" },
+            "restore_mana": { name: "Restore Mana", college: "Healing", reqs: ["magery_2", "lend_energy"], desc: "O mago sangra para injetar magia em outro.", icon: "fa-solid fa-wand-magic-sparkles" },
+
+            // Mind Control (Colégio do Controle Mental)
+            "foolishness": { name: "Foolishness", college: "Mind Control", reqs: ["magery_0"], desc: "Diminui o QI do alvo temporariamente.", icon: "fa-solid fa-face-dizzy" },
+            "forgetfulness": { name: "Forgetfulness", college: "Mind Control", reqs: ["foolishness"], desc: "Oprime as últimas horas da memória.", icon: "fa-solid fa-brain" },
+            "daze": { name: "Daze", college: "Mind Control", reqs: ["foolishness"], desc: "Alvo perde ações.", icon: "fa-solid fa-user-injured" },
+            "sleep": { name: "Sleep", college: "Mind Control", reqs: ["daze"], desc: "Sono letárgico induzido.", icon: "fa-solid fa-bed" },
+            "command": { name: "Command", college: "Mind Control", reqs: ["magery_1", "daze"], desc: "Dá 1 ordem absolutamente impositiva.", icon: "fa-solid fa-fingerprint" },
+            "charm": { name: "Charm", college: "Mind Control", reqs: ["magery_1", "command"], desc: "Trata o mago como Deus.", icon: "fa-solid fa-masks-theater" },
+            "wisdom": { name: "Wisdom", college: "Mind Control", reqs: ["foolishness"], desc: "Aumenta QI subitamente.", icon: "fa-solid fa-eye" },
+
+            // Protection (Colégio da Proteção / Aviso)
+            "shield": { name: "Shield", college: "Protection", reqs: ["magery_0"], desc: "Gera um escudo arcano de defesa ativa.", icon: "fa-solid fa-shield-halved" },
+            "armor": { name: "Armor", college: "Protection", reqs: ["shield"], desc: "Aumenta RDs e resistências corporais.", icon: "fa-solid fa-shirt" },
+            "magelock": { name: "Magelock", college: "Protection", reqs: ["magery_1", "shield"], desc: "Sela portas com código divino.", icon: "fa-solid fa-lock" },
+            "ward": { name: "Ward", college: "Protection", reqs: ["magery_1", "magelock"], desc: "Inibe magias invasoras.", icon: "fa-solid fa-ban" },
+            "missile_shield": { name: "Missile Shield", college: "Protection", reqs: ["magery_1", "shield"], desc: "Projéteis não podem te ferir.", icon: "fa-brands fa-space-awesome" },
+
+            // Light & Darkness (Luz e Trevas)
+            "light": { name: "Light", college: "Light/Darkness", reqs: [], desc: "Luz que ilumina igual Tocha.", icon: "fa-solid fa-lightbulb" },
+            "darkness": { name: "Darkness", college: "Light/Darkness", reqs: ["magery_0"], desc: "Apaga luz e cega no meio do raio.", icon: "fa-solid fa-moon" },
+            "continual_light": { name: "Con Light", college: "Light/Darkness", reqs: ["light"], desc: "Permanente lâmpada.", icon: "fa-regular fa-lightbulb" },
+            "colors": { name: "Colors", college: "Light/Darkness", reqs: ["light"], desc: "Muda propriedades visíveis.", icon: "fa-solid fa-palette" },
+            "flash": { name: "Flash", college: "Light/Darkness", reqs: ["magery_1", "light"], desc: "Granada flashbang arcana.", icon: "fa-solid fa-sun" },
+            "blur": { name: "Blur", college: "Light/Darkness", reqs: ["darkness"], desc: "Borra sua silhueta para defesa.", icon: "fa-solid fa-smog" },
+            "invisibility": { name: "Invisibility", college: "Light/Darkness", reqs: ["magery_2", "blur"], desc: "Manto de invisibilidade visual completo.", icon: "fa-solid fa-eye-slash" }
+        };
+
+        const collegeAngles = {
+            'Core': -90, // Core branches straight up
+            'Fire': 0, 'Water': 45, 'Earth': 90, 'Air': 135,
+            'Healing': 180, 'Mind Control': -135, 'Protection': -90, 'Light/Darkness': -45
+        };
+
+        const spellTree = {};
+
+        // ALGORITMO ORBITAL (Cálculo Dinâmico das Coordenadas via Requisitos)
+        function computeLayout() {
+            // Função recursiva modesta para achar Camadas (Tiers)
+            function getTier(id, depth = 0) {
+                if (depth > 20) return 1; // Safeguard loop infinito
+                if (id === 'magery_0') return 0;
+                
+                const spell = rawSpells[id];
+                if (!spell || !spell.reqs || spell.reqs.length === 0) return 1;
+                
+                let maxT = 0;
+                spell.reqs.forEach(req => {
+                    const rt = getTier(req, depth + 1);
+                    if (rt > maxT) maxT = rt;
+                });
+                return maxT + 1;
+            }
+
+            // Atribuir Tier para todas magias
+            Object.keys(rawSpells).forEach(id => {
+                spellTree[id] = { ...rawSpells[id], _tier: getTier(id) };
+            });
+
+            // Distribuir no plano Polar
+            let counters = {}; // Para espaçar spells do mesmo colégio e mesmo tier
+            Object.keys(spellTree).forEach(id => {
+                const s = spellTree[id];
+                if (id === 'magery_0') {
+                    s.x = 0; s.y = 0; return; // Centro do Cosmos
+                }
+
+                if (s.college === 'Core') {
+                    s.x = 0; s.y = s._tier * -130; return; // Eixo Y centralizado subindo
+                }
+
+                const key = s.college + '_' + s._tier;
+                counters[key] = (counters[key] || 0) + 1;
+                let countIndex = counters[key] - 1;
+
+                const baseAngle = collegeAngles[s.college] !== undefined ? collegeAngles[s.college] : 0;
+                
+                // Offset Spread: Index 0=0, Index 1=+20deg, Index 2=-20deg, Index 3=+40deg...
+                let offset = countIndex === 0 ? 0 : (countIndex % 2 === 1 ? (Math.ceil(countIndex/2) * 25) : -(Math.ceil(countIndex/2) * 25));
+
+                const ang = (baseAngle + offset) * Math.PI / 180;
+                const radius = s._tier * 160;
+
+                s.x = Math.round(Math.cos(ang) * radius);
+                s.y = Math.round(Math.sin(ang) * radius);
+            });
+        }
+
+        // INIT
+        computeLayout();
+
+        // -------------------------------------------------------------
+        // UI Handling
+        // -------------------------------------------------------------
+        const centerPoint = document.getElementById('center-point');
+        const tooltip = document.getElementById('info-tooltip');
+        const cpDisplay = document.getElementById('cp-display');
+        const modal = document.getElementById('purchase-modal');
+        let selectedSpellId = null;
+
+        firebase.auth().onAuthStateChanged(async (user) => {
+            if (user) {
+                currentUserUid = user.uid;
+                document.getElementById('user-display').innerHTML = `Logado <span class="text-[var(--rpg-purple)] text-xs">${user.uid.substring(0,8)}</span>`;
+                await loadPlayerData();
+                renderTree();
+            } else {
+                window.location.href = "login.html"; // Assume existe no repositório
+            }
+        });
+
+        async function loadPlayerData() {
+            try {
+                const doc = await db.collection("users").doc(currentUserUid).get();
+                if(doc.exists && doc.data().spells_learned) {
+                    userSpells = doc.data().spells_learned;
+                    userCP = doc.data().cp_available !== undefined ? doc.data().cp_available : 50;
+                } else {
+                    userSpells = {}; userCP = 50; 
+                }
+                updateCPDisplay();
+            } catch (e) {
+                console.error("Erro no Auth/DB", e);
+            }
+        }
+
+        function updateCPDisplay() { cpDisplay.innerText = userCP; }
+
+        function renderTree() {
+            centerPoint.innerHTML = ''; 
+            
+            // Desenhar Linhas (Dependências)
+            Object.keys(spellTree).forEach(id => {
+                const node = spellTree[id];
+                node.reqs.forEach(reqId => {
+                    if(!spellTree[reqId]) return;
+                    drawLine(spellTree[reqId].x, spellTree[reqId].y, node.x, node.y, id, reqId);
+                });
+            });
+
+            // Desenhar Hexágonos (Nós)
+            Object.keys(spellTree).forEach(id => {
+                createNode(id, spellTree[id]);
+            });
+        }
+
+        function drawLine(x1, y1, x2, y2, targetId, reqId) {
+            const line = document.createElement('div');
+            line.className = 'tree-line';
+            
+            const dx = x2 - x1;
+            const dy = y2 - y1;
+            const length = Math.sqrt(dx * dx + dy * dy);
+            const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+
+            // Centro do Hex (Raio de ~35/40px compensado)
+            line.style.width = `${length}px`;
+            line.style.left = `${x1 + 35}px`;
+            line.style.top = `${y1 + 40}px`;
+            line.style.transform = `rotate(${angle}deg)`;
+            
+            if(userSpells[targetId] > 0 && userSpells[reqId] > 0) line.classList.add('active');
+            
+            centerPoint.appendChild(line);
+        }
+
+        function createNode(id, spell) {
+            const el = document.createElement('div');
+            el.className = `hex-node ${id === 'magery_0' ? 'core' : ''}`;
+            el.style.left = `${spell.x - 32}px`; // Center offset (64/2)
+            el.style.top = `${spell.y - 37}px`;  // Center offset (74/2)
+
+            const shape = document.createElement('div');
+            shape.className = 'hex-shape';
+            shape.innerHTML = `<svg viewBox="0 0 100 115" preserveAspectRatio="none" style="width:100%; height:100%;"><polygon points="50,0 100,28 100,86 50,115 0,86 0,28" /></svg>`;
+
+            el.innerHTML = `
+                <i class="${spell.icon} icon"></i>
+                <div class="spell-title">${spell.name}</div>
+            `;
+            el.appendChild(shape);
+
+            let hasReqs = checkReqs(id);
+            let isUnlocked = userSpells[id] > 0;
+
+            if (isUnlocked) el.classList.add('unlocked');
+            else if (hasReqs) { el.classList.add('available'); el.onclick = () => promptPurchase(id); }
+            else el.classList.add('locked');
+
+            el.addEventListener('mouseenter', (e) => showTooltip(e, id, hasReqs, isUnlocked));
+            el.addEventListener('mouseleave', hideTooltip);
+
+            centerPoint.appendChild(el);
+        }
+
+        function checkReqs(id) {
+            return spellTree[id].reqs.every(req => userSpells[req] > 0);
+        }
+
+        function promptPurchase(id) {
+            const spell = spellTree[id];
+            const cost = spell.cost || 1;
+            
+            if (userCP < cost) { alert(`CPs Insuficientes! Custa ${cost} CP.`); return; }
+
+            selectedSpellId = id;
+            document.getElementById('modal-title').innerText = `Aprender: ${spell.name}`;
+            document.getElementById('modal-desc').innerText = `Isto curstará ${cost} Pontos de Personagem (CP). Deseja continuar?`;
+            modal.classList.remove('hidden');
+        }
+
+        function closeModal() { modal.classList.add('hidden'); selectedSpellId = null; }
+
+        document.getElementById('btn-confirm-buy').addEventListener('click', async () => {
+            if(!selectedSpellId) return;
+            const spell = spellTree[selectedSpellId];
+            const cost = spell.cost || 1;
+            
+            if (userCP >= cost) {
+                userCP -= cost;
+                userSpells[selectedSpellId] = (userSpells[selectedSpellId] || 0) + 1;
+                
+                try {
+                    await db.collection('users').doc(currentUserUid).set({
+                        spells_learned: userSpells,
+                        cp_available: userCP
+                    }, { merge: true });
+                    
+                    updateCPDisplay(); renderTree(); closeModal();
+                } catch(e) { alert("Erro ao gravar magia no banco."); }
+            }
+        });
+
+        function showTooltip(e, id, hasReqs, isUnlocked) {
+            const spell = spellTree[id];
+            const cost = spell.cost || 1;
+            let html = `<div class="font-bold text-lg border-b border-gray-600 pb-1 mb-2 tracking-wide font-cinzel text-white flex items-center justify-between">
+                            <span>${spell.name}</span>
+                            <span class="text-xs text-gray-400 bg-gray-800 px-2 rounded">${spell._tier}º Ciclo</span>
+                        </div>`;
+            html += `<p class="text-gray-300 font-inter leading-tight mb-2">${spell.desc}</p>`;
+            
+            if (!isUnlocked) {
+                html += `<div class="text-[10px] text-gray-400 mt-2">Custo Base: ${cost} CP</div>`;
+                if (!hasReqs) {
+                    tooltip.className = 'tooltip show';
+                    html += `<div class="mt-2 text-red-500 font-bold bg-red-900/30 p-1 border border-red-500/50 rounded"><i class="fa-solid fa-triangle-exclamation"></i> PRÉ-REQUISITOS FALTANTES:</div>`;
+                    html += `<ul class="list-disc pl-5 mt-1 text-red-400 text-xs">`;
+                    spell.reqs.forEach(req => {
+                        if (!userSpells[req]) html += `<li>${spellTree[req] ? spellTree[req].name : req}</li>`;
+                    });
+                    html += `</ul>`;
+                } else {
+                    tooltip.className = 'tooltip show good';
+                    html += `<div class="mt-2 text-[var(--rpg-purple)] font-bold"><i class="fa-solid fa-unlock"></i> Clique para destravar!</div>`;
+                }
+            } else {
+                tooltip.className = 'tooltip show good';
+                html += `<div class="mt-2 text-[var(--rpg-purple)] font-bold"><i class="fa-solid fa-check"></i> Conhecimento Adquirido</div>`;
+            }
+
+            tooltip.innerHTML = html;
+            
+            const rect = e.target.getBoundingClientRect();
+            let tx = rect.left + 80; let ty = rect.top - 20;
+            if(tx + 250 > window.innerWidth) tx = rect.left - 260; 
+            
+            tooltip.style.left = tx + 'px'; tooltip.style.top = ty + 'px';
+        }
+
+        function hideTooltip() { tooltip.classList.remove('show'); }
+
+        // --- Câmera Espacial Interativa ---
+        let scale = 1, panning = false, pointX = 0, pointY = 0, start = { x: 0, y: 0 };
+        const map = document.getElementById('tree-canvas');
+        const viewport = document.getElementById('tree-viewport');
+
+        function setTransform() { map.style.transform = `translate(${pointX}px, ${pointY}px) scale(${scale})`; }
+
+        viewport.onmousedown = function (e) {
+            if(e.button !== 0 || e.target.closest('.hex-node')) return;
+            e.preventDefault();
+            start = { x: e.clientX - pointX, y: e.clientY - pointY }; panning = true;
+        };
+        viewport.onmouseup = function (e) { panning = false; };
+        viewport.onmouseleave = function (e) { panning = false; hideTooltip(); };
+        viewport.onmousemove = function (e) {
+            if (!panning) return;
+            pointX = (e.clientX - start.x); pointY = (e.clientY - start.y);
+            setTransform();
+        };
+
+        viewport.onwheel = function (e) {
+            e.preventDefault();
+            var xs = (e.clientX - pointX) / scale, ys = (e.clientY - pointY) / scale;
+            var delta = (e.wheelDelta ? e.wheelDelta : -e.deltaY);
+            
+            (delta > 0) ? (scale *= 1.1) : (scale /= 1.1);
+            scale = Math.min(Math.max(scale, 0.2), 2.5);
+
+            pointX = e.clientX - xs * scale; pointY = e.clientY - ys * scale;
+            setTransform();
+        };
+
+        function resetView() { scale = 1; pointX = 0; pointY = 0; setTransform(); }
+
+        // Focar Câmera numa direção da árvore
+        function focusAngle(angle) {
+            resetView();
+            // Desloca o canvas na direção OPOSTA ao angulo focado para que a raiz daquela fatia de pizza fique no centro.
+            // Para fazer com que o Círculo 1 daquele colégio venha para o centro da tela:
+            let radiusDir = 250; // Move câmera 250px nessa direção
+            pointX = - (Math.cos(angle * Math.PI / 180) * radiusDir);
+            pointY = - (Math.sin(angle * Math.PI / 180) * radiusDir);
+            scale = 1.2; // Aproxima o zoom
+            setTransform();
+        }
+
+    </script>
+</body>
+</html>
