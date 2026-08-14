@@ -166,7 +166,15 @@ document.addEventListener('DOMContentLoaded', () => {
             auth.signInWithPopup(provider).catch(error => console.error("Erro de login:", error));
         });
 
-        logoutButton.addEventListener('click', () => auth.signOut());
+        logoutButton.addEventListener('click', (e) => {
+            e.preventDefault();
+            auth.signOut().then(() => {
+                window.location.reload();
+            }).catch(error => {
+                console.error("Erro no logout:", error);
+                alert("Erro ao deslogar: " + (error.message || error));
+            });
+        });
     }
 
     characterDropdown.addEventListener('change', (e) => {

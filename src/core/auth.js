@@ -33,10 +33,29 @@ function signInWithGoogle() {
  * Signs the current user out.
  */
 function signOut() {
-    if (typeof firebase !== 'undefined' && firebase.apps.length) {
-        firebase.auth().signOut().then(() => {
-            window.location.reload();
-        });
+    if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length) {
+        return firebase.auth().signOut()
+            .then(() => {
+                console.log("Usuário deslogado com sucesso.");
+                const userInfoDiv = document.getElementById('user-info');
+                const loginLink = document.getElementById('login-link');
+                if (userInfoDiv) {
+                    userInfoDiv.style.display = 'none';
+                    userInfoDiv.classList.add('hidden');
+                }
+                if (loginLink) {
+                    loginLink.style.display = '';
+                    loginLink.classList.remove('hidden');
+                }
+                window.location.reload();
+            })
+            .catch((error) => {
+                console.error("Erro ao fazer logout:", error);
+                alert("Erro ao fazer logout: " + (error.message || error));
+            });
+    } else {
+        console.warn("Firebase não inicializado para logout.");
+        return Promise.resolve();
     }
 }
 
@@ -57,6 +76,14 @@ document.addEventListener('DOMContentLoaded', function () {
     const userInfoDiv = document.getElementById('user-info');
     const userEmailSpan = document.getElementById('user-email');
     const loginLink = document.getElementById('login-link');
+    const logoutButton = document.getElementById('logout-button');
+
+    if (logoutButton) {
+        logoutButton.addEventListener('click', function (e) {
+            e.preventDefault();
+            signOut();
+        });
+    }
 
     const loginView = document.getElementById('login-view');
     const signupView = document.getElementById('signup-view');
@@ -79,9 +106,13 @@ document.addEventListener('DOMContentLoaded', function () {
                 window.location.href = 'main.html';
                 return;
             }
-            if (loginLink) loginLink.style.display = 'none';
+            if (loginLink) {
+                loginLink.style.display = 'none';
+                loginLink.classList.add('hidden');
+            }
             if (userInfoDiv) {
                 userInfoDiv.style.display = 'flex';
+                userInfoDiv.classList.remove('hidden');
                 if (userEmailSpan) {
                     userEmailSpan.textContent = user.email;
                     if (typeof firebase !== 'undefined' && firebase.firestore) {
@@ -95,8 +126,17 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
             }
         } else {
-            if (loginLink) loginLink.style.display = 'block';
-            if (userInfoDiv) userInfoDiv.style.display = 'none';
+            if (loginLink) {
+                loginLink.style.display = '';
+                loginLink.classList.remove('hidden');
+            }
+            if (userInfoDiv) {
+                userInfoDiv.style.display = 'none';
+                userInfoDiv.classList.add('hidden');
+            }
+            if (userEmailSpan) {
+                userEmailSpan.textContent = '';
+            }
         }
     });
 
