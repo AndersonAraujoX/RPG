@@ -16,11 +16,9 @@
     <!-- Font Awesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
-    <!-- Firebase SDKs -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-    <script src="../src/core/firebase-config.js"></script>
+    <!-- PeerJS P2P Multiplayer -->
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <script src="../src/core/vtt-p2p.js"></script>
 
     <style>
         :root {
@@ -35,422 +33,97 @@
             --rpg-green: #10b981;
         }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            user-select: none;
-        }
-
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: var(--bg-dark);
-            color: var(--rpg-silver);
-            overflow: hidden;
-            height: 100vh;
-            width: 100vw;
-        }
-
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg-dark); color: var(--rpg-silver); overflow: hidden; height: 100vh; width: 100vw; }
         .font-cinzel { font-family: 'Cinzel', serif; }
 
-        /* Top HUD */
-        #vtt-header {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 60px;
-            background: linear-gradient(180deg, rgba(11, 15, 25, 0.98) 0%, rgba(11, 15, 25, 0.85) 100%);
-            backdrop-filter: blur(12px);
-            border-bottom: 1px solid rgba(102, 252, 241, 0.2);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0 18px;
-            z-index: 60;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.7);
-        }
-
-        /* Viewport do Mapa */
-        #vtt-viewport {
-            width: 100vw;
-            height: calc(100vh - 60px);
-            margin-top: 60px;
-            position: relative;
-            cursor: grab;
-            overflow: hidden;
-            background-color: #030712;
-        }
-
+        #vtt-header { position: fixed; top: 0; left: 0; right: 0; height: 60px; background: linear-gradient(180deg, rgba(11, 15, 25, 0.98) 0%, rgba(11, 15, 25, 0.85) 100%); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(102, 252, 241, 0.2); display: flex; justify-content: space-between; align-items: center; padding: 0 18px; z-index: 60; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.7); }
+        #vtt-viewport { width: 100vw; height: calc(100vh - 60px); margin-top: 60px; position: relative; cursor: grab; overflow: hidden; background-color: #030712; }
         #vtt-viewport.panning { cursor: grabbing; }
         #vtt-viewport.ruler-mode { cursor: crosshair; }
         #vtt-viewport.fog-mode { cursor: crosshair; }
+        #vtt-world { position: absolute; top: 0; left: 0; transform-origin: 0 0; will-change: transform; }
+        #map-image { display: block; pointer-events: none; max-width: none; border-radius: 4px; box-shadow: 0 0 50px rgba(0, 0, 0, 0.9); }
 
-        #vtt-world {
-            position: absolute;
-            top: 0;
-            left: 0;
-            transform-origin: 0 0;
-            will-change: transform;
-        }
+        #grid-overlay { position: absolute; inset: 0; pointer-events: none; background-image: linear-gradient(to right, rgba(102, 252, 241, 0.15) 1px, transparent 1px), linear-gradient(to bottom, rgba(102, 252, 241, 0.15) 1px, transparent 1px); background-size: 50px 50px; transition: opacity 0.2s; }
+        #fog-canvas { position: absolute; inset: 0; pointer-events: none; opacity: 0.9; z-index: 15; }
+        #ruler-svg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 25; }
+        #tokens-layer { position: absolute; inset: 0; z-index: 20; pointer-events: auto; }
 
-        #map-image {
-            display: block;
-            pointer-events: none;
-            max-width: none;
-            border-radius: 4px;
-            box-shadow: 0 0 50px rgba(0, 0, 0, 0.9);
-        }
-
-        /* Grid Overlay */
-        #grid-overlay {
-            position: absolute;
-            inset: 0;
-            pointer-events: none;
-            background-image: 
-                linear-gradient(to right, rgba(102, 252, 241, 0.15) 1px, transparent 1px),
-                linear-gradient(to bottom, rgba(102, 252, 241, 0.15) 1px, transparent 1px);
-            background-size: 50px 50px;
-            transition: opacity 0.2s;
-        }
-
-        /* Fog of War Canvas */
-        #fog-canvas {
-            position: absolute;
-            inset: 0;
-            pointer-events: none;
-            opacity: 0.9;
-            z-index: 15;
-        }
-
-        /* Ruler SVG Layer */
-        #ruler-svg {
-            position: absolute;
-            inset: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: 25;
-        }
-
-        /* Tokens */
-        #tokens-layer {
-            position: absolute;
-            inset: 0;
-            z-index: 20;
-            pointer-events: auto;
-        }
-
-        .vtt-token {
-            position: absolute;
-            border-radius: 50%;
-            cursor: grab;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: box-shadow 0.2s, transform 0.1s;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.8);
-        }
-
+        .vtt-token { position: absolute; border-radius: 50%; cursor: grab; display: flex; align-items: center; justify-content: center; transition: box-shadow 0.2s, transform 0.1s; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.8); }
         .vtt-token:active { cursor: grabbing; }
-
-        .vtt-token.selected {
-            outline: 3px solid #fbbf24;
-            outline-offset: 3px;
-            animation: pulse-token 1.5s infinite alternate;
-        }
-
-        .vtt-token-img {
-            width: 100%;
-            height: 100%;
-            border-radius: 50%;
-            object-fit: cover;
-            pointer-events: none;
-        }
-
-        /* Token Bars */
-        .token-bars {
-            position: absolute;
-            top: -14px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 110%;
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
-            pointer-events: none;
-        }
-
-        .token-bar {
-            height: 4px;
-            border-radius: 2px;
-            background: rgba(0, 0, 0, 0.7);
-            overflow: hidden;
-            border: 0.5px solid rgba(255, 255, 255, 0.2);
-        }
-
+        .vtt-token.selected { outline: 3px solid #fbbf24; outline-offset: 3px; }
+        .vtt-token-img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; pointer-events: none; }
+        .token-bars { position: absolute; top: -14px; left: 50%; transform: translateX(-50%); width: 110%; display: flex; flex-direction: column; gap: 2px; pointer-events: none; }
+        .token-bar { height: 4px; border-radius: 2px; background: rgba(0, 0, 0, 0.7); overflow: hidden; border: 0.5px solid rgba(255, 255, 255, 0.2); }
         .token-bar-fill-hp { background: #ef4444; height: 100%; transition: width 0.2s; }
         .token-bar-fill-pe { background: #38bdf8; height: 100%; transition: width 0.2s; }
+        .token-nameplate { position: absolute; bottom: -18px; left: 50%; transform: translateX(-50%); background: rgba(11, 15, 25, 0.9); border: 1px solid rgba(148, 163, 184, 0.3); border-radius: 4px; padding: 1px 6px; font-size: 10px; font-weight: 700; color: #ffffff; white-space: nowrap; pointer-events: none; text-shadow: 0 1px 2px #000; }
+        .token-conditions { position: absolute; top: -6px; right: -6px; display: flex; gap: 2px; flex-wrap: wrap; max-width: 40px; pointer-events: none; }
+        .token-badge { font-size: 10px; background: rgba(0, 0, 0, 0.85); border-radius: 50%; width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255, 255, 255, 0.3); }
 
-        .token-nameplate {
-            position: absolute;
-            bottom: -18px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(11, 15, 25, 0.9);
-            border: 1px solid rgba(148, 163, 184, 0.3);
-            border-radius: 4px;
-            padding: 1px 6px;
-            font-size: 10px;
-            font-weight: 700;
-            color: #ffffff;
-            white-space: nowrap;
-            pointer-events: none;
-            text-shadow: 0 1px 2px #000;
-        }
+        #vtt-toolbar { position: fixed; left: 18px; top: 78px; background: rgba(11, 15, 25, 0.92); backdrop-filter: blur(14px); border: 1px solid rgba(102, 252, 241, 0.25); border-radius: 12px; padding: 6px; display: flex; flex-direction: column; gap: 6px; z-index: 50; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6); }
+        .tool-btn { width: 40px; height: 40px; background: rgba(30, 41, 59, 0.6); border: 1px solid rgba(148, 163, 184, 0.2); border-radius: 8px; color: #cbd5e1; font-size: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+        .tool-btn:hover, .tool-btn.active { background: rgba(102, 252, 241, 0.2); border-color: var(--rpg-cyan); color: var(--rpg-cyan); transform: scale(1.06); }
 
-        .token-conditions {
-            position: absolute;
-            top: -6px;
-            right: -6px;
-            display: flex;
-            gap: 2px;
-            flex-wrap: wrap;
-            max-width: 40px;
-            pointer-events: none;
-        }
-
-        .token-badge {
-            font-size: 10px;
-            background: rgba(0, 0, 0, 0.85);
-            border-radius: 50%;
-            width: 16px;
-            height: 16px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: 1px solid rgba(255, 255, 255, 0.3);
-        }
-
-        /* Floating Toolbar (Tools) */
-        #vtt-toolbar {
-            position: fixed;
-            left: 18px;
-            top: 78px;
-            background: rgba(11, 15, 25, 0.92);
-            backdrop-filter: blur(14px);
-            border: 1px solid rgba(102, 252, 241, 0.25);
-            border-radius: 12px;
-            padding: 6px;
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-            z-index: 50;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
-        }
-
-        .tool-btn {
-            width: 40px;
-            height: 40px;
-            background: rgba(30, 41, 59, 0.6);
-            border: 1px solid rgba(148, 163, 184, 0.2);
-            border-radius: 8px;
-            color: #cbd5e1;
-            font-size: 15px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s;
-        }
-
-        .tool-btn:hover, .tool-btn.active {
-            background: rgba(102, 252, 241, 0.2);
-            border-color: var(--rpg-cyan);
-            color: var(--rpg-cyan);
-            transform: scale(1.06);
-            box-shadow: 0 0 15px rgba(102, 252, 241, 0.3);
-        }
-
-        /* Floating Drawer Lateral (Chat, Dados, Turnos, Mestre) */
-        #vtt-drawer {
-            position: fixed;
-            top: 60px;
-            right: 0;
-            bottom: 0;
-            width: 380px;
-            max-width: 90vw;
-            background: linear-gradient(135deg, rgba(15, 23, 42, 0.98) 0%, rgba(7, 9, 14, 0.99) 100%);
-            backdrop-filter: blur(16px);
-            border-left: 1px solid rgba(102, 252, 241, 0.2);
-            box-shadow: -10px 0 35px rgba(0, 0, 0, 0.8);
-            z-index: 55;
-            display: flex;
-            flex-direction: column;
-            transform: translateX(0);
-            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
-        #vtt-drawer.collapsed {
-            transform: translateX(calc(100% - 44px));
-        }
-
-        .drawer-tab-bar {
-            display: flex;
-            background: rgba(11, 15, 25, 0.95);
-            border-bottom: 1px solid rgba(148, 163, 184, 0.2);
-        }
-
-        .drawer-tab-btn {
-            flex: 1;
-            padding: 12px 6px;
-            background: none;
-            border: none;
-            color: #94a3b8;
-            font-family: 'Cinzel', serif;
-            font-size: 11px;
-            font-weight: 700;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
-            border-bottom: 2px solid transparent;
-            transition: all 0.2s;
-        }
-
-        .drawer-tab-btn.active {
-            color: var(--rpg-cyan);
-            border-bottom-color: var(--rpg-cyan);
-            background: rgba(102, 252, 241, 0.08);
-        }
-
-        .drawer-content-pane {
-            flex: 1;
-            overflow-y: auto;
-            padding: 16px;
-            display: none;
-        }
+        #vtt-drawer { position: fixed; top: 60px; right: 0; bottom: 0; width: 380px; max-width: 90vw; background: linear-gradient(135deg, rgba(15, 23, 42, 0.98) 0%, rgba(7, 9, 14, 0.99) 100%); backdrop-filter: blur(16px); border-left: 1px solid rgba(102, 252, 241, 0.2); box-shadow: -10px 0 35px rgba(0, 0, 0, 0.8); z-index: 55; display: flex; flex-direction: column; transform: translateX(0); transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+        #vtt-drawer.collapsed { transform: translateX(calc(100% - 44px)); }
+        .drawer-tab-bar { display: flex; background: rgba(11, 15, 25, 0.95); border-bottom: 1px solid rgba(148, 163, 184, 0.2); }
+        .drawer-tab-btn { flex: 1; padding: 12px 6px; background: none; border: none; color: #94a3b8; font-family: 'Cinzel', serif; font-size: 11px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; border-bottom: 2px solid transparent; transition: all 0.2s; }
+        .drawer-tab-btn.active { color: var(--rpg-cyan); border-bottom-color: var(--rpg-cyan); background: rgba(102, 252, 241, 0.08); }
+        .drawer-content-pane { flex: 1; overflow-y: auto; padding: 16px; display: none; }
         .drawer-content-pane.active { display: flex; flex-direction: column; }
 
-        /* Chat Logs */
-        #chat-messages {
-            flex: 1;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            margin-bottom: 12px;
-            padding-right: 4px;
-        }
+        #chat-messages { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+        .chat-entry { background: rgba(15, 23, 42, 0.75); border: 1px solid rgba(71, 85, 105, 0.4); border-radius: 8px; padding: 8px 12px; font-size: 12px; }
+        .chat-entry.roll-crit { border-color: #fbbf24; background: rgba(251, 191, 36, 0.12); }
+        .chat-entry.roll-fumble { border-color: #ef4444; background: rgba(239, 68, 68, 0.12); }
 
-        .chat-entry {
-            background: rgba(15, 23, 42, 0.75);
-            border: 1px solid rgba(71, 85, 105, 0.4);
-            border-radius: 8px;
-            padding: 8px 12px;
-            font-size: 12px;
-        }
-
-        .chat-entry.roll-crit {
-            border-color: #fbbf24;
-            background: rgba(251, 191, 36, 0.12);
-            box-shadow: 0 0 15px rgba(251, 191, 36, 0.25);
-        }
-
-        .chat-entry.roll-fumble {
-            border-color: #ef4444;
-            background: rgba(239, 68, 68, 0.12);
-            box-shadow: 0 0 15px rgba(239, 68, 68, 0.25);
-        }
-
-        /* Token Context Menu */
-        #token-context-menu {
-            position: fixed;
-            background: rgba(15, 23, 42, 0.98);
-            backdrop-filter: blur(16px);
-            border: 1px solid var(--rpg-cyan);
-            border-radius: 10px;
-            padding: 12px;
-            width: 220px;
-            z-index: 150;
-            display: none;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8), 0 0 20px rgba(102, 252, 241, 0.2);
-        }
-
-        @keyframes pulse-token {
-            0% { box-shadow: 0 0 10px #fbbf24; }
-            100% { box-shadow: 0 0 25px #fbbf24; }
-        }
+        #token-context-menu { position: fixed; background: rgba(15, 23, 42, 0.98); backdrop-filter: blur(16px); border: 1px solid var(--rpg-cyan); border-radius: 10px; padding: 12px; width: 220px; z-index: 150; display: none; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8); }
     </style>
 </head>
 
 <body>
-
     <!-- Header HUD -->
     <header id="vtt-header">
-        <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-lg bg-cyan-950/60 border border-cyan-400/40 flex items-center justify-center text-cyan-400 text-lg shadow-[0_0_15px_rgba(102,252,241,0.3)]">
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="width: 40px; height: 40px; border-radius: 10px; background: rgba(8, 51, 68, 0.6); border: 1px solid rgba(102, 252, 241, 0.4); display: flex; align-items: center; justify-content: center; color: #66FCF1; font-size: 18px;">
                 <i class="fa-solid fa-dice-d20"></i>
             </div>
             <div>
-                <h1 class="font-cinzel text-base md:text-lg font-bold text-cyan-300 tracking-wider">Kuar-Tor VTT &middot; +2d6</h1>
-                <p class="text-[10px] text-gray-400">Mesa Virtual 2D Tática &middot; Sistema Daemon Adaptado</p>
+                <h1 class="font-cinzel" style="font-size: 16px; font-weight: 700; color: #66FCF1; letter-spacing: 1px;">Kuar-Tor VTT &middot; +2d6</h1>
+                <p style="font-size: 10px; color: #94a3b8;">Mesa Virtual 2D Tática (Multiplayer P2P)</p>
             </div>
         </div>
 
-        <!-- Quick Top Controls -->
-        <div class="flex items-center gap-2">
-            <!-- Map Select Modal Button -->
-            <button onclick="openMapModal()" class="px-3 py-1.5 rounded-lg bg-slate-800/80 border border-slate-600 hover:border-cyan-400 text-xs text-gray-200 font-cinzel flex items-center gap-1.5 transition">
-                <i class="fa-solid fa-map"></i>
-                <span class="hidden md:inline">Mapas</span>
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <button id="p2p-modal-btn" onclick="openMultiplayerModal()" class="btn-top" style="background: rgba(8, 51, 68, 0.8); border: 1px solid #66FCF1; color: #66FCF1; padding: 6px 12px; border-radius: 8px; font-size: 11px; font-family: 'Cinzel', serif; font-weight: 700; cursor: pointer;">
+                <i class="fa-solid fa-tower-broadcast"></i> <span id="p2p-status-label">Multijogador P2P</span>
             </button>
-
-            <!-- Snap Toggle -->
-            <button id="snap-toggle-btn" onclick="toggleSnap()" class="px-3 py-1.5 rounded-lg bg-slate-800/80 border border-cyan-400 text-cyan-300 text-xs font-cinzel flex items-center gap-1.5 transition" title="Alinhamento Magnético ao Grid">
-                <i class="fa-solid fa-magnet"></i>
-                <span class="hidden md:inline">Snap On</span>
+            <button onclick="openMapModal()" style="background: rgba(30, 41, 59, 0.8); border: 1px solid rgba(148, 163, 184, 0.3); color: #cbd5e1; padding: 6px 12px; border-radius: 8px; font-size: 11px; font-family: 'Cinzel', serif; cursor: pointer;">
+                <i class="fa-solid fa-map"></i> Mapas
             </button>
-
-            <!-- Character Spawn Button -->
-            <button onclick="openCharacterModal()" class="px-3 py-1.5 rounded-lg bg-amber-500/20 border border-amber-400 text-amber-300 hover:bg-amber-500/30 text-xs font-cinzel font-bold flex items-center gap-1.5 transition">
-                <i class="fa-solid fa-user-plus"></i>
-                <span>Adicionar Ficha</span>
+            <button id="snap-toggle-btn" onclick="toggleSnap()" style="background: rgba(30, 41, 59, 0.8); border: 1px solid #66FCF1; color: #66FCF1; padding: 6px 12px; border-radius: 8px; font-size: 11px; font-family: 'Cinzel', serif; cursor: pointer;">
+                <i class="fa-solid fa-magnet"></i> Snap On
             </button>
-
-            <!-- Sair -->
-            <a href="main.html" class="px-3 py-1.5 rounded-lg bg-slate-800/80 border border-slate-600 hover:border-red-400 text-xs text-gray-200 hover:text-red-300 font-cinzel flex items-center gap-1.5 transition no-underline">
-                <i class="fa-solid fa-door-open"></i>
-                <span class="hidden md:inline">Sair</span>
+            <button onclick="openCharacterModal()" style="background: rgba(245, 158, 11, 0.15); border: 1px solid #fbbf24; color: #fbbf24; padding: 6px 12px; border-radius: 8px; font-size: 11px; font-family: 'Cinzel', serif; font-weight: 700; cursor: pointer;">
+                <i class="fa-solid fa-user-plus"></i> Adicionar Ficha
+            </button>
+            <a href="main.html" style="background: rgba(30, 41, 59, 0.8); border: 1px solid rgba(148, 163, 184, 0.3); color: #cbd5e1; padding: 6px 12px; border-radius: 8px; font-size: 11px; font-family: 'Cinzel', serif; text-decoration: none;">
+                <i class="fa-solid fa-door-open"></i> Sair
             </a>
         </div>
     </header>
 
-    <!-- Toolbar Esquerda Flutuante -->
+    <!-- Toolbar Esquerda -->
     <div id="vtt-toolbar">
-        <button id="tool-select" class="tool-btn active" onclick="setTool('select')" title="Selecionar / Mover (V)">
-            <i class="fa-solid fa-arrow-pointer"></i>
-        </button>
-        <button id="tool-ruler" class="tool-btn" onclick="setTool('ruler')" title="Régua de Distância 2d6 (R)">
-            <i class="fa-solid fa-ruler-combined"></i>
-        </button>
-        <button id="tool-fog" class="tool-btn" onclick="setTool('fog')" title="Névoa de Guerra / Revelar (F)">
-            <i class="fa-solid fa-cloud-moon"></i>
-        </button>
-        <button id="tool-grid" class="tool-btn" onclick="toggleGrid()" title="Mostrar/Ocultar Grid (G)">
-            <i class="fa-solid fa-border-all"></i>
-        </button>
-        <hr class="border-slate-700 my-1">
-        <button class="tool-btn" onclick="adjustZoom(0.15)" title="Aproximar (+)">
-            <i class="fa-solid fa-magnifying-glass-plus"></i>
-        </button>
-        <button class="tool-btn" onclick="adjustZoom(-0.15)" title="Afastar (-)">
-            <i class="fa-solid fa-magnifying-glass-minus"></i>
-        </button>
-        <button class="tool-btn" onclick="resetViewport()" title="Centralizar Mapa">
-            <i class="fa-solid fa-crosshairs"></i>
-        </button>
+        <button id="tool-select" class="tool-btn active" onclick="setTool('select')" title="Mover (V)"><i class="fa-solid fa-arrow-pointer"></i></button>
+        <button id="tool-ruler" class="tool-btn" onclick="setTool('ruler')" title="Régua 2d6 (R)"><i class="fa-solid fa-ruler-combined"></i></button>
+        <button id="tool-fog" class="tool-btn" onclick="setTool('fog')" title="Névoa de Guerra (F)"><i class="fa-solid fa-cloud-moon"></i></button>
+        <button id="tool-grid" class="tool-btn" onclick="toggleGrid()" title="Grid On/Off (G)"><i class="fa-solid fa-border-all"></i></button>
+        <button class="tool-btn" onclick="adjustZoom(0.15)" title="Zoom +"><i class="fa-solid fa-magnifying-glass-plus"></i></button>
+        <button class="tool-btn" onclick="adjustZoom(-0.15)" title="Zoom -"><i class="fa-solid fa-magnifying-glass-minus"></i></button>
+        <button class="tool-btn" onclick="resetViewport()" title="Centralizar"><i class="fa-solid fa-crosshairs"></i></button>
     </div>
 
     <!-- Viewport do Mapa -->
@@ -464,795 +137,307 @@
         </div>
     </div>
 
-    <!-- Context Menu Flutuante do Token -->
+    <!-- Context Menu Flutuante -->
     <div id="token-context-menu">
-        <div class="flex justify-between items-center border-b border-slate-700 pb-2 mb-2">
-            <span id="ctx-token-name" class="font-cinzel text-xs font-bold text-cyan-300">Token</span>
-            <button onclick="closeContextMenu()" class="text-gray-400 hover:text-white text-xs"><i class="fa-solid fa-xmark"></i></button>
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; padding-bottom: 6px; margin-bottom: 6px;">
+            <span id="ctx-token-name" class="font-cinzel" style="font-size: 11px; font-weight: 700; color: #66FCF1;">Token</span>
+            <button onclick="closeContextMenu()" style="background: none; border: none; color: #94a3b8; cursor: pointer;"><i class="fa-solid fa-xmark"></i></button>
         </div>
-
-        <!-- PV Modifier -->
-        <div class="text-[10px] text-gray-400 uppercase tracking-wider mb-1">Pontos de Vida (PV)</div>
-        <div class="flex items-center gap-1 mb-2">
-            <button onclick="modifyTokenStat('hp', -5)" class="px-2 py-1 bg-red-950 border border-red-500 rounded text-xs text-red-300 font-bold">-5</button>
-            <button onclick="modifyTokenStat('hp', -1)" class="px-2 py-1 bg-red-950 border border-red-500 rounded text-xs text-red-300 font-bold">-1</button>
-            <span id="ctx-token-hp" class="flex-1 text-center font-cinzel text-xs font-bold text-red-400">12/12</span>
-            <button onclick="modifyTokenStat('hp', 1)" class="px-2 py-1 bg-emerald-950 border border-emerald-500 rounded text-xs text-emerald-300 font-bold">+1</button>
-            <button onclick="modifyTokenStat('hp', 5)" class="px-2 py-1 bg-emerald-950 border border-emerald-500 rounded text-xs text-emerald-300 font-bold">+5</button>
+        <div style="font-size: 9px; color: #94a3b8; text-transform: uppercase; margin-bottom: 4px;">Pontos de Vida (PV)</div>
+        <div style="display: flex; align-items: center; gap: 4px; margin-bottom: 8px;">
+            <button onclick="modifyTokenStat('hp', -5)" style="padding: 2px 6px; background: #450a0a; border: 1px solid #ef4444; border-radius: 4px; color: #fca5a5; font-size: 11px; cursor: pointer;">-5</button>
+            <button onclick="modifyTokenStat('hp', -1)" style="padding: 2px 6px; background: #450a0a; border: 1px solid #ef4444; border-radius: 4px; color: #fca5a5; font-size: 11px; cursor: pointer;">-1</button>
+            <span id="ctx-token-hp" style="flex: 1; text-align: center; font-size: 11px; font-weight: 700; color: #f87171;">12/12</span>
+            <button onclick="modifyTokenStat('hp', 1)" style="padding: 2px 6px; background: #022c22; border: 1px solid #10b981; border-radius: 4px; color: #6ee7b7; font-size: 11px; cursor: pointer;">+1</button>
+            <button onclick="modifyTokenStat('hp', 5)" style="padding: 2px 6px; background: #022c22; border: 1px solid #10b981; border-radius: 4px; color: #6ee7b7; font-size: 11px; cursor: pointer;">+5</button>
         </div>
-
-        <!-- Condições -->
-        <div class="text-[10px] text-gray-400 uppercase tracking-wider mb-1">Condições & Status</div>
-        <div class="grid grid-cols-4 gap-1 mb-3">
-            <button onclick="toggleCondition('🔥')" class="p-1 bg-slate-800 border border-slate-600 rounded text-xs hover:border-amber-400" title="Em Chamas">🔥</button>
-            <button onclick="toggleCondition('❄️')" class="p-1 bg-slate-800 border border-slate-600 rounded text-xs hover:border-cyan-400" title="Congelado">❄️</button>
-            <button onclick="toggleCondition('🧪')" class="p-1 bg-slate-800 border border-slate-600 rounded text-xs hover:border-emerald-400" title="Envenenado">🧪</button>
-            <button onclick="toggleCondition('💫')" class="p-1 bg-slate-800 border border-slate-600 rounded text-xs hover:border-purple-400" title="Atordoado">💫</button>
-            <button onclick="toggleCondition('🩸')" class="p-1 bg-slate-800 border border-slate-600 rounded text-xs hover:border-red-400" title="Sangrando">🩸</button>
-            <button onclick="toggleCondition('👻')" class="p-1 bg-slate-800 border border-slate-600 rounded text-xs hover:border-slate-300" title="Invisível">👻</button>
-            <button onclick="toggleCondition('✨')" class="p-1 bg-slate-800 border border-slate-600 rounded text-xs hover:border-yellow-400" title="Abençoado">✨</button>
-            <button onclick="deleteSelectedToken()" class="p-1 bg-red-900/60 border border-red-500 rounded text-xs text-red-300 hover:bg-red-800" title="Excluir Token"><i class="fa-solid fa-trash"></i></button>
+        <div style="font-size: 9px; color: #94a3b8; text-transform: uppercase; margin-bottom: 4px;">Condições</div>
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin-bottom: 8px;">
+            <button onclick="toggleCondition('🔥')" style="padding: 4px; background: #1e293b; border: 1px solid #475569; border-radius: 4px; cursor: pointer;">🔥</button>
+            <button onclick="toggleCondition('❄️')" style="padding: 4px; background: #1e293b; border: 1px solid #475569; border-radius: 4px; cursor: pointer;">❄️</button>
+            <button onclick="toggleCondition('🧪')" style="padding: 4px; background: #1e293b; border: 1px solid #475569; border-radius: 4px; cursor: pointer;">🧪</button>
+            <button onclick="toggleCondition('💫')" style="padding: 4px; background: #1e293b; border: 1px solid #475569; border-radius: 4px; cursor: pointer;">💫</button>
+            <button onclick="toggleCondition('🩸')" style="padding: 4px; background: #1e293b; border: 1px solid #475569; border-radius: 4px; cursor: pointer;">🩸</button>
+            <button onclick="toggleCondition('👻')" style="padding: 4px; background: #1e293b; border: 1px solid #475569; border-radius: 4px; cursor: pointer;">👻</button>
+            <button onclick="toggleCondition('✨')" style="padding: 4px; background: #1e293b; border: 1px solid #475569; border-radius: 4px; cursor: pointer;">✨</button>
+            <button onclick="deleteSelectedToken()" style="padding: 4px; background: #7f1d1d; border: 1px solid #ef4444; border-radius: 4px; color: #fca5a5; cursor: pointer;"><i class="fa-solid fa-trash"></i></button>
         </div>
     </div>
 
-    <!-- Drawer Lateral Direito (Chat, Iniciativa, GM) -->
+    <!-- Drawer Lateral -->
     <div id="vtt-drawer">
-        <!-- Tab Bar -->
         <div class="drawer-tab-bar">
-            <button class="drawer-tab-btn active" onclick="setDrawerTab('dice')">
-                <i class="fa-solid fa-dice-d6"></i>
-                <span>Rolagens</span>
-            </button>
-            <button class="drawer-tab-btn" onclick="setDrawerTab('turn')">
-                <i class="fa-solid fa-list-ol"></i>
-                <span>Iniciativa</span>
-            </button>
-            <button class="drawer-tab-btn" onclick="setDrawerTab('gm')">
-                <i class="fa-solid fa-dungeon"></i>
-                <span>Mestre</span>
-            </button>
-            <button onclick="toggleDrawer()" class="px-3 text-gray-400 hover:text-white" title="Recolher / Expandir">
-                <i class="fa-solid fa-chevron-right" id="drawer-toggle-icon"></i>
-            </button>
+            <button class="drawer-tab-btn active" onclick="setDrawerTab('dice')"><i class="fa-solid fa-dice-d6"></i> Rolagens</button>
+            <button class="drawer-tab-btn" onclick="setDrawerTab('turn')"><i class="fa-solid fa-list-ol"></i> Iniciativa</button>
+            <button class="drawer-tab-btn" onclick="setDrawerTab('gm')"><i class="fa-solid fa-dungeon"></i> Mestre</button>
+            <button onclick="toggleDrawer()" style="padding: 0 12px; background: none; border: none; color: #94a3b8; cursor: pointer;"><i class="fa-solid fa-chevron-right" id="drawer-toggle-icon"></i></button>
         </div>
 
-        <!-- PANE 1: ROLADOR +2d6 & CHAT -->
+        <!-- PANE 1: ROLADOR & CHAT -->
         <div id="pane-dice" class="drawer-content-pane active">
-            <!-- Quick +2d6 Roller Buttons -->
-            <div class="bg-slate-900/80 border border-slate-700/60 rounded-xl p-3 mb-3">
-                <div class="text-[10px] font-cinzel uppercase font-bold text-cyan-300 mb-2 flex items-center justify-between">
-                    <span>Rolagem Rápida (+2d6)</span>
-                    <span class="text-gray-400">Daemon 2D</span>
+            <div style="background: rgba(15, 23, 42, 0.8); border: 1px solid #334155; border-radius: 10px; padding: 12px; margin-bottom: 12px;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 8px;">
+                    <button onclick="rollQuickCheck('Ataque', 3, 10)" style="padding: 6px 8px; background: #1e293b; border: 1px solid #475569; border-radius: 6px; color: #f1f5f9; font-size: 11px; cursor: pointer; text-align: left;">⚔️ Ataque (+3)</button>
+                    <button onclick="rollQuickCheck('Esquiva', 2, 8)" style="padding: 6px 8px; background: #1e293b; border: 1px solid #475569; border-radius: 6px; color: #f1f5f9; font-size: 11px; cursor: pointer; text-align: left;">🛡️ Defesa (+2)</button>
+                    <button onclick="rollQuickCheck('Magia', 2, 10)" style="padding: 6px 8px; background: #1e293b; border: 1px solid #475569; border-radius: 6px; color: #f1f5f9; font-size: 11px; cursor: pointer; text-align: left;">🔮 Magia (+2)</button>
+                    <button onclick="rollQuickCheck('Percepção', 1, 8)" style="padding: 6px 8px; background: #1e293b; border: 1px solid #475569; border-radius: 6px; color: #f1f5f9; font-size: 11px; cursor: pointer; text-align: left;">👁️ Percepção (+1)</button>
                 </div>
-                <div class="grid grid-cols-2 gap-2 mb-2">
-                    <button onclick="rollQuickCheck('Ataque', 3, 10)" class="px-2 py-1.5 bg-slate-800 hover:bg-cyan-950 border border-slate-600 hover:border-cyan-400 rounded text-xs text-gray-200 text-left flex items-center justify-between transition">
-                        <span>⚔️ Ataque</span>
-                        <span class="text-[10px] text-cyan-400">+3 (CD 10)</span>
-                    </button>
-                    <button onclick="rollQuickCheck('Esquiva', 2, 8)" class="px-2 py-1.5 bg-slate-800 hover:bg-cyan-950 border border-slate-600 hover:border-cyan-400 rounded text-xs text-gray-200 text-left flex items-center justify-between transition">
-                        <span>🛡️ Defesa</span>
-                        <span class="text-[10px] text-cyan-400">+2 (CD 8)</span>
-                    </button>
-                    <button onclick="rollQuickCheck('Magia', 2, 10)" class="px-2 py-1.5 bg-slate-800 hover:bg-cyan-950 border border-slate-600 hover:border-cyan-400 rounded text-xs text-gray-200 text-left flex items-center justify-between transition">
-                        <span>🔮 Magia</span>
-                        <span class="text-[10px] text-purple-400">+2 (CD 10)</span>
-                    </button>
-                    <button onclick="rollQuickCheck('Percepção', 1, 8)" class="px-2 py-1.5 bg-slate-800 hover:bg-cyan-950 border border-slate-600 hover:border-cyan-400 rounded text-xs text-gray-200 text-left flex items-center justify-between transition">
-                        <span>👁️ Percepção</span>
-                        <span class="text-[10px] text-amber-400">+1 (CD 8)</span>
-                    </button>
+                <div style="display: flex; gap: 6px; margin-bottom: 8px;">
+                    <input type="number" id="custom-bonus" placeholder="Bônus" value="0" style="width: 60px; background: #0b0f19; border: 1px solid #334155; border-radius: 4px; padding: 4px; color: #fff; font-size: 11px; text-align: center;">
+                    <input type="number" id="custom-cd" placeholder="CD" value="10" style="width: 60px; background: #0b0f19; border: 1px solid #334155; border-radius: 4px; padding: 4px; color: #fff; font-size: 11px; text-align: center;">
+                    <button onclick="rollCustomCheck()" style="flex: 1; background: #0891b2; border: none; border-radius: 6px; color: #000; font-family: 'Cinzel', serif; font-weight: 700; font-size: 11px; cursor: pointer;">Rolar +2d6</button>
                 </div>
-
-                <!-- Custom Roll Bar -->
-                <div class="flex items-center gap-2">
-                    <input type="number" id="custom-bonus" placeholder="Bônus" value="0" class="w-16 bg-black/70 border border-slate-700 rounded px-2 py-1 text-xs text-center text-white">
-                    <input type="number" id="custom-cd" placeholder="CD" value="10" class="w-16 bg-black/70 border border-slate-700 rounded px-2 py-1 text-xs text-center text-white">
-                    <button onclick="rollCustomCheck()" class="flex-1 py-1 bg-cyan-600 hover:bg-cyan-500 text-black font-cinzel font-bold text-xs rounded transition flex items-center justify-center gap-1.5">
-                        <i class="fa-solid fa-dice"></i> Rolar +2d6
-                    </button>
+                <div style="display: flex; justify-content: space-between; font-size: 11px; color: #94a3b8; background: rgba(0,0,0,0.4); padding: 4px 8px; border-radius: 4px;">
+                    <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                        <input type="checkbox" id="secret-roll-toggle">
+                        <span>🤫 Rolagem Secreta (GM)</span>
+                    </label>
+                    <span id="p2p-net-indicator" style="font-family: monospace; font-size: 10px;">Modo Offline</span>
                 </div>
             </div>
 
-            <!-- Chat & Roll History -->
             <div id="chat-messages">
                 <div class="chat-entry">
-                    <div class="text-[10px] text-gray-400 font-cinzel">Sistema VTT</div>
-                    <div class="text-xs text-gray-300">Mesa virtual iniciada. Selecione tokens ou role dados usando as opções acima.</div>
+                    <div style="font-size: 10px; color: #66FCF1; font-family: 'Cinzel', serif;">Sistema VTT</div>
+                    <div style="color: #cbd5e1;">Mesa virtual iniciada com suporte P2P.</div>
                 </div>
             </div>
 
-            <!-- Chat Input -->
-            <div class="flex items-center gap-2 mt-auto">
-                <input type="text" id="chat-input" placeholder="Mensagem ou /r 2d6+x..." class="flex-1 bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-400" onkeydown="if(event.key==='Enter') sendChatMessage()">
-                <button onclick="sendChatMessage()" class="p-2 bg-slate-800 hover:bg-cyan-600 hover:text-black border border-slate-700 rounded-lg text-xs text-cyan-400 transition">
-                    <i class="fa-solid fa-paper-plane"></i>
-                </button>
+            <div style="display: flex; gap: 6px; margin-top: auto;">
+                <input type="text" id="chat-input" placeholder="Mensagem ou /r 2d6+x..." style="flex: 1; background: #0b0f19; border: 1px solid #334155; border-radius: 8px; padding: 8px 12px; font-size: 11px; color: #fff;" onkeydown="if(event.key==='Enter') sendChatMessage()">
+                <button onclick="sendChatMessage()" style="background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 8px 12px; color: #66FCF1; cursor: pointer;"><i class="fa-solid fa-paper-plane"></i></button>
             </div>
         </div>
 
-        <!-- PANE 2: RASTREADOR DE INICIATIVA -->
+        <!-- PANE 2: INICIATIVA -->
         <div id="pane-turn" class="drawer-content-pane">
-            <div class="flex justify-between items-center bg-slate-900/80 border border-slate-700/60 rounded-xl p-3 mb-3">
-                <div>
-                    <span class="text-[10px] text-gray-400 uppercase font-cinzel">Combate Ativo</span>
-                    <h3 class="font-cinzel text-base font-bold text-amber-400" id="round-counter">Rodada 1</h3>
-                </div>
-                <div class="flex gap-1.5">
-                    <button onclick="nextTurn()" class="px-3 py-1.5 bg-cyan-600 hover:bg-cyan-500 text-black font-cinzel font-bold text-xs rounded transition flex items-center gap-1">
-                        <span>Próximo</span>
-                        <i class="fa-solid fa-forward"></i>
-                    </button>
-                    <button onclick="rollAllInitiative()" class="p-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-600 text-gray-200 rounded text-xs" title="Rolar Iniciativa para Todos">
-                        <i class="fa-solid fa-rotate-right"></i>
-                    </button>
+            <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(15, 23, 42, 0.8); border: 1px solid #334155; border-radius: 10px; padding: 10px; margin-bottom: 10px;">
+                <div><h3 class="font-cinzel" style="color: #fbbf24; font-size: 14px; font-weight: 700;" id="round-counter">Rodada 1</h3></div>
+                <div style="display: flex; gap: 6px;">
+                    <button onclick="nextTurn()" style="background: #0891b2; border: none; padding: 6px 10px; border-radius: 6px; color: #000; font-family: 'Cinzel', serif; font-weight: 700; font-size: 11px; cursor: pointer;">Próximo</button>
+                    <button onclick="rollAllInitiative()" style="background: #1e293b; border: 1px solid #475569; padding: 6px 10px; border-radius: 6px; color: #fff; font-size: 11px; cursor: pointer;"><i class="fa-solid fa-rotate-right"></i></button>
                 </div>
             </div>
-
-            <div id="initiative-list" class="flex flex-col gap-2 flex-1 overflow-y-auto">
-                <!-- Itens de iniciativa gerados dinamicamente -->
-            </div>
+            <div id="initiative-list" style="display: flex; flex-direction: column; gap: 6px; flex: 1; overflow-y: auto;"></div>
         </div>
 
-        <!-- PANE 3: PAINEL DO MESTRE (GM TOOLS) -->
+        <!-- PANE 3: GM TOOLS -->
         <div id="pane-gm" class="drawer-content-pane">
-            <div class="text-xs font-cinzel font-bold text-red-400 mb-2 uppercase tracking-wider flex items-center gap-1.5">
-                <i class="fa-solid fa-skull"></i>
-                <span>Gerador de Inimigos / NPCs</span>
+            <div style="font-size: 11px; font-family: 'Cinzel', serif; font-weight: 700; color: #ef4444; margin-bottom: 8px;">GERADOR DE INIMIGOS</div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 12px;">
+                <button onclick="spawnMonster('Goblin Salteador', 8, 4, '#ef4444', 'https://images.unsplash.com/photo-1563089145-599997674d42?auto=format&fit=crop&w=200&q=80')" style="padding: 8px; background: #0f172a; border: 1px solid #7f1d1d; border-radius: 6px; color: #fca5a5; font-size: 11px; text-align: left; cursor: pointer;">Goblin (PV 8)</button>
+                <button onclick="spawnMonster('Guarda Corrupto', 14, 6, '#ef4444', 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&w=200&q=80')" style="padding: 8px; background: #0f172a; border: 1px solid #7f1d1d; border-radius: 6px; color: #fca5a5; font-size: 11px; text-align: left; cursor: pointer;">Guarda (PV 14)</button>
             </div>
-
-            <div class="grid grid-cols-2 gap-2 mb-4">
-                <button onclick="spawnMonster('Goblin Salteador', 8, 4, '#ef4444', 'https://images.unsplash.com/photo-1563089145-599997674d42?auto=format&fit=crop&w=200&q=80')" class="p-2 bg-slate-900 border border-red-900/60 hover:border-red-500 rounded text-left transition">
-                    <div class="font-bold text-xs text-red-300">Goblin Salteador</div>
-                    <div class="text-[10px] text-gray-400">PV 8 &middot; PE 4 &middot; Veloz</div>
-                </button>
-                <button onclick="spawnMonster('Guarda Corrupto', 14, 6, '#ef4444', 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&w=200&q=80')" class="p-2 bg-slate-900 border border-red-900/60 hover:border-red-500 rounded text-left transition">
-                    <div class="font-bold text-xs text-red-300">Guarda de Ferro</div>
-                    <div class="text-[10px] text-gray-400">PV 14 &middot; PE 6 &middot; Armadura</div>
-                </button>
-                <button onclick="spawnMonster('Cultista do Abismo', 10, 12, '#a855f7', 'https://images.unsplash.com/photo-1514539079130-25950c84af65?auto=format&fit=crop&w=200&q=80')" class="p-2 bg-slate-900 border border-purple-900/60 hover:border-purple-500 rounded text-left transition">
-                    <div class="font-bold text-xs text-purple-300">Cultista Arcano</div>
-                    <div class="text-[10px] text-gray-400">PV 10 &middot; PE 12 &middot; Magia</div>
-                </button>
-                <button onclick="spawnMonster('Demônio Menor', 20, 10, '#f97316', 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?auto=format&fit=crop&w=200&q=80')" class="p-2 bg-slate-900 border border-orange-900/60 hover:border-orange-500 rounded text-left transition">
-                    <div class="font-bold text-xs text-orange-300">Demônio Menor</div>
-                    <div class="text-[10px] text-gray-400">PV 20 &middot; PE 10 &middot; Fogo</div>
-                </button>
-            </div>
-
-            <!-- Fog Tools -->
-            <div class="text-xs font-cinzel font-bold text-cyan-300 mb-2 uppercase tracking-wider flex items-center gap-1.5">
-                <i class="fa-solid fa-eye-slash"></i>
-                <span>Controles da Névoa de Guerra</span>
-            </div>
-            <div class="flex gap-2 mb-4">
-                <button onclick="resetFog(true)" class="flex-1 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded text-xs text-gray-200">Ocultar Tudo</button>
-                <button onclick="resetFog(false)" class="flex-1 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded text-xs text-gray-200">Revelar Tudo</button>
-            </div>
-
-            <!-- Custom Token Creation -->
-            <div class="text-xs font-cinzel font-bold text-amber-400 mb-2 uppercase tracking-wider flex items-center gap-1.5">
-                <i class="fa-solid fa-user-gear"></i>
-                <span>Criar Token Personalizado</span>
-            </div>
-            <div class="space-y-2">
-                <input type="text" id="custom-token-name" placeholder="Nome do NPC / Monstro" class="w-full bg-black/70 border border-slate-700 rounded px-2 py-1 text-xs text-white">
-                <div class="flex gap-2">
-                    <input type="number" id="custom-token-hp" placeholder="PV Máx" value="12" class="w-1/2 bg-black/70 border border-slate-700 rounded px-2 py-1 text-xs text-white">
-                    <input type="number" id="custom-token-pe" placeholder="PE Máx" value="6" class="w-1/2 bg-black/70 border border-slate-700 rounded px-2 py-1 text-xs text-white">
-                </div>
-                <button onclick="createCustomToken()" class="w-full py-1.5 bg-amber-600 hover:bg-amber-500 text-black font-cinzel font-bold text-xs rounded transition">
-                    + Inserir no Centro do Mapa
-                </button>
+            <div style="font-size: 11px; font-family: 'Cinzel', serif; font-weight: 700; color: #66FCF1; margin-bottom: 8px;">NÉVOA DE GUERRA</div>
+            <div style="display: flex; gap: 6px;">
+                <button onclick="resetFog(true)" style="flex: 1; padding: 6px; background: #1e293b; border: 1px solid #475569; border-radius: 6px; color: #fff; font-size: 11px; cursor: pointer;">Ocultar Tudo</button>
+                <button onclick="resetFog(false)" style="flex: 1; padding: 6px; background: #1e293b; border: 1px solid #475569; border-radius: 6px; color: #fff; font-size: 11px; cursor: pointer;">Revelar Tudo</button>
             </div>
         </div>
     </div>
 
-    <!-- Map Selection Modal -->
-    <div id="map-modal" class="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 hidden z-[120]">
-        <div class="bg-slate-900 border border-cyan-400/40 p-6 rounded-xl max-w-lg w-full shadow-2xl">
-            <div class="flex justify-between items-center border-b border-slate-700 pb-3 mb-4">
-                <h3 class="font-cinzel text-lg font-bold text-cyan-300">Selecionar Mapa Tático</h3>
-                <button onclick="closeMapModal()" class="text-gray-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+    <!-- Multiplayer P2P Modal -->
+    <div id="p2p-modal" style="position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); display: none; align-items: center; justify-content: center; z-index: 130; padding: 16px;">
+        <div style="background: #0f172a; border: 1px solid rgba(102, 252, 241, 0.4); padding: 20px; border-radius: 12px; max-width: 420px; width: 100%; box-shadow: 0 10px 40px #000;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; padding-bottom: 10px; margin-bottom: 12px;">
+                <h3 class="font-cinzel" style="color: #66FCF1; font-size: 16px; font-weight: 700;"><i class="fa-solid fa-tower-broadcast"></i> Multijogador P2P</h3>
+                <button onclick="closeMultiplayerModal()" style="background: none; border: none; color: #94a3b8; font-size: 16px; cursor: pointer;"><i class="fa-solid fa-xmark"></i></button>
             </div>
-
-            <!-- Preset Maps -->
-            <div class="grid grid-cols-2 gap-3 mb-4">
-                <div onclick="setMapUrl('https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=2000&q=80')" class="cursor-pointer border border-slate-700 hover:border-cyan-400 rounded-lg overflow-hidden group">
-                    <img src="https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=400&q=80" class="w-full h-24 object-cover group-hover:scale-105 transition duration-300">
-                    <div class="p-2 bg-slate-950 text-xs font-cinzel text-gray-200">Ruínas Antigas</div>
-                </div>
-                <div onclick="setMapUrl('https://images.unsplash.com/photo-1509198397868-475647b2a1e5?auto=format&fit=crop&w=2000&q=80')" class="cursor-pointer border border-slate-700 hover:border-cyan-400 rounded-lg overflow-hidden group">
-                    <img src="https://images.unsplash.com/photo-1509198397868-475647b2a1e5?auto=format&fit=crop&w=400&q=80" class="w-full h-24 object-cover group-hover:scale-105 transition duration-300">
-                    <div class="p-2 bg-slate-950 text-xs font-cinzel text-gray-200">Arena Mística</div>
-                </div>
+            <div style="display: flex; background: #020617; padding: 4px; border-radius: 8px; margin-bottom: 12px;">
+                <button id="p2p-tab-host" onclick="setP2PTab('host')" style="flex: 1; padding: 6px; font-size: 11px; font-family: 'Cinzel', serif; font-weight: 700; color: #66FCF1; background: #1e293b; border: none; border-radius: 6px; cursor: pointer;">Mestre (Criar)</button>
+                <button id="p2p-tab-client" onclick="setP2PTab('client')" style="flex: 1; padding: 6px; font-size: 11px; font-family: 'Cinzel', serif; font-weight: 700; color: #94a3b8; background: none; border: none; border-radius: 6px; cursor: pointer;">Jogador (Entrar)</button>
             </div>
-
-            <!-- Custom URL -->
-            <div class="text-xs text-gray-400 mb-1">Ou insira URL de imagem:</div>
-            <div class="flex gap-2">
-                <input type="text" id="custom-map-url" placeholder="https://exemplo.com/mapa.jpg" class="flex-1 bg-black/80 border border-slate-700 rounded px-3 py-1.5 text-xs text-white">
-                <button onclick="setMapUrl(document.getElementById('custom-map-url').value)" class="px-4 py-1.5 bg-cyan-600 hover:bg-cyan-500 text-black font-cinzel font-bold text-xs rounded">Carregar</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Character Spawn Modal -->
-    <div id="char-modal" class="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 hidden z-[120]">
-        <div class="bg-slate-900 border border-amber-400/40 p-6 rounded-xl max-w-sm w-full shadow-2xl">
-            <div class="flex justify-between items-center border-b border-slate-700 pb-3 mb-4">
-                <h3 class="font-cinzel text-lg font-bold text-amber-300">Entrar com Ficha</h3>
-                <button onclick="closeCharModal()" class="text-gray-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-            <div id="char-picker-list" class="space-y-2 mb-4 max-h-60 overflow-y-auto">
-                <button onclick="spawnPlayerToken('Operativo Kuar-Tor', 16, 8, 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80')" class="w-full p-2.5 bg-slate-950 border border-cyan-500/40 hover:border-cyan-400 rounded-lg flex items-center gap-3 text-left transition">
-                    <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80" class="w-9 h-9 rounded-full object-cover border border-cyan-400">
-                    <div>
-                        <div class="font-cinzel font-bold text-xs text-cyan-300">Operativo Kuar-Tor</div>
-                        <div class="text-[10px] text-gray-400">Guerreiro &middot; PV 16 / PE 8</div>
+            <div id="p2p-pane-host">
+                <div id="host-action-box"><button onclick="createHostRoom()" style="width: 100%; padding: 10px; background: #0891b2; border: none; border-radius: 8px; color: #000; font-family: 'Cinzel', serif; font-weight: 700; font-size: 12px; cursor: pointer;">Criar Sala como Mestre</button></div>
+                <div id="host-info-box" style="display: none; background: rgba(0,0,0,0.5); padding: 10px; border-radius: 8px; border: 1px solid rgba(102,252,241,0.2);">
+                    <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 8px;"><span>ID da Sala:</span><strong id="p2p-room-id-display" style="color: #66FCF1; font-family: monospace;">--</strong></div>
+                    <div style="display: flex; gap: 6px;">
+                        <button onclick="copyRoomInviteLink()" style="flex: 1; padding: 6px; background: #1e293b; border: 1px solid #475569; border-radius: 6px; color: #66FCF1; font-size: 11px; cursor: pointer;">Copiar Link</button>
+                        <button onclick="toggleQRCode()" style="padding: 6px 12px; background: #1e293b; border: 1px solid #475569; border-radius: 6px; color: #fbbf24; font-size: 11px; cursor: pointer;">QR Code</button>
                     </div>
-                </button>
-                <button onclick="spawnPlayerToken('Mago da Trama', 12, 16, 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80')" class="w-full p-2.5 bg-slate-950 border border-purple-500/40 hover:border-purple-400 rounded-lg flex items-center gap-3 text-left transition">
-                    <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=100&q=80" class="w-9 h-9 rounded-full object-cover border border-purple-400">
-                    <div>
-                        <div class="font-cinzel font-bold text-xs text-purple-300">Mago da Trama</div>
-                        <div class="text-[10px] text-gray-400">Arcanista &middot; PV 12 / PE 16</div>
-                    </div>
-                </button>
+                    <div id="p2p-qr-container" style="display: none; text-align: center; padding-top: 8px;"><img id="p2p-qr-img" style="margin: 0 auto; border-radius: 8px; border: 1px solid #66FCF1;" alt="QR Code"></div>
+                </div>
             </div>
-            <button onclick="closeCharModal()" class="w-full py-2 bg-slate-800 hover:bg-slate-700 text-gray-300 font-cinzel text-xs rounded">Fechar</button>
+            <div id="p2p-pane-client" style="display: none;">
+                <input type="text" id="p2p-client-name" placeholder="Seu Nome" value="Jogador" style="width: 100%; background: #020617; border: 1px solid #334155; padding: 8px; border-radius: 6px; color: #fff; font-size: 11px; margin-bottom: 8px;">
+                <input type="text" id="p2p-target-room-id" placeholder="ID da Sala (Ex: kuartor-A7B2X9)" style="width: 100%; background: #020617; border: 1px solid #334155; padding: 8px; border-radius: 6px; color: #66FCF1; font-family: monospace; font-size: 11px; margin-bottom: 8px;">
+                <button onclick="connectAsPlayer()" style="width: 100%; padding: 10px; background: #0891b2; border: none; border-radius: 8px; color: #000; font-family: 'Cinzel', serif; font-weight: 700; font-size: 12px; cursor: pointer;">Entrar na Sala</button>
+            </div>
+            <div style="margin-top: 12px; border-top: 1px solid #334155; padding-top: 8px;">
+                <div style="display: flex; justify-content: space-between; font-size: 11px; font-family: 'Cinzel', serif; margin-bottom: 4px;"><span>Jogadores Conectados</span><span id="p2p-player-count" style="color: #34d399;">0 online</span></div>
+                <div id="p2p-players-list" style="max-height: 100px; overflow-y: auto; font-size: 11px; color: #94a3b8;">Nenhum outro jogador conectado.</div>
+            </div>
+            <div style="margin-top: 12px; display: flex; gap: 6px;">
+                <button onclick="disconnectP2P()" style="flex: 1; padding: 6px; background: #450a0a; border: 1px solid #ef4444; border-radius: 6px; color: #fca5a5; font-size: 11px; cursor: pointer;">Desconectar</button>
+                <button onclick="closeMultiplayerModal()" style="padding: 6px 12px; background: #1e293b; border: 1px solid #475569; border-radius: 6px; color: #fff; font-size: 11px; cursor: pointer;">Fechar</button>
+            </div>
         </div>
     </div>
 
-    <!-- VTT ENGINE SCRIPT -->
+    <!-- Modais Mapa e Ficha -->
+    <div id="map-modal" style="position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: none; align-items: center; justify-content: center; z-index: 120; padding: 16px;">
+        <div style="background: #0f172a; border: 1px solid #66FCF1; padding: 16px; border-radius: 10px; max-width: 400px; width: 100%;">
+            <h3 class="font-cinzel" style="color: #66FCF1; font-size: 14px; margin-bottom: 8px;">Trocar Mapa</h3>
+            <input type="text" id="custom-map-url" placeholder="URL da Imagem do Mapa" style="width: 100%; background: #000; border: 1px solid #334155; padding: 6px; border-radius: 4px; color: #fff; font-size: 11px; margin-bottom: 8px;">
+            <div style="display: flex; gap: 6px;">
+                <button onclick="setMapUrl(document.getElementById('custom-map-url').value)" style="flex: 1; padding: 6px; background: #0891b2; border: none; border-radius: 4px; color: #000; font-weight: 700; cursor: pointer;">Carregar</button>
+                <button onclick="closeMapModal()" style="padding: 6px 12px; background: #1e293b; border: 1px solid #475569; border-radius: 4px; color: #fff; cursor: pointer;">Fechar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="char-modal" style="position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: none; align-items: center; justify-content: center; z-index: 120; padding: 16px;">
+        <div style="background: #0f172a; border: 1px solid #fbbf24; padding: 16px; border-radius: 10px; max-width: 320px; width: 100%;">
+            <h3 class="font-cinzel" style="color: #fbbf24; font-size: 14px; margin-bottom: 8px;">Adicionar Personagem</h3>
+            <button onclick="spawnPlayerToken('Guardião Kuar-Tor', 16, 8, 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80')" style="width: 100%; padding: 8px; background: #020617; border: 1px solid #334155; border-radius: 6px; color: #fff; font-size: 11px; margin-bottom: 8px; text-align: left; cursor: pointer;">+ Guardião Kuar-Tor (PV 16)</button>
+            <button onclick="closeCharModal()" style="width: 100%; padding: 6px; background: #1e293b; border: 1px solid #475569; border-radius: 6px; color: #fff; font-size: 11px; cursor: pointer;">Fechar</button>
+        </div>
+    </div>
+
+    <!-- Script VTT P2P -->
     <script>
-        // =========================================================================
-        // ESTADO DO VTT
-        // =========================================================================
-        const state = {
-            scale: 1,
-            originX: 0,
-            originY: 0,
-            gridSize: 50,
-            showGrid: true,
-            snapToGrid: true,
-            currentTool: 'select',
-            selectedTokenId: null,
-            tokens: {},
-            combatants: [],
-            currentTurnIndex: 0,
-            currentRound: 1,
-            rulerStart: null
+        const state = { scale: 1, originX: 0, originY: 0, gridSize: 50, showGrid: true, snapToGrid: true, currentTool: 'select', selectedTokenId: null, tokens: {}, combatants: [], currentTurnIndex: 0, currentRound: 1, rulerStart: null };
+        let p2pNet = null;
+        if (typeof PeerVTTNetwork !== 'undefined') { p2pNet = new PeerVTTNetwork({ playerName: 'Mestre Kuar-Tor', characterName: 'Mestre' }); setupP2PListeners(); }
+
+        const viewport = document.getElementById('vtt-viewport'), world = document.getElementById('vtt-world'), mapImg = document.getElementById('map-image'), gridOverlay = document.getElementById('grid-overlay'), tokensLayer = document.getElementById('tokens-layer'), rulerSvg = document.getElementById('ruler-svg'), fogCanvas = document.getElementById('fog-canvas'), fogCtx = fogCanvas.getContext('2d'), ctxMenu = document.getElementById('token-context-menu');
+        let isPanning = false, startX, startY;
+
+        function updateWorldTransform() { world.style.transform = `translate(${state.originX}px, ${state.originY}px) scale(${state.scale})`; }
+        viewport.onmousedown = (e) => {
+            if (e.target.closest('.vtt-token') || e.target.closest('#vtt-toolbar') || e.target.closest('#token-context-menu') || e.target.closest('#vtt-drawer')) return;
+            if (state.currentTool === 'ruler') { state.rulerStart = screenToWorld(e.clientX, e.clientY); return; }
+            if (state.currentTool === 'fog') { revealFogAt(e.clientX, e.clientY, 80); return; }
+            isPanning = true; viewport.classList.add('panning'); startX = e.clientX - state.originX; startY = e.clientY - state.originY; closeContextMenu();
         };
-
-        // DOM Elements
-        const viewport = document.getElementById('vtt-viewport');
-        const world = document.getElementById('vtt-world');
-        const mapImg = document.getElementById('map-image');
-        const gridOverlay = document.getElementById('grid-overlay');
-        const tokensLayer = document.getElementById('tokens-layer');
-        const rulerSvg = document.getElementById('ruler-svg');
-        const fogCanvas = document.getElementById('fog-canvas');
-        const fogCtx = fogCanvas.getContext('2d');
-        const ctxMenu = document.getElementById('token-context-menu');
-
-        // =========================================================================
-        // NAVEGAÇÃO DO MAPA (PAN & ZOOM)
-        // =========================================================================
-        let isPanning = false;
-        let startX, startY;
-
-        function updateWorldTransform() {
-            world.style.transform = `translate(${state.originX}px, ${state.originY}px) scale(${state.scale})`;
-        }
-
-        viewport.addEventListener('mousedown', (e) => {
-            if (e.target.closest('.vtt-token') || e.target.closest('#vtt-toolbar') || e.target.closest('#token-context-menu') || e.target.closest('#vtt-drawer')) {
-                return;
-            }
-
-            if (state.currentTool === 'ruler') {
-                const worldPos = screenToWorld(e.clientX, e.clientY);
-                state.rulerStart = worldPos;
-                return;
-            }
-
-            if (state.currentTool === 'fog') {
-                revealFogAt(e.clientX, e.clientY, 80);
-                return;
-            }
-
-            isPanning = true;
-            viewport.classList.add('panning');
-            startX = e.clientX - state.originX;
-            startY = e.clientY - state.originY;
-            closeContextMenu();
-        });
-
-        window.addEventListener('mousemove', (e) => {
-            if (isPanning) {
-                state.originX = e.clientX - startX;
-                state.originY = e.clientY - startY;
-                updateWorldTransform();
-            }
-
-            if (state.currentTool === 'ruler' && state.rulerStart) {
-                const worldPos = screenToWorld(e.clientX, e.clientY);
-                drawRuler(state.rulerStart, worldPos);
-            }
-
-            if (state.currentTool === 'fog' && e.buttons === 1) {
-                revealFogAt(e.clientX, e.clientY, 80);
-            }
-        });
-
-        window.addEventListener('mouseup', () => {
-            isPanning = false;
-            viewport.classList.remove('panning');
-            if (state.currentTool === 'ruler' && state.rulerStart) {
-                state.rulerStart = null;
-                rulerSvg.innerHTML = '';
-            }
-        });
-
-        viewport.addEventListener('wheel', (e) => {
-            e.preventDefault();
-            const delta = e.deltaY > 0 ? -0.1 : 0.1;
-            adjustZoom(delta, e.clientX, e.clientY);
-        });
+        window.onmousemove = (e) => {
+            if (isPanning) { state.originX = e.clientX - startX; state.originY = e.clientY - startY; updateWorldTransform(); }
+            if (state.currentTool === 'ruler' && state.rulerStart) drawRuler(state.rulerStart, screenToWorld(e.clientX, e.clientY));
+            if (state.currentTool === 'fog' && e.buttons === 1) revealFogAt(e.clientX, e.clientY, 80);
+        };
+        window.onmouseup = () => { isPanning = false; viewport.classList.remove('panning'); if (state.currentTool === 'ruler' && state.rulerStart) { state.rulerStart = null; rulerSvg.innerHTML = ''; } };
+        viewport.onwheel = (e) => { e.preventDefault(); adjustZoom(e.deltaY > 0 ? -0.1 : 0.1, e.clientX, e.clientY); };
 
         function adjustZoom(amount, mouseX = window.innerWidth / 2, mouseY = window.innerHeight / 2) {
             const newScale = Math.min(Math.max(state.scale + amount, 0.25), 3.0);
             const factor = newScale / state.scale;
-            state.originX = mouseX - (mouseX - state.originX) * factor;
-            state.originY = mouseY - (mouseY - state.originY) * factor;
-            state.scale = newScale;
-            updateWorldTransform();
+            state.originX = mouseX - (mouseX - state.originX) * factor; state.originY = mouseY - (mouseY - state.originY) * factor; state.scale = newScale; updateWorldTransform();
         }
+        function resetViewport() { state.scale = 1; state.originX = (viewport.clientWidth - 1200) / 2; state.originY = (viewport.clientHeight - 800) / 2; updateWorldTransform(); }
+        function screenToWorld(x, y) { const rect = viewport.getBoundingClientRect(); return { x: (x - rect.left - state.originX) / state.scale, y: (y - rect.top - state.originY) / state.scale }; }
 
-        function resetViewport() {
-            state.scale = 1;
-            state.originX = (viewport.clientWidth - (mapImg.naturalWidth || 1200)) / 2;
-            state.originY = (viewport.clientHeight - (mapImg.naturalHeight || 800)) / 2;
-            updateWorldTransform();
-        }
-
-        function screenToWorld(x, y) {
-            const rect = viewport.getBoundingClientRect();
-            return {
-                x: (x - rect.left - state.originX) / state.scale,
-                y: (y - rect.top - state.originY) / state.scale
-            };
-        }
-
-        // =========================================================================
-        // FERRAMENTAS
-        // =========================================================================
         function setTool(tool) {
-            state.currentTool = tool;
-            document.querySelectorAll('#vtt-toolbar .tool-btn').forEach(btn => btn.classList.remove('active'));
-            const btn = document.getElementById(`tool-${tool}`);
-            if (btn) btn.classList.add('active');
-
-            viewport.classList.remove('ruler-mode', 'fog-mode');
-            if (tool === 'ruler') viewport.classList.add('ruler-mode');
-            if (tool === 'fog') viewport.classList.add('fog-mode');
+            state.currentTool = tool; document.querySelectorAll('#vtt-toolbar .tool-btn').forEach(btn => btn.classList.remove('active'));
+            const btn = document.getElementById(`tool-${tool}`); if (btn) btn.classList.add('active');
+            viewport.classList.remove('ruler-mode', 'fog-mode'); if (tool === 'ruler') viewport.classList.add('ruler-mode'); if (tool === 'fog') viewport.classList.add('fog-mode');
         }
-
-        function toggleGrid() {
-            state.showGrid = !state.showGrid;
-            gridOverlay.style.display = state.showGrid ? 'block' : 'none';
-        }
-
-        function toggleSnap() {
-            state.snapToGrid = !state.snapToGrid;
-            const btn = document.getElementById('snap-toggle-btn');
-            if (state.snapToGrid) {
-                btn.innerHTML = `<i class="fa-solid fa-magnet"></i> <span class="hidden md:inline">Snap On</span>`;
-                btn.classList.add('border-cyan-400', 'text-cyan-300');
-                btn.classList.remove('border-gray-600', 'text-gray-400');
-            } else {
-                btn.innerHTML = `<i class="fa-solid fa-magnet"></i> <span class="hidden md:inline">Snap Off</span>`;
-                btn.classList.remove('border-cyan-400', 'text-cyan-300');
-                btn.classList.add('border-gray-600', 'text-gray-400');
-            }
-        }
+        function toggleGrid() { state.showGrid = !state.showGrid; gridOverlay.style.display = state.showGrid ? 'block' : 'none'; }
+        function toggleSnap() { state.snapToGrid = !state.snapToGrid; document.getElementById('snap-toggle-btn').innerHTML = state.snapToGrid ? `<i class="fa-solid fa-magnet"></i> Snap On` : `<i class="fa-solid fa-magnet"></i> Snap Off`; }
 
         function drawRuler(p1, p2) {
-            const dx = p2.x - p1.x;
-            const dy = p2.y - p1.y;
-            const distPx = Math.sqrt(dx * dx + dy * dy);
-            const distMeters = ((distPx / state.gridSize) * 1.5).toFixed(1);
-            const squares = Math.round(distPx / state.gridSize);
-
-            rulerSvg.innerHTML = `
-                <line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" stroke="#66FCF1" stroke-width="3" stroke-dasharray="6,4" />
-                <circle cx="${p1.x}" cy="${p1.y}" r="5" fill="#66FCF1" />
-                <circle cx="${p2.x}" cy="${p2.y}" r="5" fill="#66FCF1" />
-                <rect x="${(p1.x + p2.x) / 2 - 45}" y="${(p1.y + p2.y) / 2 - 15}" width="90" height="24" rx="6" fill="rgba(11,15,25,0.9)" stroke="#66FCF1" stroke-width="1" />
-                <text x="${(p1.x + p2.x) / 2}" y="${(p1.y + p2.y) / 2 + 2}" fill="#ffffff" font-size="11" font-weight="bold" font-family="Cinzel" text-anchor="middle">${distMeters}m (${squares}q)</text>
-            `;
+            const distPx = Math.sqrt((p2.x - p1.x)**2 + (p2.y - p1.y)**2);
+            rulerSvg.innerHTML = `<line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" stroke="#66FCF1" stroke-width="3" stroke-dasharray="6,4" /><circle cx="${p1.x}" cy="${p1.y}" r="5" fill="#66FCF1" /><circle cx="${p2.x}" cy="${p2.y}" r="5" fill="#66FCF1" /><text x="${(p1.x+p2.x)/2}" y="${(p1.y+p2.y)/2}" fill="#fff" font-size="12" font-family="Cinzel" text-anchor="middle">${((distPx/state.gridSize)*1.5).toFixed(1)}m</text>`;
         }
+        function initFog() { fogCanvas.width = 2000; fogCanvas.height = 1500; resetFog(false); }
+        function resetFog(hide) { fogCtx.fillStyle = hide ? 'rgba(7, 9, 14, 0.95)' : 'rgba(0,0,0,0)'; fogCtx.clearRect(0,0,fogCanvas.width,fogCanvas.height); if(hide) fogCtx.fillRect(0,0,fogCanvas.width,fogCanvas.height); }
+        function revealFogAt(x, y, r) { const p = screenToWorld(x,y); fogCtx.globalCompositeOperation = 'destination-out'; fogCtx.beginPath(); fogCtx.arc(p.x, p.y, r, 0, Math.PI*2); fogCtx.fill(); fogCtx.globalCompositeOperation = 'source-over'; }
+        mapImg.onload = () => { initFog(); resetViewport(); };
 
-        function initFog() {
-            fogCanvas.width = mapImg.naturalWidth || 2000;
-            fogCanvas.height = mapImg.naturalHeight || 1500;
-            resetFog(false);
-        }
-
-        function resetFog(hideAll) {
-            fogCtx.fillStyle = hideAll ? 'rgba(7, 9, 14, 0.95)' : 'rgba(0, 0, 0, 0)';
-            fogCtx.clearRect(0, 0, fogCanvas.width, fogCanvas.height);
-            if (hideAll) {
-                fogCtx.fillRect(0, 0, fogCanvas.width, fogCanvas.height);
-            }
-        }
-
-        function revealFogAt(screenX, screenY, radius) {
-            const worldPos = screenToWorld(screenX, screenY);
-            fogCtx.globalCompositeOperation = 'destination-out';
-            fogCtx.beginPath();
-            fogCtx.arc(worldPos.x, worldPos.y, radius, 0, Math.PI * 2);
-            fogCtx.fill();
-            fogCtx.globalCompositeOperation = 'source-over';
-        }
-
-        mapImg.onload = () => {
-            initFog();
-            resetViewport();
-        };
-
-        // =========================================================================
-        // TOKENS
-        // =========================================================================
-        function createTokenElement(token) {
-            const el = document.createElement('div');
-            el.id = `token-${token.id}`;
-            el.className = 'vtt-token';
-            el.style.width = `${token.size * state.gridSize - 4}px`;
-            el.style.height = `${token.size * state.gridSize - 4}px`;
-            el.style.border = `2.5px solid ${token.color || '#66FCF1'}`;
-            el.style.left = `${token.x}px`;
-            el.style.top = `${token.y}px`;
-
-            const hpPercent = Math.max(0, Math.min(100, (token.hp / token.maxHp) * 100));
-            const pePercent = Math.max(0, Math.min(100, (token.pe / token.maxPe) * 100));
-
-            el.innerHTML = `
-                <div class="token-bars">
-                    <div class="token-bar"><div class="token-bar-fill-hp" style="width: ${hpPercent}%;"></div></div>
-                    <div class="token-bar"><div class="token-bar-fill-pe" style="width: ${pePercent}%;"></div></div>
-                </div>
-                <img src="${token.avatar}" class="vtt-token-img" alt="${token.name}">
-                <div class="token-nameplate">${token.name}</div>
-                <div class="token-conditions" id="conds-${token.id}"></div>
-            `;
-
-            let isDraggingToken = false;
-            let dragOffset = { x: 0, y: 0 };
-
-            el.addEventListener('mousedown', (e) => {
-                if (e.button !== 0) return;
-                e.stopPropagation();
-                selectToken(token.id);
-
-                isDraggingToken = true;
-                const worldPos = screenToWorld(e.clientX, e.clientY);
-                dragOffset.x = worldPos.x - token.x;
-                dragOffset.y = worldPos.y - token.y;
-            });
-
-            window.addEventListener('mousemove', (e) => {
-                if (!isDraggingToken || state.selectedTokenId !== token.id) return;
-                const worldPos = screenToWorld(e.clientX, e.clientY);
-                let newX = worldPos.x - dragOffset.x;
-                let newY = worldPos.y - dragOffset.y;
-
-                token.x = newX;
-                token.y = newY;
-                el.style.left = `${newX}px`;
-                el.style.top = `${newY}px`;
-            });
-
-            window.addEventListener('mouseup', () => {
-                if (!isDraggingToken || state.selectedTokenId !== token.id) return;
-                isDraggingToken = false;
-
-                if (state.snapToGrid) {
-                    token.x = Math.round(token.x / state.gridSize) * state.gridSize + 2;
-                    token.y = Math.round(token.y / state.gridSize) * state.gridSize + 2;
-                    el.style.left = `${token.x}px`;
-                    el.style.top = `${token.y}px`;
-                }
-            });
-
-            el.addEventListener('contextmenu', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                selectToken(token.id);
-                openContextMenu(e.clientX, e.clientY);
-            });
-
-            tokensLayer.appendChild(el);
+        function createTokenElement(token, broadcast = true) {
+            let el = document.getElementById(`token-${token.id}`);
+            if (!el) { el = document.createElement('div'); el.id = `token-${token.id}`; el.className = 'vtt-token'; tokensLayer.appendChild(el); }
+            el.style.width = `${token.size * state.gridSize - 4}px`; el.style.height = `${token.size * state.gridSize - 4}px`; el.style.border = `2.5px solid ${token.color || '#66FCF1'}`; el.style.left = `${token.x}px`; el.style.top = `${token.y}px`;
+            el.innerHTML = `<div class="token-bars"><div class="token-bar"><div class="token-bar-fill-hp" style="width:${(token.hp/token.maxHp)*100}%"></div></div></div><img src="${token.avatar}" class="vtt-token-img"><div class="token-nameplate">${token.name}</div><div class="token-conditions" id="conds-${token.id}"></div>`;
+            let isDrag = false, offset = {x:0, y:0};
+            el.onmousedown = (e) => { if(e.button !== 0) return; e.stopPropagation(); selectToken(token.id); isDrag = true; const p = screenToWorld(e.clientX, e.clientY); offset.x = p.x - token.x; offset.y = p.y - token.y; };
+            window.addEventListener('mousemove', (e) => { if(!isDrag || state.selectedTokenId !== token.id) return; const p = screenToWorld(e.clientX, e.clientY); token.x = p.x - offset.x; token.y = p.y - offset.y; el.style.left = `${token.x}px`; el.style.top = `${token.y}px`; });
+            window.addEventListener('mouseup', () => { if(!isDrag || state.selectedTokenId !== token.id) return; isDrag = false; if(state.snapToGrid){ token.x = Math.round(token.x/state.gridSize)*state.gridSize+2; token.y = Math.round(token.y/state.gridSize)*state.gridSize+2; el.style.left = `${token.x}px`; el.style.top = `${token.y}px`; } if(p2pNet){ if(p2pNet.isHost) p2pNet.broadcast('TOKEN_MOVE', { id: token.id, x: token.x, y: token.y }); else p2pNet.sendToHost('TOKEN_MOVE', { id: token.id, x: token.x, y: token.y }); } });
+            el.oncontextmenu = (e) => { e.preventDefault(); e.stopPropagation(); selectToken(token.id); openContextMenu(e.clientX, e.clientY); };
             updateTokenConditionsUI(token.id);
+            if (broadcast && p2pNet) { if(p2pNet.isHost) p2pNet.broadcast('TOKEN_SPAWN', token); else p2pNet.sendToHost('TOKEN_SPAWN', token); }
         }
 
-        function selectToken(id) {
-            state.selectedTokenId = id;
-            document.querySelectorAll('.vtt-token').forEach(t => t.classList.remove('selected'));
-            const el = document.getElementById(`token-${id}`);
-            if (el) el.classList.add('selected');
-        }
+        function selectToken(id) { state.selectedTokenId = id; document.querySelectorAll('.vtt-token').forEach(t => t.classList.remove('selected')); const el = document.getElementById(`token-${id}`); if(el) el.classList.add('selected'); }
+        function spawnPlayerToken(name, hp, pe, avatar) { const id = 'tok_' + Date.now(); const center = screenToWorld(viewport.clientWidth/2, viewport.clientHeight/2); const token = { id, name, hp, maxHp: hp, pe, maxPe: pe, avatar, color: '#66FCF1', size: 1, x: Math.round(center.x/state.gridSize)*state.gridSize+2, y: Math.round(center.y/state.gridSize)*state.gridSize+2, conditions: [] }; state.tokens[id] = token; createTokenElement(token, true); addCombatant(token, true); closeCharModal(); }
+        function spawnMonster(name, hp, pe, color, avatar) { const id = 'tok_' + Date.now(); const center = screenToWorld(viewport.clientWidth/2, viewport.clientHeight/2); const token = { id, name, hp, maxHp: hp, pe, maxPe: pe, avatar, color, size: 1, x: Math.round(center.x/state.gridSize)*state.gridSize+2, y: Math.round(center.y/state.gridSize)*state.gridSize+2, conditions: [] }; state.tokens[id] = token; createTokenElement(token, true); addCombatant(token, true); }
+        function deleteSelectedToken() { if(!state.selectedTokenId) return; const id = state.selectedTokenId; delete state.tokens[id]; const el = document.getElementById(`token-${id}`); if(el) el.remove(); removeCombatant(id); closeContextMenu(); if(p2pNet){ if(p2pNet.isHost) p2pNet.broadcast('TOKEN_DELETE', { id }); else p2pNet.sendToHost('TOKEN_DELETE', { id }); } }
 
-        function spawnPlayerToken(name, hp, pe, avatar) {
-            const id = 'tok_' + Date.now();
-            const center = screenToWorld(viewport.clientWidth / 2, viewport.clientHeight / 2);
-            const token = {
-                id,
-                name,
-                hp,
-                maxHp: hp,
-                pe,
-                maxPe: pe,
-                avatar,
-                color: '#66FCF1',
-                size: 1,
-                x: Math.round(center.x / state.gridSize) * state.gridSize + 2,
-                y: Math.round(center.y / state.gridSize) * state.gridSize + 2,
-                conditions: []
-            };
-            state.tokens[id] = token;
-            createTokenElement(token);
-            addCombatant(token);
-            closeCharModal();
-        }
-
-        function spawnMonster(name, hp, pe, color, avatar) {
-            const id = 'tok_' + Date.now();
-            const center = screenToWorld(viewport.clientWidth / 2, viewport.clientHeight / 2);
-            const token = {
-                id,
-                name,
-                hp,
-                maxHp: hp,
-                pe,
-                maxPe: pe,
-                avatar,
-                color,
-                size: 1,
-                x: Math.round(center.x / state.gridSize) * state.gridSize + 2,
-                y: Math.round(center.y / state.gridSize) * state.gridSize + 2,
-                conditions: []
-            };
-            state.tokens[id] = token;
-            createTokenElement(token);
-            addCombatant(token);
-        }
-
-        function createCustomToken() {
-            const name = document.getElementById('custom-token-name').value || 'Inimigo Custom';
-            const hp = parseInt(document.getElementById('custom-token-hp').value) || 10;
-            const pe = parseInt(document.getElementById('custom-token-pe').value) || 5;
-            spawnMonster(name, hp, pe, '#ef4444', 'https://images.unsplash.com/photo-1563089145-599997674d42?auto=format&fit=crop&w=200&q=80');
-        }
-
-        function deleteSelectedToken() {
-            if (!state.selectedTokenId) return;
-            const id = state.selectedTokenId;
-            delete state.tokens[id];
-            const el = document.getElementById(`token-${id}`);
-            if (el) el.remove();
-            removeCombatant(id);
-            closeContextMenu();
-        }
-
-        // Context Menu
-        function openContextMenu(x, y) {
-            const token = state.tokens[state.selectedTokenId];
-            if (!token) return;
-
-            document.getElementById('ctx-token-name').innerText = token.name;
-            document.getElementById('ctx-token-hp').innerText = `${token.hp}/${token.maxHp}`;
-
-            ctxMenu.style.left = `${Math.min(x, window.innerWidth - 240)}px`;
-            ctxMenu.style.top = `${Math.min(y, window.innerHeight - 200)}px`;
-            ctxMenu.style.display = 'block';
-        }
-
-        function closeContextMenu() {
-            ctxMenu.style.display = 'none';
-        }
-
+        function openContextMenu(x, y) { const token = state.tokens[state.selectedTokenId]; if(!token) return; document.getElementById('ctx-token-name').innerText = token.name; document.getElementById('ctx-token-hp').innerText = `${token.hp}/${token.maxHp}`; ctxMenu.style.left = `${Math.min(x, window.innerWidth-240)}px`; ctxMenu.style.top = `${Math.min(y, window.innerHeight-200)}px`; ctxMenu.style.display = 'block'; }
+        function closeContextMenu() { ctxMenu.style.display = 'none'; }
         function modifyTokenStat(stat, delta) {
-            const token = state.tokens[state.selectedTokenId];
-            if (!token) return;
-
-            if (stat === 'hp') {
-                token.hp = Math.max(0, Math.min(token.maxHp, token.hp + delta));
-                document.getElementById('ctx-token-hp').innerText = `${token.hp}/${token.maxHp}`;
-                const el = document.getElementById(`token-${token.id}`);
-                if (el) {
-                    const fill = el.querySelector('.token-bar-fill-hp');
-                    if (fill) fill.style.width = `${(token.hp / token.maxHp) * 100}%`;
-                }
-            }
+            const token = state.tokens[state.selectedTokenId]; if(!token) return;
+            if (stat === 'hp') { token.hp = Math.max(0, Math.min(token.maxHp, token.hp+delta)); document.getElementById('ctx-token-hp').innerText = `${token.hp}/${token.maxHp}`; const el = document.getElementById(`token-${token.id}`); if(el) el.querySelector('.token-bar-fill-hp').style.width = `${(token.hp/token.maxHp)*100}%`; if(p2pNet){ const payload = { id: token.id, hp: token.hp, pe: token.pe, conditions: token.conditions }; if(p2pNet.isHost) p2pNet.broadcast('TOKEN_UPDATE', payload); else p2pNet.sendToHost('TOKEN_UPDATE', payload); } }
         }
-
         function toggleCondition(icon) {
-            const token = state.tokens[state.selectedTokenId];
-            if (!token) return;
-
-            const idx = token.conditions.indexOf(icon);
-            if (idx >= 0) {
-                token.conditions.splice(idx, 1);
-            } else {
-                token.conditions.push(icon);
-            }
-            updateTokenConditionsUI(token.id);
+            const token = state.tokens[state.selectedTokenId]; if(!token) return;
+            const idx = token.conditions.indexOf(icon); if(idx >= 0) token.conditions.splice(idx, 1); else token.conditions.push(icon);
+            updateTokenConditionsUI(token.id); if(p2pNet){ const payload = { id: token.id, hp: token.hp, pe: token.pe, conditions: token.conditions }; if(p2pNet.isHost) p2pNet.broadcast('TOKEN_UPDATE', payload); else p2pNet.sendToHost('TOKEN_UPDATE', payload); }
         }
+        function updateTokenConditionsUI(id) { const token = state.tokens[id], condsEl = document.getElementById(`conds-${id}`); if(!token || !condsEl) return; condsEl.innerHTML = token.conditions.map(c => `<div class="token-badge">${c}</div>`).join(''); }
 
-        function updateTokenConditionsUI(id) {
-            const token = state.tokens[id];
-            const condsEl = document.getElementById(`conds-${id}`);
-            if (!token || !condsEl) return;
-
-            condsEl.innerHTML = token.conditions.map(c => `<div class="token-badge">${c}</div>`).join('');
-        }
-
-        // =========================================================================
-        // CHAT & INICIATIVA
-        // =========================================================================
-        function setDrawerTab(tab) {
-            document.querySelectorAll('.drawer-tab-btn').forEach(b => b.classList.remove('active'));
-            document.querySelectorAll('.drawer-content-pane').forEach(p => p.classList.remove('active'));
-
-            event.currentTarget.classList.add('active');
-            document.getElementById(`pane-${tab}`).classList.add('active');
-        }
-
-        function toggleDrawer() {
-            const drawer = document.getElementById('vtt-drawer');
-            const icon = document.getElementById('drawer-toggle-icon');
-            drawer.classList.toggle('collapsed');
-            if (drawer.classList.contains('collapsed')) {
-                icon.className = 'fa-solid fa-chevron-left';
-            } else {
-                icon.className = 'fa-solid fa-chevron-right';
-            }
-        }
-
-        function appendChatMessage(title, text, type = 'normal') {
-            const container = document.getElementById('chat-messages');
-            const entry = document.createElement('div');
-            entry.className = `chat-entry ${type === 'crit' ? 'roll-crit' : (type === 'fumble' ? 'roll-fumble' : '')}`;
-            entry.innerHTML = `
-                <div class="text-[10px] text-cyan-400 font-cinzel font-bold">${title}</div>
-                <div class="text-xs text-gray-200">${text}</div>
-            `;
-            container.appendChild(entry);
-            container.scrollTop = container.scrollHeight;
-        }
+        function setDrawerTab(tab) { document.querySelectorAll('.drawer-tab-btn').forEach(b => b.classList.remove('active')); document.querySelectorAll('.drawer-content-pane').forEach(p => p.classList.remove('active')); event.currentTarget.classList.add('active'); document.getElementById(`pane-${tab}`).classList.add('active'); }
+        function toggleDrawer() { const drawer = document.getElementById('vtt-drawer'), icon = document.getElementById('drawer-toggle-icon'); drawer.classList.toggle('collapsed'); icon.className = drawer.classList.contains('collapsed') ? 'fa-solid fa-chevron-left' : 'fa-solid fa-chevron-right'; }
+        function appendChatMessage(title, text, type = 'normal') { const container = document.getElementById('chat-messages'), entry = document.createElement('div'); entry.className = `chat-entry ${type==='crit'?'roll-crit':(type==='fumble'?'roll-fumble':'')}`; entry.innerHTML = `<div style="font-size:10px; color:#66FCF1; font-family:'Cinzel',serif;">${title}</div><div style="font-size:12px; color:#cbd5e1;">${text}</div>`; container.appendChild(entry); container.scrollTop = container.scrollHeight; }
 
         function rollQuickCheck(name, bonus, cd) {
-            const d1 = Math.floor(Math.random() * 6) + 1;
-            const d2 = Math.floor(Math.random() * 6) + 1;
-            const dice = d1 + d2;
-            const total = dice + bonus;
-
-            let outcome = '';
-            let type = 'normal';
-
-            if (dice === 12) {
-                outcome = `<strong class="text-amber-400">✨ ACERTO CRÍTICO!</strong>`;
-                type = 'crit';
-            } else if (dice === 2) {
-                outcome = `<strong class="text-red-400">💥 FALHA CRÍTICA!</strong>`;
-                type = 'fumble';
-            } else if (total >= cd) {
-                outcome = `<strong class="text-emerald-400">✓ SUCESSO</strong> (vs CD ${cd})`;
-            } else {
-                outcome = `<strong class="text-red-400">✗ FALHA</strong> (vs CD ${cd})`;
-            }
-
-            appendChatMessage(`Teste de ${name} (+2d6)`, `🎲 [${d1} + ${d2}] + ${bonus} = <strong>${total}</strong> &middot; ${outcome}`, type);
+            const d1 = Math.floor(Math.random()*6)+1, d2 = Math.floor(Math.random()*6)+1, total = d1+d2+bonus;
+            const isSecret = document.getElementById('secret-roll-toggle').checked;
+            let outcome = total >= cd ? `✓ SUCESSO (vs CD ${cd})` : `✗ FALHA (vs CD ${cd})`;
+            if (d1+d2 === 12) outcome = `✨ CRÍTICO!`; if (d1+d2 === 2) outcome = `💥 FALHA CRÍTICA!`;
+            const formatted = `🎲 [${d1}+${d2}] + ${bonus} = <strong>${total}</strong> &middot; ${outcome}`;
+            if (isSecret && p2pNet) { p2pNet.sendSecretRoll(p2pNet.playerName||'Jogador', `2d6+${bonus}`, total, outcome); appendChatMessage('Rolagem Secreta para o Mestre', formatted, 'crit'); }
+            else { appendChatMessage(`Teste de ${name}`, formatted); if(p2pNet) p2pNet.sendChatMessage(p2pNet.playerName||'Jogador', formatted, true); }
         }
+        function rollCustomCheck() { rollQuickCheck('Perícia', parseInt(document.getElementById('custom-bonus').value)||0, parseInt(document.getElementById('custom-cd').value)||10); }
+        function sendChatMessage() { const input = document.getElementById('chat-input'), val = input.value.trim(); if(!val) return; appendChatMessage(p2pNet?p2pNet.playerName:'Jogador', val); if(p2pNet) p2pNet.sendChatMessage(p2pNet.playerName||'Jogador', val); input.value = ''; }
 
-        function rollCustomCheck() {
-            const bonus = parseInt(document.getElementById('custom-bonus').value) || 0;
-            const cd = parseInt(document.getElementById('custom-cd').value) || 10;
-            rollQuickCheck('Perícia', bonus, cd);
-        }
-
-        function sendChatMessage() {
-            const input = document.getElementById('chat-input');
-            const val = input.value.trim();
-            if (!val) return;
-
-            if (val.startsWith('/r ') || val.startsWith('/roll ')) {
-                const parts = val.replace('/r ', '').replace('/roll ', '').split('+');
-                const bonus = parts[1] ? parseInt(parts[1]) : 0;
-                rollQuickCheck('Comando', bonus, 10);
-            } else {
-                appendChatMessage('Jogador', val);
-            }
-            input.value = '';
-        }
-
-        function addCombatant(token) {
-            const initRoll = Math.floor(Math.random() * 6) + 1 + Math.floor(Math.random() * 6) + 1 + 2;
-            state.combatants.push({ id: token.id, name: token.name, avatar: token.avatar, init: initRoll });
-            sortCombatants();
-            renderInitiativeUI();
-        }
-
-        function removeCombatant(id) {
-            state.combatants = state.combatants.filter(c => c.id !== id);
-            renderInitiativeUI();
-        }
-
-        function sortCombatants() {
-            state.combatants.sort((a, b) => b.init - a.init);
-        }
-
-        function rollAllInitiative() {
-            state.combatants.forEach(c => {
-                c.init = Math.floor(Math.random() * 6) + 1 + Math.floor(Math.random() * 6) + 1 + 2;
-            });
-            sortCombatants();
-            state.currentTurnIndex = 0;
-            state.currentRound = 1;
-            renderInitiativeUI();
-            appendChatMessage('Iniciativa', 'Todas as iniciativas foram roladas para o combate!');
-        }
-
-        function nextTurn() {
-            if (state.combatants.length === 0) return;
-            state.currentTurnIndex = (state.currentTurnIndex + 1) % state.combatants.length;
-            if (state.currentTurnIndex === 0) {
-                state.currentRound++;
-            }
-            renderInitiativeUI();
-            const active = state.combatants[state.currentTurnIndex];
-            if (active) selectToken(active.id);
-        }
-
+        function addCombatant(token, broadcast = false) { state.combatants.push({ id: token.id, name: token.name, avatar: token.avatar, init: Math.floor(Math.random()*6)+1+Math.floor(Math.random()*6)+1+2 }); sortCombatants(); renderInitiativeUI(); if(broadcast && p2pNet && p2pNet.isHost) p2pNet.broadcast('COMBAT_UPDATE', { combatants: state.combatants, round: state.currentRound, turn: state.currentTurnIndex }); }
+        function removeCombatant(id) { state.combatants = state.combatants.filter(c => c.id !== id); renderInitiativeUI(); if(p2pNet && p2pNet.isHost) p2pNet.broadcast('COMBAT_UPDATE', { combatants: state.combatants, round: state.currentRound, turn: state.currentTurnIndex }); }
+        function sortCombatants() { state.combatants.sort((a,b) => b.init - a.init); }
+        function rollAllInitiative() { state.combatants.forEach(c => { c.init = Math.floor(Math.random()*6)+1+Math.floor(Math.random()*6)+1+2; }); sortCombatants(); renderInitiativeUI(); if(p2pNet && p2pNet.isHost) p2pNet.broadcast('COMBAT_UPDATE', { combatants: state.combatants, round: state.currentRound, turn: state.currentTurnIndex }); }
+        function nextTurn() { if(state.combatants.length === 0) return; state.currentTurnIndex = (state.currentTurnIndex+1)%state.combatants.length; if(state.currentTurnIndex === 0) state.currentRound++; renderInitiativeUI(); if(p2pNet && p2pNet.isHost) p2pNet.broadcast('COMBAT_UPDATE', { combatants: state.combatants, round: state.currentRound, turn: state.currentTurnIndex }); }
         function renderInitiativeUI() {
-            const list = document.getElementById('initiative-list');
             document.getElementById('round-counter').innerText = `Rodada ${state.currentRound}`;
-            list.innerHTML = '';
-
+            const list = document.getElementById('initiative-list'); list.innerHTML = '';
             state.combatants.forEach((c, idx) => {
-                const isActive = idx === state.currentTurnIndex;
-                const row = document.createElement('div');
-                row.className = `p-2 rounded-lg border flex items-center justify-between cursor-pointer transition ${isActive ? 'bg-cyan-950/70 border-cyan-400 shadow-[0_0_15px_rgba(102,252,241,0.2)]' : 'bg-slate-900 border-slate-700'}`;
+                const row = document.createElement('div'); row.style.cssText = `padding: 6px; border-radius: 6px; border: 1px solid ${idx===state.currentTurnIndex ? '#66FCF1' : '#334155'}; background: ${idx===state.currentTurnIndex ? 'rgba(8,51,68,0.7)' : '#0f172a'}; display: flex; justify-content: space-between; align-items: center; cursor: pointer;`;
                 row.onclick = () => selectToken(c.id);
-
-                row.innerHTML = `
-                    <div class="flex items-center gap-2">
-                        <img src="${c.avatar}" class="w-7 h-7 rounded-full object-cover border ${isActive ? 'border-cyan-400' : 'border-slate-600'}">
-                        <div>
-                            <div class="text-xs font-cinzel font-bold ${isActive ? 'text-cyan-300' : 'text-gray-200'}">${c.name}</div>
-                            <div class="text-[10px] text-gray-400">Iniciativa: <strong>${c.init}</strong></div>
-                        </div>
-                    </div>
-                    ${isActive ? '<span class="text-[10px] font-bold px-2 py-0.5 bg-cyan-400 text-black rounded font-cinzel">TURNO</span>' : ''}
-                `;
+                row.innerHTML = `<span style="color:#fff; font-size:11px; font-weight:700;">${c.name}</span><span style="color:#fbbf24; font-size:11px; font-family:monospace;">Init: ${c.init}</span>`;
                 list.appendChild(row);
             });
         }
 
-        function openMapModal() { document.getElementById('map-modal').classList.remove('hidden'); }
-        function closeMapModal() { document.getElementById('map-modal').classList.add('hidden'); }
-
-        function setMapUrl(url) {
-            if (!url) return;
-            mapImg.src = url;
-            closeMapModal();
+        function setupP2PListeners() {
+            if (!p2pNet) return;
+            p2pNet.on('host_ready', (d) => { document.getElementById('p2p-net-indicator').innerText = `Online (Mestre: ${d.roomId})`; document.getElementById('p2p-room-id-display').innerText = d.roomId; document.getElementById('host-info-box').style.display = 'block'; document.getElementById('host-action-box').style.display = 'none'; document.getElementById('p2p-qr-img').src = p2pNet.getQRCodeUrl(d.roomId); });
+            p2pNet.on('connected_to_host', () => { document.getElementById('p2p-net-indicator').innerText = `Online (Sala: ${p2pNet.roomId})`; closeMultiplayerModal(); });
+            p2pNet.on('chat_message', (m) => appendChatMessage(m.author, m.text));
+            p2pNet.on('secret_roll_received', (m) => appendChatMessage(`🤫 Rolagem Secreta de ${m.sender}`, m.text, 'crit'));
+            p2pNet.on('token_moved', (d) => { const t = state.tokens[d.id]; if(t){ t.x = d.x; t.y = d.y; const el = document.getElementById(`token-${d.id}`); if(el){ el.style.left = `${d.x}px`; el.style.top = `${d.y}px`; } } });
+            p2pNet.on('token_updated', (d) => { const t = state.tokens[d.id]; if(t){ t.hp = d.hp; t.pe = d.pe; t.conditions = d.conditions||[]; const el = document.getElementById(`token-${d.id}`); if(el){ el.querySelector('.token-bar-fill-hp').style.width = `${(t.hp/t.maxHp)*100}%`; updateTokenConditionsUI(d.id); } } });
+            p2pNet.on('token_spawned', (t) => { state.tokens[t.id] = t; createTokenElement(t, false); });
+            p2pNet.on('token_deleted', (d) => { delete state.tokens[d.id]; const el = document.getElementById(`token-${d.id}`); if(el) el.remove(); removeCombatant(d.id); });
+            p2pNet.on('combat_updated', (d) => { state.combatants = d.combatants||[]; state.currentRound = d.round||1; state.currentTurnIndex = d.turn||0; renderInitiativeUI(); });
+            p2pNet.on('request_scene_sync', (d) => p2pNet.sendToPlayer(d.targetPeerId, 'SYNC_SCENE', { mapUrl: mapImg.src, tokens: state.tokens, combatants: state.combatants }));
+            p2pNet.on('scene_synced', (d) => { if(d.mapUrl) mapImg.src = d.mapUrl; if(d.tokens){ state.tokens = d.tokens; tokensLayer.innerHTML = ''; Object.values(state.tokens).forEach(t => createTokenElement(t, false)); } if(d.combatants){ state.combatants = d.combatants; renderInitiativeUI(); } });
+            p2pNet.on('players_updated', (l) => { document.getElementById('p2p-player-count').innerText = `${l.length} online`; document.getElementById('p2p-players-list').innerHTML = l.map(p => `<div>${p.playerName} (${p.characterName})</div>`).join(''); });
         }
 
-        function openCharacterModal() { document.getElementById('char-modal').classList.remove('hidden'); }
-        function closeCharModal() { document.getElementById('char-modal').classList.add('hidden'); }
+        function openMultiplayerModal() { document.getElementById('p2p-modal').style.display = 'flex'; }
+        function closeMultiplayerModal() { document.getElementById('p2p-modal').style.display = 'none'; }
+        function setP2PTab(tab) { document.getElementById('p2p-pane-host').style.display = tab==='host'?'block':'none'; document.getElementById('p2p-pane-client').style.display = tab==='client'?'block':'none'; }
+        function createHostRoom() { if(p2pNet) p2pNet.hostRoom(); }
+        function connectAsPlayer() { const r = document.getElementById('p2p-target-room-id').value.trim(), n = document.getElementById('p2p-client-name').value.trim()||'Jogador'; if(!r) return alert('Digite o ID da sala.'); p2pNet.joinRoom(r, { playerName: n, characterName: n }); }
+        function copyRoomInviteLink() { if(p2pNet && p2pNet.roomId) navigator.clipboard.writeText(`${window.location.href.split('?')[0]}?room=${p2pNet.roomId}`); }
+        function toggleQRCode() { const el = document.getElementById('p2p-qr-container'); el.style.display = el.style.display==='none'?'block':'none'; }
+        function disconnectP2P() { if(p2pNet){ p2pNet.disconnect(); document.getElementById('host-info-box').style.display='none'; document.getElementById('host-action-box').style.display='block'; } }
 
-        // Inicialização com 2 tokens de exemplo
+        function openMapModal() { document.getElementById('map-modal').style.display = 'flex'; }
+        function closeMapModal() { document.getElementById('map-modal').style.display = 'none'; }
+        function setMapUrl(u) { if(!u) return; mapImg.src = u; closeMapModal(); if(p2pNet && p2pNet.isHost) p2pNet.broadcast('SYNC_SCENE', { mapUrl: u, tokens: state.tokens, combatants: state.combatants }); }
+        function openCharacterModal() { document.getElementById('char-modal').style.display = 'flex'; }
+        function closeCharModal() { document.getElementById('char-modal').style.display = 'none'; }
+
         spawnPlayerToken('Guardião Kuar-Tor', 16, 8, 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80');
         spawnMonster('Lobo Sombrio', 10, 4, '#ef4444', 'https://images.unsplash.com/photo-1563089145-599997674d42?auto=format&fit=crop&w=200&q=80');
     </script>

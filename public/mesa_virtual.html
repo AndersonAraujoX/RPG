@@ -23,6 +23,10 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <script src="../src/core/firebase-config.js"></script>
 
+    <!-- PeerJS P2P Multiplayer -->
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <script src="../src/core/vtt-p2p.js"></script>
+
     <style>
         :root {
             --bg-dark: #07090e;
@@ -402,6 +406,12 @@
 
         <!-- Quick Top Controls -->
         <div class="flex items-center gap-2">
+            <!-- Multiplayer P2P Modal Button -->
+            <button id="p2p-modal-btn" onclick="openMultiplayerModal()" class="px-3 py-1.5 rounded-lg bg-cyan-950/80 border border-cyan-400 text-cyan-300 hover:bg-cyan-900 text-xs font-cinzel font-bold flex items-center gap-1.5 transition shadow-[0_0_12px_rgba(102,252,241,0.25)]">
+                <i class="fa-solid fa-tower-broadcast"></i>
+                <span id="p2p-status-label">Multijogador P2P</span>
+            </button>
+
             <!-- Map Select Modal Button -->
             <button onclick="openMapModal()" class="px-3 py-1.5 rounded-lg bg-slate-800/80 border border-slate-600 hover:border-cyan-400 text-xs text-gray-200 font-cinzel flex items-center gap-1.5 transition">
                 <i class="fa-solid fa-map"></i>
@@ -544,13 +554,20 @@
                     </button>
                 </div>
 
-                <!-- Custom Roll Bar -->
-                <div class="flex items-center gap-2">
+                <!-- Custom Roll Bar & Secret Roll Checkbox -->
+                <div class="flex items-center gap-2 mb-2">
                     <input type="number" id="custom-bonus" placeholder="Bônus" value="0" class="w-16 bg-black/70 border border-slate-700 rounded px-2 py-1 text-xs text-center text-white">
                     <input type="number" id="custom-cd" placeholder="CD" value="10" class="w-16 bg-black/70 border border-slate-700 rounded px-2 py-1 text-xs text-center text-white">
                     <button onclick="rollCustomCheck()" class="flex-1 py-1 bg-cyan-600 hover:bg-cyan-500 text-black font-cinzel font-bold text-xs rounded transition flex items-center justify-center gap-1.5">
                         <i class="fa-solid fa-dice"></i> Rolar +2d6
                     </button>
+                </div>
+                <div class="flex items-center justify-between text-[11px] text-gray-400 bg-black/40 px-2 py-1 rounded border border-slate-800">
+                    <label class="flex items-center gap-1.5 cursor-pointer">
+                        <input type="checkbox" id="secret-roll-toggle" class="accent-cyan-400">
+                        <span>🤫 Rolagem Secreta para o Mestre</span>
+                    </label>
+                    <span id="p2p-net-indicator" class="text-[10px] text-slate-500 font-mono">Modo Offline</span>
                 </div>
             </div>
 
@@ -704,11 +721,95 @@
         </div>
     </div>
 
+    <!-- Multiplayer P2P Modal -->
+    <div id="p2p-modal" class="fixed inset-0 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 hidden z-[130]">
+        <div class="bg-slate-900 border border-cyan-400/50 p-6 rounded-xl max-w-md w-full shadow-[0_0_40px_rgba(0,0,0,0.9)]">
+            <div class="flex justify-between items-center border-b border-slate-700 pb-3 mb-4">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-tower-broadcast text-cyan-400 text-lg"></i>
+                    <h3 class="font-cinzel text-lg font-bold text-cyan-300">Multijogador Peer-to-Peer</h3>
+                </div>
+                <button onclick="closeMultiplayerModal()" class="text-gray-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <!-- Tab Selection Host / Client -->
+            <div class="flex bg-slate-950 p-1 rounded-lg border border-slate-800 mb-4">
+                <button id="p2p-tab-host" onclick="setP2PTab('host')" class="flex-1 py-1.5 text-xs font-cinzel font-bold text-cyan-300 bg-slate-800 rounded transition">
+                    <i class="fa-solid fa-crown mr-1"></i> Mestre (Criar Sala)
+                </button>
+                <button id="p2p-tab-client" onclick="setP2PTab('client')" class="flex-1 py-1.5 text-xs font-cinzel font-bold text-gray-400 hover:text-white transition">
+                    <i class="fa-solid fa-user-group mr-1"></i> Jogador (Entrar)
+                </button>
+            </div>
+
+            <!-- Host Pane -->
+            <div id="p2p-pane-host" class="space-y-4">
+                <p class="text-xs text-gray-300">Como Mestre, você compartilha a cena, controla a iniciativa e transmite as alterações no mapa para todos.</p>
+                <div id="host-action-box">
+                    <button onclick="createHostRoom()" class="w-full py-2.5 bg-gradient-to-r from-cyan-600 to-emerald-600 hover:from-cyan-500 hover:to-emerald-500 text-slate-950 font-cinzel font-bold text-xs rounded-lg transition shadow flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-circle-play"></i> Criar Sala como Mestre
+                    </button>
+                </div>
+                <div id="host-info-box" class="hidden space-y-3 bg-black/60 p-3 rounded-lg border border-cyan-500/30">
+                    <div class="flex justify-between items-center text-xs">
+                        <span class="text-gray-400">ID da Sala:</span>
+                        <span id="p2p-room-id-display" class="font-mono font-bold text-cyan-300 text-sm">--</span>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="copyRoomInviteLink()" class="flex-1 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-600 text-xs text-cyan-300 rounded font-cinzel font-bold flex items-center justify-center gap-1.5 transition">
+                            <i class="fa-solid fa-copy"></i> Copiar Link
+                        </button>
+                        <button onclick="toggleQRCode()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-600 text-xs text-amber-300 rounded font-cinzel font-bold flex items-center justify-center gap-1.5 transition">
+                            <i class="fa-solid fa-qrcode"></i> QR Code
+                        </button>
+                    </div>
+                    <div id="p2p-qr-container" class="hidden text-center pt-2">
+                        <img id="p2p-qr-img" class="mx-auto border border-cyan-400 rounded-lg" alt="QR Code">
+                        <p class="text-[10px] text-gray-400 mt-1">Escaneie para entrar na mesa pelo celular</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Client Pane -->
+            <div id="p2p-pane-client" class="space-y-3 hidden">
+                <p class="text-xs text-gray-300">Digite o ID da Sala do Mestre para sincronizar tokens, mapa e rolagens.</p>
+                <div>
+                    <label class="block text-[10px] uppercase font-cinzel font-bold text-slate-400 mb-1">Seu Nome / Personagem</label>
+                    <input type="text" id="p2p-client-name" placeholder="Ex: Guerreiro Kaelen" value="Jogador" class="w-full bg-black/70 border border-slate-700 rounded px-3 py-1.5 text-xs text-white">
+                </div>
+                <div>
+                    <label class="block text-[10px] uppercase font-cinzel font-bold text-slate-400 mb-1">ID da Sala (Código do Mestre)</label>
+                    <input type="text" id="p2p-target-room-id" placeholder="Ex: kuartor-A7B2X9" class="w-full bg-black/70 border border-slate-700 rounded px-3 py-1.5 text-xs font-mono text-cyan-300">
+                </div>
+                <button onclick="connectAsPlayer()" class="w-full py-2.5 bg-cyan-600 hover:bg-cyan-500 text-slate-950 font-cinzel font-bold text-xs rounded-lg transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-right-to-bracket"></i> Entrar na Sala
+                </button>
+            </div>
+
+            <!-- Connected Players List -->
+            <div class="mt-4 pt-3 border-t border-slate-700">
+                <div class="flex justify-between items-center text-xs font-cinzel font-bold text-slate-300 mb-2">
+                    <span><i class="fa-solid fa-users text-cyan-400 mr-1.5"></i> Jogadores Conectados</span>
+                    <span id="p2p-player-count" class="text-emerald-400 font-mono">0 online</span>
+                </div>
+                <div id="p2p-players-list" class="space-y-1 max-h-32 overflow-y-auto text-xs pr-1">
+                    <div class="text-gray-500 italic text-center py-2">Nenhum outro jogador conectado.</div>
+                </div>
+            </div>
+
+            <div class="mt-4 flex gap-2">
+                <button onclick="disconnectP2P()" class="flex-1 py-1.5 bg-red-950/80 hover:bg-red-900 border border-red-500/50 text-red-300 font-cinzel text-xs rounded transition">
+                    Desconectar P2P
+                </button>
+                <button onclick="closeMultiplayerModal()" class="px-4 py-1.5 bg-slate-800 hover:bg-slate-700 text-gray-300 font-cinzel text-xs rounded">
+                    Fechar
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- VTT ENGINE SCRIPT -->
     <script>
-        // =========================================================================
-        // ESTADO DO VTT
-        // =========================================================================
         const state = {
             scale: 1,
             originX: 0,
@@ -716,7 +817,7 @@
             gridSize: 50,
             showGrid: true,
             snapToGrid: true,
-            currentTool: 'select', // 'select', 'ruler', 'fog'
+            currentTool: 'select',
             selectedTokenId: null,
             tokens: {},
             combatants: [],
@@ -725,7 +826,15 @@
             rulerStart: null
         };
 
-        // DOM Elements
+        let p2pNet = null;
+        if (typeof PeerVTTNetwork !== 'undefined') {
+            p2pNet = new PeerVTTNetwork({
+                playerName: 'Mestre Kuar-Tor',
+                characterName: 'Mestre'
+            });
+            setupP2PListeners();
+        }
+
         const viewport = document.getElementById('vtt-viewport');
         const world = document.getElementById('vtt-world');
         const mapImg = document.getElementById('map-image');
@@ -736,9 +845,6 @@
         const fogCtx = fogCanvas.getContext('2d');
         const ctxMenu = document.getElementById('token-context-menu');
 
-        // =========================================================================
-        // NAVEGAÇÃO DO MAPA (PAN & ZOOM)
-        // =========================================================================
         let isPanning = false;
         let startX, startY;
 
@@ -750,19 +856,15 @@
             if (e.target.closest('.vtt-token') || e.target.closest('#vtt-toolbar') || e.target.closest('#token-context-menu') || e.target.closest('#vtt-drawer')) {
                 return;
             }
-
             if (state.currentTool === 'ruler') {
                 const worldPos = screenToWorld(e.clientX, e.clientY);
                 state.rulerStart = worldPos;
                 return;
             }
-
             if (state.currentTool === 'fog') {
                 revealFogAt(e.clientX, e.clientY, 80);
                 return;
             }
-
-            // Pan Normal
             isPanning = true;
             viewport.classList.add('panning');
             startX = e.clientX - state.originX;
@@ -776,12 +878,10 @@
                 state.originY = e.clientY - startY;
                 updateWorldTransform();
             }
-
             if (state.currentTool === 'ruler' && state.rulerStart) {
                 const worldPos = screenToWorld(e.clientX, e.clientY);
                 drawRuler(state.rulerStart, worldPos);
             }
-
             if (state.currentTool === 'fog' && e.buttons === 1) {
                 revealFogAt(e.clientX, e.clientY, 80);
             }
@@ -826,46 +926,22 @@
             };
         }
 
-        // =========================================================================
-        // FERRAMENTAS (SELECT, RULER, FOG, GRID, SNAP)
-        // =========================================================================
         function setTool(tool) {
             state.currentTool = tool;
             document.querySelectorAll('#vtt-toolbar .tool-btn').forEach(btn => btn.classList.remove('active'));
             const btn = document.getElementById(`tool-${tool}`);
             if (btn) btn.classList.add('active');
-
             viewport.classList.remove('ruler-mode', 'fog-mode');
             if (tool === 'ruler') viewport.classList.add('ruler-mode');
             if (tool === 'fog') viewport.classList.add('fog-mode');
-        }
-
-        function toggleGrid() {
-            state.showGrid = !state.showGrid;
-            gridOverlay.style.display = state.showGrid ? 'block' : 'none';
-        }
-
-        function toggleSnap() {
-            state.snapToGrid = !state.snapToGrid;
-            const btn = document.getElementById('snap-toggle-btn');
-            if (state.snapToGrid) {
-                btn.innerHTML = `<i class="fa-solid fa-magnet"></i> <span class="hidden md:inline">Snap On</span>`;
-                btn.classList.add('border-cyan-400', 'text-cyan-300');
-                btn.classList.remove('border-gray-600', 'text-gray-400');
-            } else {
-                btn.innerHTML = `<i class="fa-solid fa-magnet"></i> <span class="hidden md:inline">Snap Off</span>`;
-                btn.classList.remove('border-cyan-400', 'text-cyan-300');
-                btn.classList.add('border-gray-600', 'text-gray-400');
-            }
         }
 
         function drawRuler(p1, p2) {
             const dx = p2.x - p1.x;
             const dy = p2.y - p1.y;
             const distPx = Math.sqrt(dx * dx + dy * dy);
-            const distMeters = ((distPx / state.gridSize) * 1.5).toFixed(1); // 1 grid = 1.5m
+            const distMeters = ((distPx / state.gridSize) * 1.5).toFixed(1);
             const squares = Math.round(distPx / state.gridSize);
-
             rulerSvg.innerHTML = `
                 <line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" stroke="#66FCF1" stroke-width="3" stroke-dasharray="6,4" />
                 <circle cx="${p1.x}" cy="${p1.y}" r="5" fill="#66FCF1" />
@@ -875,7 +951,6 @@
             `;
         }
 
-        // Névoa de Guerra Canvas
         function initFog() {
             fogCanvas.width = mapImg.naturalWidth || 2000;
             fogCanvas.height = mapImg.naturalHeight || 1500;
@@ -885,9 +960,7 @@
         function resetFog(hideAll) {
             fogCtx.fillStyle = hideAll ? 'rgba(7, 9, 14, 0.95)' : 'rgba(0, 0, 0, 0)';
             fogCtx.clearRect(0, 0, fogCanvas.width, fogCanvas.height);
-            if (hideAll) {
-                fogCtx.fillRect(0, 0, fogCanvas.width, fogCanvas.height);
-            }
+            if (hideAll) fogCtx.fillRect(0, 0, fogCanvas.width, fogCanvas.height);
         }
 
         function revealFogAt(screenX, screenY, radius) {
@@ -904,22 +977,21 @@
             resetViewport();
         };
 
-        // =========================================================================
-        // SISTEMA DE TOKENS (ARRASTAR, SNAP, DADOS)
-        // =========================================================================
-        function createTokenElement(token) {
-            const el = document.createElement('div');
-            el.id = `token-${token.id}`;
-            el.className = 'vtt-token';
+        function createTokenElement(token, broadcast = true) {
+            let el = document.getElementById(`token-${token.id}`);
+            if (!el) {
+                el = document.createElement('div');
+                el.id = `token-${token.id}`;
+                el.className = 'vtt-token';
+                tokensLayer.appendChild(el);
+            }
             el.style.width = `${token.size * state.gridSize - 4}px`;
             el.style.height = `${token.size * state.gridSize - 4}px`;
             el.style.border = `2.5px solid ${token.color || '#66FCF1'}`;
             el.style.left = `${token.x}px`;
             el.style.top = `${token.y}px`;
-
             const hpPercent = Math.max(0, Math.min(100, (token.hp / token.maxHp) * 100));
             const pePercent = Math.max(0, Math.min(100, (token.pe / token.maxPe) * 100));
-
             el.innerHTML = `
                 <div class="token-bars">
                     <div class="token-bar"><div class="token-bar-fill-hp" style="width: ${hpPercent}%;"></div></div>
@@ -929,55 +1001,52 @@
                 <div class="token-nameplate">${token.name}</div>
                 <div class="token-conditions" id="conds-${token.id}"></div>
             `;
-
-            // Setup Token Dragging
             let isDraggingToken = false;
             let dragOffset = { x: 0, y: 0 };
-
-            el.addEventListener('mousedown', (e) => {
+            el.onmousedown = (e) => {
                 if (e.button !== 0) return;
                 e.stopPropagation();
                 selectToken(token.id);
-
                 isDraggingToken = true;
                 const worldPos = screenToWorld(e.clientX, e.clientY);
                 dragOffset.x = worldPos.x - token.x;
                 dragOffset.y = worldPos.y - token.y;
-            });
-
+            };
             window.addEventListener('mousemove', (e) => {
                 if (!isDraggingToken || state.selectedTokenId !== token.id) return;
                 const worldPos = screenToWorld(e.clientX, e.clientY);
                 let newX = worldPos.x - dragOffset.x;
                 let newY = worldPos.y - dragOffset.y;
-
                 token.x = newX;
                 token.y = newY;
                 el.style.left = `${newX}px`;
                 el.style.top = `${newY}px`;
             });
-
             window.addEventListener('mouseup', () => {
                 if (!isDraggingToken || state.selectedTokenId !== token.id) return;
                 isDraggingToken = false;
-
                 if (state.snapToGrid) {
                     token.x = Math.round(token.x / state.gridSize) * state.gridSize + 2;
                     token.y = Math.round(token.y / state.gridSize) * state.gridSize + 2;
                     el.style.left = `${token.x}px`;
                     el.style.top = `${token.y}px`;
                 }
+                if (p2pNet) {
+                    if (p2pNet.isHost) p2pNet.broadcast('TOKEN_MOVE', { id: token.id, x: token.x, y: token.y });
+                    else p2pNet.sendToHost('TOKEN_MOVE', { id: token.id, x: token.x, y: token.y });
+                }
             });
-
-            el.addEventListener('contextmenu', (e) => {
+            el.oncontextmenu = (e) => {
                 e.preventDefault();
                 e.stopPropagation();
                 selectToken(token.id);
                 openContextMenu(e.clientX, e.clientY);
-            });
-
-            tokensLayer.appendChild(el);
+            };
             updateTokenConditionsUI(token.id);
+            if (broadcast && p2pNet) {
+                if (p2pNet.isHost) p2pNet.broadcast('TOKEN_SPAWN', token);
+                else p2pNet.sendToHost('TOKEN_SPAWN', token);
+            }
         }
 
         function selectToken(id) {
@@ -990,46 +1059,20 @@
         function spawnPlayerToken(name, hp, pe, avatar) {
             const id = 'tok_' + Date.now();
             const center = screenToWorld(viewport.clientWidth / 2, viewport.clientHeight / 2);
-            const token = {
-                id,
-                name,
-                hp,
-                maxHp: hp,
-                pe,
-                maxPe: pe,
-                avatar,
-                color: '#66FCF1',
-                size: 1,
-                x: Math.round(center.x / state.gridSize) * state.gridSize + 2,
-                y: Math.round(center.y / state.gridSize) * state.gridSize + 2,
-                conditions: []
-            };
+            const token = { id, name, hp, maxHp: hp, pe, maxPe: pe, avatar, color: '#66FCF1', size: 1, x: Math.round(center.x / state.gridSize) * state.gridSize + 2, y: Math.round(center.y / state.gridSize) * state.gridSize + 2, conditions: [] };
             state.tokens[id] = token;
-            createTokenElement(token);
-            addCombatant(token);
+            createTokenElement(token, true);
+            addCombatant(token, true);
             closeCharModal();
         }
 
         function spawnMonster(name, hp, pe, color, avatar) {
             const id = 'tok_' + Date.now();
             const center = screenToWorld(viewport.clientWidth / 2, viewport.clientHeight / 2);
-            const token = {
-                id,
-                name,
-                hp,
-                maxHp: hp,
-                pe,
-                maxPe: pe,
-                avatar,
-                color,
-                size: 1,
-                x: Math.round(center.x / state.gridSize) * state.gridSize + 2,
-                y: Math.round(center.y / state.gridSize) * state.gridSize + 2,
-                conditions: []
-            };
+            const token = { id, name, hp, maxHp: hp, pe, maxPe: pe, avatar, color, size: 1, x: Math.round(center.x / state.gridSize) * state.gridSize + 2, y: Math.round(center.y / state.gridSize) * state.gridSize + 2, conditions: [] };
             state.tokens[id] = token;
-            createTokenElement(token);
-            addCombatant(token);
+            createTokenElement(token, true);
+            addCombatant(token, true);
         }
 
         function createCustomToken() {
@@ -1047,31 +1090,27 @@
             if (el) el.remove();
             removeCombatant(id);
             closeContextMenu();
+            if (p2pNet) {
+                if (p2pNet.isHost) p2pNet.broadcast('TOKEN_DELETE', { id });
+                else p2pNet.sendToHost('TOKEN_DELETE', { id });
+            }
         }
 
-        // =========================================================================
-        // CONTEXT MENU & MODIFICAÇÃO DE STATS
-        // =========================================================================
         function openContextMenu(x, y) {
             const token = state.tokens[state.selectedTokenId];
             if (!token) return;
-
             document.getElementById('ctx-token-name').innerText = token.name;
             document.getElementById('ctx-token-hp').innerText = `${token.hp}/${token.maxHp}`;
-
             ctxMenu.style.left = `${Math.min(x, window.innerWidth - 240)}px`;
             ctxMenu.style.top = `${Math.min(y, window.innerHeight - 200)}px`;
             ctxMenu.style.display = 'block';
         }
 
-        function closeContextMenu() {
-            ctxMenu.style.display = 'none';
-        }
+        function closeContextMenu() { ctxMenu.style.display = 'none'; }
 
         function modifyTokenStat(stat, delta) {
             const token = state.tokens[state.selectedTokenId];
             if (!token) return;
-
             if (stat === 'hp') {
                 token.hp = Math.max(0, Math.min(token.maxHp, token.hp + delta));
                 document.getElementById('ctx-token-hp').innerText = `${token.hp}/${token.maxHp}`;
@@ -1080,37 +1119,38 @@
                     const fill = el.querySelector('.token-bar-fill-hp');
                     if (fill) fill.style.width = `${(token.hp / token.maxHp) * 100}%`;
                 }
+                if (p2pNet) {
+                    const payload = { id: token.id, hp: token.hp, pe: token.pe, conditions: token.conditions };
+                    if (p2pNet.isHost) p2pNet.broadcast('TOKEN_UPDATE', payload);
+                    else p2pNet.sendToHost('TOKEN_UPDATE', payload);
+                }
             }
         }
 
         function toggleCondition(icon) {
             const token = state.tokens[state.selectedTokenId];
             if (!token) return;
-
             const idx = token.conditions.indexOf(icon);
-            if (idx >= 0) {
-                token.conditions.splice(idx, 1);
-            } else {
-                token.conditions.push(icon);
-            }
+            if (idx >= 0) token.conditions.splice(idx, 1);
+            else token.conditions.push(icon);
             updateTokenConditionsUI(token.id);
+            if (p2pNet) {
+                const payload = { id: token.id, hp: token.hp, pe: token.pe, conditions: token.conditions };
+                if (p2pNet.isHost) p2pNet.broadcast('TOKEN_UPDATE', payload);
+                else p2pNet.sendToHost('TOKEN_UPDATE', payload);
+            }
         }
 
         function updateTokenConditionsUI(id) {
             const token = state.tokens[id];
             const condsEl = document.getElementById(`conds-${id}`);
             if (!token || !condsEl) return;
-
             condsEl.innerHTML = token.conditions.map(c => `<div class="token-badge">${c}</div>`).join('');
         }
 
-        // =========================================================================
-        // DRAWER, CHAT & ROLADOR +2d6
-        // =========================================================================
         function setDrawerTab(tab) {
             document.querySelectorAll('.drawer-tab-btn').forEach(b => b.classList.remove('active'));
             document.querySelectorAll('.drawer-content-pane').forEach(p => p.classList.remove('active'));
-
             event.currentTarget.classList.add('active');
             document.getElementById(`pane-${tab}`).classList.add('active');
         }
@@ -1119,21 +1159,14 @@
             const drawer = document.getElementById('vtt-drawer');
             const icon = document.getElementById('drawer-toggle-icon');
             drawer.classList.toggle('collapsed');
-            if (drawer.classList.contains('collapsed')) {
-                icon.className = 'fa-solid fa-chevron-left';
-            } else {
-                icon.className = 'fa-solid fa-chevron-right';
-            }
+            icon.className = drawer.classList.contains('collapsed') ? 'fa-solid fa-chevron-left' : 'fa-solid fa-chevron-right';
         }
 
         function appendChatMessage(title, text, type = 'normal') {
             const container = document.getElementById('chat-messages');
             const entry = document.createElement('div');
             entry.className = `chat-entry ${type === 'crit' ? 'roll-crit' : (type === 'fumble' ? 'roll-fumble' : '')}`;
-            entry.innerHTML = `
-                <div class="text-[10px] text-cyan-400 font-cinzel font-bold">${title}</div>
-                <div class="text-xs text-gray-200">${text}</div>
-            `;
+            entry.innerHTML = `<div class="text-[10px] text-cyan-400 font-cinzel font-bold">${title}</div><div class="text-xs text-gray-200">${text}</div>`;
             container.appendChild(entry);
             container.scrollTop = container.scrollHeight;
         }
@@ -1143,23 +1176,21 @@
             const d2 = Math.floor(Math.random() * 6) + 1;
             const dice = d1 + d2;
             const total = dice + bonus;
-
+            const isSecret = document.getElementById('secret-roll-toggle').checked;
             let outcome = '';
             let type = 'normal';
-
-            if (dice === 12) {
-                outcome = `<strong class="text-amber-400">✨ ACERTO CRÍTICO!</strong>`;
-                type = 'crit';
-            } else if (dice === 2) {
-                outcome = `<strong class="text-red-400">💥 FALHA CRÍTICA!</strong>`;
-                type = 'fumble';
-            } else if (total >= cd) {
-                outcome = `<strong class="text-emerald-400">✓ SUCESSO</strong> (vs CD ${cd})`;
+            if (dice === 12) { outcome = `✨ ACERTO CRÍTICO!`; type = 'crit'; }
+            else if (dice === 2) { outcome = `💥 FALHA CRÍTICA!`; type = 'fumble'; }
+            else if (total >= cd) { outcome = `✓ SUCESSO (vs CD ${cd})`; }
+            else { outcome = `✗ FALHA (vs CD ${cd})`; }
+            const formattedMsg = `🎲 [${d1} + ${d2}] + ${bonus} = <strong>${total}</strong> &middot; ${outcome}`;
+            if (isSecret && p2pNet) {
+                p2pNet.sendSecretRoll(p2pNet.playerName || 'Jogador', `2d6+${bonus}`, total, outcome);
+                appendChatMessage(`Rolagem Secreta para o Mestre`, formattedMsg, type);
             } else {
-                outcome = `<strong class="text-red-400">✗ FALHA</strong> (vs CD ${cd})`;
+                appendChatMessage(`Teste de ${name} (+2d6)`, formattedMsg, type);
+                if (p2pNet) p2pNet.sendChatMessage(p2pNet.playerName || 'Jogador', `Teste de ${name} (+2d6): ${formattedMsg}`, true, { total, d1, d2 });
             }
-
-            appendChatMessage(`Teste de ${name} (+2d6)`, `🎲 [${d1} + ${d2}] + ${bonus} = <strong>${total}</strong> &middot; ${outcome}`, type);
         }
 
         function rollCustomCheck() {
@@ -1172,86 +1203,192 @@
             const input = document.getElementById('chat-input');
             const val = input.value.trim();
             if (!val) return;
-
             if (val.startsWith('/r ') || val.startsWith('/roll ')) {
                 const parts = val.replace('/r ', '').replace('/roll ', '').split('+');
                 const bonus = parts[1] ? parseInt(parts[1]) : 0;
                 rollQuickCheck('Comando', bonus, 10);
             } else {
-                appendChatMessage('Jogador', val);
+                const author = p2pNet ? p2pNet.playerName : 'Jogador';
+                appendChatMessage(author, val);
+                if (p2pNet) p2pNet.sendChatMessage(author, val);
             }
             input.value = '';
         }
 
-        // =========================================================================
-        // RASTREADOR DE INICIATIVA & COMBATE
-        // =========================================================================
-        function addCombatant(token) {
+        function addCombatant(token, broadcast = false) {
             const initRoll = Math.floor(Math.random() * 6) + 1 + Math.floor(Math.random() * 6) + 1 + 2;
             state.combatants.push({ id: token.id, name: token.name, avatar: token.avatar, init: initRoll });
             sortCombatants();
             renderInitiativeUI();
+            if (broadcast && p2pNet && p2pNet.isHost) p2pNet.broadcast('COMBAT_UPDATE', { combatants: state.combatants, round: state.currentRound, turn: state.currentTurnIndex });
         }
 
         function removeCombatant(id) {
             state.combatants = state.combatants.filter(c => c.id !== id);
             renderInitiativeUI();
+            if (p2pNet && p2pNet.isHost) p2pNet.broadcast('COMBAT_UPDATE', { combatants: state.combatants, round: state.currentRound, turn: state.currentTurnIndex });
         }
 
-        function sortCombatants() {
-            state.combatants.sort((a, b) => b.init - a.init);
-        }
+        function sortCombatants() { state.combatants.sort((a, b) => b.init - a.init); }
 
         function rollAllInitiative() {
-            state.combatants.forEach(c => {
-                c.init = Math.floor(Math.random() * 6) + 1 + Math.floor(Math.random() * 6) + 1 + 2;
-            });
+            state.combatants.forEach(c => { c.init = Math.floor(Math.random() * 6) + 1 + Math.floor(Math.random() * 6) + 1 + 2; });
             sortCombatants();
             state.currentTurnIndex = 0;
             state.currentRound = 1;
             renderInitiativeUI();
             appendChatMessage('Iniciativa', 'Todas as iniciativas foram roladas para o combate!');
+            if (p2pNet && p2pNet.isHost) p2pNet.broadcast('COMBAT_UPDATE', { combatants: state.combatants, round: state.currentRound, turn: state.currentTurnIndex });
         }
 
         function nextTurn() {
             if (state.combatants.length === 0) return;
             state.currentTurnIndex = (state.currentTurnIndex + 1) % state.combatants.length;
-            if (state.currentTurnIndex === 0) {
-                state.currentRound++;
-            }
+            if (state.currentTurnIndex === 0) state.currentRound++;
             renderInitiativeUI();
             const active = state.combatants[state.currentTurnIndex];
             if (active) selectToken(active.id);
+            if (p2pNet && p2pNet.isHost) p2pNet.broadcast('COMBAT_UPDATE', { combatants: state.combatants, round: state.currentRound, turn: state.currentTurnIndex });
         }
 
         function renderInitiativeUI() {
             const list = document.getElementById('initiative-list');
             document.getElementById('round-counter').innerText = `Rodada ${state.currentRound}`;
             list.innerHTML = '';
-
             state.combatants.forEach((c, idx) => {
                 const isActive = idx === state.currentTurnIndex;
                 const row = document.createElement('div');
                 row.className = `p-2 rounded-lg border flex items-center justify-between cursor-pointer transition ${isActive ? 'bg-cyan-950/70 border-cyan-400 shadow-[0_0_15px_rgba(102,252,241,0.2)]' : 'bg-slate-900 border-slate-700'}`;
                 row.onclick = () => selectToken(c.id);
-
-                row.innerHTML = `
-                    <div class="flex items-center gap-2">
-                        <img src="${c.avatar}" class="w-7 h-7 rounded-full object-cover border ${isActive ? 'border-cyan-400' : 'border-slate-600'}">
-                        <div>
-                            <div class="text-xs font-cinzel font-bold ${isActive ? 'text-cyan-300' : 'text-gray-200'}">${c.name}</div>
-                            <div class="text-[10px] text-gray-400">Iniciativa: <strong>${c.init}</strong></div>
-                        </div>
-                    </div>
-                    ${isActive ? '<span class="text-[10px] font-bold px-2 py-0.5 bg-cyan-400 text-black rounded font-cinzel">TURNO</span>' : ''}
-                `;
+                row.innerHTML = `<div class="flex items-center gap-2"><img src="${c.avatar}" class="w-7 h-7 rounded-full object-cover border ${isActive ? 'border-cyan-400' : 'border-slate-600'}"><div><div class="text-xs font-cinzel font-bold ${isActive ? 'text-cyan-300' : 'text-gray-200'}">${c.name}</div><div class="text-[10px] text-gray-400">Iniciativa: <strong>${c.init}</strong></div></div></div>${isActive ? '<span class="text-[10px] font-bold px-2 py-0.5 bg-cyan-400 text-black rounded font-cinzel">TURNO</span>' : ''}`;
                 list.appendChild(row);
             });
         }
 
-        // =========================================================================
-        // MODAL MAPA & PERSONAGEM
-        // =========================================================================
+        function setupP2PListeners() {
+            if (!p2pNet) return;
+            p2pNet.on('host_ready', (data) => {
+                document.getElementById('p2p-net-indicator').innerText = `Online (Mestre: ${data.roomId})`;
+                document.getElementById('p2p-room-id-display').innerText = data.roomId;
+                document.getElementById('host-info-box').classList.remove('hidden');
+                document.getElementById('host-action-box').classList.add('hidden');
+                document.getElementById('p2p-qr-img').src = p2pNet.getQRCodeUrl(data.roomId);
+            });
+            p2pNet.on('connected_to_host', (data) => {
+                document.getElementById('p2p-net-indicator').innerText = `Online (Sala: ${p2pNet.roomId})`;
+                closeMultiplayerModal();
+            });
+            p2pNet.on('chat_message', (msg) => {
+                appendChatMessage(msg.author, msg.text, msg.isRoll ? (msg.text.includes('CRÍTICO') ? 'crit' : 'normal') : 'normal');
+            });
+            p2pNet.on('secret_roll_received', (msg) => {
+                appendChatMessage(`🤫 Rolagem Secreta de ${msg.sender}`, msg.text, 'crit');
+            });
+            p2pNet.on('token_moved', (data) => {
+                const token = state.tokens[data.id];
+                if (token) {
+                    token.x = data.x;
+                    token.y = data.y;
+                    const el = document.getElementById(`token-${data.id}`);
+                    if (el) { el.style.left = `${data.x}px`; el.style.top = `${data.y}px`; }
+                }
+            });
+            p2pNet.on('token_updated', (data) => {
+                const token = state.tokens[data.id];
+                if (token) {
+                    token.hp = data.hp;
+                    token.pe = data.pe;
+                    token.conditions = data.conditions || [];
+                    const el = document.getElementById(`token-${data.id}`);
+                    if (el) {
+                        const fill = el.querySelector('.token-bar-fill-hp');
+                        if (fill) fill.style.width = `${(token.hp / token.maxHp) * 100}%`;
+                        updateTokenConditionsUI(data.id);
+                    }
+                }
+            });
+            p2pNet.on('token_spawned', (token) => {
+                state.tokens[token.id] = token;
+                createTokenElement(token, false);
+            });
+            p2pNet.on('token_deleted', (data) => {
+                delete state.tokens[data.id];
+                const el = document.getElementById(`token-${data.id}`);
+                if (el) el.remove();
+                removeCombatant(data.id);
+            });
+            p2pNet.on('combat_updated', (data) => {
+                state.combatants = data.combatants || [];
+                state.currentRound = data.round || 1;
+                state.currentTurnIndex = data.turn || 0;
+                renderInitiativeUI();
+            });
+            p2pNet.on('request_scene_sync', (data) => {
+                p2pNet.sendToPlayer(data.targetPeerId, 'SYNC_SCENE', { mapUrl: mapImg.src, tokens: state.tokens, combatants: state.combatants, round: state.currentRound, turn: state.currentTurnIndex });
+            });
+            p2pNet.on('scene_synced', (data) => {
+                if (data.mapUrl) mapImg.src = data.mapUrl;
+                if (data.tokens) {
+                    state.tokens = data.tokens;
+                    tokensLayer.innerHTML = '';
+                    Object.values(state.tokens).forEach(t => createTokenElement(t, false));
+                }
+                if (data.combatants) {
+                    state.combatants = data.combatants;
+                    state.currentRound = data.round || 1;
+                    state.currentTurnIndex = data.turn || 0;
+                    renderInitiativeUI();
+                }
+            });
+            p2pNet.on('players_updated', (list) => {
+                const container = document.getElementById('p2p-players-list');
+                const countBadge = document.getElementById('p2p-player-count');
+                countBadge.innerText = `${list.length} conectado(s)`;
+                if (list.length === 0) {
+                    container.innerHTML = `<div class="text-gray-500 italic text-center py-2">Nenhum jogador conectado.</div>`;
+                    return;
+                }
+                container.innerHTML = list.map(p => `<div class="flex items-center justify-between bg-slate-950 p-2 rounded border border-slate-800"><span class="text-white font-cinzel font-bold">${p.playerName} <small class="text-gray-400">(${p.characterName})</small></span><span class="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399]"></span></div>`).join('');
+            });
+        }
+
+        function openMultiplayerModal() { document.getElementById('p2p-modal').classList.remove('hidden'); }
+        function closeMultiplayerModal() { document.getElementById('p2p-modal').classList.add('hidden'); }
+
+        function setP2PTab(tab) {
+            document.getElementById('p2p-tab-host').className = tab === 'host' ? 'flex-1 py-1.5 text-xs font-cinzel font-bold text-cyan-300 bg-slate-800 rounded transition' : 'flex-1 py-1.5 text-xs font-cinzel font-bold text-gray-400 hover:text-white transition';
+            document.getElementById('p2p-tab-client').className = tab === 'client' ? 'flex-1 py-1.5 text-xs font-cinzel font-bold text-cyan-300 bg-slate-800 rounded transition' : 'flex-1 py-1.5 text-xs font-cinzel font-bold text-gray-400 hover:text-white transition';
+            document.getElementById('p2p-pane-host').className = tab === 'host' ? 'space-y-4' : 'space-y-4 hidden';
+            document.getElementById('p2p-pane-client').className = tab === 'client' ? 'space-y-3' : 'space-y-3 hidden';
+        }
+
+        function createHostRoom() { if (p2pNet) p2pNet.hostRoom(); }
+
+        function connectAsPlayer() {
+            if (!p2pNet) return;
+            const roomId = document.getElementById('p2p-target-room-id').value.trim();
+            const playerName = document.getElementById('p2p-client-name').value.trim() || 'Jogador';
+            if (!roomId) { alert('Digite o ID da Sala do Mestre.'); return; }
+            p2pNet.joinRoom(roomId, { playerName, characterName: playerName });
+        }
+
+        function copyRoomInviteLink() {
+            if (!p2pNet || !p2pNet.roomId) return;
+            const joinUrl = `${window.location.href.split('?')[0]}?room=${p2pNet.roomId}`;
+            navigator.clipboard.writeText(joinUrl);
+        }
+
+        function toggleQRCode() { document.getElementById('p2p-qr-container').classList.toggle('hidden'); }
+
+        function disconnectP2P() {
+            if (p2pNet) {
+                p2pNet.disconnect();
+                document.getElementById('p2p-net-indicator').innerText = 'Modo Offline';
+                document.getElementById('host-info-box').classList.add('hidden');
+                document.getElementById('host-action-box').classList.remove('hidden');
+            }
+        }
+
         function openMapModal() { document.getElementById('map-modal').classList.remove('hidden'); }
         function closeMapModal() { document.getElementById('map-modal').classList.add('hidden'); }
 
@@ -1259,14 +1396,24 @@
             if (!url) return;
             mapImg.src = url;
             closeMapModal();
+            if (p2pNet && p2pNet.isHost) p2pNet.broadcast('SYNC_SCENE', { mapUrl: url, tokens: state.tokens, combatants: state.combatants });
         }
 
         function openCharacterModal() { document.getElementById('char-modal').classList.remove('hidden'); }
         function closeCharModal() { document.getElementById('char-modal').classList.add('hidden'); }
 
-        // Inicialização com 2 tokens de exemplo
         spawnPlayerToken('Guardião Kuar-Tor', 16, 8, 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80');
         spawnMonster('Lobo Sombrio', 10, 4, '#ef4444', 'https://images.unsplash.com/photo-1563089145-599997674d42?auto=format&fit=crop&w=200&q=80');
+
+        window.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const roomParam = urlParams.get('room');
+            if (roomParam) {
+                openMultiplayerModal();
+                setP2PTab('client');
+                document.getElementById('p2p-target-room-id').value = roomParam;
+            }
+        });
     </script>
 </body>
 
