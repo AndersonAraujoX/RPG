@@ -1,0 +1,10 @@
+@import "tailwindcss";
+@source "../../public/**/*.html";
+@source "../../public/*.html";
+
+@theme {
+  --color-rpg-black: #0B0C10;
+  --color-rpg-cyan: #66FCF1;
+  --color-rpg-slate: #1F2833;
+  --color-rpg-silver: #C5C6C7;
+}
