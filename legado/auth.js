@@ -53,10 +53,9 @@ function signOut() {
 // =================================================================================
 
 document.addEventListener('DOMContentLoaded', function () {
-    // Check if Firebase is initialized. If not, stop execution.
-    if (typeof firebase === 'undefined' || !firebase.apps.length) {
-        console.error("Firebase not initialized. Check that firebase-config.js is loaded correctly.");
-        document.body.innerHTML = '<div style="color: red; text-align: center; padding: 2rem;">Erro Crítico: A conexão com os serviços de autenticação falhou.</div>';
+    // Check if Firebase is initialized
+    if (typeof firebase === 'undefined' || !firebase.apps || !firebase.apps.length) {
+        console.warn("Firebase não inicializado. O portal funcionará normalmente em modo visitante/offline.");
         return;
     }
 

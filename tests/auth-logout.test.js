@@ -114,6 +114,11 @@ QUnit.module('Auth & Logout Tests', function (hooks) {
         });
     });
 
+    QUnit.test('auth.js não deve quebrar a renderização da página se o Firebase estiver indisponível/bloqueado', function (assert) {
+        const authContent = fs.readFileSync(AUTH_JS_PATH, 'utf-8');
+        assert.notOk(authContent.includes('document.body.innerHTML ='), 'auth.js nunca deve sobrescrever document.body.innerHTML em caso de erro');
+    });
+
     QUnit.test('Simulação: onAuthStateChanged sincroniza visibilidade de user-info e login-link', function (assert) {
         const userInfo = { style: {}, classList: { add: (c) => userInfo.hiddenClass = true, remove: (c) => userInfo.hiddenClass = false } };
         const loginLink = { style: {}, classList: { add: (c) => loginLink.hiddenClass = true, remove: (c) => loginLink.hiddenClass = false } };
