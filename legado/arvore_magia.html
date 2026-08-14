@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Biblioteca Arcana — Teia de Magias GURPS | Kuar-Tor</title>
+    <title>Biblioteca Arcana — 12 Caminhos e Fusão de Magias (+2d6) | Kuar-Tor</title>
     
     <link rel="stylesheet" href="../src/styles/theme.css">
     
@@ -32,16 +32,19 @@
             --rpg-black: #0B0C10;
             --rpg-red: #ef4444;
 
-            /* Cores dos Colégios */
-            --color-core: #fbbf24;
-            --color-fire: #f97316;
-            --color-water: #06b6d4;
-            --color-earth: #10b981;
-            --color-air: #38bdf8;
-            --color-healing: #22c55e;
-            --color-mind: #c084fc;
-            --color-protection: #60a5fa;
-            --color-lightdark: #e879f9;
+            /* Cores dos 12 Caminhos */
+            --path-fogo: #f97316;
+            --path-agua: #06b6d4;
+            --path-ar: #38bdf8;
+            --path-terra: #10b981;
+            --path-luz: #fbbf24;
+            --path-trevas: #6366f1;
+            --path-animais: #eab308;
+            --path-humanos: #ec4899;
+            --path-plantas: #84cc16;
+            --path-spiritum: #a855f7;
+            --path-arkanum: #ef4444;
+            --path-metamagia: #14b8a6;
         }
 
         * {
@@ -74,14 +77,13 @@
             z-index: 0;
         }
 
-        /* Nebulosa de Fundo */
         .cosmic-nebula {
             position: fixed;
             inset: 0;
             background: 
                 radial-gradient(circle at 50% 50%, rgba(180, 142, 173, 0.08) 0%, transparent 60%),
-                radial-gradient(circle at 20% 30%, rgba(102, 252, 241, 0.06) 0%, transparent 45%),
-                radial-gradient(circle at 80% 70%, rgba(249, 115, 22, 0.05) 0%, transparent 50%);
+                radial-gradient(circle at 15% 25%, rgba(102, 252, 241, 0.06) 0%, transparent 45%),
+                radial-gradient(circle at 85% 75%, rgba(249, 115, 22, 0.05) 0%, transparent 50%);
             pointer-events: none;
             z-index: 1;
         }
@@ -90,14 +92,14 @@
         header {
             position: relative;
             z-index: 50;
-            background: linear-gradient(180deg, rgba(11, 12, 16, 0.95) 0%, rgba(11, 12, 16, 0.75) 80%, transparent 100%);
-            backdrop-filter: blur(12px);
-            border-bottom: 1px solid rgba(102, 252, 241, 0.15);
-            padding: 12px 24px;
+            background: linear-gradient(180deg, rgba(11, 12, 16, 0.96) 0%, rgba(11, 12, 16, 0.8) 80%, transparent 100%);
+            backdrop-filter: blur(14px);
+            border-bottom: 1px solid rgba(102, 252, 241, 0.18);
+            padding: 10px 24px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
         }
 
         .header-title-box {
@@ -109,89 +111,94 @@
         .header-rune-icon {
             width: 44px;
             height: 44px;
-            border-radius: 10px;
-            background: linear-gradient(135deg, rgba(180, 142, 173, 0.25), rgba(102, 252, 241, 0.15));
-            border: 1px solid rgba(102, 252, 241, 0.4);
+            border-radius: 12px;
+            background: linear-gradient(135deg, rgba(180, 142, 173, 0.3), rgba(102, 252, 241, 0.2));
+            border: 1.5px solid rgba(102, 252, 241, 0.4);
             display: flex;
             align-items: center;
             justify-content: center;
             color: var(--rpg-cyan);
             font-size: 22px;
-            box-shadow: 0 0 15px rgba(102, 252, 241, 0.3);
-            animation: pulse-gem 4s infinite alternate;
+            box-shadow: 0 0 20px rgba(102, 252, 241, 0.35);
         }
 
         .header-stats {
             display: flex;
             align-items: center;
-            gap: 18px;
+            gap: 14px;
         }
 
-        /* CP Crystal Badge */
-        .cp-crystal-card {
+        /* Badges HUD */
+        .hud-badge {
             background: linear-gradient(135deg, rgba(30, 41, 59, 0.85), rgba(15, 23, 42, 0.95));
-            border: 1px solid rgba(251, 191, 36, 0.4);
+            border: 1px solid rgba(148, 163, 184, 0.3);
             border-radius: 12px;
-            padding: 6px 16px;
+            padding: 6px 14px;
             display: flex;
             align-items: center;
-            gap: 12px;
-            box-shadow: 0 0 20px rgba(251, 191, 36, 0.15);
-            position: relative;
-            overflow: hidden;
+            gap: 10px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.4);
         }
 
-        .cp-crystal-card::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: linear-gradient(45deg, transparent 40%, rgba(251, 191, 36, 0.15) 50%, transparent 60%);
-            transform: rotate(30deg);
-            animation: shine 4s infinite linear;
-        }
-
-        .cp-val {
+        .hud-val {
             font-family: 'Cinzel', serif;
-            font-size: 24px;
+            font-size: 20px;
             font-weight: 700;
             color: #fbbf24;
-            text-shadow: 0 0 12px rgba(251, 191, 36, 0.7);
+            text-shadow: 0 0 10px rgba(251, 191, 36, 0.6);
         }
 
-        /* Botões de Ação Topo */
-        .btn-top {
-            background: rgba(31, 41, 55, 0.7);
-            border: 1px solid rgba(148, 163, 184, 0.3);
-            color: #e2e8f0;
+        .btn-fusion-toggle {
+            background: linear-gradient(135deg, rgba(180, 142, 173, 0.3), rgba(102, 252, 241, 0.25));
+            border: 1px solid var(--rpg-cyan);
+            color: var(--rpg-cyan);
             padding: 8px 16px;
-            border-radius: 8px;
+            border-radius: 10px;
             font-family: 'Cinzel', serif;
             font-size: 13px;
-            font-weight: 600;
+            font-weight: 700;
             cursor: pointer;
             display: inline-flex;
             align-items: center;
             gap: 8px;
             transition: all 0.25s ease;
+            box-shadow: 0 0 15px rgba(102, 252, 241, 0.25);
+        }
+
+        .btn-fusion-toggle:hover {
+            background: var(--rpg-cyan);
+            color: var(--rpg-black);
+            transform: scale(1.05);
+            box-shadow: 0 0 25px rgba(102, 252, 241, 0.6);
+        }
+
+        .btn-top {
+            background: rgba(31, 41, 55, 0.7);
+            border: 1px solid rgba(148, 163, 184, 0.3);
+            color: #e2e8f0;
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-family: 'Cinzel', serif;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.25s ease;
             text-decoration: none;
-            backdrop-filter: blur(8px);
         }
 
         .btn-top:hover {
             background: rgba(102, 252, 241, 0.15);
             border-color: var(--rpg-cyan);
             color: var(--rpg-cyan);
-            transform: translateY(-2px);
-            box-shadow: 0 0 15px rgba(102, 252, 241, 0.3);
         }
 
         /* Viewport e Espaço de Árvore */
         #tree-viewport {
             width: 100vw;
-            height: calc(100vh - 75px);
+            height: calc(100vh - 70px);
             cursor: grab;
             position: relative;
             overflow: hidden;
@@ -216,7 +223,7 @@
             left: 50vw;
         }
 
-        /* Círculos Rúnicos Místicos de Fundo */
+        /* Círculos Rúnicos Místicos */
         .rune-circle {
             position: absolute;
             top: 50%;
@@ -227,65 +234,40 @@
             z-index: 1;
         }
 
-        .rune-circle-1 {
-            width: 340px;
-            height: 340px;
-            border: 1.5px dashed rgba(102, 252, 241, 0.15);
-            animation: rotate-cw 120s infinite linear;
-        }
-
-        .rune-circle-2 {
-            width: 660px;
-            height: 660px;
-            border: 1.5px solid rgba(180, 142, 173, 0.12);
-            animation: rotate-ccw 160s infinite linear;
-        }
-
-        .rune-circle-3 {
-            width: 1000px;
-            height: 1000px;
-            border: 1px dashed rgba(102, 252, 241, 0.08);
-            animation: rotate-cw 220s infinite linear;
-        }
-
-        .rune-circle-4 {
-            width: 1350px;
-            height: 1350px;
-            border: 1px solid rgba(251, 191, 36, 0.06);
-            animation: rotate-ccw 300s infinite linear;
-        }
+        .rune-circle-1 { width: 360px; height: 360px; border: 1.5px dashed rgba(102, 252, 241, 0.15); animation: rotate-cw 140s infinite linear; }
+        .rune-circle-2 { width: 720px; height: 720px; border: 1.5px solid rgba(180, 142, 173, 0.12); animation: rotate-ccw 180s infinite linear; }
+        .rune-circle-3 { width: 1100px; height: 1100px; border: 1px dashed rgba(251, 191, 36, 0.09); animation: rotate-cw 240s infinite linear; }
+        .rune-circle-4 { width: 1480px; height: 1480px; border: 1px solid rgba(102, 252, 241, 0.06); animation: rotate-ccw 320s infinite linear; }
 
         /* Conexões SVG Suaves */
         #connections-svg {
             position: absolute;
-            top: -2000px;
-            left: -2000px;
-            width: 4000px;
-            height: 4000px;
+            top: -2500px;
+            left: -2500px;
+            width: 5000px;
+            height: 5000px;
             pointer-events: none;
             z-index: 5;
         }
 
         .conn-line {
-            stroke: rgba(71, 85, 105, 0.4);
+            stroke: rgba(71, 85, 105, 0.35);
             stroke-width: 2.5;
             stroke-linecap: round;
             transition: all 0.4s ease;
         }
 
         .conn-line.active {
-            stroke: var(--rpg-cyan);
             stroke-width: 3.5;
-            filter: drop-shadow(0 0 6px var(--rpg-cyan));
             stroke-dasharray: 8, 4;
-            animation: mana-flow 25s infinite linear;
+            animation: mana-flow 20s infinite linear;
         }
 
-        /* Nós Hexagonais */
+        /* Nós Hexagonais dos Caminhos */
         .hex-node {
             position: absolute;
-            width: 76px;
-            height: 86px;
+            width: 80px;
+            height: 92px;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -320,83 +302,49 @@
             stroke-width: 2.5;
         }
 
-        /* Status dos Nós */
-        .hex-node.locked {
-            opacity: 0.65;
-            filter: grayscale(80%);
+        /* Nó Central Místico */
+        .hex-node.nexus-core {
+            width: 110px;
+            height: 124px;
+            z-index: 25;
         }
-        .hex-node.locked .hex-shape polygon {
-            fill: #070c14;
-            stroke: #253347;
+        .hex-node.nexus-core .hex-shape polygon {
+            stroke: var(--rpg-cyan);
+            stroke-width: 3.5;
+            fill: rgba(102, 252, 241, 0.15);
+            filter: drop-shadow(0 0 25px rgba(102, 252, 241, 0.7));
+        }
+        .hex-node.nexus-core .icon {
+            font-size: 32px;
+            color: var(--rpg-cyan);
+            text-shadow: 0 0 15px var(--rpg-cyan);
+        }
+        .hex-node.nexus-core .spell-title {
+            color: #ffffff;
+            font-size: 11px;
+            font-weight: 800;
         }
 
-        .hex-node.available {
-            opacity: 1;
-            filter: drop-shadow(0 0 8px rgba(251, 191, 36, 0.5));
-            animation: node-pulse 2.5s infinite ease-in-out;
-        }
-        .hex-node.available .hex-shape polygon {
-            fill: rgba(30, 41, 59, 0.9);
-            stroke: var(--rpg-gold);
-            stroke-width: 2.5;
-        }
-
-        .hex-node.unlocked {
-            opacity: 1;
-        }
+        /* Níveis / Status */
         .hex-node.unlocked .hex-shape polygon {
             fill: rgba(15, 23, 42, 0.95);
             stroke-width: 2.5;
         }
 
-        /* Estilização por Colégio */
-        .hex-node[data-college="Fire"].unlocked .hex-shape polygon { stroke: var(--color-fire); fill: rgba(249, 115, 22, 0.12); filter: drop-shadow(0 0 10px var(--color-fire)); }
-        .hex-node[data-college="Fire"].unlocked .icon { color: var(--color-fire); text-shadow: 0 0 8px var(--color-fire); }
-
-        .hex-node[data-college="Water"].unlocked .hex-shape polygon { stroke: var(--color-water); fill: rgba(6, 182, 212, 0.12); filter: drop-shadow(0 0 10px var(--color-water)); }
-        .hex-node[data-college="Water"].unlocked .icon { color: var(--color-water); text-shadow: 0 0 8px var(--color-water); }
-
-        .hex-node[data-college="Earth"].unlocked .hex-shape polygon { stroke: var(--color-earth); fill: rgba(16, 185, 129, 0.12); filter: drop-shadow(0 0 10px var(--color-earth)); }
-        .hex-node[data-college="Earth"].unlocked .icon { color: var(--color-earth); text-shadow: 0 0 8px var(--color-earth); }
-
-        .hex-node[data-college="Air"].unlocked .hex-shape polygon { stroke: var(--color-air); fill: rgba(56, 189, 248, 0.12); filter: drop-shadow(0 0 10px var(--color-air)); }
-        .hex-node[data-college="Air"].unlocked .icon { color: var(--color-air); text-shadow: 0 0 8px var(--color-air); }
-
-        .hex-node[data-college="Healing"].unlocked .hex-shape polygon { stroke: var(--color-healing); fill: rgba(34, 197, 94, 0.12); filter: drop-shadow(0 0 10px var(--color-healing)); }
-        .hex-node[data-college="Healing"].unlocked .icon { color: var(--color-healing); text-shadow: 0 0 8px var(--color-healing); }
-
-        .hex-node[data-college="Mind Control"].unlocked .hex-shape polygon { stroke: var(--color-mind); fill: rgba(192, 132, 252, 0.12); filter: drop-shadow(0 0 10px var(--color-mind)); }
-        .hex-node[data-college="Mind Control"].unlocked .icon { color: var(--color-mind); text-shadow: 0 0 8px var(--color-mind); }
-
-        .hex-node[data-college="Protection"].unlocked .hex-shape polygon { stroke: var(--color-protection); fill: rgba(96, 165, 250, 0.12); filter: drop-shadow(0 0 10px var(--color-protection)); }
-        .hex-node[data-college="Protection"].unlocked .icon { color: var(--color-protection); text-shadow: 0 0 8px var(--color-protection); }
-
-        .hex-node[data-college="Light/Darkness"].unlocked .hex-shape polygon { stroke: var(--color-lightdark); fill: rgba(232, 121, 249, 0.12); filter: drop-shadow(0 0 10px var(--color-lightdark)); }
-        .hex-node[data-college="Light/Darkness"].unlocked .icon { color: var(--color-lightdark); text-shadow: 0 0 8px var(--color-lightdark); }
-
-        /* Magery Core Nodes */
-        .hex-node.core {
-            width: 90px;
-            height: 102px;
+        .hex-node.selected-fusion {
+            transform: scale(1.25);
+            z-index: 80;
+            animation: highlight-pulse 1s infinite alternate;
         }
-        .hex-node.core .hex-shape polygon {
-            stroke: var(--rpg-gold);
-            stroke-width: 3;
-            fill: rgba(251, 191, 36, 0.15);
-            filter: drop-shadow(0 0 20px rgba(251, 191, 36, 0.6));
-        }
-        .hex-node.core .icon {
-            font-size: 26px;
-            color: var(--rpg-gold);
-            text-shadow: 0 0 12px rgba(251, 191, 36, 0.8);
-        }
-        .hex-node.core .spell-title {
-            color: #fef08a;
-            font-weight: 800;
+        .hex-node.selected-fusion .hex-shape polygon {
+            stroke: #ffffff !important;
+            stroke-width: 3.5 !important;
+            fill: rgba(255, 255, 255, 0.3) !important;
+            filter: drop-shadow(0 0 25px #ffffff) !important;
         }
 
         .icon {
-            font-size: 21px;
+            font-size: 22px;
             color: #94a3b8;
             margin-bottom: 2px;
             z-index: 2;
@@ -410,45 +358,35 @@
             line-height: 1.1;
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            padding: 0 6px;
+            padding: 0 4px;
             z-index: 2;
-            max-width: 70px;
+            max-width: 72px;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
         }
 
-        .hex-node.unlocked .spell-title {
-            color: #ffffff;
+        .spell-level-badge {
+            font-size: 8px;
             font-weight: 700;
-        }
-
-        .hex-node.available .icon {
-            color: var(--rpg-gold);
-        }
-
-        /* Search Highlight */
-        .hex-node.highlighted {
-            transform: scale(1.3);
-            z-index: 100;
-            animation: highlight-pulse 1s infinite alternate;
-        }
-        .hex-node.highlighted .hex-shape polygon {
-            stroke: #ffffff !important;
-            stroke-width: 3.5 !important;
-            fill: rgba(255, 255, 255, 0.3) !important;
-            filter: drop-shadow(0 0 25px #ffffff) !important;
+            background: rgba(30, 41, 59, 0.9);
+            border: 1px solid rgba(148, 163, 184, 0.3);
+            border-radius: 4px;
+            padding: 1px 4px;
+            margin-top: 2px;
+            color: #fbbf24;
+            z-index: 2;
         }
 
         /* Tooltip Ultra-Refinado */
         .tooltip {
             position: fixed;
-            background: linear-gradient(135deg, rgba(15, 23, 42, 0.96) 0%, rgba(3, 7, 18, 0.98) 100%);
+            background: linear-gradient(135deg, rgba(15, 23, 42, 0.97) 0%, rgba(3, 7, 18, 0.99) 100%);
             backdrop-filter: blur(16px);
             border: 1px solid rgba(148, 163, 184, 0.25);
             border-radius: 12px;
             color: #f1f5f9;
-            padding: 16px 18px;
+            padding: 16px;
             font-size: 12px;
             pointer-events: none;
             opacity: 0;
@@ -456,57 +394,11 @@
             transform: scale(0.95) translateY(10px);
             transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
             z-index: 200;
-            width: 310px;
+            width: 320px;
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.8), 0 0 25px rgba(102, 252, 241, 0.1);
         }
 
-        .tooltip.show {
-            opacity: 1;
-            visibility: visible;
-            transform: scale(1) translateY(0);
-        }
-
-        .tooltip-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid rgba(148, 163, 184, 0.2);
-            padding-bottom: 8px;
-            margin-bottom: 10px;
-        }
-
-        .tooltip-title {
-            font-family: 'Cinzel', serif;
-            font-size: 16px;
-            font-weight: 700;
-            color: #ffffff;
-        }
-
-        .tooltip-college-badge {
-            font-size: 10px;
-            font-weight: 600;
-            padding: 2px 8px;
-            border-radius: 999px;
-            background: rgba(30, 41, 59, 0.8);
-            border: 1px solid rgba(148, 163, 184, 0.3);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .tooltip-desc {
-            font-size: 12px;
-            line-height: 1.5;
-            color: #cbd5e1;
-            margin-bottom: 12px;
-        }
-
-        .tooltip-footer {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-            border-top: 1px solid rgba(148, 163, 184, 0.15);
-            padding-top: 10px;
-        }
+        .tooltip.show { opacity: 1; visibility: visible; transform: scale(1) translateY(0); }
 
         /* Floating Sidebar Controls */
         .floating-sidebar {
@@ -516,12 +408,12 @@
             z-index: 40;
             display: flex;
             flex-direction: column;
-            gap: 12px;
-            max-width: 260px;
+            gap: 10px;
+            max-width: 280px;
         }
 
         .glass-panel {
-            background: rgba(11, 15, 25, 0.85);
+            background: rgba(11, 15, 25, 0.88);
             backdrop-filter: blur(14px);
             border: 1px solid rgba(148, 163, 184, 0.2);
             border-radius: 14px;
@@ -529,45 +421,39 @@
             box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6);
         }
 
-        .search-box {
-            position: relative;
+        .category-tab {
+            display: flex;
+            gap: 4px;
             margin-bottom: 10px;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+            padding-bottom: 6px;
         }
 
-        .search-input {
-            width: 100%;
-            background: rgba(15, 23, 42, 0.8);
-            border: 1px solid rgba(102, 252, 241, 0.3);
-            border-radius: 8px;
-            padding: 8px 12px 8px 34px;
-            color: #f1f5f9;
-            font-size: 12px;
-            outline: none;
-            transition: all 0.2s ease;
-        }
-
-        .search-input:focus {
-            border-color: var(--rpg-cyan);
-            box-shadow: 0 0 12px rgba(102, 252, 241, 0.3);
-            background: rgba(15, 23, 42, 0.95);
-        }
-
-        .search-icon {
-            position: absolute;
-            top: 50%;
-            left: 10px;
-            transform: translateY(-50%);
+        .cat-btn {
+            background: none;
+            border: none;
             color: #94a3b8;
-            font-size: 13px;
+            font-size: 11px;
+            font-family: 'Cinzel', serif;
+            padding: 4px 8px;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+        .cat-btn.active, .cat-btn:hover {
+            color: var(--rpg-cyan);
+            background: rgba(102, 252, 241, 0.1);
         }
 
-        .college-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 6px;
+        .paths-list {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            max-height: 240px;
+            overflow-y: auto;
         }
 
-        .college-btn {
+        .path-row-btn {
             background: rgba(15, 23, 42, 0.7);
             border: 1px solid rgba(71, 85, 105, 0.4);
             border-radius: 6px;
@@ -577,19 +463,120 @@
             cursor: pointer;
             display: flex;
             align-items: center;
-            gap: 8px;
-            transition: all 0.2s ease;
-            text-align: left;
+            justify-content: space-between;
+            transition: all 0.2s;
         }
-
-        .college-btn:hover {
-            transform: translateY(-2px);
+        .path-row-btn:hover {
             border-color: rgba(255, 255, 255, 0.4);
             color: #ffffff;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+            transform: translateX(3px);
         }
 
-        /* Floating Viewport Controls (Bottom Right) */
+        /* PAINEL DE FUSÃO / ALTAR DE SÍNTESE (Gaveta/Altar Lateral/Modal) */
+        #fusion-altar {
+            position: fixed;
+            top: 70px;
+            right: 0;
+            bottom: 0;
+            width: 440px;
+            max-width: 95vw;
+            background: linear-gradient(135deg, rgba(15, 23, 42, 0.98) 0%, rgba(3, 7, 18, 0.99) 100%);
+            backdrop-filter: blur(18px);
+            border-left: 2px solid var(--rpg-cyan);
+            box-shadow: -15px 0 40px rgba(0, 0, 0, 0.8), 0 0 25px rgba(102, 252, 241, 0.15);
+            z-index: 100;
+            transform: translateX(100%);
+            transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+            display: flex;
+            flex-direction: column;
+            padding: 24px;
+            overflow-y: auto;
+        }
+
+        #fusion-altar.open {
+            transform: translateX(0);
+        }
+
+        .fusion-slots {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin: 20px 0;
+        }
+
+        .fusion-slot {
+            width: 90px;
+            height: 100px;
+            background: rgba(15, 23, 42, 0.8);
+            border: 2px dashed rgba(102, 252, 241, 0.4);
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.25s;
+            text-align: center;
+            padding: 6px;
+        }
+        .fusion-slot.filled {
+            border-style: solid;
+            background: rgba(30, 41, 59, 0.9);
+            box-shadow: 0 0 15px rgba(102, 252, 241, 0.3);
+        }
+
+        .fusion-plus {
+            font-size: 18px;
+            color: var(--rpg-cyan);
+            font-weight: bold;
+        }
+
+        /* Form Selector (Criar / Controlar / Entender) */
+        .forma-selector {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .forma-card {
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid rgba(148, 163, 184, 0.3);
+            border-radius: 10px;
+            padding: 10px 6px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .forma-card.active {
+            border-color: #fbbf24;
+            background: rgba(251, 191, 36, 0.15);
+            box-shadow: 0 0 15px rgba(251, 191, 36, 0.3);
+        }
+
+        .fusion-result-box {
+            background: rgba(11, 15, 25, 0.9);
+            border: 1px solid rgba(180, 142, 173, 0.4);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 20px;
+            min-height: 140px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .dice-roll-box {
+            background: rgba(15, 23, 42, 0.9);
+            border: 1px solid rgba(102, 252, 241, 0.3);
+            border-radius: 10px;
+            padding: 12px;
+            margin-top: 14px;
+            text-align: center;
+        }
+
+        /* Floating Viewport Controls */
         .zoom-controls {
             position: absolute;
             bottom: 24px;
@@ -602,7 +589,6 @@
             border: 1px solid rgba(148, 163, 184, 0.25);
             border-radius: 12px;
             padding: 6px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6);
         }
 
         .zoom-btn {
@@ -619,194 +605,21 @@
             justify-content: center;
             transition: all 0.2s ease;
         }
-
         .zoom-btn:hover {
             background: rgba(102, 252, 241, 0.2);
             border-color: var(--rpg-cyan);
             color: var(--rpg-cyan);
-            box-shadow: 0 0 10px rgba(102, 252, 241, 0.3);
-        }
-
-        /* Mini Grimório Stats Bar (Bottom Left) */
-        .progress-bar-card {
-            position: absolute;
-            bottom: 24px;
-            left: 20px;
-            z-index: 40;
-            min-width: 240px;
-        }
-
-        .progress-track {
-            width: 100%;
-            height: 6px;
-            background: rgba(30, 41, 59, 0.8);
-            border-radius: 999px;
-            overflow: hidden;
-            margin-top: 6px;
-        }
-
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, var(--rpg-purple), var(--rpg-cyan));
-            width: 0%;
-            border-radius: 999px;
-            transition: width 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-            box-shadow: 0 0 10px var(--rpg-cyan);
-        }
-
-        /* Purchase Modal */
-        #purchase-modal {
-            position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.85);
-            backdrop-filter: blur(16px);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 300;
-            opacity: 0;
-            visibility: hidden;
-            transition: all 0.3s ease;
-        }
-
-        #purchase-modal.active {
-            opacity: 1;
-            visibility: visible;
-        }
-
-        .modal-card {
-            background: linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(11, 15, 25, 0.99));
-            border: 2px solid var(--rpg-purple);
-            border-radius: 18px;
-            max-width: 440px;
-            width: 90%;
-            padding: 28px;
-            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.9), 0 0 35px rgba(180, 142, 173, 0.3);
-            transform: scale(0.9) translateY(20px);
-            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-        }
-
-        #purchase-modal.active .modal-card {
-            transform: scale(1) translateY(0);
-        }
-
-        .modal-icon-badge {
-            width: 64px;
-            height: 64px;
-            border-radius: 16px;
-            background: linear-gradient(135deg, rgba(180, 142, 173, 0.2), rgba(102, 252, 241, 0.15));
-            border: 1.5px solid var(--rpg-purple);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 28px;
-            color: var(--rpg-cyan);
-            margin: 0 auto 16px auto;
-            box-shadow: 0 0 25px rgba(180, 142, 173, 0.4);
-        }
-
-        .btn-action-primary {
-            background: linear-gradient(135deg, #b48ead, #9d6b96);
-            color: #030712;
-            font-family: 'Cinzel', serif;
-            font-weight: 700;
-            padding: 10px 20px;
-            border-radius: 10px;
-            border: none;
-            cursor: pointer;
-            flex: 1;
-            font-size: 14px;
-            transition: all 0.2s ease;
-            box-shadow: 0 0 15px rgba(180, 142, 173, 0.4);
-        }
-
-        .btn-action-primary:hover {
-            background: #ffffff;
-            transform: translateY(-2px);
-            box-shadow: 0 0 25px rgba(255, 255, 255, 0.7);
-        }
-
-        .btn-action-secondary {
-            background: rgba(30, 41, 59, 0.8);
-            color: #cbd5e1;
-            font-family: 'Cinzel', serif;
-            font-weight: 600;
-            padding: 10px 20px;
-            border-radius: 10px;
-            border: 1px solid rgba(148, 163, 184, 0.3);
-            cursor: pointer;
-            flex: 1;
-            font-size: 14px;
-            transition: all 0.2s ease;
-        }
-
-        .btn-action-secondary:hover {
-            background: rgba(239, 68, 68, 0.2);
-            border-color: var(--rpg-red);
-            color: var(--rpg-red);
         }
 
         /* Animações */
-        @keyframes rotate-cw {
-            from { transform: translate(-50%, -50%) rotate(0deg); }
-            to { transform: translate(-50%, -50%) rotate(360deg); }
-        }
-
-        @keyframes rotate-ccw {
-            from { transform: translate(-50%, -50%) rotate(0deg); }
-            to { transform: translate(-50%, -50%) rotate(-360deg); }
-        }
-
-        @keyframes node-pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.08); }
-        }
-
-        @keyframes highlight-pulse {
-            0% { transform: scale(1.25); }
-            100% { transform: scale(1.38); }
-        }
-
-        @keyframes shine {
-            0% { transform: translateX(-100%) rotate(30deg); }
-            100% { transform: translateX(100%) rotate(30deg); }
-        }
-
-        @keyframes mana-flow {
-            0% { stroke-dashoffset: 0; }
-            100% { stroke-dashoffset: 1000; }
-        }
-
-        @keyframes pulse-gem {
-            0% { box-shadow: 0 0 10px rgba(102, 252, 241, 0.2); }
-            100% { box-shadow: 0 0 25px rgba(102, 252, 241, 0.6); }
-        }
-
-        /* Responsividade */
-        @media (max-width: 768px) {
-            header {
-                padding: 10px 14px;
-            }
-            .header-title-box h1 {
-                font-size: 18px;
-            }
-            .floating-sidebar {
-                top: 10px;
-                left: 10px;
-                max-width: 200px;
-            }
-            .college-grid {
-                grid-template-columns: 1fr;
-            }
-            .progress-bar-card {
-                display: none;
-            }
-        }
+        @keyframes rotate-cw { from { transform: translate(-50%, -50%) rotate(0deg); } to { transform: translate(-50%, -50%) rotate(360deg); } }
+        @keyframes rotate-ccw { from { transform: translate(-50%, -50%) rotate(0deg); } to { transform: translate(-50%, -50%) rotate(-360deg); } }
+        @keyframes mana-flow { 0% { stroke-dashoffset: 0; } 100% { stroke-dashoffset: 1000; } }
+        @keyframes highlight-pulse { 0% { transform: scale(1.18); } 100% { transform: scale(1.3); } }
     </style>
 </head>
 
 <body>
-    <!-- Canvas Cósmico de Fundo -->
     <canvas id="stars-canvas"></canvas>
     <div class="cosmic-nebula"></div>
 
@@ -817,19 +630,24 @@
                 <i class="fa-solid fa-wand-magic-sparkles"></i>
             </div>
             <div>
-                <h1 class="font-cinzel text-xl md:text-2xl font-bold tracking-wider" style="color: var(--rpg-purple); text-shadow: 0 0 15px rgba(180, 142, 173, 0.5);">Biblioteca Arcana</h1>
-                <p id="user-display" class="text-xs text-gray-400 font-inter">Teia Universal de Magias &middot; <span id="auth-status-badge" class="text-emerald-400">Modo Conjurador</span></p>
+                <h1 class="font-cinzel text-xl md:text-2xl font-bold tracking-wider" style="color: var(--rpg-cyan); text-shadow: 0 0 15px rgba(102, 252, 241, 0.5);">Biblioteca Arcana &middot; +2d6</h1>
+                <p id="user-display" class="text-xs text-gray-400 font-inter">12 Caminhos Místicos &middot; 3 Formas (Daemon +2d6)</p>
             </div>
         </div>
 
         <div class="header-stats">
-            <div class="cp-crystal-card">
-                <i class="fa-solid fa-gem text-amber-400 text-lg"></i>
+            <div class="hud-badge">
+                <i class="fa-solid fa-sparkles text-amber-400 text-base"></i>
                 <div>
-                    <div style="font-size: 9px; text-transform: uppercase; letter-spacing: 1px; color: #94a3b8;">Character Points</div>
-                    <div class="cp-val" id="cp-display">50</div>
+                    <div style="font-size: 9px; text-transform: uppercase; letter-spacing: 1px; color: #94a3b8;">Poderes Mágicos</div>
+                    <div class="hud-val" id="pm-display">3</div>
                 </div>
             </div>
+
+            <button onclick="toggleFusionAltar()" class="btn-fusion-toggle">
+                <i class="fa-solid fa-flask-round-potion"></i>
+                <span>Altar de Fusão</span>
+            </button>
 
             <a href="main.html" class="btn-top">
                 <i class="fa-solid fa-door-open"></i>
@@ -838,94 +656,120 @@
         </div>
     </header>
 
-    <!-- Área de Visualização Interativa -->
+    <!-- Área de Visualização Cósmica -->
     <div id="tree-viewport">
         <div id="tree-canvas">
             <div id="center-point">
-                <!-- Círculos Rúnicos Tridimensionais -->
                 <div class="rune-circle rune-circle-1"></div>
                 <div class="rune-circle rune-circle-2"></div>
                 <div class="rune-circle rune-circle-3"></div>
                 <div class="rune-circle rune-circle-4"></div>
 
-                <!-- SVG de Conexões de Mana -->
                 <svg id="connections-svg"></svg>
-                
-                <!-- Os nós são inseridos dinamicamente aqui -->
             </div>
         </div>
 
         <!-- Tooltip Dinâmico -->
         <div id="info-tooltip" class="tooltip"></div>
 
-        <!-- Barra Lateral Flutuante: Busca e Filtros -->
+        <!-- Barra Lateral Flutuante: Navegação dos 12 Caminhos -->
         <div class="floating-sidebar">
             <div class="glass-panel">
-                <div class="search-box">
-                    <i class="fa-solid fa-magnifying-glass search-icon"></i>
-                    <input type="text" id="spell-search" class="search-input" placeholder="Buscar magia...">
+                <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--rpg-cyan); margin-bottom: 8px; font-family: 'Cinzel', serif;">
+                    <i class="fa-solid fa-circle-nodes"></i> 12 Caminhos de Magia
+                </div>
+                
+                <div class="category-tab">
+                    <button class="cat-btn active" onclick="filterCategory('all')">Todos</button>
+                    <button class="cat-btn" onclick="filterCategory('elemental')">Elementais</button>
+                    <button class="cat-btn" onclick="filterCategory('vital')">Vitais</button>
+                    <button class="cat-btn" onclick="filterCategory('arcano')">Arcanos</button>
                 </div>
 
-                <div style="font-size: 10px; font-weight: 700; text-transform: uppercase; color: #94a3b8; margin-bottom: 8px; font-family: 'Cinzel', serif; letter-spacing: 0.5px;">
-                    <i class="fa-solid fa-compass"></i> Focar Colégio
-                </div>
-                <div class="college-grid">
-                    <button onclick="focusAngle(0)" class="college-btn" style="border-left: 3px solid var(--color-fire);"><i class="fa-solid fa-fire text-orange-400"></i> Fogo</button>
-                    <button onclick="focusAngle(45)" class="college-btn" style="border-left: 3px solid var(--color-water);"><i class="fa-solid fa-water text-cyan-400"></i> Água</button>
-                    <button onclick="focusAngle(90)" class="college-btn" style="border-left: 3px solid var(--color-earth);"><i class="fa-brands fa-pagelines text-emerald-400"></i> Terra</button>
-                    <button onclick="focusAngle(135)" class="college-btn" style="border-left: 3px solid var(--color-air);"><i class="fa-solid fa-wind text-sky-400"></i> Ar</button>
-                    <button onclick="focusAngle(180)" class="college-btn" style="border-left: 3px solid var(--color-healing);"><i class="fa-solid fa-heart-pulse text-green-400"></i> Cura</button>
-                    <button onclick="focusAngle(-135)" class="college-btn" style="border-left: 3px solid var(--color-mind);"><i class="fa-solid fa-brain text-purple-400"></i> Mente</button>
-                    <button onclick="focusAngle(-90)" class="college-btn" style="border-left: 3px solid var(--color-protection);"><i class="fa-solid fa-shield-halved text-blue-400"></i> Proteção</button>
-                    <button onclick="focusAngle(-45)" class="college-btn" style="border-left: 3px solid var(--color-lightdark);"><i class="fa-solid fa-circle-half-stroke text-fuchsia-400"></i> Luz/Trevas</button>
+                <div class="paths-list" id="paths-list-container">
+                    <!-- Gerado via JS -->
                 </div>
             </div>
         </div>
 
-        <!-- Indicador de Progresso (Canto Inferior Esquerdo) -->
-        <div class="glass-panel progress-bar-card">
-            <div style="display: flex; justify-content: space-between; font-size: 11px; font-family: 'Cinzel', serif;">
-                <span style="color: #94a3b8;"><i class="fa-solid fa-book-sparkles"></i> Grimório Pessoal</span>
-                <span id="learned-count-display" style="color: var(--rpg-cyan); font-weight: 700;">0 / 46</span>
-            </div>
-            <div class="progress-track">
-                <div id="progress-bar-fill" class="progress-fill"></div>
-            </div>
-        </div>
-
-        <!-- Controles de Câmera e Zoom (Canto Inferior Direito) -->
+        <!-- Controles de Câmera -->
         <div class="zoom-controls">
             <button class="zoom-btn" onclick="zoomIn()" title="Aproximar"><i class="fa-solid fa-plus"></i></button>
             <button class="zoom-btn" onclick="zoomOut()" title="Afastar"><i class="fa-solid fa-minus"></i></button>
-            <button class="zoom-btn" onclick="resetView()" title="Centralizar Magery"><i class="fa-solid fa-crosshairs"></i></button>
+            <button class="zoom-btn" onclick="resetView()" title="Centralizar"><i class="fa-solid fa-crosshairs"></i></button>
         </div>
     </div>
 
-    <!-- Modal de Aquisição / Confirmação -->
-    <div id="purchase-modal">
-        <div class="modal-card">
-            <div class="modal-icon-badge" id="modal-icon-container">
-                <i class="fa-solid fa-wand-magic-sparkles" id="modal-icon"></i>
+    <!-- ALTAR DE FUSÃO ARCANA (GAVETA / MODAL LATERAL) -->
+    <div id="fusion-altar">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(102, 252, 241, 0.2); padding-bottom: 12px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <i class="fa-solid fa-flask-vial text-xl text-cyan-400"></i>
+                <h2 class="font-cinzel text-xl font-bold text-white">Altar de Fusão Arcana</h2>
             </div>
-            <h3 id="modal-title" class="font-cinzel text-xl text-center font-bold mb-1" style="color: var(--rpg-purple);">Aprender Feitiço</h3>
-            <p id="modal-college" class="text-xs text-center text-gray-400 uppercase tracking-widest mb-4">Colégio Místico</p>
-            <p id="modal-desc" class="text-sm text-gray-300 mb-5 leading-relaxed text-center">Descrição do efeito arcano...</p>
-            
-            <div style="background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(148, 163, 184, 0.2); border-radius: 10px; padding: 10px 14px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
-                <span style="font-size: 12px; color: #94a3b8;"><i class="fa-solid fa-coins text-amber-400"></i> Custo de Aprendizado:</span>
-                <span id="modal-cost" class="font-cinzel font-bold text-amber-400 text-sm">1 CP</span>
+            <button onclick="toggleFusionAltar()" style="background:none; border:none; color:#94a3b8; font-size:18px; cursor:pointer;"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+
+        <p class="text-xs text-gray-300 my-3">Combine 2 Caminhos e escolha uma Forma para sintetizar uma magia híbrida com resolução no sistema +2d6.</p>
+
+        <!-- Slots de Fusão -->
+        <div class="fusion-slots">
+            <div id="slot-1" class="fusion-slot" onclick="selectSlot(1)">
+                <i class="fa-solid fa-circle-plus text-gray-500 text-xl mb-1" id="slot-1-icon"></i>
+                <span class="text-[10px] font-cinzel text-gray-400" id="slot-1-name">Caminho 1</span>
             </div>
 
-            <div style="display: flex; gap: 12px;">
-                <button id="btn-confirm-buy" class="btn-action-primary"><i class="fa-solid fa-sparkles"></i> Dominar Feitiço</button>
-                <button onclick="closeModal()" class="btn-action-secondary">Cancelar</button>
+            <div class="fusion-plus"><i class="fa-solid fa-bolt"></i></div>
+
+            <div id="slot-2" class="fusion-slot" onclick="selectSlot(2)">
+                <i class="fa-solid fa-circle-plus text-gray-500 text-xl mb-1" id="slot-2-icon"></i>
+                <span class="text-[10px] font-cinzel text-gray-400" id="slot-2-name">Caminho 2</span>
             </div>
+        </div>
+
+        <!-- Seletor de Formas -->
+        <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: #fbbf24; margin-bottom: 8px; font-family: 'Cinzel', serif;">
+            Escolha a Forma da Ação
+        </div>
+        <div class="forma-selector">
+            <div id="forma-criar" class="forma-card active" onclick="setForma('Criar')">
+                <i class="fa-solid fa-fire-flame-curved text-amber-400 text-base mb-1"></i>
+                <div class="font-cinzel font-bold text-xs text-white">Criar</div>
+                <div class="text-[9px] text-gray-400">Gerar do nada (CD 10)</div>
+            </div>
+            <div id="forma-controlar" class="forma-card" onclick="setForma('Controlar')">
+                <i class="fa-solid fa-hand-holding-magic text-cyan-400 text-base mb-1"></i>
+                <div class="font-cinzel font-bold text-xs text-white">Controlar</div>
+                <div class="text-[9px] text-gray-400">Manipular (CD 8)</div>
+            </div>
+            <div id="forma-entender" class="forma-card" onclick="setForma('Entender')">
+                <i class="fa-solid fa-eye text-purple-400 text-base mb-1"></i>
+                <div class="font-cinzel font-bold text-xs text-white">Entender</div>
+                <div class="text-[9px] text-gray-400">Analisar (CD 6)</div>
+            </div>
+        </div>
+
+        <!-- Resultado da Fusão -->
+        <div class="fusion-result-box" id="fusion-result-display">
+            <div class="text-center text-gray-500 text-xs italic">Selecione dois caminhos na árvore ou na lista para forjar uma fusão.</div>
+        </div>
+
+        <!-- Rolagem de Teste +2d6 -->
+        <div class="dice-roll-box">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <span class="text-xs font-cinzel text-cyan-300 font-bold">Teste de Conjunção (+2d6)</span>
+                <span id="test-formula-display" class="text-[10px] text-gray-400">2d6 + Bônus vs CD</span>
+            </div>
+            <button onclick="rollSpellTest()" class="btn-fusion-toggle w-full py-2 justify-center text-sm">
+                <i class="fa-solid fa-dice-d6"></i> Rolar 2d6 Mágico
+            </button>
+            <div id="roll-result-display" class="mt-2 text-xs text-gray-300 min-h-[24px]"></div>
         </div>
     </div>
 
     <script>
         // =========================================================================
-        // Canvas Animado de Partículas Cósmicas
+        // Canvas Animado de Fundo
         // =========================================================================
         const starsCanvas = document.getElementById('stars-canvas');
         const ctx = starsCanvas.getContext('2d');
@@ -947,7 +791,7 @@
                     radius: Math.random() * 1.5 + 0.5,
                     alpha: Math.random() * 0.8 + 0.2,
                     speed: Math.random() * 0.02 + 0.005,
-                    hue: Math.random() > 0.6 ? 180 : (Math.random() > 0.5 ? 280 : 45) // Tons de ciano, roxo e dourado
+                    hue: Math.random() > 0.6 ? 180 : (Math.random() > 0.5 ? 280 : 45)
                 });
             }
         }
@@ -961,7 +805,6 @@
                 ctx.shadowBlur = s.radius * 3;
                 ctx.shadowColor = `hsla(${s.hue}, 90%, 65%, 0.8)`;
                 ctx.fill();
-
                 s.alpha += Math.sin(Date.now() * s.speed) * 0.01;
                 if (s.alpha < 0.1) s.alpha = 0.1;
                 if (s.alpha > 0.9) s.alpha = 0.9;
@@ -974,421 +817,270 @@
         drawStars();
 
         // =========================================================================
-        // Base de Dados de Magias GURPS
+        // Os 12 Caminhos e 3 Formas (Daemon Adaptado para +2d6)
         // =========================================================================
-        const rawSpells = {
-            // Core
-            "magery_0": { name: "Magery 0", college: "Core", reqs: [], desc: "Aptidão base. Permite sentir a presença de magia e destrava os primeiros ramos arcanos.", icon: "fa-solid fa-eye" },
-            "magery_1": { name: "Magery 1", college: "Core", reqs: ["magery_0"], cost: 10, desc: "Aptidão grau 1. Destrava feitiços intermediários e magias de ataque letal.", icon: "fa-solid fa-star" },
-            "magery_2": { name: "Magery 2", college: "Core", reqs: ["magery_1"], cost: 10, desc: "Aptidão grau 2. Mestre das artes elementais de alta potência.", icon: "fa-solid fa-meteor" },
-            "magery_3": { name: "Magery 3", college: "Core", reqs: ["magery_2"], cost: 10, desc: "Aptidão Arconte. Nível lendário dos grandes sábios de Kuar-Tor.", icon: "fa-brands fa-galactic-senate" },
+        const magicPaths = {
+            // Elementais (6)
+            "fogo": { name: "Magia (Fogo)", category: "elemental", angle: 0, color: "#f97316", icon: "fa-solid fa-fire", desc: "Chamas, calor, explosões térmicas e plasma ardente." },
+            "agua": { name: "Magia (Água)", category: "elemental", angle: 30, color: "#06b6d4", icon: "fa-solid fa-water", desc: "Fluidos, gelo, vapor e manipulação de correntes hídricas." },
+            "ar": { name: "Magia (Ar)", category: "elemental", angle: 60, color: "#38bdf8", icon: "fa-solid fa-wind", desc: "Ventos, tempestades, relâmpagos e gases." },
+            "terra": { name: "Magia (Terra)", category: "elemental", angle: 90, color: "#10b981", icon: "fa-solid fa-mountain", desc: "Rochas, minerais, metais, areia e solidez telúrica." },
+            "luz": { name: "Magia (Luz)", category: "elemental", angle: 120, color: "#fbbf24", icon: "fa-solid fa-sun", desc: "Fótons, radiação solar, revelação e clareza mágica." },
+            "trevas": { name: "Magia (Trevas)", category: "elemental", angle: 150, color: "#6366f1", icon: "fa-solid fa-moon", desc: "Sombras, frio abissal, ilusões espectrais e ocultação." },
 
-            // Utility / Base
-            "lend_energy": { name: "Lend Energy", college: "Healing", reqs: ["magery_0"], desc: "Transfere pontos de fadiga para revigorar um aliado exausto.", icon: "fa-solid fa-battery-half" },
-            "ignite_fire": { name: "Ignite Fire", college: "Fire", reqs: ["magery_0"], desc: "Cria faíscas ou uma pequena chama sustentável no ar.", icon: "fa-solid fa-fire-burner" },
-            "seek_water": { name: "Seek Water", college: "Water", reqs: [], desc: "Detecta a direção e distância de fontes de água potável natural.", icon: "fa-solid fa-magnifying-glass-location" },
-            "purify_air": { name: "Purify Air", college: "Air", reqs: [], desc: "Elimina fumaça, gases tóxicos e miasmas de uma área.", icon: "fa-solid fa-filter" },
-            "seek_earth": { name: "Seek Earth", college: "Earth", reqs: [], desc: "Sente veios de minerais preciosos, túneis e composição do solo.", icon: "fa-solid fa-compass" },
+            // Vitais (3)
+            "animais": { name: "Magia (Animais)", category: "vital", angle: 180, color: "#eab308", icon: "fa-solid fa-paw", desc: "Comunicação com bestas, sentidos aguçados e instintos." },
+            "humanos": { name: "Magia (Humanos)", category: "vital", angle: 210, color: "#ec4899", icon: "fa-solid fa-person", desc: "Corpo biológico, restauração de PVs, mente e vigor humanoide." },
+            "plantas": { name: "Magia (Plantas)", category: "vital", angle: 240, color: "#84cc16", icon: "fa-solid fa-seedling", desc: "Flora, raízes vivas, cipós e venenos botânicos." },
 
-            // Fire (Colégio do Fogo)
-            "create_fire": { name: "Create Fire", college: "Fire", reqs: ["ignite_fire"], desc: "Gera labaredas contínuas sem necessitar de combustível sólido.", icon: "fa-solid fa-fire" },
-            "shape_fire": { name: "Shape Fire", college: "Fire", reqs: ["create_fire"], desc: "Modela e move chamas existentes com a força da mente.", icon: "fa-brands fa-free-code-camp" },
-            "fireball": { name: "Fireball", college: "Fire", reqs: ["magery_1", "create_fire"], desc: "Conjura e arremessa uma esfera de fogo ardente e concentrada.", icon: "fa-solid fa-meteor" },
-            "explosive_fireball": { name: "Explosive Fire", college: "Fire", reqs: ["fireball"], desc: "Lança uma bomba de chamas com dano de concussão em área.", icon: "fa-solid fa-burst" },
-            "extinguish_fire": { name: "Extinguish Fire", college: "Fire", reqs: ["ignite_fire"], desc: "Extingue instantaneamente chamas e labaredas em um raio.", icon: "fa-solid fa-fire-extinguisher" },
-            "flaming_weapon": { name: "Flaming Weapon", college: "Fire", reqs: ["magery_1", "create_fire"], desc: "Imbui uma arma corpo a corpo com chamas mágicas ardentes.", icon: "fa-solid fa-gavel" },
-            "resist_fire": { name: "Resist Fire", college: "Fire", reqs: ["extinguish_fire"], desc: "Concede imunidade temporal ao calor e chamas intensas.", icon: "fa-solid fa-shield" },
-
-            // Water (Colégio da Água)
-            "purify_water": { name: "Purify Water", college: "Water", reqs: ["seek_water"], desc: "Remove venenos, salinidade e impurezas de qualquer líquido.", icon: "fa-solid fa-glass-water" },
-            "create_water": { name: "Create Water", college: "Water", reqs: ["purify_water"], desc: "Faz brotar água cristalina e pura diretamente do éter.", icon: "fa-solid fa-droplet" },
-            "destroy_water": { name: "Destroy Water", college: "Water", reqs: ["create_water"], desc: "Vaporiza instantaneamente grandes volumes de líquidos.", icon: "fa-solid fa-droplet-slash" },
-            "shape_water": { name: "Shape Water", college: "Water", reqs: ["create_water"], desc: "Controla o fluxo, ondas e barreiras aquáticas.", icon: "fa-solid fa-hand-holding-droplet" },
-            "fog": { name: "Fog", college: "Water", reqs: ["shape_water"], desc: "Invoca uma névoa espessa que bloqueia visão e rastreamento.", icon: "fa-solid fa-cloud" },
-            "ice_sphere": { name: "Ice Sphere", college: "Water", reqs: ["magery_1", "shape_water"], desc: "Projeta um orbe congelante que perfura e causa hipotermia.", icon: "fa-solid fa-snowflake" },
-            "icy_weapon": { name: "Icy Weapon", college: "Water", reqs: ["ice_sphere"], desc: "Cobre lâminas e projéteis com gelo místico cortante.", icon: "fa-regular fa-snowflake" },
-            "walk_on_water": { name: "Walk on Water", college: "Water", reqs: ["shape_water"], desc: "Permite correr e caminhar sobre superfícies líquidas sem afundar.", icon: "fa-solid fa-shoe-prints" },
-
-            // Earth (Colégio da Terra)
-            "shape_earth": { name: "Shape Earth", college: "Earth", reqs: ["seek_earth"], desc: "Modela terra, barro e areia em trincheiras ou barricadas.", icon: "fa-solid fa-mound" },
-            "earth_to_stone": { name: "Earth to Stone", college: "Earth", reqs: ["shape_earth"], desc: "Transmuta terra fofa em rocha rígida ou vice-versa.", icon: "fa-solid fa-cubes" },
-            "create_earth": { name: "Create Earth", college: "Earth", reqs: ["earth_to_stone"], desc: "Produz massa sólida de terra e pedras do vazio.", icon: "fa-solid fa-hill-rockslide" },
-            "flesh_to_stone": { name: "Flesh to Stone", college: "Earth", reqs: ["magery_2", "earth_to_stone"], desc: "A lendária maldição da petrificação permanente.", icon: "fa-solid fa-person-burst" },
-            "stone_missile": { name: "Stone Missile", college: "Earth", reqs: ["magery_1", "earth_to_stone"], desc: "Dispara uma rocha balística com força de canhão.", icon: "fa-solid fa-bowling-ball" },
-            "entombment": { name: "Entombment", college: "Earth", reqs: ["magery_2", "earth_to_stone"], desc: "Abre o solo e sela o alvo em um túmulo mineral subterrâneo.", icon: "fa-solid fa-skull" },
-
-            // Air (Colégio do Ar)
-            "create_air": { name: "Create Air", college: "Air", reqs: ["purify_air"], desc: "Gera oxigênio fresco em locais sufocantes ou no vácuo.", icon: "fa-solid fa-wind" },
-            "shape_air": { name: "Shape Air", college: "Air", reqs: ["create_air"], desc: "Canaliza rajadas de vento orientadas para empurrar alvos.", icon: "fa-solid fa-arrows-to-eye" },
-            "breathe_water": { name: "Breathe Water", college: "Air", reqs: ["create_air", "create_water"], desc: "Adapta os pulmões para respirar fluidos e névoas.", icon: "fa-solid fa-fish" },
-            "windstorm": { name: "Windstorm", college: "Air", reqs: ["shape_air"], desc: "Gera um turbilhão ciclônico que desequilibra combatentes.", icon: "fa-solid fa-tornado" },
-            "lightning": { name: "Lightning", college: "Air", reqs: ["magery_1", "windstorm"], desc: "Dispara um raio elétrico devastador a partir das mãos.", icon: "fa-solid fa-bolt" },
-            "explosive_lightning": { name: "Explo Lightning", college: "Air", reqs: ["lightning"], desc: "Relâmpago bifurcado com explosão em cadeia.", icon: "fa-solid fa-bolt-lightning" },
-
-            // Healing (Colégio da Cura)
-            "lend_vitality": { name: "Lend Vitality", college: "Healing", reqs: ["lend_energy"], desc: "Transfere vitalidade pura para restaurar Pontos de Vida (HP).", icon: "fa-solid fa-heart-pulse" },
-            "minor_healing": { name: "Minor Healing", college: "Healing", reqs: ["lend_vitality"], desc: "Cura ferimentos leves e estanca sangramentos rápidos.", icon: "fa-solid fa-kit-medical" },
-            "major_healing": { name: "Major Healing", college: "Healing", reqs: ["magery_1", "minor_healing"], desc: "Restaura lacerações graves e repara ossos partidos.", icon: "fa-solid fa-suitcase-medical" },
-            "great_healing": { name: "Great Healing", college: "Healing", reqs: ["magery_2", "major_healing"], desc: "Reconstitui completamente a integridade biológica do alvo.", icon: "fa-solid fa-truck-medical" },
-            "cure_disease": { name: "Cure Disease", college: "Healing", reqs: ["magery_1", "major_healing"], desc: "Purga infecções virais, toxinas e pragas arcanas.", icon: "fa-solid fa-vial-virus" },
-            "relieve_sickness": { name: "Relieve Sick", college: "Healing", reqs: ["lend_energy"], desc: "Anula náuseas, vertigens e penalidades de atordoamento.", icon: "fa-solid fa-bed" },
-
-            // Mind Control (Colégio do Controle Mental)
-            "foolishness": { name: "Foolishness", college: "Mind Control", reqs: ["magery_0"], desc: "Reduz o QI e a capacidade analítica do alvo temporariamente.", icon: "fa-solid fa-face-dizzy" },
-            "forgetfulness": { name: "Forgetfulness", college: "Mind Control", reqs: ["foolishness"], desc: "Apaga memórias e eventos das últimas horas do alvo.", icon: "fa-solid fa-brain" },
-            "daze": { name: "Daze", college: "Mind Control", reqs: ["foolishness"], desc: "Entorpece os sentidos, fazendo o alvo perder o próximo turno.", icon: "fa-solid fa-user-injured" },
-            "sleep": { name: "Sleep", college: "Mind Control", reqs: ["daze"], desc: "Induz um sono profundo e letárgico no oponente.", icon: "fa-solid fa-moon" },
-            "command": { name: "Command", college: "Mind Control", reqs: ["magery_1", "daze"], desc: "Emite uma ordem direta e irresistível de uma única palavra.", icon: "fa-solid fa-fingerprint" },
-            "charm": { name: "Charm", college: "Mind Control", reqs: ["magery_1", "command"], desc: "Transforma a hostilidade do alvo em lealdade incondicional.", icon: "fa-solid fa-masks-theater" },
-
-            // Protection (Colégio da Proteção)
-            "shield": { name: "Shield", college: "Protection", reqs: ["magery_0"], desc: "Ergue um escudo translúcido de energia com bônus de Defesa Ativa.", icon: "fa-solid fa-shield-halved" },
-            "armor": { name: "Armor", college: "Protection", reqs: ["shield"], desc: "Endurece a pele conferindo Resistência a Dano (RD) passiva.", icon: "fa-solid fa-shirt" },
-            "magelock": { name: "Magelock", college: "Protection", reqs: ["magery_1", "shield"], desc: "Sela portas e baús com trancas invioláveis por meios comuns.", icon: "fa-solid fa-lock" },
-            "ward": { name: "Ward", college: "Protection", reqs: ["magery_1", "magelock"], desc: "Cria um círculo protetor que repele magias invasoras.", icon: "fa-solid fa-ban" },
-            "missile_shield": { name: "Missile Shield", college: "Protection", reqs: ["magery_1", "shield"], desc: "Desvia flechas, tiros e projéteis arremessados magicamente.", icon: "fa-solid fa-shield-virus" },
-
-            // Light & Darkness (Luz e Trevas)
-            "light": { name: "Light", college: "Light/Darkness", reqs: [], desc: "Invoca um ponto de luz pura comparável a uma tocha cintilante.", icon: "fa-solid fa-lightbulb" },
-            "darkness": { name: "Darkness", college: "Light/Darkness", reqs: ["magery_0"], desc: "Absorve fótons gerando uma esfera de trevas absolutas.", icon: "fa-solid fa-moon" },
-            "continual_light": { name: "Con Light", college: "Light/Darkness", reqs: ["light"], desc: "Fixa uma fonte de luz eterna e inabalável em um objeto.", icon: "fa-regular fa-lightbulb" },
-            "flash": { name: "Flash", college: "Light/Darkness", reqs: ["magery_1", "light"], desc: "Detona um clarão ofuscante capaz de cegar os adversários.", icon: "fa-solid fa-sun" },
-            "blur": { name: "Blur", college: "Light/Darkness", reqs: ["darkness"], desc: "Distorce a silhueta do conjurador dificultando ataques inimigos.", icon: "fa-solid fa-smog" },
-            "invisibility": { name: "Invisibility", college: "Light/Darkness", reqs: ["magery_2", "blur"], desc: "Torna o conjurador completamente invisível ao espectro óptico.", icon: "fa-solid fa-eye-slash" }
+            // Arcanos (3)
+            "spiritum": { name: "Magia (Spiritum)", category: "arcano", angle: 270, color: "#a855f7", icon: "fa-solid fa-ghost", desc: "Espíritos, plano astral, sonhos e conexões etéreas." },
+            "arkanum": { name: "Magia (Arkanum)", category: "arcano", angle: 300, color: "#ef4444", icon: "fa-solid fa-skull-crossbones", desc: "Demônios, fendas cósmicas e pactos extraplanares." },
+            "metamagia": { name: "Magia (Metamagia)", category: "arcano", angle: 330, color: "#14b8a6", icon: "fa-solid fa-infinity", desc: "Manipulação da própria trama mágica: anular, teleportar, absorver." }
         };
 
-        const collegeAngles = {
-            'Core': -90,
-            'Fire': 0, 'Water': 45, 'Earth': 90, 'Air': 135,
-            'Healing': 180, 'Mind Control': -135, 'Protection': -90, 'Light/Darkness': -45
+        // Formas e Modificadores +2d6
+        const magicForms = {
+            "Criar": { cdBase: 10, peCost: 3, desc: "Gerar o elemento do nada absoluto." },
+            "Controlar": { cdBase: 8, peCost: 2, desc: "Manipular ou moldar elemento já existente." },
+            "Entender": { cdBase: 6, peCost: 1, desc: "Analisar, detectar ou comunicar-se com o elemento." }
         };
 
-        const spellTree = {};
-
-        // Layout Polar Dinâmico
-        function computeLayout() {
-            function getTier(id, depth = 0) {
-                if (depth > 20) return 1;
-                if (id === 'magery_0') return 0;
-                const spell = rawSpells[id];
-                if (!spell || !spell.reqs || spell.reqs.length === 0) return 1;
-                let maxT = 0;
-                spell.reqs.forEach(req => {
-                    const rt = getTier(req, depth + 1);
-                    if (rt > maxT) maxT = rt;
-                });
-                return maxT + 1;
+        // Matriz de Fusões Arcanas (Combinações Temáticas +2d6)
+        const spellFusions = {
+            "fogo+ar": {
+                name: "Plasma & Eletricidade Ígnea",
+                Criar: { spell: "Tempestade de Plasma", desc: "Detona um raio elétrico superaquecido causando 3d6 de dano térmico/elétrico.", cd: 12, pe: 4 },
+                Controlar: { spell: "Direcionar Corrente de Fogo", desc: "Guia chamas e faíscas ao redor de obstáculos.", cd: 9, pe: 3 },
+                Entender: { spell: "Visão Termoelétrica", desc: "Detecta calor e campos eletromagnéticos vivos.", cd: 7, pe: 2 }
+            },
+            "fogo+terra": {
+                name: "Magma & Vulcanismo",
+                Criar: { spell: "Lança de Magma", desc: "Arremessa rocha fundida que perfura armaduras (2d6 + queima contínua).", cd: 11, pe: 4 },
+                Controlar: { spell: "Moldar Fluxo de Lava", desc: "Cria barreiras de magma que solidificam em pedra quente.", cd: 9, pe: 3 },
+                Entender: { spell: "Previsão Vulcânica", desc: "Sente tensões tectônicas e calor no subsolo.", cd: 7, pe: 2 }
+            },
+            "fogo+luz": {
+                name: "Chama Sagrada Solar",
+                Criar: { spell: "Raio Solar Purificador", desc: "Feixe de luz radiante que causa dano dobrado em mortos-vivos e demônios.", cd: 11, pe: 4 },
+                Controlar: { spell: "Aura do Sol Nascente", desc: "Ilumina e queima inimigos que se aproximam.", cd: 9, pe: 3 },
+                Entender: { spell: "Discernir Trevas e Ilusões", desc: "Dissipa camuflagens ópticas e mágicas.", cd: 7, pe: 2 }
+            },
+            "fogo+trevas": {
+                name: "Fogo Negro Abissal",
+                Criar: { spell: "Labaredas Queima-Alma", desc: "Chamas negras que danificam diretamente a fadiga/alma.", cd: 12, pe: 5 },
+                Controlar: { spell: "Dreno de Calor", desc: "Absorve calor de um ambiente gerando escuridão gélida.", cd: 9, pe: 3 },
+                Entender: { spell: "Rastrear Pecados", desc: "Sente a presença de atos violentos recentes.", cd: 8, pe: 2 }
+            },
+            "agua+ar": {
+                name: "Gelo & Nevasca",
+                Criar: { spell: "Prisão Glacial de Granizo", desc: "Congela a umidade gerando espinhos de gelo e imobilização.", cd: 11, pe: 4 },
+                Controlar: { spell: "Nevoeiro Congelante", desc: "Cobre a área com cerração que reduz mobilidade inimiga.", cd: 9, pe: 2 },
+                Entender: { spell: "Pressentir Tempestades", desc: "Lê a umidade e pressão atmosférica com precisão.", cd: 6, pe: 1 }
+            },
+            "agua+plantas": {
+                name: "Pântano & Toxinas Botânicas",
+                Criar: { spell: "Lodo Espinhoso Tóxico", desc: "Faz brotar terreno alagado e venenoso sob os pés dos inimigos.", cd: 11, pe: 4 },
+                Controlar: { spell: "Cipós Aquáticos Constritores", desc: "Raízes submersas puxam alvos para o fundo.", cd: 9, pe: 3 },
+                Entender: { spell: "Detectar Venenos & Água Pura", desc: "Identifica propriedades de qualquer extrato líquido.", cd: 6, pe: 1 }
+            },
+            "terra+metamagia": {
+                name: "Portais Rúnicos de Pedra",
+                Criar: { spell: "Portal Monolítico", desc: "Ergue duas lajes de pedra interligadas para teletransporte tático.", cd: 13, pe: 5 },
+                Controlar: { spell: "Barreira de Ressonância", desc: "Reflete magias direcionadas contra a muralha rochosa.", cd: 10, pe: 4 },
+                Entender: { spell: "Sondar Linhas de Ley", desc: "Mapeia correntes de poder místico na crosta terrestre.", cd: 7, pe: 2 }
+            },
+            "humanos+spiritum": {
+                name: "Mediunidade & Projeção",
+                Criar: { spell: "Corpo Astral Duplo", desc: "Manifesta um avatar espectral capaz de agir à distância.", cd: 12, pe: 4 },
+                Controlar: { spell: "Marionete Espiritual", desc: "Comanda impulsos motores de um alvo por 1 rodada.", cd: 11, pe: 4 },
+                Entender: { spell: "Leitura de Memórias da Alma", desc: "Acessa recordações profundas de alguém desacordado.", cd: 8, pe: 2 }
+            },
+            "animais+trevas": {
+                name: "Quimera das Sombras",
+                Criar: { spell: "Invocar Lobo do Vazio", desc: "Materializa uma fera furtiva imune a ataques físicos mundanos.", cd: 12, pe: 5 },
+                Controlar: { spell: "Frenesi Noturno", desc: "Aumenta o dano e ferocidade de feras na escuridão.", cd: 9, pe: 3 },
+                Entender: { spell: "Sentidos da Noite", desc: "Visão no escuro e audição ultrassônica por 1 cena.", cd: 7, pe: 2 }
+            },
+            "arkanum+fogo": {
+                name: "Chamas Infernais",
+                Criar: { spell: "Meteoro Demoníaco", desc: "Invoca bola de fogo do abismo que queima até matéria inerte.", cd: 13, pe: 6 },
+                Controlar: { spell: "Correntes de Fogo Abissal", desc: "Aprisiona o alvo em laços flamejantes inextinguíveis.", cd: 10, pe: 4 },
+                Entender: { spell: "Decifrar Contratos Arcanos", desc: "Lê runas demoníacas e termos de pactos ocultos.", cd: 8, pe: 2 }
+            },
+            "luz+humanos": {
+                name: "Bio-Radiância Sagrada",
+                Criar: { spell: "Regeneração Fotônica", desc: "Cura 2d6 PVs e estanca todos os sangramentos instantaneamente.", cd: 10, pe: 3 },
+                Controlar: { spell: "Aura da Verdade", desc: "Emite um brilho que impede mentiras voluntárias em cena.", cd: 9, pe: 2 },
+                Entender: { spell: "Diagnóstico da Alma", desc: "Revela doenças, venenos e maldições no organismo.", cd: 6, pe: 1 }
+            },
+            "spiritum+metamagia": {
+                name: "Clarividência Cósmica",
+                Criar: { spell: "Fenda no Espaço-Tempo", desc: "Abre uma janela para observar qualquer ponto da ilha.", cd: 12, pe: 4 },
+                Controlar: { spell: "Banish Astral", desc: "Expulsa espíritos e intrusos planares de volta ao éter.", cd: 10, pe: 3 },
+                Entender: { spell: "Premonição (+2d6)", desc: "Recebe +3 no próximo teste de Esquiva ou Iniciativa.", cd: 7, pe: 2 }
             }
+        };
 
-            Object.keys(rawSpells).forEach(id => {
-                spellTree[id] = { ...rawSpells[id], _tier: getTier(id) };
-            });
+        // Estado do Personagem
+        let characterSkills = {
+            "fogo": 2,
+            "luz": 1,
+            "metamagia": 1
+        };
+        let userPM = 4; // Poderes Mágicos
+        let selectedPath1 = null;
+        let selectedPath2 = null;
+        let activeForma = "Criar";
 
-            let counters = {};
-            Object.keys(spellTree).forEach(id => {
-                const s = spellTree[id];
-                if (id === 'magery_0') {
-                    s.x = 0; s.y = 0; return;
-                }
-                if (s.college === 'Core') {
-                    s.x = 0; s.y = s._tier * -140; return;
-                }
+        // Coordenadas dos Nós (12 Caminhos Orbitais)
+        const pathNodes = {};
+        function computePathLayout() {
+            const centerNode = { id: "nexus_core", name: "Nexo Arcano", x: 0, y: 0, icon: "fa-solid fa-atom" };
+            pathNodes["nexus_core"] = centerNode;
 
-                const key = s.college + '_' + s._tier;
-                counters[key] = (counters[key] || 0) + 1;
-                let countIndex = counters[key] - 1;
-
-                const baseAngle = collegeAngles[s.college] !== undefined ? collegeAngles[s.college] : 0;
-                let offset = countIndex === 0 ? 0 : (countIndex % 2 === 1 ? (Math.ceil(countIndex / 2) * 26) : -(Math.ceil(countIndex / 2) * 26));
-
-                const ang = (baseAngle + offset) * Math.PI / 180;
-                const radius = s._tier * 165;
-
-                s.x = Math.round(Math.cos(ang) * radius);
-                s.y = Math.round(Math.sin(ang) * radius);
+            Object.keys(magicPaths).forEach(key => {
+                const path = magicPaths[key];
+                const rad = (path.angle * Math.PI) / 180;
+                const radius = 280; // Distância do centro
+                pathNodes[key] = {
+                    ...path,
+                    id: key,
+                    x: Math.round(Math.cos(rad) * radius),
+                    y: Math.round(Math.sin(rad) * radius)
+                };
             });
         }
-
-        computeLayout();
+        computePathLayout();
 
         // =========================================================================
-        // Estado e Integração Firebase / LocalStorage
+        // Renderização Visual
         // =========================================================================
-        let userSpells = { "magery_0": 1 }; // Começa com Magery 0 padrão
-        let userCP = 50;
-        let currentUserUid = null;
-        let selectedSpellId = null;
-
         const centerPoint = document.getElementById('center-point');
         const svgContainer = document.getElementById('connections-svg');
         const tooltip = document.getElementById('info-tooltip');
-        const cpDisplay = document.getElementById('cp-display');
-        const modal = document.getElementById('purchase-modal');
-        const learnedCountDisplay = document.getElementById('learned-count-display');
-        const progressBarFill = document.getElementById('progress-bar-fill');
-        const authStatusBadge = document.getElementById('auth-status-badge');
-        const searchInput = document.getElementById('spell-search');
 
-        // Carregar dados
-        function loadLocalData() {
-            try {
-                const saved = localStorage.getItem('kuartor_spell_tree');
-                if (saved) {
-                    const parsed = JSON.parse(saved);
-                    userSpells = parsed.spells || { "magery_0": 1 };
-                    userCP = parsed.cp !== undefined ? parsed.cp : 50;
-                }
-            } catch (e) { console.warn("Erro ao ler localStorage:", e); }
-            updateHUD();
-            renderTree();
-        }
-
-        function saveLocalData() {
-            try {
-                localStorage.setItem('kuartor_spell_tree', JSON.stringify({
-                    spells: userSpells,
-                    cp: userCP
-                }));
-            } catch (e) { }
-        }
-
-        if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length) {
-            firebase.auth().onAuthStateChanged(async (user) => {
-                if (user) {
-                    currentUserUid = user.uid;
-                    document.getElementById('user-display').innerHTML = `Operativo <span style="color:var(--rpg-cyan); font-weight:600;">${user.email || user.uid.substring(0,8)}</span>`;
-                    authStatusBadge.innerText = "Sincronizado na Nuvem";
-                    authStatusBadge.className = "text-emerald-400";
-                    try {
-                        const doc = await firebase.firestore().collection("users").doc(currentUserUid).get();
-                        if (doc.exists && doc.data().spells_learned) {
-                            userSpells = doc.data().spells_learned;
-                            if (!userSpells["magery_0"]) userSpells["magery_0"] = 1;
-                            userCP = doc.data().cp_available !== undefined ? doc.data().cp_available : 50;
-                        }
-                    } catch (e) { console.warn("Firestore error:", e); }
-                } else {
-                    document.getElementById('user-display').innerHTML = `Grimório de Batalha &middot; <span style="color:var(--rpg-purple);">Simulador</span>`;
-                    authStatusBadge.innerText = "Modo Local";
-                    authStatusBadge.className = "text-amber-400";
-                    loadLocalData();
-                }
-                updateHUD();
-                renderTree();
-            });
-        } else {
-            loadLocalData();
-        }
-
-        function updateHUD() {
-            cpDisplay.innerText = userCP;
-            const learnedCount = Object.keys(userSpells).filter(id => userSpells[id] > 0).length;
-            const totalCount = Object.keys(rawSpells).length;
-            learnedCountDisplay.innerText = `${learnedCount} / ${totalCount}`;
-            const percentage = Math.round((learnedCount / totalCount) * 100);
-            progressBarFill.style.width = `${percentage}%`;
-        }
-
-        // =========================================================================
-        // Renderização da Árvore
-        // =========================================================================
         function renderTree() {
-            // Limpar Nós antigos mantendo círculos e SVG
-            const oldNodes = centerPoint.querySelectorAll('.hex-node');
-            oldNodes.forEach(n => n.remove());
-
+            centerPoint.querySelectorAll('.hex-node').forEach(n => n.remove());
             svgContainer.innerHTML = '';
 
-            // 1. Desenhar Linhas de Conexão SVG
-            const svgOffset = 2000;
-            Object.keys(spellTree).forEach(id => {
-                const node = spellTree[id];
-                node.reqs.forEach(reqId => {
-                    const reqNode = spellTree[reqId];
-                    if (!reqNode) return;
+            const svgOffset = 2500;
 
-                    const x1 = reqNode.x + svgOffset;
-                    const y1 = reqNode.y + svgOffset;
-                    const x2 = node.x + svgOffset;
-                    const y2 = node.y + svgOffset;
+            // 1. Linhas de Conexão com o Centro e entre pares afins
+            Object.keys(pathNodes).forEach(id => {
+                if (id === 'nexus_core') return;
+                const node = pathNodes[id];
 
-                    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-                    line.setAttribute('x1', x1);
-                    line.setAttribute('y1', y1);
-                    line.setAttribute('x2', x2);
-                    line.setAttribute('y2', y2);
-                    line.setAttribute('class', 'conn-line');
+                // Linha centro -> nó
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line.setAttribute('x1', svgOffset);
+                line.setAttribute('y1', svgOffset);
+                line.setAttribute('x2', node.x + svgOffset);
+                line.setAttribute('y2', node.y + svgOffset);
+                line.setAttribute('class', 'conn-line');
 
-                    const isUnlocked = userSpells[id] > 0 && userSpells[reqId] > 0;
-                    if (isUnlocked) {
-                        line.classList.add('active');
-                        const collegeColor = getCollegeColor(node.college);
-                        line.style.stroke = collegeColor;
-                        line.style.filter = `drop-shadow(0 0 6px ${collegeColor})`;
-                    }
-
-                    svgContainer.appendChild(line);
-                });
+                if (characterSkills[id] > 0) {
+                    line.classList.add('active');
+                    line.style.stroke = node.color;
+                    line.style.filter = `drop-shadow(0 0 6px ${node.color})`;
+                }
+                svgContainer.appendChild(line);
             });
 
-            // 2. Criar os Nós Hexagonais
-            Object.keys(spellTree).forEach(id => {
-                createNode(id, spellTree[id]);
+            // 2. Criar Nós
+            createCoreNode();
+            Object.keys(magicPaths).forEach(key => {
+                createPathNode(key, pathNodes[key]);
             });
+
+            renderSidebarPaths('all');
         }
 
-        function getCollegeColor(college) {
-            const map = {
-                'Core': '#fbbf24',
-                'Fire': '#f97316',
-                'Water': '#06b6d4',
-                'Earth': '#10b981',
-                'Air': '#38bdf8',
-                'Healing': '#22c55e',
-                'Mind Control': '#c084fc',
-                'Protection': '#60a5fa',
-                'Light/Darkness': '#e879f9'
-            };
-            return map[college] || '#66FCF1';
-        }
-
-        function createNode(id, spell) {
+        function createCoreNode() {
             const el = document.createElement('div');
-            el.id = `node-${id}`;
-            el.className = `hex-node ${id === 'magery_0' ? 'core' : ''}`;
-            el.dataset.college = spell.college;
-            el.dataset.spellId = id;
-            el.style.left = `${spell.x - 38}px`;
-            el.style.top = `${spell.y - 43}px`;
+            el.className = 'hex-node nexus-core';
+            el.style.left = '-55px';
+            el.style.top = '-62px';
 
             const shape = document.createElement('div');
             shape.className = 'hex-shape';
             shape.innerHTML = `<svg viewBox="0 0 100 115" preserveAspectRatio="none" style="width:100%; height:100%;"><polygon points="50,0 100,28 100,86 50,115 0,86 0,28" /></svg>`;
 
             el.innerHTML = `
-                <i class="${spell.icon} icon"></i>
-                <div class="spell-title">${spell.name}</div>
+                <i class="fa-solid fa-atom icon"></i>
+                <div class="spell-title font-cinzel">Nexo +2d6</div>
+            `;
+            el.appendChild(shape);
+            el.onclick = () => resetView();
+            centerPoint.appendChild(el);
+        }
+
+        function createPathNode(id, path) {
+            const el = document.createElement('div');
+            el.id = `node-${id}`;
+            const level = characterSkills[id] || 0;
+            const isSelectedForFusion = (selectedPath1 === id || selectedPath2 === id);
+
+            el.className = `hex-node ${level > 0 ? 'unlocked' : 'locked'} ${isSelectedForFusion ? 'selected-fusion' : ''}`;
+            el.style.left = `${path.x - 40}px`;
+            el.style.top = `${path.y - 46}px`;
+
+            const shape = document.createElement('div');
+            shape.className = 'hex-shape';
+            shape.innerHTML = `<svg viewBox="0 0 100 115" preserveAspectRatio="none" style="width:100%; height:100%;"><polygon points="50,0 100,28 100,86 50,115 0,86 0,28" /></svg>`;
+
+            if (level > 0) {
+                shape.querySelector('polygon').style.stroke = path.color;
+                shape.querySelector('polygon').style.fill = `${path.color}18`;
+                shape.querySelector('polygon').style.filter = `drop-shadow(0 0 10px ${path.color})`;
+            }
+
+            el.innerHTML = `
+                <i class="${path.icon} icon" style="${level > 0 ? 'color:' + path.color + '; text-shadow:0 0 8px ' + path.color : ''}"></i>
+                <div class="spell-title">${path.name.replace('Magia ', '')}</div>
+                <div class="spell-level-badge">Nv. ${level}</div>
             `;
             el.appendChild(shape);
 
-            const hasReqs = checkReqs(id);
-            const isUnlocked = userSpells[id] > 0;
-
-            if (isUnlocked) {
-                el.classList.add('unlocked');
-            } else if (hasReqs) {
-                el.classList.add('available');
-                el.onclick = () => promptPurchase(id);
-            } else {
-                el.classList.add('locked');
-            }
-
-            el.addEventListener('mouseenter', (e) => showTooltip(e, id, hasReqs, isUnlocked));
+            el.onclick = () => handlePathClick(id);
+            el.addEventListener('mouseenter', (e) => showPathTooltip(e, id));
             el.addEventListener('mouseleave', hideTooltip);
 
             centerPoint.appendChild(el);
         }
 
-        function checkReqs(id) {
-            const spell = spellTree[id];
-            if (!spell || !spell.reqs || spell.reqs.length === 0) return true;
-            return spell.reqs.every(req => userSpells[req] > 0);
-        }
-
-        // =========================================================================
-        // Modal de Compra & Interação
-        // =========================================================================
-        function promptPurchase(id) {
-            const spell = spellTree[id];
-            const cost = spell.cost || 1;
-
-            if (userCP < cost) {
-                alert(`CPs Insuficientes! Este feitiço custa ${cost} CP.`);
-                return;
+        function handlePathClick(id) {
+            if (!selectedPath1) {
+                selectedPath1 = id;
+            } else if (selectedPath1 === id) {
+                selectedPath1 = null;
+            } else if (!selectedPath2) {
+                selectedPath2 = id;
+            } else if (selectedPath2 === id) {
+                selectedPath2 = null;
+            } else {
+                selectedPath1 = id;
             }
-
-            selectedSpellId = id;
-            document.getElementById('modal-icon').className = spell.icon;
-            document.getElementById('modal-title').innerText = spell.name;
-            document.getElementById('modal-college').innerText = `Colégio do(a) ${spell.college} &middot; Ciclo ${spell._tier}`;
-            document.getElementById('modal-desc').innerText = spell.desc;
-            document.getElementById('modal-cost').innerText = `${cost} CP`;
-
-            modal.classList.add('active');
+            updateFusionSlots();
+            renderTree();
+            updateFusionResult();
         }
 
-        function closeModal() {
-            modal.classList.remove('active');
-            selectedSpellId = null;
-        }
-
-        document.getElementById('btn-confirm-buy').addEventListener('click', async () => {
-            if (!selectedSpellId) return;
-            const spell = spellTree[selectedSpellId];
-            const cost = spell.cost || 1;
-
-            if (userCP >= cost) {
-                userCP -= cost;
-                userSpells[selectedSpellId] = (userSpells[selectedSpellId] || 0) + 1;
-
-                if (currentUserUid && typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length) {
-                    try {
-                        await firebase.firestore().collection('users').doc(currentUserUid).set({
-                            spells_learned: userSpells,
-                            cp_available: userCP
-                        }, { merge: true });
-                    } catch (e) {
-                        console.error("Erro ao salvar no Firestore:", e);
-                    }
-                } else {
-                    saveLocalData();
-                }
-
-                updateHUD();
-                renderTree();
-                closeModal();
-            }
-        });
-
-        // =========================================================================
-        // Tooltip Informativo
-        // =========================================================================
-        function showTooltip(e, id, hasReqs, isUnlocked) {
-            const spell = spellTree[id];
-            const cost = spell.cost || 1;
-            const collegeColor = getCollegeColor(spell.college);
+        function showPathTooltip(e, id) {
+            const p = magicPaths[id];
+            const lvl = characterSkills[id] || 0;
 
             let html = `
-                <div class="tooltip-header">
-                    <span class="tooltip-title font-cinzel" style="color:${collegeColor};">${spell.name}</span>
-                    <span class="tooltip-college-badge" style="border-color:${collegeColor}; color:${collegeColor};">${spell.college}</span>
+                <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(148,163,184,0.2); padding-bottom:6px; margin-bottom:8px;">
+                    <span class="font-cinzel font-bold" style="color:${p.color}; font-size:15px;"><i class="${p.icon}"></i> ${p.name}</span>
+                    <span style="font-size:10px; font-weight:700; color:#fbbf24; background:rgba(30,41,59,0.8); padding:2px 6px; border-radius:4px;">Nível ${lvl}</span>
                 </div>
-                <div class="tooltip-desc">${spell.desc}</div>
-                <div class="tooltip-footer">
-                    <div style="display:flex; justify-content:space-between; font-size:11px;">
-                        <span style="color:#94a3b8;">Grau: ${spell._tier}º Ciclo</span>
-                        <span style="color:#fbbf24; font-weight:700;">Custo: ${cost} CP</span>
-                    </div>
+                <p style="font-size:12px; color:#cbd5e1; line-height:1.4; margin-bottom:10px;">${p.desc}</p>
+                <div style="background:rgba(15,23,42,0.8); padding:8px; border-radius:8px; border:1px solid rgba(148,163,184,0.15); font-size:11px;">
+                    <div style="color:#94a3b8;"><i class="fa-solid fa-dice"></i> Bônus no Teste (+2d6): <strong style="color:#ffffff;">+${lvl}</strong></div>
+                    <div style="color:#94a3b8; margin-top:2px;"><i class="fa-solid fa-sparkles"></i> Clique para adicionar ao Altar de Fusão.</div>
+                </div>
             `;
-
-            if (isUnlocked) {
-                html += `<div style="color:var(--rpg-cyan); font-weight:700; margin-top:4px;"><i class="fa-solid fa-circle-check"></i> Feitiço Dominado</div>`;
-            } else if (hasReqs) {
-                html += `<div style="color:#fbbf24; font-weight:700; margin-top:4px;"><i class="fa-solid fa-sparkles"></i> Disponível! Clique para aprender.</div>`;
-            } else {
-                html += `
-                    <div style="color:var(--rpg-red); font-weight:700; margin-top:4px;"><i class="fa-solid fa-lock"></i> Pré-requisitos pendentes:</div>
-                    <ul style="padding-left:16px; color:#f87171; font-size:11px; margin-top:2px;">
-                `;
-                spell.reqs.forEach(req => {
-                    if (!userSpells[req]) {
-                        html += `<li>${spellTree[req] ? spellTree[req].name : req}</li>`;
-                    }
-                });
-                html += `</ul>`;
-            }
-
-            html += `</div>`;
 
             tooltip.innerHTML = html;
             tooltip.classList.add('show');
@@ -1396,67 +1088,246 @@
             const rect = e.currentTarget.getBoundingClientRect();
             let tx = rect.right + 15;
             let ty = rect.top - 10;
-
-            if (tx + 320 > window.innerWidth) {
-                tx = rect.left - 325;
-            }
-            if (ty + 200 > window.innerHeight) {
-                ty = window.innerHeight - 210;
-            }
-            if (ty < 80) ty = 80;
-
+            if (tx + 330 > window.innerWidth) tx = rect.left - 335;
             tooltip.style.left = `${tx}px`;
             tooltip.style.top = `${ty}px`;
         }
 
-        function hideTooltip() {
-            tooltip.classList.remove('show');
+        function hideTooltip() { tooltip.classList.remove('show'); }
+
+        // =========================================================================
+        // Lógica do Altar de Fusão
+        // =========================================================================
+        const altarEl = document.getElementById('fusion-altar');
+        function toggleFusionAltar() {
+            altarEl.classList.toggle('open');
+        }
+
+        function selectSlot(slotNum) {
+            if (slotNum === 1) selectedPath1 = null;
+            if (slotNum === 2) selectedPath2 = null;
+            updateFusionSlots();
+            renderTree();
+            updateFusionResult();
+        }
+
+        function updateFusionSlots() {
+            const s1 = document.getElementById('slot-1');
+            const s2 = document.getElementById('slot-2');
+
+            if (selectedPath1 && magicPaths[selectedPath1]) {
+                const p = magicPaths[selectedPath1];
+                s1.className = 'fusion-slot filled';
+                s1.style.borderColor = p.color;
+                document.getElementById('slot-1-icon').className = `${p.icon} text-xl mb-1`;
+                document.getElementById('slot-1-icon').style.color = p.color;
+                document.getElementById('slot-1-name').innerText = p.name.replace('Magia ', '');
+                document.getElementById('slot-1-name').style.color = p.color;
+            } else {
+                s1.className = 'fusion-slot';
+                s1.style.borderColor = 'rgba(102, 252, 241, 0.4)';
+                document.getElementById('slot-1-icon').className = 'fa-solid fa-circle-plus text-gray-500 text-xl mb-1';
+                document.getElementById('slot-1-icon').style.color = '';
+                document.getElementById('slot-1-name').innerText = 'Caminho 1';
+                document.getElementById('slot-1-name').style.color = '';
+            }
+
+            if (selectedPath2 && magicPaths[selectedPath2]) {
+                const p = magicPaths[selectedPath2];
+                s2.className = 'fusion-slot filled';
+                s2.style.borderColor = p.color;
+                document.getElementById('slot-2-icon').className = `${p.icon} text-xl mb-1`;
+                document.getElementById('slot-2-icon').style.color = p.color;
+                document.getElementById('slot-2-name').innerText = p.name.replace('Magia ', '');
+                document.getElementById('slot-2-name').style.color = p.color;
+            } else {
+                s2.className = 'fusion-slot';
+                s2.style.borderColor = 'rgba(102, 252, 241, 0.4)';
+                document.getElementById('slot-2-icon').className = 'fa-solid fa-circle-plus text-gray-500 text-xl mb-1';
+                document.getElementById('slot-2-icon').style.color = '';
+                document.getElementById('slot-2-name').innerText = 'Caminho 2';
+                document.getElementById('slot-2-name').style.color = '';
+            }
+        }
+
+        function setForma(forma) {
+            activeForma = forma;
+            document.querySelectorAll('.forma-card').forEach(c => c.classList.remove('active'));
+            document.getElementById(`forma-${forma.toLowerCase()}`).classList.add('active');
+            updateFusionResult();
+        }
+
+        function getFusionKey(p1, p2) {
+            const pair1 = `${p1}+${p2}`;
+            const pair2 = `${p2}+${p1}`;
+            if (spellFusions[pair1]) return pair1;
+            if (spellFusions[pair2]) return pair2;
+            return null;
+        }
+
+        function updateFusionResult() {
+            const display = document.getElementById('fusion-result-display');
+            const formulaDisplay = document.getElementById('test-formula-display');
+
+            if (!selectedPath1 && !selectedPath2) {
+                display.innerHTML = `<div class="text-center text-gray-500 text-xs italic">Selecione dois caminhos na árvore cósmica para forjar uma fusão.</div>`;
+                formulaDisplay.innerText = "2d6 + Bônus vs CD";
+                return;
+            }
+
+            // Apenas 1 Caminho Selecionado (Magia Pura)
+            if ((selectedPath1 && !selectedPath2) || (!selectedPath1 && selectedPath2)) {
+                const singleKey = selectedPath1 || selectedPath2;
+                const path = magicPaths[singleKey];
+                const formaInfo = magicForms[activeForma];
+                const lvl = characterSkills[singleKey] || 0;
+                const cd = formaInfo.cdBase;
+
+                display.innerHTML = `
+                    <div style="font-size:10px; font-weight:700; color:${path.color}; text-transform:uppercase;">Magia Pura &middot; ${activeForma} ${path.name.replace('Magia ', '')}</div>
+                    <h3 class="font-cinzel text-base font-bold text-white my-1">${activeForma} ${path.name.replace('Magia (', '').replace(')', '')}</h3>
+                    <p class="text-xs text-gray-300 mb-2">${formaInfo.desc} Concentrado no elemento ${path.name}.</p>
+                    <div style="display:flex; justify-content:space-between; font-size:11px; color:#fbbf24; border-top:1px solid rgba(148,163,184,0.2); padding-top:6px;">
+                        <span><i class="fa-solid fa-bullseye"></i> Dificuldade: <strong>CD ${cd}</strong></span>
+                        <span><i class="fa-solid fa-bolt"></i> Custo: <strong>${formaInfo.peCost} PEs</strong></span>
+                    </div>
+                `;
+                formulaDisplay.innerText = `2d6 + ${lvl} (${path.name.replace('Magia ', '')}) vs CD ${cd}`;
+                return;
+            }
+
+            // Dois Caminhos Selecionados (Fusão Híbrida)
+            const p1 = magicPaths[selectedPath1];
+            const p2 = magicPaths[selectedPath2];
+            const fusionKey = getFusionKey(selectedPath1, selectedPath2);
+            const formaInfo = magicForms[activeForma];
+            const lvl1 = characterSkills[selectedPath1] || 0;
+            const lvl2 = characterSkills[selectedPath2] || 0;
+            const avgLevel = Math.floor((lvl1 + lvl2) / 2);
+
+            let fusionData = null;
+            if (fusionKey && spellFusions[fusionKey] && spellFusions[fusionKey][activeForma]) {
+                fusionData = spellFusions[fusionKey][activeForma];
+            } else {
+                // Fusão Dinâmica Gerada
+                fusionData = {
+                    spell: `${activeForma} ${p1.name.replace('Magia (', '').replace(')', '')}-${p2.name.replace('Magia (', '').replace(')', '')}`,
+                    desc: `Síntese arcana combinando as propriedades de ${p1.name} e ${p2.name}. Causa 2d6+${avgLevel} de efeito híbrido.`,
+                    cd: formaInfo.cdBase + 2,
+                    pe: formaInfo.peCost + 1
+                };
+            }
+
+            display.innerHTML = `
+                <div style="font-size:10px; font-weight:700; color:var(--rpg-cyan); text-transform:uppercase;"><i class="fa-solid fa-sparkles"></i> Fusão Mística Híbrida &middot; Forma ${activeForma}</div>
+                <h3 class="font-cinzel text-base font-bold text-white my-1" style="text-shadow:0 0 10px var(--rpg-cyan);">${fusionData.spell}</h3>
+                <p class="text-xs text-gray-300 mb-2">${fusionData.desc}</p>
+                <div style="display:flex; justify-content:space-between; font-size:11px; color:#fbbf24; border-top:1px solid rgba(148,163,184,0.2); padding-top:6px;">
+                    <span><i class="fa-solid fa-bullseye"></i> Dificuldade: <strong>CD ${fusionData.cd}</strong></span>
+                    <span><i class="fa-solid fa-bolt"></i> Custo: <strong>${fusionData.pe} PEs</strong></span>
+                </div>
+            `;
+
+            formulaDisplay.innerText = `2d6 + ${avgLevel} (Média ${lvl1}&${lvl2}) vs CD ${fusionData.cd}`;
+        }
+
+        function rollSpellTest() {
+            const d1 = Math.floor(Math.random() * 6) + 1;
+            const d2 = Math.floor(Math.random() * 6) + 1;
+            const diceTotal = d1 + d2;
+
+            let bonus = 0;
+            let cd = 10;
+
+            if (selectedPath1 && selectedPath2) {
+                const lvl1 = characterSkills[selectedPath1] || 0;
+                const lvl2 = characterSkills[selectedPath2] || 0;
+                bonus = Math.floor((lvl1 + lvl2) / 2);
+                const fusionKey = getFusionKey(selectedPath1, selectedPath2);
+                if (fusionKey && spellFusions[fusionKey] && spellFusions[fusionKey][activeForma]) {
+                    cd = spellFusions[fusionKey][activeForma].cd;
+                } else {
+                    cd = magicForms[activeForma].cdBase + 2;
+                }
+            } else if (selectedPath1 || selectedPath2) {
+                const single = selectedPath1 || selectedPath2;
+                bonus = characterSkills[single] || 0;
+                cd = magicForms[activeForma].cdBase;
+            }
+
+            const total = diceTotal + bonus;
+            const rollDisplay = document.getElementById('roll-result-display');
+
+            let outcome = '';
+            if (diceTotal === 12) {
+                outcome = `<span class="text-amber-400 font-bold">✨ ACERTO CRÍTICO (12 nos dados)! Efeito Maximo Ampliado!</span>`;
+            } else if (diceTotal === 2) {
+                outcome = `<span class="text-red-500 font-bold">💥 FALHA CRÍTICA (2 nos dados)! Retorno de Mana Incontrolável!</span>`;
+            } else if (total >= cd) {
+                outcome = `<span class="text-emerald-400 font-bold">✓ SUCESSO! (${total} vs CD ${cd}) Feitiço Conjurado com Maestria!</span>`;
+            } else {
+                outcome = `<span class="text-red-400">✗ FALHA (${total} vs CD ${cd}). A magia se dissipou sem efeito.</span>`;
+            }
+
+            rollDisplay.innerHTML = `
+                <div style="font-size:13px; font-family:'Cinzel',serif;">🎲 Dados: [${d1}] + [${d2}] = <strong>${diceTotal}</strong> + ${bonus} bônus = <strong class="text-white">${total}</strong></div>
+                <div style="margin-top:2px;">${outcome}</div>
+            `;
         }
 
         // =========================================================================
-        // Busca Dinâmica com Spotlight
+        // Sidebar e Filtros
         // =========================================================================
-        searchInput.addEventListener('input', (e) => {
-            const term = e.target.value.toLowerCase().trim();
-            const allNodes = document.querySelectorAll('.hex-node');
+        function renderSidebarPaths(category) {
+            const container = document.getElementById('paths-list-container');
+            container.innerHTML = '';
 
-            allNodes.forEach(node => node.classList.remove('highlighted'));
+            Object.keys(magicPaths).forEach(key => {
+                const p = magicPaths[key];
+                if (category !== 'all' && p.category !== category) return;
+                const lvl = characterSkills[key] || 0;
 
-            if (!term) return;
-
-            let firstMatch = null;
-            Object.keys(spellTree).forEach(id => {
-                const s = spellTree[id];
-                if (s.name.toLowerCase().includes(term) || s.college.toLowerCase().includes(term)) {
-                    const el = document.getElementById(`node-${id}`);
-                    if (el) {
-                        el.classList.add('highlighted');
-                        if (!firstMatch) firstMatch = s;
-                    }
-                }
+                const btn = document.createElement('button');
+                btn.className = 'path-row-btn';
+                btn.style.borderLeft = `3px solid ${p.color}`;
+                btn.innerHTML = `
+                    <span><i class="${p.icon}" style="color:${p.color}; width:16px;"></i> ${p.name.replace('Magia ', '')}</span>
+                    <span style="color:#fbbf24; font-weight:700;">Nv. ${lvl}</span>
+                `;
+                btn.onclick = () => {
+                    handlePathClick(key);
+                    focusPath(key);
+                };
+                container.appendChild(btn);
             });
+        }
 
-            if (firstMatch && term.length >= 3) {
-                pointX = -firstMatch.x;
-                pointY = -firstMatch.y;
-                scale = 1.3;
-                setTransform();
-            }
-        });
+        function filterCategory(cat) {
+            document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+            renderSidebarPaths(cat);
+        }
+
+        function focusPath(key) {
+            const p = pathNodes[key];
+            if (!p) return;
+            pointX = -p.x;
+            pointY = -p.y;
+            scale = 1.3;
+            setTransform();
+        }
 
         // =========================================================================
-        // Câmera Espacial Interativa (Pan, Zoom & Touch)
+        // Câmera Espacial
         // =========================================================================
         let scale = 1, panning = false, pointX = 0, pointY = 0, start = { x: 0, y: 0 };
         const map = document.getElementById('tree-canvas');
         const viewport = document.getElementById('tree-viewport');
 
-        function setTransform() {
-            map.style.transform = `translate(${pointX}px, ${pointY}px) scale(${scale})`;
-        }
+        function setTransform() { map.style.transform = `translate(${pointX}px, ${pointY}px) scale(${scale})`; }
 
         viewport.onmousedown = function (e) {
-            if (e.button !== 0 || e.target.closest('.hex-node') || e.target.closest('.glass-panel') || e.target.closest('.zoom-controls')) return;
+            if (e.button !== 0 || e.target.closest('.hex-node') || e.target.closest('.glass-panel') || e.target.closest('.zoom-controls') || e.target.closest('#fusion-altar')) return;
             e.preventDefault();
             start = { x: e.clientX - pointX, y: e.clientY - pointY };
             panning = true;
@@ -1475,40 +1346,19 @@
             const xs = (e.clientX - pointX) / scale;
             const ys = (e.clientY - pointY) / scale;
             const delta = (e.wheelDelta ? e.wheelDelta : -e.deltaY);
-
             (delta > 0) ? (scale *= 1.12) : (scale /= 1.12);
-            scale = Math.min(Math.max(scale, 0.25), 2.8);
-
+            scale = Math.min(Math.max(scale, 0.3), 2.5);
             pointX = e.clientX - xs * scale;
             pointY = e.clientY - ys * scale;
             setTransform();
         };
 
-        function zoomIn() {
-            scale = Math.min(scale * 1.25, 2.8);
-            setTransform();
-        }
+        function zoomIn() { scale = Math.min(scale * 1.25, 2.5); setTransform(); }
+        function zoomOut() { scale = Math.max(scale / 1.25, 0.3); setTransform(); }
+        function resetView() { scale = 1; pointX = 0; pointY = 0; setTransform(); }
 
-        function zoomOut() {
-            scale = Math.max(scale / 1.25, 0.25);
-            setTransform();
-        }
-
-        function resetView() {
-            scale = 1;
-            pointX = 0;
-            pointY = 0;
-            setTransform();
-        }
-
-        function focusAngle(angle) {
-            resetView();
-            const radiusDir = 240;
-            pointX = -(Math.cos(angle * Math.PI / 180) * radiusDir);
-            pointY = -(Math.sin(angle * Math.PI / 180) * radiusDir);
-            scale = 1.25;
-            setTransform();
-        }
+        // Inicialização
+        renderTree();
     </script>
 </body>
 

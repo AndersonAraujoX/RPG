@@ -1,7 +1,5 @@
 /**
- * Testes unitários para a Biblioteca Arcana (Árvore de Magia)
- * Valida a integridade do banco de magias, cálculo de tiers, consistência de pré-requisitos,
- * coordenadas espaciais e conformidade com as regras de design/segurança (sem CDN bloqueado).
+ * Testes unitários para a Biblioteca Arcana (12 Caminhos Daemon +2d6 & Fusão)
  */
 
 const QUnit = require('qunit');
@@ -11,26 +9,16 @@ const path = require('path');
 const LEGADO_TREE_PATH = path.resolve(__dirname, '../legado/arvore_magia.html');
 const PUBLIC_TREE_PATH = path.resolve(__dirname, '../public/arvore_magia.html');
 
-// Extrair o objeto rawSpells e computeLayout do código HTML para testes isolados
-function extractSpellsData(htmlContent) {
-    const rawSpellsMatch = htmlContent.match(/const rawSpells = ({[\s\S]*?});\s*const collegeAngles/);
-    if (!rawSpellsMatch) {
-        throw new Error('Não foi possível extrair rawSpells do arquivo HTML');
-    }
-    // Avaliar objeto JSON-like
-    const rawSpellsStr = rawSpellsMatch[1];
-    return eval('(' + rawSpellsStr + ')');
-}
-
-function extractCollegeAngles(htmlContent) {
-    const match = htmlContent.match(/const collegeAngles = ({[\s\S]*?});/);
+function extractObjectFromHtml(htmlContent, varName) {
+    const regex = new RegExp(`const ${varName} = ({[\\s\\S]*?});\\s*(?:const|let|function|//)`);
+    const match = htmlContent.match(regex);
     if (!match) {
-        throw new Error('Não foi possível extrair collegeAngles do arquivo HTML');
+        throw new Error(`Não foi possível extrair ${varName} do arquivo HTML`);
     }
     return eval('(' + match[1] + ')');
 }
 
-QUnit.module('Árvore de Magia — Biblioteca Arcana', function () {
+QUnit.module('Biblioteca Arcana — 12 Caminhos Daemon & Fusão (+2d6)', function () {
 
     QUnit.test('Arquivos arvore_magia.html devem existir em /legado e /public', function (assert) {
         assert.ok(fs.existsSync(LEGADO_TREE_PATH), 'legado/arvore_magia.html deve existir');
@@ -45,105 +33,50 @@ QUnit.module('Árvore de Magia — Biblioteca Arcana', function () {
         assert.notOk(publicContent.includes('cdn.tailwindcss.com'), 'public/arvore_magia.html não deve conter cdn.tailwindcss.com');
     });
 
-    QUnit.test('Todos os pré-requisitos das magias devem existir na base de dados', function (assert) {
-        const content = fs.readFileSync(LEGADO_TREE_PATH, 'utf-8');
-        const rawSpells = extractSpellsData(content);
+    QUnit.test('Estrutura dos 12 Caminhos de Magia (Perícias +2d6)', function (assert) {
+        const content = fs.readFileSync(PUBLIC_TREE_PATH, 'utf-8');
+        const magicPaths = extractObjectFromHtml(content, 'magicPaths');
 
-        const spellKeys = Object.keys(rawSpells);
-        assert.ok(spellKeys.length >= 40, `Deve conter ao menos 40 magias catalogadas (encontradas: ${spellKeys.length})`);
+        const pathKeys = Object.keys(magicPaths);
+        assert.equal(pathKeys.length, 12, 'Devem existir exatamente 12 Caminhos de Magia');
 
-        const missingReqs = [];
+        const elementais = pathKeys.filter(k => magicPaths[k].category === 'elemental');
+        const vitais = pathKeys.filter(k => magicPaths[k].category === 'vital');
+        const arcanos = pathKeys.filter(k => magicPaths[k].category === 'arcano');
 
-        spellKeys.forEach(id => {
-            const spell = rawSpells[id];
-            if (spell.reqs && spell.reqs.length > 0) {
-                spell.reqs.forEach(req => {
-                    if (!rawSpells[req]) {
-                        missingReqs.push(`Magia '${id}' requer '${req}' que não existe no catálogo`);
-                    }
-                });
-            }
-        });
-
-        assert.deepEqual(missingReqs, [], 'Todos os pré-requisitos referenciados devem ser válidos');
+        assert.equal(elementais.length, 6, '6 Caminhos Elementais (Fogo, Água, Ar, Terra, Luz, Trevas)');
+        assert.equal(vitais.length, 3, '3 Caminhos Vitais (Animais, Humanos, Plantas)');
+        assert.equal(arcanos.length, 3, '3 Caminhos Arcanos (Spiritum, Arkanum, Metamagia)');
     });
 
-    QUnit.test('Cálculo de Tiers (Camadas) e Coordenadas Espaciais', function (assert) {
-        const content = fs.readFileSync(LEGADO_TREE_PATH, 'utf-8');
-        const rawSpells = extractSpellsData(content);
-        const collegeAngles = extractCollegeAngles(content);
+    QUnit.test('Estrutura das 3 Formas (Criar, Controlar, Entender)', function (assert) {
+        const content = fs.readFileSync(PUBLIC_TREE_PATH, 'utf-8');
+        const magicForms = extractObjectFromHtml(content, 'magicForms');
 
-        // Algoritmo de Tiers
-        function getTier(id, depth = 0) {
-            if (depth > 20) return 1;
-            if (id === 'magery_0') return 0;
-            const spell = rawSpells[id];
-            if (!spell || !spell.reqs || spell.reqs.length === 0) return 1;
-            let maxT = 0;
-            spell.reqs.forEach(req => {
-                const rt = getTier(req, depth + 1);
-                if (rt > maxT) maxT = rt;
-            });
-            return maxT + 1;
+        assert.equal(magicForms['Criar'].cdBase, 10, 'Criar: CD 10');
+        assert.equal(magicForms['Controlar'].cdBase, 8, 'Controlar: CD 8');
+        assert.equal(magicForms['Entender'].cdBase, 6, 'Entender: CD 6');
+    });
+
+    QUnit.test('Matriz de Fusão Arcana e Rolagens 2d6', function (assert) {
+        const content = fs.readFileSync(PUBLIC_TREE_PATH, 'utf-8');
+        const spellFusions = extractObjectFromHtml(content, 'spellFusions');
+
+        assert.ok(spellFusions['fogo+ar'], 'Fusão Fogo+Ar existe');
+        assert.ok(spellFusions['fogo+terra'], 'Fusão Fogo+Terra existe');
+        assert.ok(spellFusions['agua+ar'], 'Fusão Água+Ar existe');
+
+        // Resolução 2d6
+        function rollTest(d1, d2, bonus, cd) {
+            const dice = d1 + d2;
+            const total = dice + bonus;
+            if (dice === 12) return { success: true, crit: true };
+            if (dice === 2) return { success: false, fumble: true };
+            return { success: total >= cd };
         }
 
-        const spellTree = {};
-        Object.keys(rawSpells).forEach(id => {
-            spellTree[id] = { ...rawSpells[id], _tier: getTier(id) };
-        });
-
-        // Testar Tiers de nós chave
-        assert.equal(spellTree['magery_0']._tier, 0, 'Magery 0 deve ter Tier 0 (Centro)');
-        assert.equal(spellTree['magery_1']._tier, 1, 'Magery 1 deve ter Tier 1');
-        assert.equal(spellTree['magery_2']._tier, 2, 'Magery 2 deve ter Tier 2');
-        assert.equal(spellTree['magery_3']._tier, 3, 'Magery 3 deve ter Tier 3');
-
-        // Testar posicionamento de nós
-        let counters = {};
-        const invalidCoords = [];
-
-        Object.keys(spellTree).forEach(id => {
-            const s = spellTree[id];
-            if (id === 'magery_0') {
-                s.x = 0; s.y = 0;
-                return;
-            }
-            if (s.college === 'Core') {
-                s.x = 0; s.y = s._tier * -140;
-                return;
-            }
-
-            const key = s.college + '_' + s._tier;
-            counters[key] = (counters[key] || 0) + 1;
-            let countIndex = counters[key] - 1;
-
-            const baseAngle = collegeAngles[s.college] !== undefined ? collegeAngles[s.college] : 0;
-            let offset = countIndex === 0 ? 0 : (countIndex % 2 === 1 ? (Math.ceil(countIndex / 2) * 26) : -(Math.ceil(countIndex / 2) * 26));
-
-            const ang = (baseAngle + offset) * Math.PI / 180;
-            const radius = s._tier * 165;
-
-            s.x = Math.round(Math.cos(ang) * radius);
-            s.y = Math.round(Math.sin(ang) * radius);
-
-            if (isNaN(s.x) || isNaN(s.y)) {
-                invalidCoords.push(id);
-            }
-        });
-
-        assert.deepEqual(invalidCoords, [], 'Nenhuma coordenada espacial deve ser NaN');
-        assert.equal(spellTree['magery_0'].x, 0, 'Magery 0 x = 0');
-        assert.equal(spellTree['magery_0'].y, 0, 'Magery 0 y = 0');
-    });
-
-    QUnit.test('Elementos de interface ricos no HTML', function (assert) {
-        const content = fs.readFileSync(LEGADO_TREE_PATH, 'utf-8');
-
-        assert.ok(content.includes('id="stars-canvas"'), 'Deve conter canvas cósmico de estrelas');
-        assert.ok(content.includes('id="connections-svg"'), 'Deve conter elemento SVG para conexões suaves');
-        assert.ok(content.includes('id="spell-search"'), 'Deve conter barra de busca de magias');
-        assert.ok(content.includes('id="info-tooltip"'), 'Deve conter tooltip dinâmico');
-        assert.ok(content.includes('id="purchase-modal"'), 'Deve conter modal de aprendizado de feitiço');
-        assert.ok(content.includes('id="cp-display"'), 'Deve conter mostrador de CP');
+        assert.ok(rollTest(6, 6, 0, 20).crit, '6+6 = 12 é Acerto Crítico');
+        assert.notOk(rollTest(1, 1, 10, 5).success, '1+1 = 2 é Falha Crítica');
+        assert.ok(rollTest(4, 5, 2, 10).success, '9 + 2 = 11 vs CD 10 é Sucesso');
     });
 });
