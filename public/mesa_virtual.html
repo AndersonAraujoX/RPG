@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mesa Virtual 2D — Kuar-Tor VTT (+2d6)</title>
 
+    <link rel="stylesheet" href="tailwind.css">
     <link rel="stylesheet" href="../src/styles/theme.css">
 
     <!-- Google Fonts -->
@@ -715,7 +716,7 @@
             gridSize: 50,
             showGrid: true,
             snapToGrid: true,
-            currentTool: 'select',
+            currentTool: 'select', // 'select', 'ruler', 'fog'
             selectedTokenId: null,
             tokens: {},
             combatants: [],
@@ -761,6 +762,7 @@
                 return;
             }
 
+            // Pan Normal
             isPanning = true;
             viewport.classList.add('panning');
             startX = e.clientX - state.originX;
@@ -825,7 +827,7 @@
         }
 
         // =========================================================================
-        // FERRAMENTAS
+        // FERRAMENTAS (SELECT, RULER, FOG, GRID, SNAP)
         // =========================================================================
         function setTool(tool) {
             state.currentTool = tool;
@@ -861,7 +863,7 @@
             const dx = p2.x - p1.x;
             const dy = p2.y - p1.y;
             const distPx = Math.sqrt(dx * dx + dy * dy);
-            const distMeters = ((distPx / state.gridSize) * 1.5).toFixed(1);
+            const distMeters = ((distPx / state.gridSize) * 1.5).toFixed(1); // 1 grid = 1.5m
             const squares = Math.round(distPx / state.gridSize);
 
             rulerSvg.innerHTML = `
@@ -873,6 +875,7 @@
             `;
         }
 
+        // Névoa de Guerra Canvas
         function initFog() {
             fogCanvas.width = mapImg.naturalWidth || 2000;
             fogCanvas.height = mapImg.naturalHeight || 1500;
@@ -902,7 +905,7 @@
         };
 
         // =========================================================================
-        // TOKENS
+        // SISTEMA DE TOKENS (ARRASTAR, SNAP, DADOS)
         // =========================================================================
         function createTokenElement(token) {
             const el = document.createElement('div');
@@ -927,6 +930,7 @@
                 <div class="token-conditions" id="conds-${token.id}"></div>
             `;
 
+            // Setup Token Dragging
             let isDraggingToken = false;
             let dragOffset = { x: 0, y: 0 };
 
@@ -1045,7 +1049,9 @@
             closeContextMenu();
         }
 
-        // Context Menu
+        // =========================================================================
+        // CONTEXT MENU & MODIFICAÇÃO DE STATS
+        // =========================================================================
         function openContextMenu(x, y) {
             const token = state.tokens[state.selectedTokenId];
             if (!token) return;
@@ -1099,7 +1105,7 @@
         }
 
         // =========================================================================
-        // CHAT & INICIATIVA
+        // DRAWER, CHAT & ROLADOR +2d6
         // =========================================================================
         function setDrawerTab(tab) {
             document.querySelectorAll('.drawer-tab-btn').forEach(b => b.classList.remove('active'));
@@ -1177,6 +1183,9 @@
             input.value = '';
         }
 
+        // =========================================================================
+        // RASTREADOR DE INICIATIVA & COMBATE
+        // =========================================================================
         function addCombatant(token) {
             const initRoll = Math.floor(Math.random() * 6) + 1 + Math.floor(Math.random() * 6) + 1 + 2;
             state.combatants.push({ id: token.id, name: token.name, avatar: token.avatar, init: initRoll });
@@ -1240,6 +1249,9 @@
             });
         }
 
+        // =========================================================================
+        // MODAL MAPA & PERSONAGEM
+        // =========================================================================
         function openMapModal() { document.getElementById('map-modal').classList.remove('hidden'); }
         function closeMapModal() { document.getElementById('map-modal').classList.add('hidden'); }
 
