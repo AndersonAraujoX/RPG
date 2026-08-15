@@ -27,6 +27,10 @@
     <link
         href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Inter:wght@400;500;700&family=MedievalSharp&display=swap"
         rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <!-- Core Rules & Calculations (+2d6 v2.3) -->
+    <script src="../../src/core/character-sheet.js"></script>
 
     <style>
         body {
@@ -509,22 +513,29 @@
                     </div>
                 </fieldset>
 
-                <!-- Recursos de Combate -->
+                <!-- Recursos de Combate (+2d6 v2.3) -->
                 <fieldset class="border border-neutral-700 p-4 rounded-md">
-                    <legend class="text-lg px-2 section-title !border-none !mb-0 !pb-0 !text-amber-500">Recursos de
-                        Combate</legend>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-center">
+                    <legend class="text-lg px-2 section-title !border-none !mb-0 !pb-0 !text-amber-500">Recursos de Combate (+2d6 v2.3)</legend>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
                         <div>
-                            <label for="pontosVida" class="block text-lg font-bold title-font text-gray-300">Pontos de
-                                Vida (PV)</label>
-                            <input type="number" id="pontosVida" name="pontosVida" class="attribute-input mt-1 w-24"
-                                value="10">
+                            <label for="pontosVida" class="block text-sm font-bold title-font text-gray-300">PV Máximo</label>
+                            <input type="number" id="pontosVida" name="pontosVida" class="attribute-input mt-1 w-20 text-emerald-400 font-bold" value="14" readonly>
+                            <p class="text-[10px] text-gray-500 mt-0.5">10+CON+FOR (+5 se CON&ge;3)</p>
                         </div>
                         <div>
-                            <label for="pontosEnergia" class="block text-lg font-bold title-font text-gray-300">Pontos
-                                de Energia (PE)</label>
-                            <input type="number" id="pontosEnergia" name="pontosEnergia"
-                                class="attribute-input mt-1 w-24" value="10">
+                            <label for="pontosEnergia" class="block text-sm font-bold title-font text-gray-300">PE Máximo</label>
+                            <input type="number" id="pontosEnergia" name="pontosEnergia" class="attribute-input mt-1 w-20 text-cyan-400 font-bold" value="12" readonly>
+                            <p class="text-[10px] text-gray-500 mt-0.5">POD + 10</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold title-font text-gray-300">Dano de Força</label>
+                            <input type="text" id="danoForcaDisplay" name="danoForca" class="attribute-input mt-1 w-24 text-amber-400 font-bold text-sm" value="1d6-2" readonly>
+                            <p class="text-[10px] text-gray-500 mt-0.5">Tabela Oficial (+2d6)</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold title-font text-gray-300">Bônus Iniciativa</label>
+                            <input type="text" id="iniciativaDisplay" name="iniciativa" class="attribute-input mt-1 w-20 text-purple-400 font-bold text-sm" value="+0" readonly>
+                            <p class="text-[10px] text-gray-500 mt-0.5">DES &minus; 2 (se DES&ge;3)</p>
                         </div>
                     </div>
                 </fieldset>
@@ -920,6 +931,30 @@
                 attributePointsValueDiv.textContent = `${attributesSpent}/${totalAttributePoints}`;
                 attributePointsValueDiv.classList.toggle('negative', attributesSpent > totalAttributePoints);
 
+                // --- CÁLCULOS DERIVADOS (+2d6 v2.3 Newton Rocha) ---
+                const forVal = parseInt(allAtributosInputs.for.value) || 0;
+                const desVal = parseInt(allAtributosInputs.des.value) || 0;
+                const conVal = parseInt(allAtributosInputs.con.value) || 0;
+                const podVal = parseInt(allAtributosInputs.pod.value) || 0;
+
+                if (typeof CharacterSheetRules !== 'undefined') {
+                    // PVs = 10 + CON + FOR (+5 se CON >= 3)
+                    const maxPV = CharacterSheetRules.calcMaxPV(conVal, forVal);
+                    pontosVidaInput.value = maxPV;
+
+                    // PEs = POD + 10
+                    const maxPE = CharacterSheetRules.calcMaxPE(podVal);
+                    pontosEnergiaInput.value = maxPE;
+
+                    // Dano de Força
+                    const danoForcaEl = document.getElementById('danoForcaDisplay');
+                    if (danoForcaEl) danoForcaEl.value = CharacterSheetRules.calcForceDamage(forVal);
+
+                    // Bônus de Iniciativa (DES >= 3 ? DES - 2 : 0)
+                    const iniciativaEl = document.getElementById('iniciativaDisplay');
+                    if (iniciativaEl) iniciativaEl.value = `+${CharacterSheetRules.calcInitiativeBonus(desVal)}`;
+                }
+
                 const totalSkillPoints = 10 + pontosPericiaAdd;
                 const skills = JSON.parse(document.getElementById('periciasInput').value || '[]');
                 const skillsSpent = skills.reduce((total, skill) => total + (skill.valor || 0), 0);
@@ -1106,10 +1141,72 @@
                 const pericias = JSON.parse(document.getElementById('periciasInput').value || '[]');
                 const vantagens = JSON.parse(document.getElementById('vantagensInput').value || '[]');
                 const desvantagens = JSON.parse(document.getElementById('desvantagensInput').value || '[]');
-                displaySkillsDiv.innerHTML = pericias.map(p => `<span>${p.nome} (${p.atributo}: ${p.valor})</span>`).join('; ') || '<span class="italic text-neutral-500">Nenhuma perícia.</span>';
+
+                if (pericias.length === 0) {
+                    displaySkillsDiv.innerHTML = '<span class="italic text-neutral-500">Nenhuma perícia.</span>';
+                } else {
+                    displaySkillsDiv.innerHTML = `
+                        <div class="flex flex-wrap gap-2">
+                            ${pericias.map(p => {
+                                const attrKey = p.atributo ? p.atributo.toLowerCase() : 'des';
+                                const attrVal = parseInt(allAtributosInputs[attrKey]?.value) || 0;
+                                const shBonus = typeof CharacterSheetRules !== 'undefined' ? CharacterSheetRules.calcSuperhumanBonus(attrVal).bonus : 0;
+                                const totalBonus = (p.valor || 0) + attrVal + shBonus;
+
+                                return `
+                                    <div class="inline-flex items-center gap-1.5 bg-neutral-900 border border-neutral-700 hover:border-cyan-500/50 rounded-md px-2.5 py-1 text-xs transition shadow">
+                                        <span class="font-bold text-gray-200">${p.nome}</span>
+                                        <span class="text-cyan-400 font-mono font-bold">+${p.valor} (${p.atributo})</span>
+                                        <button type="button" onclick="rollSkillFromSheet('${p.nome}', ${p.valor}, '${p.atributo}')" class="ml-1 px-1.5 py-0.5 bg-cyan-600 hover:bg-cyan-500 text-black font-cinzel font-bold text-[10px] rounded transition shadow flex items-center gap-1">
+                                            <i class="fa-solid fa-dice"></i> Rolar (+${totalBonus})
+                                        </button>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    `;
+                }
+
                 displayAdvantagesDiv.innerHTML = vantagens.map(v => `<span>${v.nome} (Custo: ${v.custo})</span>`).join('; ') || '<span class="italic text-neutral-500">Nenhuma vantagem.</span>';
                 displayDisadvantagesDiv.innerHTML = desvantagens.map(d => `<span>${d.nome} (Bônus: ${d.bonus})</span>`).join('; ') || '<span class="italic text-neutral-500">Nenhuma desvantagem.</span>';
             }
+
+            window.rollSkillFromSheet = function(skillName, skillValue, attributeKey) {
+                const attrInputKey = attributeKey ? attributeKey.toLowerCase() : 'des';
+                const attrVal = parseInt(allAtributosInputs[attrInputKey]?.value) || 0;
+
+                let result;
+                if (typeof CharacterSheetRules !== 'undefined') {
+                    result = CharacterSheetRules.rollSkillTest({
+                        skillName: skillName,
+                        skillBonus: skillValue,
+                        attrName: attributeKey,
+                        attrValue: attrVal,
+                        modOccasion: 0,
+                        cd: 10,
+                        vsHuman: true
+                    });
+                } else {
+                    const d1 = Math.floor(Math.random() * 6) + 1;
+                    const d2 = Math.floor(Math.random() * 6) + 1;
+                    const total = d1 + d2 + skillValue + attrVal;
+                    result = {
+                        d1, d2, total,
+                        outcome: total >= 10 ? '✓ Sucesso' : '✗ Falha',
+                        formulaString: `2d6 [${d1}+${d2}] + ${skillValue} + ${attrVal} = ${total}`
+                    };
+                }
+
+                showModalMessage(
+                    `🎲 Rolagem de ${skillName} (+2d6)`,
+                    `<div class="space-y-2">
+                        <div class="text-sm font-mono bg-neutral-900 p-2.5 rounded border border-neutral-700 text-cyan-300">${result.formulaString}</div>
+                        <div class="text-base font-bold font-cinzel ${result.isCrit ? 'text-amber-400' : (result.isFumble ? 'text-red-400' : (result.isSuccess ? 'text-emerald-400' : 'text-red-400'))}">
+                            Resultado: ${result.outcome}
+                        </div>
+                    </div>`
+                );
+            };
 
             function getFormAsJson() {
                 const formData = new FormData(form);
@@ -1306,7 +1403,16 @@
             }
 
             // --- EVENT LISTENERS ---
-            Object.values(allAtributosInputs).forEach(input => input.addEventListener('input', updateAllStats));
+            Object.values(allAtributosInputs).forEach(input => {
+                input.addEventListener('input', () => {
+                    updateAllStats();
+                    updateDisplayPVDs();
+                });
+                input.addEventListener('change', () => {
+                    updateAllStats();
+                    updateDisplayPVDs();
+                });
+            });
             tradicaoMagicaSelect.addEventListener('input', updateAllStats);
             addCaminhoBtn.addEventListener('click', () => adicionarCaminho());
             expInput.addEventListener('input', updateAllStats);
