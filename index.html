@@ -1109,7 +1109,7 @@
 
             currentRoomId = roomId;
 
-            // Escuta reativa da Sala no Firestore
+            // Escuta reativa da Sala no Firestore com tratamento de erro
             unsubscribeRoom = onSnapshot(roomRef, (snapshot) => {
                 if (snapshot.exists()) {
                     currentRoomData = snapshot.data();
@@ -1121,6 +1121,8 @@
                     alert("A sala foi encerrada pelo Mestre.");
                     leaveRoom();
                 }
+            }, (err) => {
+                console.warn("Aviso Firestore (Sala):", err.message);
             });
 
             // Conectar chat da sala
@@ -1746,8 +1748,14 @@
             const tag = document.getElementById('chat-room-sync-tag');
             if (tag) tag.innerText = `Sala: ${roomId}`;
 
-            const q = query(collection(db, "rooms", roomId, "messages"), orderBy("timestamp", "asc"), limit(50));
-            unsubscribeMessages = onSnapshot(q, (snapshot) => renderMessages(snapshot));
+            try {
+                const q = query(collection(db, "rooms", roomId, "messages"), orderBy("timestamp", "asc"), limit(50));
+                unsubscribeMessages = onSnapshot(q, (snapshot) => renderMessages(snapshot), (err) => {
+                    console.warn("Aviso Firestore (Mensagens da Sala):", err.message);
+                });
+            } catch (err) {
+                console.warn("Erro ao escutar mensagens da sala:", err.message);
+            }
         }
 
         function listenToGlobalMessages() {
@@ -1755,8 +1763,14 @@
             const tag = document.getElementById('chat-room-sync-tag');
             if (tag) tag.innerText = 'Nuvem Global';
 
-            const q = query(collection(db, "messages"), orderBy("timestamp", "asc"), limit(50));
-            unsubscribeMessages = onSnapshot(q, (snapshot) => renderMessages(snapshot));
+            try {
+                const q = query(collection(db, "messages"), orderBy("timestamp", "asc"), limit(50));
+                unsubscribeMessages = onSnapshot(q, (snapshot) => renderMessages(snapshot), (err) => {
+                    console.warn("Aviso Firestore (Mensagens Globais):", err.message);
+                });
+            } catch (err) {
+                console.warn("Erro ao escutar mensagens globais:", err.message);
+            }
         }
 
         function renderMessages(snapshot) {
@@ -1796,33 +1810,80 @@
                     await addDoc(collection(db, "messages"), payload);
                 }
             } catch (err) {
-                console.error("Erro ao enviar mensagem:", err);
+                console.warn("Aviso Firestore ao enviar mensagem:", err.message);
             }
         }
 
         // =========================================================================
-        // 6. FICHA DO PERSONAGEM (characters/{userId})
+        // 6. FICHA DO PERSONAGEM (LocalStorage + characters/{userId})
         // =========================================================================
 
+        let isCloudSyncAvailable = true;
+        let sheetSaveDebounceTimer = null;
+
+        function loadLocalSheet() {
+            try {
+                const saved = localStorage.getItem('kuartor_character_sheet');
+                if (saved) {
+                    const data = JSON.parse(saved);
+                    applySheetDataToUI(data);
+                }
+            } catch (e) {
+                console.warn("Erro ao ler localStorage:", e);
+            }
+        }
+
+        function saveLocalSheet(sheetData) {
+            try {
+                localStorage.setItem('kuartor_character_sheet', JSON.stringify(sheetData));
+            } catch (e) {
+                console.warn("Erro ao salvar localStorage:", e);
+            }
+        }
+
         function listenToCharacterSheet(userId) {
+            loadLocalSheet(); // Carrega instantaneamente do navegador
             if (unsubscribeCharacter) unsubscribeCharacter();
-            const docRef = doc(db, "characters", userId);
-            unsubscribeCharacter = onSnapshot(docRef, (docSnap) => {
-                if (docSnap.exists()) applySheetDataToUI(docSnap.data());
-                else saveCurrentSheetToCloud();
-            });
+            if (!isCloudSyncAvailable) return;
+
+            try {
+                const docRef = doc(db, "characters", userId);
+                unsubscribeCharacter = onSnapshot(docRef, (docSnap) => {
+                    if (docSnap.exists()) {
+                        applySheetDataToUI(docSnap.data());
+                        saveLocalSheet(docSnap.data());
+                    }
+                }, (err) => {
+                    console.warn("Aviso Firestore (Ficha):", err.message);
+                    if (err.code === 'permission-denied' || err.message?.includes('permission')) {
+                        isCloudSyncAvailable = false;
+                        updateStatusBadge(true, "Modo Local (Salvo no Navegador)");
+                    }
+                });
+            } catch (err) {
+                console.warn("Erro ao iniciar escuta da ficha:", err.message);
+            }
         }
 
         async function saveCurrentSheetToCloud() {
-            if (!currentUserId) return;
             const sheetData = getSheetDataFromUI();
+            saveLocalSheet(sheetData); // SEMPRE garante a gravação local
+
+            if (!currentUserId || !isCloudSyncAvailable) return;
+
             try {
                 await setDoc(doc(db, "characters", currentUserId), {
                     ...sheetData,
                     lastUpdated: serverTimestamp()
                 }, { merge: true });
             } catch (err) {
-                console.error("Erro ao salvar ficha:", err);
+                if (err.code === 'permission-denied' || err.message?.includes('permission')) {
+                    console.warn("Firestore: Permissão negada para nuvem. Usando persistência local.");
+                    isCloudSyncAvailable = false;
+                    updateStatusBadge(true, "Modo Local (Salvo no Navegador)");
+                } else {
+                    console.warn("Aviso ao salvar ficha na nuvem:", err.message);
+                }
             }
         }
 
@@ -2009,7 +2070,12 @@
 
         window.onSheetFieldChange = function() {
             recalcSheetDerivations();
-            saveCurrentSheetToCloud();
+            saveLocalSheet(getSheetDataFromUI());
+
+            clearTimeout(sheetSaveDebounceTimer);
+            sheetSaveDebounceTimer = setTimeout(() => {
+                saveCurrentSheetToCloud();
+            }, 500);
         };
 
         window.saveSheetToCloud = saveCurrentSheetToCloud;

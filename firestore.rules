@@ -1,43 +1,32 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-  
-    // Private User Data (Strict)
-    match /users/{userId}/{document=**} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
-    }
 
-    // Shared "Mesa de Operações" Data (Authenticated Users)
-    match /map_pins/{document=**} {
-      allow read, write: if request.auth != null;
-    }
+    // Regras para a Campanha Kuar-Tor VTT (+2d6)
     
-    match /mission_signups/{document=**} {
-      allow read, write: if request.auth != null;
+    // 1. Fichas de Personagens
+    match /characters/{userId} {
+      allow read, write: if true;
     }
 
-    match /expedition_logs/{document=**} {
-      allow read, write: if request.auth != null;
+    // 2. Salas de Campanha, Tokens, Combate e Grid Tático
+    match /rooms/{roomId} {
+      allow read, write: if true;
+
+      // Subcoleção de Mensagens da Sala
+      match /messages/{messageId} {
+        allow read, write: if true;
+      }
     }
 
-    match /vtt_tokens/{document=**} {
-      allow read, write: if request.auth != null;
+    // 3. Chat & Rolagens Globais
+    match /messages/{messageId} {
+      allow read, write: if true;
     }
 
-    match /vtt_config/{document=**} {
-      allow read, write: if request.auth != null;
+    // Fallback permissivo para desenvolvimento e testes
+    match /{document=**} {
+      allow read, write: if true;
     }
-    
-    // Default/Legacy Characters Collection
-    match /personagens/{document=**} {
-      allow read, write: if request.auth != null;
-    }
-
-    // Collection Group Query for Characters (Read-only for all auth users)
-    // This allows searching across all /users/{id}/characters
-    match /{path=**}/characters/{characterId} {
-      allow read: if request.auth != null;
-    }
-    
   }
 }
