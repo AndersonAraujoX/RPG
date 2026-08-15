@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR" class="dark">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Portal da Campanha: Kuar-Tor &middot; RPG +2d6</title>
+    <title>Portal de Kuar-Tor &middot; VTT +2d6 (v2.3 Tio Nitro)</title>
 
     <!-- Tailwind CSS Local Compilado -->
     <link rel="stylesheet" href="public/tailwind.css">
@@ -14,300 +14,831 @@
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;900&family=Inter:wght@300;400;500;600;700&family=Roboto+Slab:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;900&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
 
     <!-- Font Awesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
-    <!-- Firebase SDKs -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-    <script src="src/core/firebase-config.js"></script>
-    <script src="src/core/auth.js"></script>
-
     <style>
         :root {
-            --bg-dark: #07090e;
-            --rpg-cyan: #66FCF1;
-            --rpg-purple: #b48ead;
-            --rpg-gold: #fbbf24;
-            --rpg-silver: #C5C6C7;
-            --rpg-slate: #0f172a;
-            --rpg-black: #0B0C10;
+            --bg-color: #05070d;
+            --panel-color: #0d131f;
+            --emerald-accent: #10b981;
+            --cyan-accent: #06b6d4;
         }
 
         body {
-            font-family: 'Roboto Slab', serif;
-            background-color: var(--bg-dark);
-            background-image: radial-gradient(circle at 50% 10%, rgba(8, 51, 68, 0.45) 0%, transparent 60%), url('https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=2000&auto=format&fit=crop');
-            background-size: cover;
-            background-position: center;
-            background-attachment: fixed;
-            color: var(--rpg-silver);
+            background-color: var(--bg-color);
+            color: #cbd5e1;
+            font-family: 'Inter', sans-serif;
             min-height: 100vh;
+            background-image: radial-gradient(circle at 50% 0%, rgba(6, 182, 212, 0.12) 0%, transparent 50%),
+                              radial-gradient(circle at 100% 100%, rgba(16, 185, 129, 0.08) 0%, transparent 40%);
+            background-attachment: fixed;
         }
 
         .font-cinzel { font-family: 'Cinzel', serif; }
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
 
-        .main-container {
-            background: linear-gradient(180deg, rgba(11, 15, 25, 0.96) 0%, rgba(7, 9, 14, 0.98) 100%);
-            backdrop-filter: blur(14px);
-            border: 1px solid rgba(102, 252, 241, 0.2);
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.9), 0 0 30px rgba(102, 252, 241, 0.1);
+        .glass-panel {
+            background: linear-gradient(135deg, rgba(13, 19, 31, 0.92) 0%, rgba(8, 12, 20, 0.98) 100%);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(100, 116, 139, 0.2);
         }
 
-        .portal-card {
-            background: linear-gradient(145deg, rgba(15, 23, 42, 0.85) 0%, rgba(11, 15, 25, 0.95) 100%);
-            border: 1px solid rgba(148, 163, 184, 0.2);
-            border-radius: 12px;
-            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        .glass-panel:hover {
+            border-color: rgba(6, 182, 212, 0.35);
+        }
+
+        .nav-tab-btn {
+            font-family: 'Cinzel', serif;
+            font-weight: 700;
+            font-size: 0.82rem;
+            letter-spacing: 0.05em;
+            transition: all 0.2s ease;
             position: relative;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
         }
 
-        .portal-card::before {
+        .nav-tab-btn.active {
+            color: #67e8f9;
+            background: rgba(6, 182, 212, 0.15);
+            border-color: #06b6d4;
+            box-shadow: 0 0 15px rgba(6, 182, 212, 0.25);
+        }
+
+        .nav-tab-btn.active::after {
             content: '';
             position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 3px;
-            background: transparent;
-            transition: background 0.3s;
+            bottom: -1px;
+            left: 20%;
+            right: 20%;
+            height: 2px;
+            background: #06b6d4;
+            box-shadow: 0 0 8px #06b6d4;
         }
 
-        .portal-card:hover {
-            transform: translateY(-5px);
-            border-color: rgba(102, 252, 241, 0.5);
-            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.8), 0 0 20px rgba(102, 252, 241, 0.2);
+        .chat-scroll::-webkit-scrollbar {
+            width: 6px;
         }
-
-        .portal-card:hover::before {
-            background: linear-gradient(90deg, #66FCF1, #38bdf8);
-        }
-
-        .vtt-highlight-card {
-            border: 2px solid #ef4444;
-            background: linear-gradient(135deg, rgba(69, 10, 10, 0.4) 0%, rgba(15, 23, 42, 0.95) 100%);
-            box-shadow: 0 0 30px rgba(239, 68, 68, 0.3);
-        }
-
-        .vtt-highlight-card:hover {
-            border-color: #f87171;
-            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.9), 0 0 35px rgba(239, 68, 68, 0.5);
-        }
-
-        .vtt-highlight-card::before {
-            background: linear-gradient(90deg, #ef4444, #f97316) !important;
+        .chat-scroll::-webkit-scrollbar-thumb {
+            background: #1e293b;
+            border-radius: 4px;
         }
     </style>
 </head>
 
-<body class="flex items-center justify-center min-h-screen p-3 md:p-6">
-    <div class="main-container w-full max-w-6xl p-6 md:p-10 rounded-2xl">
+<body class="p-3 md:p-6 flex flex-col min-h-screen">
 
-        <!-- Top Navigation & Header -->
-        <header class="flex flex-col md:flex-row justify-between items-center gap-6 mb-10 pb-6 border-b border-slate-800">
-            <div class="flex items-center gap-4">
-                <div class="w-14 h-14 rounded-xl bg-cyan-950/70 border border-cyan-400/50 flex items-center justify-center text-cyan-400 text-2xl shadow-[0_0_20px_rgba(102,252,241,0.35)]">
-                    <i class="fa-solid fa-compass"></i>
+    <!-- Top Portal Header & Navigation -->
+    <header class="glass-panel rounded-2xl p-4 mb-4 shadow-2xl flex flex-col lg:flex-row justify-between items-center gap-4">
+        <div class="flex items-center gap-3 w-full lg:w-auto justify-between lg:justify-start">
+            <div class="flex items-center gap-3">
+                <div class="w-11 h-11 rounded-xl bg-cyan-950/80 border border-cyan-400/50 flex items-center justify-center text-cyan-400 text-xl shadow-[0_0_15px_rgba(6,182,212,0.3)]">
+                    <i class="fa-solid fa-dice-d20"></i>
                 </div>
                 <div>
-                    <h1 class="font-cinzel text-3xl md:text-4xl font-bold text-cyan-300 tracking-wider">Portal de Kuar-Tor</h1>
-                    <p class="text-xs md:text-sm text-gray-400">Hub Central de Recursos &middot; Campanha "A Última Expedição" (+2d6)</p>
+                    <h1 class="font-cinzel text-lg md:text-xl font-bold text-cyan-300 tracking-wider">Portal de Kuar-Tor</h1>
+                    <p class="text-[11px] text-gray-400">VTT Virtual Tabletop &middot; Sistema +2d6 (v2.3 Tio Nitro)</p>
                 </div>
             </div>
 
-            <div class="flex items-center gap-3" id="user-session">
-                <a href="public/login.html" id="login-link" class="font-cinzel text-xs font-bold px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-slate-950 rounded-lg transition shadow flex items-center gap-1.5 no-underline">
+            <!-- Authentication Status & Session Elements -->
+            <div class="flex items-center gap-2">
+                <!-- User Info Container -->
+                <div id="user-info" class="hidden items-center gap-2 px-3 py-1 bg-slate-900 border border-emerald-500/40 rounded-lg text-xs">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                    <span id="user-email" class="text-gray-300 font-mono text-[11px]"></span>
+                    <button id="logout-button" type="button" class="ml-1 text-red-400 hover:text-red-300 text-xs font-bold font-cinzel">Sair</button>
+                </div>
+
+                <!-- Login Button -->
+                <a id="login-link" href="public/login.html" class="px-3 py-1.5 bg-cyan-950/80 border border-cyan-500/60 text-cyan-300 hover:bg-cyan-900 rounded-lg text-xs font-cinzel font-bold transition flex items-center gap-1">
                     <i class="fa-solid fa-right-to-bracket"></i> Login
                 </a>
-                <div id="user-info" class="hidden items-center gap-3 bg-slate-900/90 border border-slate-700 px-3 py-1.5 rounded-lg">
-                    <span id="user-email" class="text-xs text-cyan-300 font-mono"></span>
-                    <button id="logout-button" onclick="if(typeof signOut === 'function') signOut();" class="font-cinzel text-[11px] font-bold px-3 py-1 bg-red-900/80 hover:bg-red-800 text-red-200 border border-red-700 rounded transition">
-                        <i class="fa-solid fa-arrow-right-from-bracket mr-1"></i> Sair
+
+                <!-- Firebase Status Badge -->
+                <div id="firebase-status-badge" class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs font-mono">
+                    <span class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse" id="firebase-status-dot"></span>
+                    <span class="text-gray-300 text-[11px]" id="firebase-status-text">Conectando...</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Navigation Tabs & External VTT Link -->
+        <nav class="flex flex-wrap gap-1.5 p-1 bg-slate-950/80 border border-slate-800 rounded-xl">
+            <button onclick="switchTab('roller')" id="tab-btn-roller" class="nav-tab-btn active px-3.5 py-2 rounded-lg border border-transparent text-gray-400 hover:text-white flex items-center gap-1.5">
+                <i class="fa-solid fa-dice text-cyan-400"></i> Rolador 2d6
+            </button>
+            <button onclick="switchTab('sheet')" id="tab-btn-sheet" class="nav-tab-btn px-3.5 py-2 rounded-lg border border-transparent text-gray-400 hover:text-white flex items-center gap-1.5">
+                <i class="fa-solid fa-id-card text-emerald-400"></i> Ficha Interativa
+            </button>
+            <button onclick="switchTab('combat')" id="tab-btn-combat" class="nav-tab-btn px-3.5 py-2 rounded-lg border border-transparent text-gray-400 hover:text-white flex items-center gap-1.5">
+                <i class="fa-solid fa-swords text-red-400"></i> Combate & Iniciativa
+            </button>
+            <button onclick="switchTab('bestiary')" id="tab-btn-bestiary" class="nav-tab-btn px-3.5 py-2 rounded-lg border border-transparent text-gray-400 hover:text-white flex items-center gap-1.5">
+                <i class="fa-solid fa-skull text-purple-400"></i> Bestiário & PdMs
+            </button>
+            <button onclick="switchTab('compendium')" id="tab-btn-compendium" class="nav-tab-btn px-3.5 py-2 rounded-lg border border-transparent text-gray-400 hover:text-white flex items-center gap-1.5">
+                <i class="fa-solid fa-book-journal-whills text-amber-400"></i> Compêndio
+            </button>
+            <button onclick="togglePortalHub()" class="nav-tab-btn px-3.5 py-2 rounded-lg bg-indigo-950/60 border border-indigo-500/50 hover:bg-indigo-900 text-indigo-300 flex items-center gap-1.5">
+                <i class="fa-solid fa-compass"></i> Ferramentas Kuar-Tor
+            </button>
+        </nav>
+    </header>
+
+    <!-- Super Card em Destaque: Mesa Virtual (Kuar-Tor VTT 2D) com Multiplayer P2P -->
+    <section class="glass-panel rounded-2xl p-4 mb-4 border border-cyan-500/40 bg-gradient-to-r from-cyan-950/40 via-slate-900/60 to-emerald-950/40 flex flex-col md:flex-row justify-between items-center gap-4">
+        <div class="flex items-center gap-3">
+            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-600 to-emerald-600 flex items-center justify-center text-slate-950 text-2xl shadow-lg">
+                <i class="fa-solid fa-map-location-dot"></i>
+            </div>
+            <div>
+                <div class="flex items-center gap-2">
+                    <h2 class="font-cinzel text-base font-bold text-cyan-200">Mesa Virtual (Kuar-Tor VTT 2D)</h2>
+                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-400/40 font-mono">Multiplayer P2P</span>
+                </div>
+                <p class="text-xs text-gray-400">Grid magnético 2D, tokens arrastáveis, névoa de guerra, régua de distância e sincronização WebRTC</p>
+            </div>
+        </div>
+        <a href="public/mesa_virtual.html" class="px-5 py-2.5 bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-400 hover:to-emerald-400 text-slate-950 font-cinzel font-bold text-xs rounded-xl shadow-lg transition flex items-center gap-2 no-underline">
+            <i class="fa-solid fa-play"></i> Abrir Mesa Virtual 2D
+        </a>
+    </section>
+
+    <!-- Hub de Acesso Rápido a Todas as Páginas da Campanha (Colapsável/Visível) -->
+    <section id="portal-hub-drawer" class="glass-panel rounded-2xl p-4 mb-4">
+        <div class="flex justify-between items-center mb-3 pb-2 border-b border-slate-800">
+            <span class="text-xs uppercase font-cinzel font-bold text-gray-400">Tomos & Ferramentas da Campanha</span>
+            <span class="text-[11px] text-cyan-400 font-mono">10 Páginas Conectadas</span>
+        </div>
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 text-xs">
+            <a href="legado/Site/siteV1.1.html" class="p-2 rounded-lg bg-slate-950/80 border border-slate-800 hover:border-cyan-500 text-gray-300 hover:text-cyan-300 flex items-center gap-2 transition no-underline">
+                <i class="fa-solid fa-castle text-cyan-400"></i> O Mundo de Kuar-Tor
+            </a>
+            <a href="legado/Forms/formV6.html" class="p-2 rounded-lg bg-slate-950/80 border border-slate-800 hover:border-emerald-500 text-gray-300 hover:text-emerald-300 flex items-center gap-2 transition no-underline">
+                <i class="fa-solid fa-scroll text-emerald-400"></i> Gerador de Fichas
+            </a>
+            <a href="public/arvore_magia.html" class="p-2 rounded-lg bg-slate-950/80 border border-slate-800 hover:border-purple-500 text-gray-300 hover:text-purple-300 flex items-center gap-2 transition no-underline">
+                <i class="fa-solid fa-wand-magic-sparkles text-purple-400"></i> Biblioteca Arcana
+            </a>
+            <a href="legado/Dados/dados.html" class="p-2 rounded-lg bg-slate-950/80 border border-slate-800 hover:border-amber-500 text-gray-300 hover:text-amber-300 flex items-center gap-2 transition no-underline">
+                <i class="fa-solid fa-dice text-amber-400"></i> Tomo dos Dados
+            </a>
+            <a href="public/items.html" class="p-2 rounded-lg bg-slate-950/80 border border-slate-800 hover:border-blue-500 text-gray-300 hover:text-blue-300 flex items-center gap-2 transition no-underline">
+                <i class="fa-solid fa-shield-halved text-blue-400"></i> Gerenciador de Itens
+            </a>
+            <a href="legado/nexo.html" class="p-2 rounded-lg bg-slate-950/80 border border-slate-800 hover:border-teal-500 text-gray-300 hover:text-teal-300 flex items-center gap-2 transition no-underline">
+                <i class="fa-solid fa-beer-mug-empty text-teal-400"></i> O Nexo
+            </a>
+            <a href="legado/diario.html" class="p-2 rounded-lg bg-slate-950/80 border border-slate-800 hover:border-indigo-500 text-gray-300 hover:text-indigo-300 flex items-center gap-2 transition no-underline">
+                <i class="fa-solid fa-book-skull text-indigo-400"></i> Diário de Expedição
+            </a>
+            <a href="legado/computador_de_kuar_tor.html" class="p-2 rounded-lg bg-slate-950/80 border border-slate-800 hover:border-emerald-500 text-gray-300 hover:text-emerald-300 flex items-center gap-2 transition no-underline">
+                <i class="fa-solid fa-terminal text-emerald-400"></i> Computador de Kuar-Tor
+            </a>
+            <a href="public/puzzles/index.html" class="p-2 rounded-lg bg-slate-950/80 border border-slate-800 hover:border-yellow-500 text-gray-300 hover:text-yellow-300 flex items-center gap-2 transition no-underline">
+                <i class="fa-solid fa-puzzle-piece text-yellow-400"></i> Salão de Puzzles
+            </a>
+            <a href="public/login.html" class="p-2 rounded-lg bg-slate-950/80 border border-slate-800 hover:border-pink-500 text-gray-300 hover:text-pink-300 flex items-center gap-2 transition no-underline">
+                <i class="fa-solid fa-key text-pink-400"></i> Login
+            </a>
+        </div>
+    </section>
+
+    <!-- Main Container -->
+    <main class="flex-1 max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+        <!-- Left 2 Cols: Active Tab Content -->
+        <div class="lg:col-span-2 space-y-6">
+
+            <!-- TAB 1: ROLADOR DE DADOS 2D6 -->
+            <section id="tab-roller" class="glass-panel rounded-2xl p-6 shadow-2xl">
+                <div class="flex justify-between items-center mb-6 pb-3 border-b border-slate-800">
+                    <h2 class="font-cinzel text-lg font-bold text-cyan-300 flex items-center gap-2">
+                        <i class="fa-solid fa-dice-d6 text-cyan-400"></i> Mecânica Central +2d6
+                    </h2>
+                    <span class="text-xs text-gray-400 font-mono">Crítico: 12 &middot; Falha: 2</span>
+                </div>
+
+                <!-- Controls Grid -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+                    <div>
+                        <label class="block text-xs uppercase font-cinzel font-bold text-gray-400 mb-1.5">Atributo Chave</label>
+                        <select id="roller-attr" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-xs text-white focus:border-cyan-400">
+                            <option value="FOR">FOR (Força)</option>
+                            <option value="DES" selected>DES (Destreza)</option>
+                            <option value="CON">CON (Constituição)</option>
+                            <option value="INT">INT (Inteligência)</option>
+                            <option value="SAB">SAB (Sabedoria)</option>
+                            <option value="CAR">CAR (Carisma)</option>
+                            <option value="POD">POD (Poder)</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs uppercase font-cinzel font-bold text-gray-400 mb-1.5">Nível da Perícia</label>
+                        <input type="number" id="roller-skill" value="2" min="0" max="10" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-xs text-white text-center focus:border-cyan-400 font-mono font-bold">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs uppercase font-cinzel font-bold text-gray-400 mb-1.5">Classe de Dificuldade</label>
+                        <div class="grid grid-cols-4 gap-1">
+                            <button type="button" onclick="setCD(8)" class="cd-btn py-2 text-[11px] font-bold bg-slate-900 border border-slate-700 hover:border-emerald-400 text-emerald-400 rounded">8</button>
+                            <button type="button" onclick="setCD(10)" class="cd-btn active py-2 text-[11px] font-bold bg-cyan-950 border border-cyan-400 text-cyan-300 rounded">10</button>
+                            <button type="button" onclick="setCD(14)" class="cd-btn py-2 text-[11px] font-bold bg-slate-900 border border-slate-700 hover:border-amber-400 text-amber-400 rounded">14</button>
+                            <button type="button" onclick="setCD(18)" class="cd-btn py-2 text-[11px] font-bold bg-slate-900 border border-slate-700 hover:border-red-400 text-red-400 rounded">18</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Modificador Slider -->
+                <div class="bg-slate-950/60 p-4 rounded-xl border border-slate-800 mb-6">
+                    <div class="flex justify-between items-center text-xs mb-2">
+                        <span class="font-cinzel text-gray-300">Modificador de Ocasião:</span>
+                        <span id="mod-display" class="font-mono font-bold text-cyan-400 text-sm">+0</span>
+                    </div>
+                    <input type="range" id="roller-mod" min="-6" max="6" value="0" class="w-full accent-cyan-400 cursor-pointer" oninput="document.getElementById('mod-display').innerText = (this.value >= 0 ? '+' : '') + this.value">
+                </div>
+
+                <!-- Actions -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
+                    <button type="button" onclick="roll2d6Action()" class="py-3.5 bg-gradient-to-r from-cyan-600 to-emerald-600 hover:from-cyan-500 hover:to-emerald-500 text-slate-950 font-cinzel font-bold text-sm rounded-xl shadow-lg transition flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-dice"></i> Rolar Teste (+2d6)
+                    </button>
+                    <button type="button" onclick="rollDeathSave()" class="py-3.5 bg-red-950/80 hover:bg-red-900 border border-red-600 text-red-300 font-cinzel font-bold text-sm rounded-xl shadow transition flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-skull-crossbones"></i> Teste de Morte (2d6)
                     </button>
                 </div>
-            </div>
-        </header>
 
-        <!-- Grid de Recursos & Páginas da Campanha -->
-        <main class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-
-            <!-- DESTAQUE SUPREMO: VTT MESA VIRTUAL -->
-            <div class="portal-card vtt-highlight-card p-6 md:col-span-2 lg:col-span-3">
-                <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-3">
-                    <div class="flex items-center gap-3">
-                        <span class="w-3 h-3 bg-red-500 rounded-full animate-pulse shadow-[0_0_12px_#ef4444]"></span>
-                        <h2 class="font-cinzel text-2xl md:text-3xl font-bold text-red-400 flex items-center gap-2">
-                            <i class="fa-solid fa-dice-d20"></i> Mesa Virtual (Kuar-Tor VTT 2D)
-                        </h2>
+                <!-- Roll Display Box -->
+                <div id="roller-result-card" class="bg-black/60 border border-slate-800 rounded-xl p-5 text-center">
+                    <div class="text-xs uppercase font-cinzel text-gray-400 mb-2">Resultado da Rolagem</div>
+                    <div class="flex justify-center items-center gap-4 my-2">
+                        <div id="dice-d1" class="w-12 h-12 rounded-xl bg-slate-900 border border-cyan-400 flex items-center justify-center font-mono font-bold text-xl text-cyan-300 shadow">?</div>
+                        <span class="text-gray-500 font-bold text-lg">+</span>
+                        <div id="dice-d2" class="w-12 h-12 rounded-xl bg-slate-900 border border-cyan-400 flex items-center justify-center font-mono font-bold text-xl text-cyan-300 shadow">?</div>
                     </div>
-                    <span class="px-3 py-1 bg-red-950 border border-red-500/60 text-red-300 text-xs font-mono rounded-full font-bold uppercase tracking-wider">
-                        Multiplayer P2P &middot; Tempo Real
-                    </span>
+                    <div id="roll-total-text" class="text-2xl font-bold font-mono text-white mt-2">--</div>
+                    <div id="roll-outcome-badge" class="mt-2 text-xs font-cinzel font-bold text-gray-400">Aguardando rolagem...</div>
                 </div>
-                <p class="text-gray-300 text-sm mb-5 leading-relaxed">
-                    Campo de batalha tático interativo com sincronização <strong>Peer-to-Peer (WebRTC)</strong> sem servidor. Inclui movimentação de tokens com drag-and-drop magnético, rastreador de iniciativa ordenada, régua de distância em metros/quadrados, névoa de guerra dinâmica, rolador de dados +2d6 com acertos críticos e chat com rolagem secreta para o Mestre.
-                </p>
-                <div class="flex flex-wrap gap-3 mt-auto">
-                    <a href="public/mesa_virtual.html" class="flex-1 min-w-[200px] text-center py-3 px-6 bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-500 hover:to-orange-500 text-white font-cinzel font-bold text-sm rounded-xl shadow-[0_0_20px_rgba(239,68,68,0.5)] hover:scale-[1.02] transition-all no-underline flex items-center justify-center gap-2">
-                        <i class="fa-solid fa-shield-halved"></i> ENTRAR NA MESA VIRTUAL
-                    </a>
+            </section>
+
+            <!-- TAB 2: FICHA DE PERSONAGEM INTERATIVA -->
+            <section id="tab-sheet" class="glass-panel rounded-2xl p-6 shadow-2xl hidden">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6 pb-3 border-b border-slate-800">
+                    <div>
+                        <h2 class="font-cinzel text-lg font-bold text-emerald-300 flex items-center gap-2">
+                            <i class="fa-solid fa-id-card text-emerald-400"></i> Ficha do Operativo
+                        </h2>
+                        <p class="text-[11px] text-gray-400">Sincronizada em tempo real no Firebase Firestore</p>
+                    </div>
+                    <div class="flex gap-2">
+                        <button type="button" onclick="saveSheetToCloud()" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-cinzel font-bold text-xs rounded-lg transition shadow flex items-center gap-1.5">
+                            <i class="fa-solid fa-cloud-arrow-up"></i> Salvar na Nuvem
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Info Header -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+                    <div>
+                        <label class="block text-xs uppercase font-cinzel font-bold text-gray-400 mb-1">Nome do Personagem</label>
+                        <input type="text" id="sheet-char-name" value="Operativo Kuar-Tor" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-xs text-white" onchange="onSheetFieldChange()">
+                    </div>
+                    <div>
+                        <label class="block text-xs uppercase font-cinzel font-bold text-gray-400 mb-1">Conceito / Arquétipo</label>
+                        <input type="text" id="sheet-concept" value="Guerreiro Tático" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-xs text-white" onchange="onSheetFieldChange()">
+                    </div>
+                </div>
+
+                <!-- Atributos -->
+                <div class="text-xs uppercase font-cinzel font-bold text-cyan-400 mb-2">Atributos Primários</div>
+                <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2.5 mb-6 text-center">
+                    <div class="bg-slate-950 p-2.5 rounded-xl border border-slate-800">
+                        <label class="block text-[11px] font-bold text-gray-400 font-cinzel">FOR</label>
+                        <input type="number" id="attr-for" value="2" min="0" max="20" class="w-full bg-transparent text-center font-mono font-bold text-lg text-cyan-300 mt-1" onchange="onSheetFieldChange()" oninput="onSheetFieldChange()">
+                        <span id="badge-sh-for" class="hidden text-[9px] font-bold text-amber-300">+6 SH</span>
+                    </div>
+                    <div class="bg-slate-950 p-2.5 rounded-xl border border-slate-800">
+                        <label class="block text-[11px] font-bold text-gray-400 font-cinzel">DES</label>
+                        <input type="number" id="attr-des" value="3" min="0" max="20" class="w-full bg-transparent text-center font-mono font-bold text-lg text-cyan-300 mt-1" onchange="onSheetFieldChange()" oninput="onSheetFieldChange()">
+                        <span id="badge-sh-des" class="hidden text-[9px] font-bold text-amber-300">+6 SH</span>
+                    </div>
+                    <div class="bg-slate-950 p-2.5 rounded-xl border border-slate-800">
+                        <label class="block text-[11px] font-bold text-gray-400 font-cinzel">CON</label>
+                        <input type="number" id="attr-con" value="3" min="0" max="20" class="w-full bg-transparent text-center font-mono font-bold text-lg text-cyan-300 mt-1" onchange="onSheetFieldChange()" oninput="onSheetFieldChange()">
+                        <span id="badge-sh-con" class="hidden text-[9px] font-bold text-amber-300">+6 SH</span>
+                    </div>
+                    <div class="bg-slate-950 p-2.5 rounded-xl border border-slate-800">
+                        <label class="block text-[11px] font-bold text-gray-400 font-cinzel">INT</label>
+                        <input type="number" id="attr-int" value="2" min="0" max="20" class="w-full bg-transparent text-center font-mono font-bold text-lg text-cyan-300 mt-1" onchange="onSheetFieldChange()" oninput="onSheetFieldChange()">
+                        <span id="badge-sh-int" class="hidden text-[9px] font-bold text-amber-300">+6 SH</span>
+                    </div>
+                    <div class="bg-slate-950 p-2.5 rounded-xl border border-slate-800">
+                        <label class="block text-[11px] font-bold text-gray-400 font-cinzel">SAB</label>
+                        <input type="number" id="attr-sab" value="2" min="0" max="20" class="w-full bg-transparent text-center font-mono font-bold text-lg text-cyan-300 mt-1" onchange="onSheetFieldChange()" oninput="onSheetFieldChange()">
+                        <span id="badge-sh-sab" class="hidden text-[9px] font-bold text-amber-300">+6 SH</span>
+                    </div>
+                    <div class="bg-slate-950 p-2.5 rounded-xl border border-slate-800">
+                        <label class="block text-[11px] font-bold text-gray-400 font-cinzel">CAR</label>
+                        <input type="number" id="attr-car" value="2" min="0" max="20" class="w-full bg-transparent text-center font-mono font-bold text-lg text-cyan-300 mt-1" onchange="onSheetFieldChange()" oninput="onSheetFieldChange()">
+                        <span id="badge-sh-car" class="hidden text-[9px] font-bold text-amber-300">+6 SH</span>
+                    </div>
+                    <div class="bg-slate-950 p-2.5 rounded-xl border border-slate-800">
+                        <label class="block text-[11px] font-bold text-gray-400 font-cinzel">POD</label>
+                        <input type="number" id="attr-pod" value="2" min="0" max="20" class="w-full bg-transparent text-center font-mono font-bold text-lg text-cyan-300 mt-1" onchange="onSheetFieldChange()" oninput="onSheetFieldChange()">
+                        <span id="badge-sh-pod" class="hidden text-[9px] font-bold text-amber-300">+6 SH</span>
+                    </div>
+                </div>
+
+                <!-- Status Derivados (+2d6 v2.3) -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+                    <div class="bg-slate-950/80 p-3 rounded-xl border border-emerald-900/60 text-center">
+                        <span class="text-[10px] text-gray-400 font-cinzel">PV Máximo</span>
+                        <div id="sheet-pv-max" class="text-xl font-bold font-mono text-emerald-400 mt-0.5">20</div>
+                        <span class="text-[9px] text-gray-500">10+CON+FOR (+5 se CON&ge;3)</span>
+                    </div>
+                    <div class="bg-slate-950/80 p-3 rounded-xl border border-cyan-900/60 text-center">
+                        <span class="text-[10px] text-gray-400 font-cinzel">PE Máximo</span>
+                        <div id="sheet-pe-max" class="text-xl font-bold font-mono text-cyan-400 mt-0.5">12</div>
+                        <span class="text-[9px] text-gray-500">POD + 10</span>
+                    </div>
+                    <div class="bg-slate-950/80 p-3 rounded-xl border border-amber-900/60 text-center">
+                        <span class="text-[10px] text-gray-400 font-cinzel">Dano de Força</span>
+                        <div id="sheet-dmg-force" class="text-xl font-bold font-mono text-amber-400 mt-0.5">1d6-2</div>
+                        <span class="text-[9px] text-gray-500">Tabela Oficial</span>
+                    </div>
+                    <div class="bg-slate-950/80 p-3 rounded-xl border border-purple-900/60 text-center">
+                        <span class="text-[10px] text-gray-400 font-cinzel">Iniciativa</span>
+                        <div id="sheet-init-bonus" class="text-xl font-bold font-mono text-purple-400 mt-0.5">+1</div>
+                        <span class="text-[9px] text-gray-500">DES &minus; 2 (se DES&ge;3)</span>
+                    </div>
+                </div>
+
+                <!-- Perícias com Botões de Rolagem Direta -->
+                <div class="mb-6">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-xs uppercase font-cinzel font-bold text-cyan-400">Perícias Cadastradas (Rolagem Direta)</span>
+                        <button type="button" onclick="addNewSkillPrompt()" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-cyan-300 text-xs rounded border border-slate-700 font-cinzel">
+                            + Nova Perícia
+                        </button>
+                    </div>
+                    <div id="skills-list-container" class="space-y-1.5">
+                        <!-- Renderizado dinamicamente -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 3: GERENCIADOR DE COMBATE -->
+            <section id="tab-combat" class="glass-panel rounded-2xl p-6 shadow-2xl hidden">
+                <div class="flex justify-between items-center mb-6 pb-3 border-b border-slate-800">
+                    <div>
+                        <h2 class="font-cinzel text-lg font-bold text-red-400 flex items-center gap-2">
+                            <i class="fa-solid fa-swords text-red-400"></i> Rastreador de Combate & Iniciativa
+                        </h2>
+                        <p class="text-[11px] text-gray-400">Iniciativa = 2d6 + Bônus de DES (Ordenação Decrescente)</p>
+                    </div>
+                    <div class="flex gap-2">
+                        <button type="button" onclick="rollAllCombatInitiatives()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-600 text-xs text-white rounded-lg font-cinzel font-bold">
+                            <i class="fa-solid fa-rotate-right mr-1"></i> Rolar Todos
+                        </button>
+                        <button type="button" onclick="advanceCombatTurn()" class="px-3 py-1.5 bg-red-600 hover:bg-red-500 text-white text-xs rounded-lg font-cinzel font-bold">
+                            Próximo Turno <i class="fa-solid fa-forward ml-1"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 mb-4 flex justify-between items-center">
+                    <span class="text-xs uppercase font-cinzel text-gray-400">Rodada Atual:</span>
+                    <span id="combat-round-counter" class="font-cinzel font-bold text-amber-400 text-lg">Rodada 1</span>
+                </div>
+
+                <div id="combatants-table-container" class="space-y-2">
+                    <!-- Tabela de Combatentes -->
+                </div>
+            </section>
+
+            <!-- TAB 4: BESTIÁRIO & PDMs -->
+            <section id="tab-bestiary" class="glass-panel rounded-2xl p-6 shadow-2xl hidden">
+                <div class="mb-6 pb-3 border-b border-slate-800">
+                    <h2 class="font-cinzel text-lg font-bold text-purple-300 flex items-center gap-2">
+                        <i class="fa-solid fa-skull text-purple-400"></i> Bestiário & Gerador por ND
+                    </h2>
+                    <p class="text-[11px] text-gray-400">Criaturas oficiais do manual +2d6 e balanceamento instantâneo</p>
+                </div>
+
+                <!-- Presets Rápidos -->
+                <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5 mb-6">
+                    <button type="button" onclick="loadMonsterPreset('zumbi')" class="p-2.5 bg-slate-950 border border-slate-800 hover:border-purple-500 rounded-xl text-left transition">
+                        <div class="font-bold text-xs text-purple-300">Zumbi Capenga</div>
+                        <div class="text-[10px] text-gray-400">ND 1 &middot; PV 12 &middot; RD 1</div>
+                    </button>
+                    <button type="button" onclick="loadMonsterPreset('goblin')" class="p-2.5 bg-slate-950 border border-slate-800 hover:border-purple-500 rounded-xl text-left transition">
+                        <div class="font-bold text-xs text-purple-300">Chefe Goblin</div>
+                        <div class="text-[10px] text-gray-400">ND 3 &middot; PV 16 &middot; DES +3</div>
+                    </button>
+                    <button type="button" onclick="loadMonsterPreset('orc')" class="p-2.5 bg-slate-950 border border-slate-800 hover:border-purple-500 rounded-xl text-left transition">
+                        <div class="font-bold text-xs text-purple-300">General Orc</div>
+                        <div class="text-[10px] text-gray-400">ND 5 &middot; PV 28 &middot; Dano 2d6+4</div>
+                    </button>
+                    <button type="button" onclick="loadMonsterPreset('cthulhu')" class="p-2.5 bg-slate-950 border border-slate-800 hover:border-purple-500 rounded-xl text-left transition">
+                        <div class="font-bold text-xs text-purple-300">Cthulhu Cósmico</div>
+                        <div class="text-[10px] text-gray-400">ND 10 &middot; PV 90 &middot; Insanidade</div>
+                    </button>
+                    <button type="button" onclick="loadMonsterPreset('kratos')" class="p-2.5 bg-slate-950 border border-slate-800 hover:border-purple-500 rounded-xl text-left transition">
+                        <div class="font-bold text-xs text-purple-300">Kratos Espartano</div>
+                        <div class="text-[10px] text-gray-400">ND 10 &middot; PV 80 &middot; Fúria</div>
+                    </button>
+                </div>
+            </section>
+
+            <!-- TAB 5: COMPÊNDIO -->
+            <section id="tab-compendium" class="glass-panel rounded-2xl p-6 shadow-2xl hidden">
+                <div class="mb-6 pb-3 border-b border-slate-800">
+                    <h2 class="font-cinzel text-lg font-bold text-amber-300 flex items-center gap-2">
+                        <i class="fa-solid fa-book-journal-whills text-amber-400"></i> Compêndio de Regras (+2d6 v2.3)
+                    </h2>
+                    <p class="text-[11px] text-gray-400">Tabelas de armas brancas, armas de fogo, armaduras (RD) e magias</p>
+                </div>
+                <div id="compendium-list-container" class="space-y-2">
+                    <!-- Itens do Compêndio -->
+                </div>
+            </section>
+
+        </div>
+
+        <!-- Right Col: Real-time Cloud Chat & Roll Log (Firestore messages) -->
+        <div class="glass-panel rounded-2xl p-5 shadow-2xl flex flex-col h-[650px]">
+            <div class="flex justify-between items-center mb-3 pb-2 border-b border-slate-800">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-comments text-cyan-400"></i>
+                    <h3 class="font-cinzel text-sm font-bold text-cyan-300">Chat & Rolagens em Nuvem</h3>
+                </div>
+                <span class="text-[10px] text-emerald-400 font-mono font-bold">Firestore Sincronizado</span>
+            </div>
+
+            <!-- Messages Log -->
+            <div id="firestore-messages-log" class="flex-1 overflow-y-auto space-y-2 pr-1 chat-scroll">
+                <div class="p-2.5 rounded-lg bg-slate-950/80 border border-slate-800 text-xs text-gray-400">
+                    <span class="text-cyan-400 font-bold font-cinzel">Sistema:</span> Conectando à nuvem para escutar rolagens e mensagens...
                 </div>
             </div>
 
-            <!-- CARD 1: O MUNDO DE KUAR-TOR -->
-            <div class="portal-card p-6">
-                <div class="flex items-center gap-2.5 mb-3">
-                    <i class="fa-solid fa-scroll text-cyan-400 text-lg"></i>
-                    <h2 class="font-cinzel text-xl font-bold text-cyan-300">O Mundo de Kuar-Tor</h2>
-                </div>
-                <p class="text-gray-300 text-xs mb-6 flex-grow leading-relaxed">
-                    Descubra a história da ilha amaldiçoada, as facções em conflito e as regras essenciais do sistema +2d6 de Newton "Tio Nitro" Rocha.
-                </p>
-                <a href="legado/Site/siteV1.1.html" class="w-full text-center py-2.5 bg-slate-800 hover:bg-cyan-600 hover:text-slate-950 border border-slate-700 text-cyan-300 font-cinzel font-bold text-xs rounded-lg transition no-underline block">
-                    Explorar a Campanha &rarr;
-                </a>
+            <!-- Input Box -->
+            <div class="mt-3 pt-3 border-t border-slate-800 flex gap-2">
+                <input type="text" id="chat-msg-input" placeholder="Mensagem narrativa ou /r 2d6+x..." class="flex-1 bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-400" onkeydown="if(event.key==='Enter') sendChatMessageAction()">
+                <button type="button" onclick="sendChatMessageAction()" class="p-2 bg-cyan-600 hover:bg-cyan-500 text-slate-950 font-bold rounded-lg transition text-xs">
+                    <i class="fa-solid fa-paper-plane"></i>
+                </button>
             </div>
+        </div>
 
-            <!-- CARD 2: GERADOR DE FICHAS -->
-            <div class="portal-card p-6">
-                <div class="flex items-center gap-2.5 mb-3">
-                    <i class="fa-solid fa-id-card text-cyan-400 text-lg"></i>
-                    <h2 class="font-cinzel text-xl font-bold text-cyan-300">Gerador de Fichas</h2>
-                </div>
-                <p class="text-gray-300 text-xs mb-6 flex-grow leading-relaxed">
-                    Forje e gerencie seus personagens com cálculo automático de PVs (10+CON+FOR), PEs (POD+10), Iniciativa e Dano de Força.
-                </p>
-                <a href="legado/Forms/formV6.html" class="w-full text-center py-2.5 bg-slate-800 hover:bg-cyan-600 hover:text-slate-950 border border-slate-700 text-cyan-300 font-cinzel font-bold text-xs rounded-lg transition no-underline block">
-                    Criar Personagem &rarr;
-                </a>
+    </main>
+
+    <!-- Modal de Codinome (Opcional) -->
+    <div id="nickname-modal" class="fixed inset-0 bg-black/80 backdrop-blur-md hidden items-center justify-center p-4 z-50">
+        <div class="glass-panel p-6 rounded-2xl max-w-sm w-full border border-cyan-500/40 text-center">
+            <h3 class="font-cinzel text-base font-bold text-cyan-300 mb-2">Definir Codinome</h3>
+            <p class="text-xs text-gray-400 mb-4">Escolha seu nome de guerra em Kuar-Tor</p>
+            <input type="text" id="nickname-input" placeholder="Ex: Arthur Lâmina" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-xs text-white mb-4 focus:border-cyan-400">
+            <div class="flex justify-end gap-2">
+                <button type="button" onclick="document.getElementById('nickname-modal').classList.add('hidden')" class="px-3 py-1.5 bg-slate-800 text-gray-300 text-xs rounded-lg font-cinzel">Cancelar</button>
+                <button type="button" onclick="document.getElementById('nickname-modal').classList.add('hidden')" class="px-4 py-1.5 bg-cyan-600 text-slate-950 font-bold text-xs rounded-lg font-cinzel">Salvar</button>
             </div>
-
-            <!-- CARD 3: BIBLIOTECA ARCANA -->
-            <div class="portal-card p-6 border-purple-500/30">
-                <div class="flex items-center gap-2.5 mb-3">
-                    <i class="fa-solid fa-wand-magic-sparkles text-purple-400 text-lg"></i>
-                    <h2 class="font-cinzel text-xl font-bold text-purple-300">Biblioteca Arcana</h2>
-                </div>
-                <p class="text-gray-300 text-xs mb-6 flex-grow leading-relaxed">
-                    Árvore de Magia com os 12 Caminhos Daemon adaptados como perícias +2d6, 3 Formas (Criar, Controlar, Entender) e Altar de Fusão Híbrida.
-                </p>
-                <a href="public/arvore_magia.html" class="w-full text-center py-2.5 bg-slate-800 hover:bg-purple-600 hover:text-white border border-purple-700/60 text-purple-300 font-cinzel font-bold text-xs rounded-lg transition no-underline block">
-                    Abrir Biblioteca &rarr;
-                </a>
-            </div>
-
-            <!-- CARD 4: TOMO DOS DADOS -->
-            <div class="portal-card p-6">
-                <div class="flex items-center gap-2.5 mb-3">
-                    <i class="fa-solid fa-dice text-cyan-400 text-lg"></i>
-                    <h2 class="font-cinzel text-xl font-bold text-cyan-300">Tomo dos Dados</h2>
-                </div>
-                <p class="text-gray-300 text-xs mb-6 flex-grow leading-relaxed">
-                    Grimório completo para rolagens de dados 2d6, estatísticas de probabilidade acumulada e cálculo de margens de sucesso.
-                </p>
-                <a href="legado/Dados/dados.html" class="w-full text-center py-2.5 bg-slate-800 hover:bg-cyan-600 hover:text-slate-950 border border-slate-700 text-cyan-300 font-cinzel font-bold text-xs rounded-lg transition no-underline block">
-                    Rolar os Dados &rarr;
-                </a>
-            </div>
-
-            <!-- CARD 5: GERENCIADOR DE ITENS -->
-            <div class="portal-card p-6">
-                <div class="flex items-center gap-2.5 mb-3">
-                    <i class="fa-solid fa-box-open text-cyan-400 text-lg"></i>
-                    <h2 class="font-cinzel text-xl font-bold text-cyan-300">Gerenciador de Itens</h2>
-                </div>
-                <p class="text-gray-300 text-xs mb-6 flex-grow leading-relaxed">
-                    Controle de inventário, armas de fogo, artefatos arcanos e suprimentos da expedição salvos no Firestore e LocalStorage.
-                </p>
-                <a href="public/items.html" class="w-full text-center py-2.5 bg-slate-800 hover:bg-cyan-600 hover:text-slate-950 border border-slate-700 text-cyan-300 font-cinzel font-bold text-xs rounded-lg transition no-underline block">
-                    Acessar Inventário &rarr;
-                </a>
-            </div>
-
-            <!-- CARD 6: O NEXO -->
-            <div class="portal-card p-6">
-                <div class="flex items-center gap-2.5 mb-3">
-                    <i class="fa-solid fa-dungeon text-cyan-400 text-lg"></i>
-                    <h2 class="font-cinzel text-xl font-bold text-cyan-300">O Nexo</h2>
-                </div>
-                <p class="text-gray-300 text-xs mb-6 flex-grow leading-relaxed">
-                    Ponto de encontro dos operativos na base central: quadro de missões ativas, rumores locais e apostas na taverna.
-                </p>
-                <a href="legado/nexo.html" class="w-full text-center py-2.5 bg-slate-800 hover:bg-cyan-600 hover:text-slate-950 border border-slate-700 text-cyan-300 font-cinzel font-bold text-xs rounded-lg transition no-underline block">
-                    Entrar no Nexo &rarr;
-                </a>
-            </div>
-
-            <!-- CARD 7: DIÁRIO DE EXPEDIÇÃO -->
-            <div class="portal-card p-6 border-amber-500/30">
-                <div class="flex items-center gap-2.5 mb-3">
-                    <i class="fa-solid fa-book-journal-whills text-amber-400 text-lg"></i>
-                    <h2 class="font-cinzel text-xl font-bold text-amber-300">Diário de Expedição</h2>
-                </div>
-                <p class="text-gray-300 text-xs mb-6 flex-grow leading-relaxed">
-                    Crônicas da campanha, anotações secretas, pistas desvendadas e obituário dos companheiros caídos.
-                </p>
-                <a href="legado/diario.html" class="w-full text-center py-2.5 bg-slate-800 hover:bg-amber-600 hover:text-slate-950 border border-amber-600/50 text-amber-300 font-cinzel font-bold text-xs rounded-lg transition no-underline block">
-                    Abrir Diário &rarr;
-                </a>
-            </div>
-
-            <!-- CARD 8: COMPUTADOR DE KUAR-TOR -->
-            <div class="portal-card p-6">
-                <div class="flex items-center gap-2.5 mb-3">
-                    <i class="fa-solid fa-terminal text-cyan-400 text-lg"></i>
-                    <h2 class="font-cinzel text-xl font-bold text-cyan-300">Computador de Kuar-Tor</h2>
-                </div>
-                <p class="text-gray-300 text-xs mb-6 flex-grow leading-relaxed">
-                    Terminal de inteligência tática, cofres criptografados, decodificação de logs e arquivos restritos da expedição.
-                </p>
-                <a href="legado/computador_de_kuar_tor.html" class="w-full text-center py-2.5 bg-slate-800 hover:bg-cyan-600 hover:text-slate-950 border border-slate-700 text-cyan-300 font-cinzel font-bold text-xs rounded-lg transition no-underline block">
-                    Acessar Terminal &rarr;
-                </a>
-            </div>
-
-            <!-- CARD 9: SALÃO DE JOGOS & PUZZLES -->
-            <div class="portal-card p-6">
-                <div class="flex items-center gap-2.5 mb-3">
-                    <i class="fa-solid fa-puzzle-piece text-cyan-400 text-lg"></i>
-                    <h2 class="font-cinzel text-xl font-bold text-cyan-300">Salão de Puzzles</h2>
-                </div>
-                <p class="text-gray-300 text-xs mb-6 flex-grow leading-relaxed">
-                    Desafie sua mente com enigmas lógicos, quebra-cabeças arcanos e minigames interativos ambientados na campanha.
-                </p>
-                <a href="public/puzzles/index.html" class="w-full text-center py-2.5 bg-slate-800 hover:bg-cyan-600 hover:text-slate-950 border border-slate-700 text-cyan-300 font-cinzel font-bold text-xs rounded-lg transition no-underline block">
-                    Resolver Enigmas &rarr;
-                </a>
-            </div>
-
-        </main>
-
-        <!-- Footer -->
-        <footer class="text-center mt-12 pt-6 border-t border-slate-800 flex flex-col md:flex-row justify-between items-center text-xs text-gray-500 gap-2">
-            <p>Portal de Kuar-Tor &middot; Sistema +2d6 (v2.3 de Newton "Tio Nitro" Rocha)</p>
-            <p>GitHub Pages &middot; Peer-to-Peer WebRTC Enabled</p>
-        </footer>
-    </div>
-
-    <!-- Modal de Nickname Global -->
-    <div id="nickname-modal" class="fixed inset-0 bg-black/90 backdrop-blur-md flex items-center justify-center p-4 hidden z-50">
-        <div class="bg-slate-900 border border-cyan-400/50 p-6 rounded-xl max-w-md w-full shadow-[0_0_30px_rgba(0,0,0,0.8)]">
-            <h2 class="text-xl font-bold text-cyan-300 mb-2 text-center font-cinzel">Identificação Necessária</h2>
-            <p class="text-gray-300 text-xs mb-4 text-center">Para prosseguir em Kuar-Tor, escolha um codinome que será visto pelos outros operativos.</p>
-            <div class="mb-4">
-                <label for="global-nickname-input" class="block text-xs font-bold text-cyan-400 mb-1">Seu Codinome:</label>
-                <input type="text" id="global-nickname-input" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-xs text-white focus:outline-none focus:border-cyan-400" placeholder="Ex: Caçador de Sombras">
-                <p id="nickname-error" class="text-red-400 text-xs mt-1.5 hidden">O codinome é obrigatório.</p>
-            </div>
-            <button id="save-nickname-btn" class="w-full bg-cyan-600 hover:bg-cyan-500 text-slate-950 font-cinzel font-bold py-2.5 rounded-lg transition">Confirmar Identidade</button>
         </div>
     </div>
+
+    <!-- Footer -->
+    <footer class="mt-8 text-center text-xs text-gray-500 font-cinzel">
+        Kuar-Tor VTT &middot; Sistema +2d6 v2.3 de Newton Rocha &middot; GitHub Pages Firestore Realtime
+    </footer>
+
+    <!-- Core Rules (+2d6) -->
+    <script src="src/core/character-sheet.js"></script>
+
+    <!-- FIREBASE MODULAR (v10.8.0) SCRIPT INTEGRATION -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
+        import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
+        import {
+            getFirestore,
+            doc,
+            setDoc,
+            getDoc,
+            onSnapshot,
+            collection,
+            addDoc,
+            query,
+            orderBy,
+            limit,
+            serverTimestamp,
+            enableIndexedDbPersistence
+        } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+
+        // Firebase Config
+        const firebaseConfig = {
+            apiKey: "AIzaSyDzdmWbibdIDwd1VkgOzne1Nd8l4WVBDXw",
+            authDomain: "rpg---mesa.firebaseapp.com",
+            projectId: "rpg---mesa",
+            storageBucket: "rpg---mesa.firebasestorage.app",
+            messagingSenderId: "724621847047",
+            appId: "1:724621847047:web:cb561e9792b26b80ab98a2",
+            measurementId: "G-E9YVLZMB0W"
+        };
+
+        // 1. Inicialização do Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // 4. Suporte Offline (Persistence IndexedDB)
+        enableIndexedDbPersistence(db).then(() => {
+            console.log("Persistência Offline do Firestore ativada com sucesso!");
+        }).catch((err) => {
+            if (err.code === 'failed-precondition') {
+                console.warn("Persistência falhou: Múltiplas abas abertas.");
+            } else if (err.code === 'unimplemented') {
+                console.warn("Persistência não suportada pelo navegador.");
+            }
+        });
+
+        // Estado Global
+        let currentUserId = null;
+        let unsubscribeCharacter = null;
+        let selectedCD = 10;
+
+        // 1. Autenticação Anônima Automática
+        signInAnonymously(auth).catch((error) => {
+            console.error("Erro no login anônimo:", error);
+            updateStatusBadge(false, "Offline");
+        });
+
+        onAuthStateChanged(auth, (user) => {
+            const userInfoDiv = document.getElementById('user-info');
+            const userEmailSpan = document.getElementById('user-email');
+            const loginLink = document.getElementById('login-link');
+
+            if (user) {
+                currentUserId = user.uid;
+                updateStatusBadge(true, `UID: ${user.uid.substring(0, 6)}...`);
+                
+                if (userInfoDiv && userEmailSpan) {
+                    userInfoDiv.style.display = 'flex';
+                    userInfoDiv.classList.remove('hidden');
+                    userEmailSpan.textContent = user.isAnonymous ? `Anônimo (${user.uid.substring(0, 6)})` : (user.email || 'Usuário');
+                }
+                if (loginLink) loginLink.style.display = 'none';
+
+                // 2. Escutar Ficha em tempo real
+                listenToCharacterSheet(user.uid);
+                // 3. Escutar Chat em tempo real
+                listenToMessages();
+            } else {
+                updateStatusBadge(false, "Desconectado");
+                if (userInfoDiv) userInfoDiv.style.display = 'none';
+                if (loginLink) loginLink.style.display = 'flex';
+            }
+        });
+
+        function updateStatusBadge(isOnline, text) {
+            const dot = document.getElementById('firebase-status-dot');
+            const label = document.getElementById('firebase-status-text');
+            if (dot && label) {
+                dot.className = isOnline ? 'w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399]' : 'w-2.5 h-2.5 rounded-full bg-amber-400';
+                label.innerText = text;
+            }
+        }
+
+        // 2. Sincronização da Ficha (characters/{userId})
+        function listenToCharacterSheet(userId) {
+            if (unsubscribeCharacter) unsubscribeCharacter();
+
+            const docRef = doc(db, "characters", userId);
+            unsubscribeCharacter = onSnapshot(docRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    applySheetDataToUI(data);
+                } else {
+                    // Salva a ficha inicial
+                    saveCurrentSheetToCloud();
+                }
+            }, (error) => {
+                console.warn("Erro ao sincronizar ficha no Firestore:", error);
+            });
+        }
+
+        async function saveCurrentSheetToCloud() {
+            if (!currentUserId) return;
+            const sheetData = getSheetDataFromUI();
+            try {
+                await setDoc(doc(db, "characters", currentUserId), {
+                    ...sheetData,
+                    lastUpdated: serverTimestamp()
+                }, { merge: true });
+            } catch (err) {
+                console.error("Erro ao salvar ficha no Firestore:", err);
+            }
+        }
+
+        // 3. Chat & Rolagens em Tempo Real (messages)
+        function listenToMessages() {
+            const q = query(collection(db, "messages"), orderBy("timestamp", "asc"), limit(50));
+            onSnapshot(q, (snapshot) => {
+                const container = document.getElementById('firestore-messages-log');
+                if (!container) return;
+
+                container.innerHTML = '';
+                snapshot.forEach((docSnap) => {
+                    const msg = docSnap.data();
+                    const el = document.createElement('div');
+                    el.className = `p-2.5 rounded-lg border text-xs ${msg.isRoll ? 'bg-cyan-950/40 border-cyan-500/40' : 'bg-slate-950/80 border-slate-800'}`;
+                    el.innerHTML = `
+                        <div class="flex justify-between items-center text-[10px] mb-1 font-mono">
+                            <span class="font-bold ${msg.isRoll ? 'text-cyan-300' : 'text-emerald-400'} font-cinzel">${msg.author || 'Anônimo'}</span>
+                            <span class="text-gray-500">${msg.timestamp ? new Date(msg.timestamp.toDate()).toLocaleTimeString() : 'agora'}</span>
+                        </div>
+                        <div class="text-gray-200">${msg.text}</div>
+                    `;
+                    container.appendChild(el);
+                });
+                container.scrollTop = container.scrollHeight;
+            });
+        }
+
+        async function publishMessage(author, text, isRoll = false, rollData = null) {
+            try {
+                await addDoc(collection(db, "messages"), {
+                    author: author || 'Operativo',
+                    text,
+                    isRoll,
+                    rollData,
+                    timestamp: serverTimestamp()
+                });
+            } catch (err) {
+                console.error("Erro ao publicar mensagem no Firestore:", err);
+            }
+        }
+
+        // Helpers de UI e Ficha
+        function getSheetDataFromUI() {
+            return {
+                charName: document.getElementById('sheet-char-name')?.value || 'Operativo',
+                concept: document.getElementById('sheet-concept')?.value || 'Guerreiro',
+                attributes: {
+                    FOR: parseInt(document.getElementById('attr-for')?.value) || 2,
+                    DES: parseInt(document.getElementById('attr-des')?.value) || 2,
+                    CON: parseInt(document.getElementById('attr-con')?.value) || 2,
+                    INT: parseInt(document.getElementById('attr-int')?.value) || 2,
+                    SAB: parseInt(document.getElementById('attr-sab')?.value) || 2,
+                    CAR: parseInt(document.getElementById('attr-car')?.value) || 2,
+                    POD: parseInt(document.getElementById('attr-pod')?.value) || 2
+                }
+            };
+        }
+
+        function applySheetDataToUI(data) {
+            if (data.charName && document.getElementById('sheet-char-name')) document.getElementById('sheet-char-name').value = data.charName;
+            if (data.concept && document.getElementById('sheet-concept')) document.getElementById('sheet-concept').value = data.concept;
+            if (data.attributes) {
+                Object.keys(data.attributes).forEach(attr => {
+                    const el = document.getElementById(`attr-${attr.toLowerCase()}`);
+                    if (el) el.value = data.attributes[attr];
+                });
+            }
+            recalcSheetDerivations();
+        }
+
+        function recalcSheetDerivations() {
+            const forStat = parseInt(document.getElementById('attr-for')?.value) || 2;
+            const des = parseInt(document.getElementById('attr-des')?.value) || 2;
+            const con = parseInt(document.getElementById('attr-con')?.value) || 2;
+            const pod = parseInt(document.getElementById('attr-pod')?.value) || 2;
+
+            if (typeof CharacterSheetRules !== 'undefined') {
+                const pv = CharacterSheetRules.calcMaxPV(con, forStat);
+                const pe = CharacterSheetRules.calcMaxPE(pod);
+                const dmg = CharacterSheetRules.calcForceDamage(forStat);
+                const init = CharacterSheetRules.calcInitiativeBonus(des);
+
+                if (document.getElementById('sheet-pv-max')) document.getElementById('sheet-pv-max').innerText = pv;
+                if (document.getElementById('sheet-pe-max')) document.getElementById('sheet-pe-max').innerText = pe;
+                if (document.getElementById('sheet-dmg-force')) document.getElementById('sheet-dmg-force').innerText = dmg;
+                if (document.getElementById('sheet-init-bonus')) document.getElementById('sheet-init-bonus').innerText = `+${init}`;
+
+                // Atualizar badges sobre-humanas
+                ['for', 'des', 'con', 'int', 'sab', 'car', 'pod'].forEach(k => {
+                    const val = parseInt(document.getElementById(`attr-${k}`)?.value) || 0;
+                    const bInfo = CharacterSheetRules.calcSuperhumanBonus(val);
+                    const badge = document.getElementById(`badge-sh-${k}`);
+                    if (badge) {
+                        if (bInfo.bonus > 0) {
+                            badge.innerText = bInfo.label;
+                            badge.classList.remove('hidden');
+                        } else {
+                            badge.classList.add('hidden');
+                        }
+                    }
+                });
+            }
+        }
+
+        // Exportação para Window (Acesso global aos botões)
+        window.switchTab = function(tabName) {
+            document.querySelectorAll('section[id^="tab-"]').forEach(sec => sec.classList.add('hidden'));
+            document.querySelectorAll('.nav-tab-btn').forEach(btn => btn.classList.remove('active'));
+
+            const activeSec = document.getElementById(`tab-${tabName}`);
+            const activeBtn = document.getElementById(`tab-btn-${tabName}`);
+            if (activeSec) activeSec.classList.remove('hidden');
+            if (activeBtn) activeBtn.classList.add('active');
+        };
+
+        window.togglePortalHub = function() {
+            const drawer = document.getElementById('portal-hub-drawer');
+            if (drawer) {
+                drawer.classList.toggle('hidden');
+            }
+        };
+
+        window.setCD = function(cdVal) {
+            selectedCD = cdVal;
+            document.querySelectorAll('.cd-btn').forEach(b => b.classList.remove('active', 'bg-cyan-950', 'border-cyan-400', 'text-cyan-300'));
+            event.target.classList.add('active', 'bg-cyan-950', 'border-cyan-400', 'text-cyan-300');
+        };
+
+        window.roll2d6Action = function() {
+            const attr = document.getElementById('roller-attr').value;
+            const attrVal = parseInt(document.getElementById(`attr-${attr.toLowerCase()}`)?.value) || 2;
+            const skillBonus = parseInt(document.getElementById('roller-skill').value) || 0;
+            const modOccasion = parseInt(document.getElementById('roller-mod').value) || 0;
+
+            const res = CharacterSheetRules.rollSkillTest({
+                skillName: `Teste de ${attr}`,
+                skillBonus,
+                attrName: attr,
+                attrValue: attrVal,
+                modOccasion,
+                cd: selectedCD,
+                vsHuman: true
+            });
+
+            document.getElementById('dice-d1').innerText = res.d1;
+            document.getElementById('dice-d2').innerText = res.d2;
+            document.getElementById('roll-total-text').innerText = res.total;
+            document.getElementById('roll-outcome-badge').innerHTML = res.outcome;
+
+            const charName = document.getElementById('sheet-char-name')?.value || 'Operativo';
+            publishMessage(charName, `rolou ${res.formulaString} &middot; <strong>${res.outcome}</strong>`, true, res);
+        };
+
+        window.rollDeathSave = function() {
+            const d1 = Math.floor(Math.random() * 6) + 1;
+            const d2 = Math.floor(Math.random() * 6) + 1;
+            const sum = d1 + d2;
+            let outcome = '';
+
+            if (sum >= 11) outcome = '✨ Estabilizou!';
+            else if (sum >= 6) outcome = '🛡️ Resistiu este turno.';
+            else outcome = '💀 Falhou no Teste de Morte!';
+
+            document.getElementById('dice-d1').innerText = d1;
+            document.getElementById('dice-d2').innerText = d2;
+            document.getElementById('roll-total-text').innerText = sum;
+            document.getElementById('roll-outcome-badge').innerHTML = outcome;
+
+            const charName = document.getElementById('sheet-char-name')?.value || 'Operativo';
+            publishMessage(charName, `Teste de Morte (2d6 [${d1}+${d2}] = ${sum}): <strong>${outcome}</strong>`, true);
+        };
+
+        window.sendChatMessageAction = function() {
+            const input = document.getElementById('chat-msg-input');
+            const val = input.value.trim();
+            if (!val) return;
+
+            const charName = document.getElementById('sheet-char-name')?.value || 'Operativo';
+            publishMessage(charName, val);
+            input.value = '';
+        };
+
+        window.onSheetFieldChange = function() {
+            recalcSheetDerivations();
+            saveCurrentSheetToCloud();
+        };
+
+        window.saveSheetToCloud = saveCurrentSheetToCloud;
+
+        const logoutBtn = document.getElementById('logout-button');
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                auth.signOut().then(() => window.location.reload());
+            });
+        }
+
+        // Inicialização dos dados
+        recalcSheetDerivations();
+    </script>
 </body>
 
 </html>
