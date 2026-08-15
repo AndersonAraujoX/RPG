@@ -21,10 +21,11 @@
 
     <style>
         :root {
-            --bg-color: #05070d;
-            --panel-color: #0d131f;
+            --bg-color: #04070d;
+            --panel-color: #0c1322;
             --emerald-accent: #10b981;
             --cyan-accent: #06b6d4;
+            --amber-accent: #f59e0b;
         }
 
         body {
@@ -32,8 +33,11 @@
             color: #cbd5e1;
             font-family: 'Inter', sans-serif;
             min-height: 100vh;
-            background-image: radial-gradient(circle at 50% 0%, rgba(6, 182, 212, 0.12) 0%, transparent 50%),
-                              radial-gradient(circle at 100% 100%, rgba(16, 185, 129, 0.08) 0%, transparent 40%);
+            background-image: 
+                linear-gradient(to bottom, rgba(4, 7, 13, 0.88), rgba(4, 7, 13, 0.96)),
+                url('https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1920&auto=format&fit=crop');
+            background-size: cover;
+            background-position: center;
             background-attachment: fixed;
         }
 
@@ -41,40 +45,55 @@
         .font-mono { font-family: 'JetBrains Mono', monospace; }
 
         .glass-panel {
-            background: linear-gradient(135deg, rgba(13, 19, 31, 0.94) 0%, rgba(8, 12, 20, 0.98) 100%);
-            backdrop-filter: blur(16px);
-            border: 1px solid rgba(100, 116, 139, 0.2);
+            background: linear-gradient(135deg, rgba(12, 19, 34, 0.92) 0%, rgba(6, 10, 18, 0.97) 100%);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(100, 116, 139, 0.25);
+            box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.6);
         }
 
         .glass-panel:hover {
-            border-color: rgba(6, 182, 212, 0.35);
+            border-color: rgba(6, 182, 212, 0.4);
+        }
+
+        .resource-card {
+            background: linear-gradient(145deg, rgba(13, 21, 38, 0.85) 0%, rgba(7, 12, 22, 0.95) 100%);
+            backdrop-filter: blur(14px);
+            border: 1px solid rgba(100, 116, 139, 0.2);
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .resource-card:hover {
+            transform: translateY(-3px);
+            border-color: rgba(6, 182, 212, 0.5);
+            box-shadow: 0 12px 25px -8px rgba(6, 182, 212, 0.2);
         }
 
         .nav-tab-btn {
             font-family: 'Cinzel', serif;
             font-weight: 700;
-            font-size: 0.82rem;
-            letter-spacing: 0.05em;
+            font-size: 0.8rem;
+            letter-spacing: 0.04em;
             transition: all 0.2s ease;
             position: relative;
+            white-space: nowrap;
         }
 
         .nav-tab-btn.active {
             color: #67e8f9;
-            background: rgba(6, 182, 212, 0.15);
+            background: linear-gradient(180deg, rgba(6, 182, 212, 0.2) 0%, rgba(6, 182, 212, 0.05) 100%);
             border-color: #06b6d4;
-            box-shadow: 0 0 15px rgba(6, 182, 212, 0.25);
+            box-shadow: 0 0 18px rgba(6, 182, 212, 0.3);
         }
 
         .nav-tab-btn.active::after {
             content: '';
             position: absolute;
             bottom: -1px;
-            left: 20%;
-            right: 20%;
+            left: 15%;
+            right: 15%;
             height: 2px;
             background: #06b6d4;
-            box-shadow: 0 0 8px #06b6d4;
+            box-shadow: 0 0 10px #06b6d4;
         }
 
         .chat-scroll::-webkit-scrollbar {
@@ -89,8 +108,8 @@
         .vtt-grid {
             background-size: 40px 40px;
             background-image: 
-                linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
-                linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+                linear-gradient(to right, rgba(255, 255, 255, 0.06) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(255, 255, 255, 0.06) 1px, transparent 1px);
         }
 
         .token-element {
@@ -107,7 +126,7 @@
         }
 
         .fog-cell {
-            background: rgba(0, 0, 0, 0.88);
+            background: rgba(0, 0, 0, 0.9);
             backdrop-filter: blur(4px);
             pointer-events: auto;
         }
@@ -121,130 +140,239 @@
 <body class="p-3 md:p-6 flex flex-col min-h-screen">
 
     <!-- Top Portal Header & Navigation -->
-    <header class="glass-panel rounded-2xl p-4 mb-4 shadow-2xl flex flex-col lg:flex-row justify-between items-center gap-4">
-        <div class="flex items-center gap-3 w-full lg:w-auto justify-between lg:justify-start">
-            <div class="flex items-center gap-3">
-                <div class="w-11 h-11 rounded-xl bg-cyan-950/80 border border-cyan-400/50 flex items-center justify-center text-cyan-400 text-xl shadow-[0_0_15px_rgba(6,182,212,0.3)]">
+    <header class="glass-panel rounded-3xl p-6 mb-6 shadow-2xl border border-cyan-500/30">
+        <div class="flex flex-col lg:flex-row justify-between items-center gap-6 mb-5">
+            <!-- Brand & Campaign Subtitle -->
+            <div class="flex items-center gap-4 text-center lg:text-left">
+                <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-cyan-600 via-cyan-700 to-slate-950 border-2 border-cyan-400 flex items-center justify-center text-slate-950 text-2xl shadow-[0_0_25px_rgba(6,182,212,0.5)]">
                     <i class="fa-solid fa-dice-d20"></i>
                 </div>
                 <div>
-                    <h1 class="font-cinzel text-lg md:text-xl font-bold text-cyan-300 tracking-wider">Portal de Kuar-Tor</h1>
-                    <p class="text-[11px] text-gray-400">VTT Virtual Tabletop &middot; Sistema +2d6 (v2.3 Tio Nitro)</p>
+                    <h1 class="font-cinzel text-2xl md:text-3xl font-bold text-cyan-300 tracking-wider drop-shadow-[0_0_12px_rgba(102,252,241,0.5)]">Portal de Kuar-Tor</h1>
+                    <p class="text-xs md:text-sm text-gray-400 mt-0.5">Recursos da Campanha "A Última Expedição" &middot; Sistema +2d6 (v2.3 Tio Nitro)</p>
                 </div>
             </div>
 
             <!-- Profile & Authentication Container -->
-            <div class="flex items-center gap-2">
+            <div class="flex items-center gap-3">
                 <!-- User Profile Header (Foto + Nome) -->
-                <div id="user-info" class="hidden items-center gap-2.5 px-3 py-1.5 bg-slate-900/90 border border-emerald-500/40 rounded-xl text-xs shadow">
-                    <img id="user-avatar" src="https://images.unsplash.com/photo-1566492031773-4f4e44671857?w=80&auto=format&fit=crop&q=60" alt="Avatar" class="w-7 h-7 rounded-full border border-emerald-400 object-cover">
+                <div id="user-info" class="hidden items-center gap-3 px-4 py-2 bg-slate-950/90 border border-emerald-500/50 rounded-2xl text-xs shadow-lg">
+                    <img id="user-avatar" src="https://images.unsplash.com/photo-1566492031773-4f4e44671857?w=80&auto=format&fit=crop&q=60" alt="Avatar" class="w-9 h-9 rounded-full border-2 border-emerald-400 object-cover shadow">
                     <div class="flex flex-col">
-                        <span id="user-name" class="text-emerald-300 font-cinzel font-bold text-xs leading-none">Operativo</span>
-                        <span id="user-email" class="text-gray-400 font-mono text-[10px] leading-tight"></span>
+                        <span id="user-name" class="text-emerald-300 font-cinzel font-bold text-xs leading-tight">Operativo</span>
+                        <span id="user-email" class="text-gray-400 font-mono text-[10px]"></span>
                     </div>
-                    <button id="logout-button" type="button" class="ml-2 text-red-400 hover:text-red-300 text-xs font-bold font-cinzel p-1" title="Encerrar Sessão">
-                        <i class="fa-solid fa-right-from-bracket"></i>
+                    <button id="logout-button" type="button" class="ml-2 px-2.5 py-1 bg-red-950 hover:bg-red-900 border border-red-700 text-red-300 rounded-lg text-xs font-cinzel font-bold transition flex items-center gap-1" title="Encerrar Sessão">
+                        <i class="fa-solid fa-right-from-bracket"></i> Sair
                     </button>
                 </div>
 
                 <!-- Open Auth Modal Button -->
-                <button id="login-link" type="button" onclick="openAuthModal()" class="px-3.5 py-1.5 bg-gradient-to-r from-cyan-950 to-slate-900 border border-cyan-500/60 text-cyan-300 hover:bg-cyan-900 rounded-xl text-xs font-cinzel font-bold transition flex items-center gap-1.5 shadow">
+                <button id="login-link" type="button" onclick="openAuthModal()" class="px-4 py-2.5 bg-gradient-to-r from-cyan-600 to-cyan-500 hover:from-cyan-500 hover:to-cyan-400 text-slate-950 rounded-xl text-xs font-cinzel font-bold transition flex items-center gap-2 shadow-[0_0_15px_rgba(6,182,212,0.4)]">
                     <i class="fa-solid fa-user-shield"></i> Entrar / Perfil
                 </button>
 
                 <!-- Firebase Status Badge -->
-                <div id="firebase-status-badge" class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-700 text-xs font-mono">
+                <div id="firebase-status-badge" class="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs font-mono">
                     <span class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse" id="firebase-status-dot"></span>
                     <span class="text-gray-300 text-[11px]" id="firebase-status-text">Conectando...</span>
                 </div>
             </div>
         </div>
 
-        <!-- Navigation Tabs -->
-        <nav class="flex flex-wrap gap-1.5 p-1 bg-slate-950/80 border border-slate-800 rounded-xl">
-            <button onclick="switchTab('rooms')" id="tab-btn-rooms" class="nav-tab-btn active px-3.5 py-2 rounded-lg border border-transparent text-gray-400 hover:text-white flex items-center gap-1.5">
+        <!-- Navigation Tabs Bar -->
+        <nav class="flex flex-wrap gap-2 p-1.5 bg-slate-950/90 border border-slate-800 rounded-2xl justify-center lg:justify-start">
+            <button onclick="switchTab('rooms')" id="tab-btn-rooms" class="nav-tab-btn active px-4 py-2.5 rounded-xl border border-transparent text-gray-400 hover:text-white flex items-center gap-2">
                 <i class="fa-solid fa-dungeon text-amber-400"></i> Salas & Mesas
             </button>
-            <button onclick="switchTab('tactical')" id="tab-btn-tactical" class="nav-tab-btn px-3.5 py-2 rounded-lg border border-transparent text-gray-400 hover:text-white flex items-center gap-1.5">
+            <button onclick="switchTab('tactical')" id="tab-btn-tactical" class="nav-tab-btn px-4 py-2.5 rounded-xl border border-transparent text-gray-400 hover:text-white flex items-center gap-2">
                 <i class="fa-solid fa-chess-board text-cyan-400"></i> Grid Tático & Névoa
             </button>
-            <button onclick="switchTab('roller')" id="tab-btn-roller" class="nav-tab-btn px-3.5 py-2 rounded-lg border border-transparent text-gray-400 hover:text-white flex items-center gap-1.5">
+            <button onclick="switchTab('roller')" id="tab-btn-roller" class="nav-tab-btn px-4 py-2.5 rounded-xl border border-transparent text-gray-400 hover:text-white flex items-center gap-2">
                 <i class="fa-solid fa-dice text-cyan-400"></i> Rolador 2d6
             </button>
-            <button onclick="switchTab('sheet')" id="tab-btn-sheet" class="nav-tab-btn px-3.5 py-2 rounded-lg border border-transparent text-gray-400 hover:text-white flex items-center gap-1.5">
+            <button onclick="switchTab('sheet')" id="tab-btn-sheet" class="nav-tab-btn px-4 py-2.5 rounded-xl border border-transparent text-gray-400 hover:text-white flex items-center gap-2">
                 <i class="fa-solid fa-id-card text-emerald-400"></i> Ficha Interativa
             </button>
-            <button onclick="switchTab('combat')" id="tab-btn-combat" class="nav-tab-btn px-3.5 py-2 rounded-lg border border-transparent text-gray-400 hover:text-white flex items-center gap-1.5">
+            <button onclick="switchTab('combat')" id="tab-btn-combat" class="nav-tab-btn px-4 py-2.5 rounded-xl border border-transparent text-gray-400 hover:text-white flex items-center gap-2">
                 <i class="fa-solid fa-swords text-red-400"></i> Combate
             </button>
-            <button onclick="switchTab('bestiary')" id="tab-btn-bestiary" class="nav-tab-btn px-3.5 py-2 rounded-lg border border-transparent text-gray-400 hover:text-white flex items-center gap-1.5">
+            <button onclick="switchTab('bestiary')" id="tab-btn-bestiary" class="nav-tab-btn px-4 py-2.5 rounded-xl border border-transparent text-gray-400 hover:text-white flex items-center gap-2">
                 <i class="fa-solid fa-skull text-purple-400"></i> Bestiário
             </button>
-            <button onclick="switchTab('compendium')" id="tab-btn-compendium" class="nav-tab-btn px-3.5 py-2 rounded-lg border border-transparent text-gray-400 hover:text-white flex items-center gap-1.5">
+            <button onclick="switchTab('compendium')" id="tab-btn-compendium" class="nav-tab-btn px-4 py-2.5 rounded-xl border border-transparent text-gray-400 hover:text-white flex items-center gap-2">
                 <i class="fa-solid fa-book-journal-whills text-amber-400"></i> Compêndio
             </button>
-            <button onclick="togglePortalHub()" class="nav-tab-btn px-3.5 py-2 rounded-lg bg-indigo-950/60 border border-indigo-500/50 hover:bg-indigo-900 text-indigo-300 flex items-center gap-1.5">
-                <i class="fa-solid fa-compass"></i> Ferramentas Kuar-Tor
+            <button onclick="togglePortalHub()" id="tab-btn-hub" class="nav-tab-btn px-4 py-2.5 rounded-xl bg-indigo-950/70 border border-indigo-500/60 hover:bg-indigo-900 text-indigo-300 flex items-center gap-2">
+                <i class="fa-solid fa-book-atlas"></i> Tomos da Campanha (10)
             </button>
         </nav>
     </header>
 
     <!-- Super Card em Destaque: Mesa Virtual (Kuar-Tor VTT 2D) com Multiplayer P2P -->
-    <section class="glass-panel rounded-2xl p-4 mb-4 border border-cyan-500/40 bg-gradient-to-r from-cyan-950/40 via-slate-900/60 to-emerald-950/40 flex flex-col md:flex-row justify-between items-center gap-4">
-        <div class="flex items-center gap-3">
-            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-600 to-emerald-600 flex items-center justify-center text-slate-950 text-2xl shadow-lg">
+    <section class="glass-panel rounded-3xl p-5 mb-6 border-2 border-red-600/70 bg-gradient-to-r from-red-950/50 via-slate-950/90 to-slate-950/90 shadow-[0_0_30px_rgba(220,38,38,0.3)] flex flex-col md:flex-row justify-between items-center gap-4">
+        <div class="flex items-center gap-4">
+            <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-red-600 to-amber-600 flex items-center justify-center text-white text-2xl shadow-[0_0_20px_rgba(239,68,68,0.5)]">
                 <i class="fa-solid fa-map-location-dot"></i>
             </div>
             <div>
                 <div class="flex items-center gap-2">
-                    <h2 class="font-cinzel text-base font-bold text-cyan-200">Mesa Virtual (Kuar-Tor VTT 2D)</h2>
-                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-400/40 font-mono">Multiplayer P2P</span>
+                    <h2 class="font-cinzel text-lg font-bold text-red-400 flex items-center gap-2">
+                        <span class="w-2.5 h-2.5 bg-red-500 rounded-full animate-ping"></span>
+                        Mesa Virtual (Kuar-Tor VTT 2D)
+                    </h2>
+                    <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-red-500/20 text-red-300 border border-red-400/40 font-mono uppercase">Multiplayer P2P</span>
                 </div>
-                <p class="text-xs text-gray-400">Grid magnético 2D, tokens arrastáveis, névoa de guerra, régua de distância e sincronização WebRTC</p>
+                <p class="text-xs text-gray-300 mt-1">Grid magnético 2D, tokens arrastáveis, névoa de guerra, régua de distância e sincronização WebRTC</p>
             </div>
         </div>
-        <a href="public/mesa_virtual.html" class="px-5 py-2.5 bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-400 hover:to-emerald-400 text-slate-950 font-cinzel font-bold text-xs rounded-xl shadow-lg transition flex items-center gap-2 no-underline">
-            <i class="fa-solid fa-play"></i> Abrir Mesa Virtual 2D
+        <a href="public/mesa_virtual.html" class="px-6 py-3 bg-gradient-to-r from-red-600 to-amber-600 hover:from-red-500 hover:to-amber-500 text-white font-cinzel font-bold text-xs rounded-xl shadow-[0_0_20px_rgba(220,38,38,0.4)] hover:scale-105 transition-all flex items-center gap-2 no-underline">
+            <i class="fa-solid fa-play"></i> ENTRAR NA BATALHA (VTT 2D)
         </a>
     </section>
 
-    <!-- Hub de Acesso Rápido a Todas as Páginas da Campanha (Colapsável) -->
-    <section id="portal-hub-drawer" class="glass-panel rounded-2xl p-4 mb-4">
-        <div class="flex justify-between items-center mb-3 pb-2 border-b border-slate-800">
-            <span class="text-xs uppercase font-cinzel font-bold text-gray-400">Tomos & Ferramentas da Campanha</span>
-            <span class="text-[11px] text-cyan-400 font-mono">10 Páginas Conectadas</span>
+    <!-- Hub de Acesso Rápido a Todas as Páginas da Campanha (Estilo Cards Ricos da Versão Anterior) -->
+    <section id="portal-hub-drawer" class="glass-panel rounded-3xl p-6 mb-6">
+        <div class="flex justify-between items-center mb-6 pb-3 border-b border-slate-800">
+            <div>
+                <h3 class="font-cinzel text-lg font-bold text-cyan-300 flex items-center gap-2">
+                    <i class="fa-solid fa-book-atlas text-cyan-400"></i> Tomos & Ferramentas da Campanha
+                </h3>
+                <p class="text-xs text-gray-400">Grimórios, geradores e recursos para mestres e jogadores de Kuar-Tor</p>
+            </div>
+            <span class="text-xs text-cyan-400 font-mono bg-cyan-950/60 border border-cyan-500/40 px-3 py-1 rounded-full">10 Páginas Conectadas</span>
         </div>
-        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 text-xs">
-            <a href="legado/Site/siteV1.1.html" class="p-2 rounded-lg bg-slate-950/80 border border-slate-800 hover:border-cyan-500 text-gray-300 hover:text-cyan-300 flex items-center gap-2 transition no-underline">
-                <i class="fa-solid fa-castle text-cyan-400"></i> O Mundo de Kuar-Tor
-            </a>
-            <a href="legado/Forms/formV6.html" class="p-2 rounded-lg bg-slate-950/80 border border-slate-800 hover:border-emerald-500 text-gray-300 hover:text-emerald-300 flex items-center gap-2 transition no-underline">
-                <i class="fa-solid fa-scroll text-emerald-400"></i> Gerador de Fichas
-            </a>
-            <a href="public/arvore_magia.html" class="p-2 rounded-lg bg-slate-950/80 border border-slate-800 hover:border-purple-500 text-gray-300 hover:text-purple-300 flex items-center gap-2 transition no-underline">
-                <i class="fa-solid fa-wand-magic-sparkles text-purple-400"></i> Biblioteca Arcana
-            </a>
-            <a href="legado/Dados/dados.html" class="p-2 rounded-lg bg-slate-950/80 border border-slate-800 hover:border-amber-500 text-gray-300 hover:text-amber-300 flex items-center gap-2 transition no-underline">
-                <i class="fa-solid fa-dice text-amber-400"></i> Tomo dos Dados
-            </a>
-            <a href="public/items.html" class="p-2 rounded-lg bg-slate-950/80 border border-slate-800 hover:border-blue-500 text-gray-300 hover:text-blue-300 flex items-center gap-2 transition no-underline">
-                <i class="fa-solid fa-shield-halved text-blue-400"></i> Gerenciador de Itens
-            </a>
-            <a href="legado/nexo.html" class="p-2 rounded-lg bg-slate-950/80 border border-slate-800 hover:border-teal-500 text-gray-300 hover:text-teal-300 flex items-center gap-2 transition no-underline">
-                <i class="fa-solid fa-beer-mug-empty text-teal-400"></i> O Nexo
-            </a>
-            <a href="legado/diario.html" class="p-2 rounded-lg bg-slate-950/80 border border-slate-800 hover:border-indigo-500 text-gray-300 hover:text-indigo-300 flex items-center gap-2 transition no-underline">
-                <i class="fa-solid fa-book-skull text-indigo-400"></i> Diário de Expedição
-            </a>
-            <a href="legado/computador_de_kuar_tor.html" class="p-2 rounded-lg bg-slate-950/80 border border-slate-800 hover:border-emerald-500 text-gray-300 hover:text-emerald-300 flex items-center gap-2 transition no-underline">
-                <i class="fa-solid fa-terminal text-emerald-400"></i> Computador de Kuar-Tor
-            </a>
-            <a href="public/puzzles/index.html" class="p-2 rounded-lg bg-slate-950/80 border border-slate-800 hover:border-yellow-500 text-gray-300 hover:text-yellow-300 flex items-center gap-2 transition no-underline">
-                <i class="fa-solid fa-puzzle-piece text-yellow-400"></i> Salão de Puzzles
-            </a>
-            <a href="public/login.html" class="p-2 rounded-lg bg-slate-950/80 border border-slate-800 hover:border-pink-500 text-gray-300 hover:text-pink-300 flex items-center gap-2 transition no-underline">
-                <i class="fa-solid fa-key text-pink-400"></i> Login
-            </a>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            <!-- Card 1: O Mundo de Kuar-Tor -->
+            <div class="resource-card rounded-2xl p-5 flex flex-col justify-between">
+                <div>
+                    <h4 class="font-cinzel text-base font-bold text-cyan-400 mb-2 flex items-center gap-2">
+                        <i class="fa-solid fa-castle text-cyan-400"></i> O Mundo de Kuar-Tor
+                    </h4>
+                    <p class="text-xs text-gray-400 mb-4 leading-relaxed">Descubra a história, regras do sistema +2d6 e os segredos da ilha amaldiçoada. Essencial para todos os jogadores.</p>
+                </div>
+                <a href="legado/Site/siteV1.1.html" class="block w-full py-2.5 text-center bg-slate-900 hover:bg-cyan-950 border border-cyan-500/40 text-cyan-300 hover:text-cyan-200 font-cinzel font-bold text-xs rounded-xl transition no-underline shadow">
+                    Explorar a Campanha
+                </a>
+            </div>
+
+            <!-- Card 2: Gerador de Fichas -->
+            <div class="resource-card rounded-2xl p-5 flex flex-col justify-between">
+                <div>
+                    <h4 class="font-cinzel text-base font-bold text-emerald-400 mb-2 flex items-center gap-2">
+                        <i class="fa-solid fa-scroll text-emerald-400"></i> Gerador de Fichas
+                    </h4>
+                    <p class="text-xs text-gray-400 mb-4 leading-relaxed">Forje seu personagem para a expedição. Salve, importe e gerencie suas fichas de forma prática e rápida.</p>
+                </div>
+                <a href="legado/Forms/formV6.html" class="block w-full py-2.5 text-center bg-slate-900 hover:bg-emerald-950 border border-emerald-500/40 text-emerald-300 hover:text-emerald-200 font-cinzel font-bold text-xs rounded-xl transition no-underline shadow">
+                    Criar Personagem
+                </a>
+            </div>
+
+            <!-- Card 3: Biblioteca Arcana -->
+            <div class="resource-card rounded-2xl p-5 flex flex-col justify-between border border-purple-500/30">
+                <div>
+                    <h4 class="font-cinzel text-base font-bold text-purple-400 mb-2 flex items-center gap-2">
+                        <i class="fa-solid fa-wand-magic-sparkles text-purple-400"></i> Biblioteca Arcana
+                    </h4>
+                    <p class="text-xs text-gray-400 mb-4 leading-relaxed">Acesse a grande teia mágica dos 12 Caminhos e 3 Formas Daemon adaptadas ao +2d6 com Síntese e Fusão de Feitiços.</p>
+                </div>
+                <a href="public/arvore_magia.html" class="block w-full py-2.5 text-center bg-slate-900 hover:bg-purple-950 border border-purple-500/40 text-purple-300 hover:text-purple-200 font-cinzel font-bold text-xs rounded-xl transition no-underline shadow">
+                    Abrir Grimório Arcana
+                </a>
+            </div>
+
+            <!-- Card 4: Tomo dos Dados -->
+            <div class="resource-card rounded-2xl p-5 flex flex-col justify-between">
+                <div>
+                    <h4 class="font-cinzel text-base font-bold text-amber-400 mb-2 flex items-center gap-2">
+                        <i class="fa-solid fa-dice text-amber-400"></i> Tomo dos Dados
+                    </h4>
+                    <p class="text-xs text-gray-400 mb-4 leading-relaxed">Utilize este grimório para rolar dados, adicionar valores personalizados e consultar as estatísticas arcanas de seus lançamentos.</p>
+                </div>
+                <a href="legado/Dados/dados.html" class="block w-full py-2.5 text-center bg-slate-900 hover:bg-amber-950 border border-amber-500/40 text-amber-300 hover:text-amber-200 font-cinzel font-bold text-xs rounded-xl transition no-underline shadow">
+                    Rolar os Dados
+                </a>
+            </div>
+
+            <!-- Card 5: Gerenciador de Itens -->
+            <div class="resource-card rounded-2xl p-5 flex flex-col justify-between">
+                <div>
+                    <h4 class="font-cinzel text-base font-bold text-blue-400 mb-2 flex items-center gap-2">
+                        <i class="fa-solid fa-shield-halved text-blue-400"></i> Gerenciador de Itens
+                    </h4>
+                    <p class="text-xs text-gray-400 mb-4 leading-relaxed">Cadastre, organize e consulte os itens, armas e armaduras dos personagens de forma individual e segura.</p>
+                </div>
+                <a href="public/items.html" class="block w-full py-2.5 text-center bg-slate-900 hover:bg-blue-950 border border-blue-500/40 text-blue-300 hover:text-blue-200 font-cinzel font-bold text-xs rounded-xl transition no-underline shadow">
+                    Acessar Inventário
+                </a>
+            </div>
+
+            <!-- Card 6: O Nexo -->
+            <div class="resource-card rounded-2xl p-5 flex flex-col justify-between">
+                <div>
+                    <h4 class="font-cinzel text-base font-bold text-teal-400 mb-2 flex items-center gap-2">
+                        <i class="fa-solid fa-beer-mug-empty text-teal-400"></i> O Nexo
+                    </h4>
+                    <p class="text-xs text-gray-400 mb-4 leading-relaxed">Acesse o ponto de encontro social, onde missões são aceitas, rumores são ouvidos e a sorte é testada.</p>
+                </div>
+                <a href="legado/nexo.html" class="block w-full py-2.5 text-center bg-slate-900 hover:bg-teal-950 border border-teal-500/40 text-teal-300 hover:text-teal-200 font-cinzel font-bold text-xs rounded-xl transition no-underline shadow">
+                    Entrar no Nexo
+                </a>
+            </div>
+
+            <!-- Card 7: Diário de Expedição -->
+            <div class="resource-card rounded-2xl p-5 flex flex-col justify-between border border-amber-500/30">
+                <div>
+                    <h4 class="font-cinzel text-base font-bold text-amber-400 mb-2 flex items-center gap-2">
+                        <i class="fa-solid fa-book-skull text-amber-400"></i> Diário de Expedição
+                    </h4>
+                    <p class="text-xs text-gray-400 mb-4 leading-relaxed">Registre as memórias, vitórias e perdas da campanha. Um log compartilhado para todos os operativos.</p>
+                </div>
+                <a href="legado/diario.html" class="block w-full py-2.5 text-center bg-slate-900 hover:bg-amber-950 border border-amber-500/40 text-amber-300 hover:text-amber-200 font-cinzel font-bold text-xs rounded-xl transition no-underline shadow">
+                    Abrir Diário
+                </a>
+            </div>
+
+            <!-- Card 8: Computador de Kuar-Tor -->
+            <div class="resource-card rounded-2xl p-5 flex flex-col justify-between">
+                <div>
+                    <h4 class="font-cinzel text-base font-bold text-emerald-400 mb-2 flex items-center gap-2">
+                        <i class="fa-solid fa-terminal text-emerald-400"></i> Computador de Kuar-Tor
+                    </h4>
+                    <p class="text-xs text-gray-400 mb-4 leading-relaxed">Acesse ferramentas e recursos de inteligência da campanha, incluindo mapas, cofres e arquivos de Kuar-Tor.</p>
+                </div>
+                <a href="legado/computador_de_kuar_tor.html" class="block w-full py-2.5 text-center bg-slate-900 hover:bg-emerald-950 border border-emerald-500/40 text-emerald-300 hover:text-emerald-200 font-cinzel font-bold text-xs rounded-xl transition no-underline shadow">
+                    Acessar Computador
+                </a>
+            </div>
+
+            <!-- Card 9: Salão de Puzzles -->
+            <div class="resource-card rounded-2xl p-5 flex flex-col justify-between">
+                <div>
+                    <h4 class="font-cinzel text-base font-bold text-yellow-400 mb-2 flex items-center gap-2">
+                        <i class="fa-solid fa-puzzle-piece text-yellow-400"></i> Salão de Puzzles
+                    </h4>
+                    <p class="text-xs text-gray-400 mb-4 leading-relaxed">Desafie a sorte e a habilidade em puzzles lógicos, decodificadores e mini-games temáticos de exploração.</p>
+                </div>
+                <a href="public/puzzles/index.html" class="block w-full py-2.5 text-center bg-slate-900 hover:bg-yellow-950 border border-yellow-500/40 text-yellow-300 hover:text-yellow-200 font-cinzel font-bold text-xs rounded-xl transition no-underline shadow">
+                    Entrar no Salão
+                </a>
+            </div>
+
+            <!-- Card 10: Autenticação / Login -->
+            <div class="resource-card rounded-2xl p-5 flex flex-col justify-between">
+                <div>
+                    <h4 class="font-cinzel text-base font-bold text-pink-400 mb-2 flex items-center gap-2">
+                        <i class="fa-solid fa-key text-pink-400"></i> Login & Sessão
+                    </h4>
+                    <p class="text-xs text-gray-400 mb-4 leading-relaxed">Conecte sua conta de aventureiro para salvar personagens e sincronizar seus recursos na nuvem.</p>
+                </div>
+                <a href="public/login.html" class="block w-full py-2.5 text-center bg-slate-900 hover:bg-pink-950 border border-pink-500/40 text-pink-300 hover:text-pink-200 font-cinzel font-bold text-xs rounded-xl transition no-underline shadow">
+                    Autenticar
+                </a>
+            </div>
         </div>
     </section>
 
