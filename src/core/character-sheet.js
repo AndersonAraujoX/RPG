@@ -90,6 +90,222 @@
         },
 
         /**
+         * Rolagem Completa de Iniciativa (+2d6): 2d6 + DES + Bônus de Iniciativa
+         */
+        calcCombatInitiative(des, diceOverride = null) {
+            const d = parseInt(des) || 0;
+            const initBonus = this.calcInitiativeBonus(d);
+            const d1 = diceOverride ? diceOverride[0] : Math.floor(Math.random() * 6) + 1;
+            const d2 = diceOverride ? diceOverride[1] : Math.floor(Math.random() * 6) + 1;
+            const diceSum = d1 + d2;
+            const total = diceSum + d + initBonus;
+
+            return {
+                d1,
+                d2,
+                diceSum,
+                des: d,
+                initBonus,
+                total,
+                formulaString: `2d6 [${d1}+${d2}] + DES (${d}) + Bônus (${initBonus}) = ${total}`
+            };
+        },
+
+        /**
+         * 3. Redução Automática de Condições no início do turno
+         */
+        processTurnConditions(conditions = []) {
+            const remaining = [];
+            const expired = [];
+            const messages = [];
+
+            (conditions || []).forEach(cond => {
+                const currentDuration = parseInt(cond.duration) || 1;
+                const newDuration = currentDuration - 1;
+
+                if (newDuration <= 0) {
+                    expired.push({ ...cond, duration: 0 });
+                    messages.push(`✨ Condição "${cond.name}" expirou!`);
+                } else {
+                    remaining.push({ ...cond, duration: newDuration });
+                    messages.push(`⏳ "${cond.name}" dura mais ${newDuration} rodada(s).`);
+                }
+            });
+
+            return {
+                conditions: remaining,
+                expired,
+                messages
+            };
+        },
+
+        /**
+         * 4. Resolução em 1 Clique: Ataque, Defesa Oposta, Dano e Redução de Dano (RD)
+         */
+        resolveAttackAndDamage({
+            attacker = { name: 'Atacante', attrVal: 3, skillBonus: 2, forVal: 3 },
+            defender = { name: 'Alvo', des: 2, defenseSkill: 1, rd: 2, pv: 20, maxPv: 20, con: 2, forStat: 2 },
+            weapon = { name: 'Espada Longa', baseDice: 1, baseMod: 2 },
+            diceOverrideAttack = null,
+            diceOverrideDefense = null,
+            diceOverrideDamage = null
+        }) {
+            // A) Teste de Ataque
+            const aD1 = diceOverrideAttack ? diceOverrideAttack[0] : Math.floor(Math.random() * 6) + 1;
+            const aD2 = diceOverrideAttack ? diceOverrideAttack[1] : Math.floor(Math.random() * 6) + 1;
+            const aDiceSum = aD1 + aD2;
+            const attackTotal = aDiceSum + (attacker.attrVal || 0) + (attacker.skillBonus || 0);
+
+            // B) Teste de Defesa Oposta
+            const dD1 = diceOverrideDefense ? diceOverrideDefense[0] : Math.floor(Math.random() * 6) + 1;
+            const dD2 = diceOverrideDefense ? diceOverrideDefense[1] : Math.floor(Math.random() * 6) + 1;
+            const dDiceSum = dD1 + dD2;
+            const defenseTotal = dDiceSum + (defender.des || 0) + (defender.defenseSkill || 0);
+
+            // Críticos
+            const isCrit = (aDiceSum === 12);
+            const isFumble = (aDiceSum === 2);
+            const isHit = isCrit || (!isFumble && attackTotal >= defenseTotal);
+
+            let rawDamage = 0;
+            let finalDamage = 0;
+            let forceMod = 0;
+            let dmgDiceRolls = [];
+
+            if (isHit) {
+                // Cálculo de Dano: Arma + Bônus de Força
+                const numDice = weapon.baseDice || 1;
+                for (let i = 0; i < numDice; i++) {
+                    const dRoll = diceOverrideDamage ? diceOverrideDamage[i] || 4 : Math.floor(Math.random() * 6) + 1;
+                    dmgDiceRolls.push(dRoll);
+                    rawDamage += dRoll;
+                }
+                rawDamage += (weapon.baseMod || 0);
+
+                // Dano de Força Oficial (+2d6)
+                const fVal = attacker.forVal || 2;
+                if (fVal === 1) forceMod = -4;
+                else if (fVal === 2) forceMod = -2;
+                else if (fVal === 3) forceMod = 0;
+                else if (fVal === 4) forceMod = 1;
+                else if (fVal === 5) forceMod = 2;
+                else if (fVal >= 6) forceMod = 4; // FOR 6+ aplica dano massivo
+
+                rawDamage = Math.max(1, rawDamage + forceMod);
+
+                // Crítico = Dano Dobrado
+                if (isCrit) {
+                    rawDamage *= 2;
+                }
+
+                // Subtração de RD (Redução de Dano)
+                const rd = defender.rd || 0;
+                finalDamage = Math.max(0, rawDamage - rd);
+            }
+
+            const currentPv = defender.pv !== undefined ? defender.pv : 20;
+            const newPv = isHit ? currentPv - finalDamage : currentPv;
+
+            // Status de Inconsciência / Morte
+            const isDying = newPv <= 0;
+            const maxNegativePv = -((defender.con || 2) + (defender.forStat || 2) + 10);
+            const isInstantDead = newPv <= maxNegativePv;
+
+            let description = '';
+            if (isFumble) {
+                description = `💥 ${attacker.name} teve uma FALHA CRÍTICA no ataque contra ${defender.name}! (Dados: [1+1]=2)`;
+            } else if (isCrit) {
+                description = `✨ ACERTO CRÍTICO! ${attacker.name} atingiu ${defender.name} (Ataque ${attackTotal} vs Defesa ${defenseTotal}). Dano Dobrado: ${rawDamage} - RD ${defender.rd || 0} = ${finalDamage} PVs aplicados!`;
+            } else if (isHit) {
+                description = `⚔️ ${attacker.name} acertou ${defender.name}: Ataque ${attackTotal} vs Defesa ${defenseTotal} [SUCESSO]. Dano: ${rawDamage} - RD ${defender.rd || 0} = ${finalDamage} PVs aplicados!`;
+            } else {
+                description = `🛡️ ${defender.name} defendeu o ataque de ${attacker.name}! (Ataque ${attackTotal} vs Defesa ${defenseTotal})`;
+            }
+
+            return {
+                isHit,
+                isCrit,
+                isFumble,
+                attackTotal,
+                defenseTotal,
+                aD1, aD2, aDiceSum,
+                dD1, dD2, dDiceSum,
+                rawDamage,
+                rd: defender.rd || 0,
+                finalDamage,
+                previousPv: currentPv,
+                newPv,
+                isDying,
+                isInstantDead,
+                description
+            };
+        },
+
+        /**
+         * 5. Teste de Morte Automático (+2d6 v2.3)
+         * - Resultado >= 6: Sucesso (permanece vivo)
+         * - Resultado < 6: Fracasso (+1 failure)
+         * - Resultado == 12: Estabilização Automática!
+         * - 3 Fracassos: MORTO
+         */
+        resolveDeathSave({ combatant = { name: 'Herói', deathFailures: 0 }, diceOverride = null }) {
+            const d1 = diceOverride ? diceOverride[0] : Math.floor(Math.random() * 6) + 1;
+            const d2 = diceOverride ? diceOverride[1] : Math.floor(Math.random() * 6) + 1;
+            const sum = d1 + d2;
+
+            let currentFailures = combatant.deathFailures || 0;
+            let isStabilized = false;
+            let isDead = false;
+            let outcome = '';
+
+            if (sum === 12) {
+                isStabilized = true;
+                currentFailures = 0;
+                outcome = `✨ Estabilização Automática! (Rolou 12). Perigo de morte imediata removido.`;
+            } else if (sum >= 6) {
+                outcome = `🛡️ Sucesso no Teste de Morte (Rolou ${sum}). Permanece vivo e resistindo.`;
+            } else {
+                currentFailures += 1;
+                outcome = `💀 Fracasso no Teste de Morte (Rolou ${sum}). Marcador de Fracasso: ${currentFailures}/3.`;
+                if (currentFailures >= 3) {
+                    isDead = true;
+                    outcome += ` ☠️ MORTE DEFINITIVA! O combatente sucumbiu aos ferimentos.`;
+                }
+            }
+
+            return {
+                d1,
+                d2,
+                sum,
+                deathFailures: currentFailures,
+                isStabilized,
+                isDead,
+                isSuccess: sum >= 6,
+                outcome,
+                logString: `[Teste de Morte] ${combatant.name} rolou 2d6 [${d1}+${d2}] = ${sum}: ${outcome}`
+            };
+        },
+
+        /**
+         * Recuperação e Estabilização de Combatente
+         */
+        healOrStabilizeCombatant({ combatant = { pv: 0, maxPv: 20 }, healAmount = 5 }) {
+            const heal = parseInt(healAmount) || 1;
+            const prevPv = combatant.pv || 0;
+            const newPv = Math.min(combatant.maxPv || 20, Math.max(1, prevPv + heal));
+
+            return {
+                previousPv: prevPv,
+                newPv,
+                deathFailures: 0,
+                isStabilized: true,
+                isDying: false,
+                isDead: false,
+                message: `💚 ${combatant.name} recebeu primeiros socorros/cura (+${heal} PVs) e foi ESTABILIZADO!`
+            };
+        },
+
+        /**
          * Bônus Efetivo Total de um Atributo em teste contra humano
          */
         calcEffectiveAttributeBonus(attrValue, vsHuman = true) {

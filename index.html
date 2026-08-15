@@ -550,32 +550,48 @@
                 </div>
             </section>
 
-            <!-- TAB 4: GERENCIADOR DE COMBATE -->
+            <!-- TAB 4: GERENCIADOR DE COMBATE (+2d6 v2.3) -->
             <section id="tab-combat" class="glass-panel rounded-2xl p-6 shadow-2xl hidden">
-                <div class="flex justify-between items-center mb-6 pb-3 border-b border-slate-800">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6 pb-3 border-b border-slate-800">
                     <div>
                         <h2 class="font-cinzel text-lg font-bold text-red-400 flex items-center gap-2">
-                            <i class="fa-solid fa-swords text-red-400"></i> Rastreador de Combate & Iniciativa
+                            <i class="fa-solid fa-swords text-red-400"></i> Gestão de Turnos & Iniciativa (+2d6)
                         </h2>
-                        <p class="text-[11px] text-gray-400">Sincronizado na sala: Iniciativa = 2d6 + Bônus de DES</p>
+                        <p class="text-[11px] text-gray-400">Iniciativa Oficial: 2d6 + DES + (DES&ge;3 ? DES - 2 : 0) &middot; Redução Automática de Condições</p>
                     </div>
-                    <div class="flex gap-2">
-                        <button type="button" onclick="rollAllCombatInitiatives()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-600 text-xs text-white rounded-lg font-cinzel font-bold">
-                            <i class="fa-solid fa-rotate-right mr-1"></i> Rolar Todos
+                    <div class="flex flex-wrap gap-2">
+                        <button type="button" onclick="startCombat()" class="px-3.5 py-2 bg-gradient-to-r from-red-600 to-amber-600 hover:from-red-500 hover:to-amber-500 text-white text-xs rounded-xl font-cinzel font-bold shadow-lg transition flex items-center gap-1.5">
+                            <i class="fa-solid fa-play"></i> Iniciar Combate
                         </button>
-                        <button type="button" onclick="advanceCombatTurn()" class="px-3 py-1.5 bg-red-600 hover:bg-red-500 text-white text-xs rounded-lg font-cinzel font-bold">
+                        <button type="button" onclick="openAttackModal()" class="px-3.5 py-2 bg-gradient-to-r from-cyan-600 to-emerald-600 hover:from-cyan-500 hover:to-emerald-500 text-slate-950 text-xs rounded-xl font-cinzel font-bold shadow-lg transition flex items-center gap-1.5">
+                            <i class="fa-solid fa-crosshairs"></i> Ataque em 1 Clique
+                        </button>
+                        <button type="button" onclick="advanceCombatTurn()" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-600 text-cyan-300 text-xs rounded-xl font-cinzel font-bold transition flex items-center gap-1.5">
                             Próximo Turno <i class="fa-solid fa-forward ml-1"></i>
                         </button>
+                        <button type="button" onclick="openAddCombatantPrompt()" class="px-3 py-2 bg-slate-900 hover:bg-slate-800 border border-slate-700 text-gray-300 text-xs rounded-xl font-cinzel transition">
+                            + Combatente
+                        </button>
                     </div>
                 </div>
 
-                <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 mb-4 flex justify-between items-center">
-                    <span class="text-xs uppercase font-cinzel text-gray-400">Rodada Atual:</span>
-                    <span id="combat-round-counter" class="font-cinzel font-bold text-amber-400 text-lg">Rodada 1</span>
+                <!-- Round Counter Banner -->
+                <div class="bg-slate-950/80 p-4 rounded-xl border border-slate-800 mb-4 flex justify-between items-center">
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-hourglass-half text-amber-400"></i>
+                        <span class="text-xs uppercase font-cinzel text-gray-400">Estado da Batalha:</span>
+                    </div>
+                    <span id="combat-round-counter" class="font-cinzel font-bold text-amber-400 text-lg bg-amber-950/60 border border-amber-500/50 px-3 py-0.5 rounded-lg shadow">Rodada 1</span>
                 </div>
 
-                <div id="combatants-table-container" class="space-y-2">
-                    <!-- Tabela de Combatentes sincronizada -->
+                <!-- Combat Events Log (Expirations & Turn Changes) -->
+                <div id="combat-log-container" class="mb-4 p-3 rounded-xl bg-black/40 border border-slate-800/80 text-xs space-y-1 max-h-24 overflow-y-auto chat-scroll hidden">
+                    <!-- Avisos de condições e turnos -->
+                </div>
+
+                <!-- Combatants Table / Cards List -->
+                <div id="combatants-table-container" class="space-y-2.5">
+                    <!-- Tabela de Combatentes renderizada dinamicamente -->
                 </div>
             </section>
 
@@ -713,6 +729,59 @@
             <div class="flex justify-end gap-2">
                 <button type="button" onclick="document.getElementById('nickname-modal').classList.add('hidden')" class="px-3 py-1.5 bg-slate-800 text-gray-300 text-xs rounded-lg font-cinzel">Cancelar</button>
                 <button type="button" onclick="document.getElementById('nickname-modal').classList.add('hidden')" class="px-4 py-1.5 bg-cyan-600 text-slate-950 font-bold text-xs rounded-lg font-cinzel">Salvar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Resolução de Ataque e Dano em 1 Clique -->
+    <div id="attack-modal" class="fixed inset-0 bg-black/85 backdrop-blur-md hidden items-center justify-center p-4 z-50">
+        <div class="glass-panel p-6 rounded-3xl max-w-md w-full border border-red-500/40 shadow-2xl">
+            <div class="flex justify-between items-center mb-4 pb-2 border-b border-slate-800">
+                <h3 class="font-cinzel text-base font-bold text-red-400 flex items-center gap-2">
+                    <i class="fa-solid fa-crosshairs"></i> Ataque em 1 Clique (+2d6)
+                </h3>
+                <button type="button" onclick="closeAttackModal()" class="text-gray-400 hover:text-white text-lg">&times;</button>
+            </div>
+
+            <div class="space-y-4 mb-5">
+                <div>
+                    <label class="block text-xs uppercase font-cinzel font-bold text-gray-400 mb-1">Combatente Atacante</label>
+                    <select id="attack-source-select" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:border-red-400"></select>
+                </div>
+
+                <div>
+                    <label class="block text-xs uppercase font-cinzel font-bold text-gray-400 mb-1">Arma Selecionada</label>
+                    <select id="attack-weapon-select" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:border-red-400">
+                        <option value="espada_longa" data-dice="1" data-mod="2">Espada Longa (1d6+2 + FOR)</option>
+                        <option value="machado_batalha" data-dice="2" data-mod="0">Machado de Batalha (2d6 + FOR)</option>
+                        <option value="arco_composto" data-dice="1" data-mod="3">Arco Composto (1d6+3 + DES)</option>
+                        <option value="adaga_furtiva" data-dice="1" data-mod="-1">Adaga / Faca (1d6-1 + DES)</option>
+                        <option value="montante_pesado" data-dice="2" data-mod="4">Montante de Duas Mãos (2d6+4 + FOR)</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs uppercase font-cinzel font-bold text-gray-400 mb-1">Alvo do Ataque (Defesa Oposta)</label>
+                    <select id="attack-target-select" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:border-red-400"></select>
+                </div>
+            </div>
+
+            <div class="flex gap-2">
+                <button type="button" onclick="closeAttackModal()" class="w-1/3 py-2.5 bg-slate-800 text-gray-300 text-xs rounded-xl font-cinzel">Cancelar</button>
+                <button type="button" onclick="executeOneClickAttack()" class="w-2/3 py-2.5 bg-gradient-to-r from-red-600 to-amber-600 hover:from-red-500 hover:to-amber-500 text-white font-cinzel font-bold text-xs rounded-xl shadow-lg transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-burst"></i> Desferir Ataque
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Banner Toast de Transição de Turno (Centralizado e Cintilante) -->
+    <div id="turn-toast-banner" class="fixed top-12 left-1/2 -translate-x-1/2 z-50 pointer-events-none transition-all duration-500 opacity-0 transform -translate-y-4">
+        <div class="glass-panel px-6 py-3 rounded-2xl border-2 border-emerald-400 bg-slate-950/95 shadow-[0_0_30px_rgba(16,185,129,0.5)] flex items-center gap-3">
+            <span class="text-xl animate-bounce">⚔️</span>
+            <div>
+                <div class="text-[10px] uppercase font-mono font-bold text-emerald-400">Mudança de Turno</div>
+                <div id="turn-toast-name" class="text-sm font-cinzel font-bold text-white">É a vez de Arthur Lâmina!</div>
             </div>
         </div>
     </div>
@@ -1135,37 +1204,140 @@
         };
 
         // =========================================================================
-        // 4. COMBATE & INICIATIVA SINCRONIZADA
+        // 4. COMBATE, GESTÃO DE TURNOS & CONDIÇÕES (+2d6)
         // =========================================================================
 
-        function renderCombatantsList(combatants = [], round = 1) {
+        let localCombatState = {
+            combatRound: 1,
+            combatants: [
+                {
+                    id: 'pc-1',
+                    name: 'Arthur Lâmina',
+                    des: 3,
+                    init: 12,
+                    pv: 20,
+                    maxPv: 20,
+                    isNpc: false,
+                    ownerUid: currentUserId,
+                    active: true,
+                    conditions: [
+                        { id: 'cond-1', name: 'Em Chamas', duration: 3, icon: 'fa-fire', color: 'text-red-400' }
+                    ]
+                },
+                {
+                    id: 'npc-1',
+                    name: 'Goblin Sentinela',
+                    des: 4,
+                    init: 10,
+                    pv: 12,
+                    maxPv: 12,
+                    isNpc: true,
+                    ownerUid: currentUserId,
+                    active: false,
+                    conditions: [
+                        { id: 'cond-2', name: 'Pasmar', duration: 2, icon: 'fa-dizzy', color: 'text-amber-400' }
+                    ]
+                }
+            ]
+        };
+
+        function getActiveCombatants() {
+            if (currentRoomData && currentRoomData.combatants) {
+                return currentRoomData.combatants;
+            }
+            return localCombatState.combatants;
+        }
+
+        function getActiveCombatRound() {
+            if (currentRoomData && currentRoomData.combatRound) {
+                return currentRoomData.combatRound;
+            }
+            return localCombatState.combatRound;
+        }
+
+        function renderCombatantsList(combatants = null, round = null) {
+            const list = combatants || getActiveCombatants();
+            const r = round || getActiveCombatRound();
+
             const container = document.getElementById('combatants-table-container');
             const roundEl = document.getElementById('combat-round-counter');
-            if (roundEl) roundEl.innerText = `Rodada ${round}`;
+            if (roundEl) roundEl.innerText = `Rodada ${r}`;
             if (!container) return;
 
-            if (combatants.length === 0) {
-                container.innerHTML = '<div class="text-xs text-gray-500 italic p-3 text-center">Nenhum combatente ativo.</div>';
+            if (list.length === 0) {
+                container.innerHTML = '<div class="text-xs text-gray-500 italic p-4 text-center">Nenhum combatente na arena. Clique em "+ Combatente" para adicionar.</div>';
                 return;
             }
 
-            container.innerHTML = combatants.map((c, idx) => {
+            container.innerHTML = list.map((c, idx) => {
                 const canEdit = isMaster || (c.ownerUid === currentUserId);
+                const desVal = c.des || 2;
+                const initBonus = typeof CharacterSheetRules !== 'undefined' ? CharacterSheetRules.calcInitiativeBonus(desVal) : 0;
+                const isDying = c.pv <= 0 && !c.isDead;
+                const isDead = c.isDead;
+
+                let activeStyle = 'border border-slate-800 bg-slate-950/80';
+                if (isDead) {
+                    activeStyle = 'border border-red-950 bg-black/80 opacity-60';
+                } else if (c.active) {
+                    activeStyle = 'border-2 border-emerald-400 bg-gradient-to-r from-emerald-950/50 via-slate-900/90 to-slate-900/90 shadow-[0_0_20px_rgba(16,185,129,0.35)] ring-1 ring-emerald-400/50';
+                } else if (isDying) {
+                    activeStyle = 'border-2 border-red-500/80 bg-red-950/40 animate-pulse';
+                }
+
+                const conditionsHtml = (c.conditions || []).map(cond => `
+                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-900 border border-slate-700 ${cond.color || 'text-cyan-300'} font-mono shadow">
+                        <i class="fa-solid ${cond.icon || 'fa-hourglass-start'}"></i> ${cond.name} <strong class="text-white">(${cond.duration}r)</strong>
+                    </span>
+                `).join('');
+
                 return `
-                    <div class="flex items-center justify-between p-3 rounded-xl border ${c.active ? 'bg-red-950/40 border-red-500/80 shadow-md' : 'bg-slate-950/80 border-slate-800'} text-xs">
+                    <div class="flex flex-col md:flex-row items-start md:items-center justify-between p-3.5 rounded-2xl ${activeStyle} transition-all duration-300 gap-3">
                         <div class="flex items-center gap-3">
-                            <span class="w-7 h-7 rounded-lg bg-slate-900 border border-slate-700 flex items-center justify-center font-mono font-bold text-cyan-300">${c.init}</span>
+                            <div class="flex flex-col items-center justify-center w-11 h-11 rounded-xl bg-slate-900 border border-slate-700 font-mono font-bold ${c.active ? 'text-emerald-300 border-emerald-500' : 'text-gray-300'} shadow">
+                                <span class="text-[9px] text-gray-500 font-cinzel leading-none">INIT</span>
+                                <span class="text-base leading-tight">${c.init || 0}</span>
+                            </div>
                             <div>
-                                <div class="font-cinzel font-bold ${c.isNpc ? 'text-red-300' : 'text-emerald-300'}">${c.name} ${c.active ? '<span class="text-[10px] text-amber-400 font-mono">(Turno Atual)</span>' : ''}</div>
-                                <div class="text-[10px] text-gray-400">${c.isNpc ? 'Monstro / PNJ' : 'Personagem'}</div>
+                                <div class="flex items-center gap-2">
+                                    <h4 class="font-cinzel font-bold text-sm ${isDead ? 'text-gray-500 line-through' : (c.isNpc ? 'text-red-300' : 'text-emerald-300')}">${c.name}</h4>
+                                    ${c.active && !isDead ? '<span class="px-2 py-0.5 rounded-full bg-emerald-500 text-slate-950 font-cinzel font-bold text-[9px] shadow animate-pulse">⭐ SUA VEZ</span>' : ''}
+                                    ${isDying ? '<span class="px-2 py-0.5 rounded-full bg-red-600 text-white font-mono font-bold text-[9px] shadow animate-bounce">💀 MORRENDO</span>' : ''}
+                                    ${isDead ? '<span class="px-2 py-0.5 rounded-full bg-slate-800 text-red-400 font-mono font-bold text-[9px]">☠️ MORTO</span>' : ''}
+                                </div>
+                                <div class="text-[10px] text-gray-400 font-mono mt-0.5">
+                                    DES ${desVal} (+${initBonus} Init) &middot; RD ${c.rd || 0} &middot; ${c.isNpc ? 'Monstro' : 'Herói'}
+                                    ${c.deathFailures ? `&middot; <span class="text-red-400 font-bold">Fracassos Morte: ${c.deathFailures}/3</span>` : ''}
+                                </div>
                             </div>
                         </div>
-                        <div class="flex items-center gap-2 font-mono">
-                            <span class="text-gray-400">PV:</span>
-                            <span class="font-bold text-emerald-400">${c.pv}/${c.maxPv}</span>
+
+                        <!-- Conditions List -->
+                        <div class="flex flex-wrap gap-1.5 items-center">
+                            ${conditionsHtml}
+                            ${canEdit && !isDead ? `
+                                <button type="button" onclick="promptAddCondition('${c.id}')" class="text-[10px] px-2 py-0.5 bg-slate-900 hover:bg-slate-800 border border-slate-700 text-cyan-300 rounded-full font-cinzel transition">
+                                    + Condição
+                                </button>
+                            ` : ''}
+                        </div>
+
+                        <!-- PV Control & Actions -->
+                        <div class="flex items-center gap-2.5 font-mono w-full md:w-auto justify-between md:justify-end">
+                            <div class="flex items-center gap-1.5">
+                                <span class="text-xs text-gray-400">PV:</span>
+                                <span class="text-xs font-bold ${c.pv <= 0 ? 'text-red-500' : (c.pv <= (c.maxPv * 0.3) ? 'text-amber-400' : 'text-emerald-400')}">${c.pv}/${c.maxPv}</span>
+                            </div>
                             ${canEdit ? `
-                                <button type="button" onclick="modifyCombatantPV('${c.id}', -1)" class="w-6 h-6 rounded bg-slate-800 hover:bg-slate-700 text-red-400 font-bold">-</button>
-                                <button type="button" onclick="modifyCombatantPV('${c.id}', 1)" class="w-6 h-6 rounded bg-slate-800 hover:bg-slate-700 text-emerald-400 font-bold">+</button>
+                                <div class="flex items-center gap-1">
+                                    <button type="button" onclick="modifyCombatantPV('${c.id}', -1)" class="w-6 h-6 rounded-lg bg-slate-800 hover:bg-slate-700 text-red-400 font-bold flex items-center justify-center border border-slate-700 text-xs">-</button>
+                                    <button type="button" onclick="modifyCombatantPV('${c.id}', 1)" class="w-6 h-6 rounded-lg bg-slate-800 hover:bg-slate-700 text-emerald-400 font-bold flex items-center justify-center border border-slate-700 text-xs">+</button>
+                                    ${isDying || isDead ? `
+                                        <button type="button" onclick="healOrStabilizeCombatantAction('${c.id}')" class="px-2 py-0.5 bg-emerald-950 hover:bg-emerald-900 border border-emerald-500 text-emerald-300 text-[10px] font-cinzel font-bold rounded-lg transition" title="Primeiros Socorros / Curar">
+                                            💚 Curar
+                                        </button>
+                                    ` : ''}
+                                </div>
                             ` : ''}
                         </div>
                     </div>
@@ -1173,56 +1345,269 @@
             }).join('');
         }
 
-        window.advanceCombatTurn = async function() {
-            if (!isMaster || !currentRoomId || !currentRoomData) {
-                alert("Apenas o Mestre pode avançar turnos de combate.");
+        function logCombatEvent(message, type = 'info') {
+            const logBox = document.getElementById('combat-log-container');
+            if (!logBox) return;
+            logBox.classList.remove('hidden');
+
+            const item = document.createElement('div');
+            item.className = type === 'alert' ? 'text-amber-300 font-bold' : (type === 'expired' ? 'text-emerald-300' : 'text-cyan-300');
+            item.innerHTML = `<span class="text-gray-500 font-mono">[${new Date().toLocaleTimeString()}]</span> ${message}`;
+            logBox.appendChild(item);
+            logBox.scrollTop = logBox.scrollHeight;
+        }
+
+        function showTurnToast(characterName) {
+            const banner = document.getElementById('turn-toast-banner');
+            const nameEl = document.getElementById('turn-toast-name');
+            if (!banner || !nameEl) return;
+
+            nameEl.innerText = `É a vez de ${characterName}!`;
+            banner.classList.remove('opacity-0', '-translate-y-4');
+            banner.classList.add('opacity-100', 'translate-y-0');
+
+            setTimeout(() => {
+                banner.classList.remove('opacity-100', 'translate-y-0');
+                banner.classList.add('opacity-0', '-translate-y-4');
+            }, 2500);
+        }
+
+        window.startCombat = async function() {
+            if (currentRoomId && !isMaster) {
+                alert("Apenas o Mestre pode iniciar o combate oficial na sala.");
                 return;
             }
-            const combatants = currentRoomData.combatants || [];
+
+            const combatants = getActiveCombatants().map(c => {
+                const desVal = c.des || 2;
+                const initRes = CharacterSheetRules.calcCombatInitiative(desVal);
+                return {
+                    ...c,
+                    init: initRes.total,
+                    active: false,
+                    isDead: false,
+                    deathFailures: 0
+                };
+            });
+
+            // 1. Ordena decrescente por iniciativa
+            combatants.sort((a, b) => b.init - a.init);
+
+            // 2. Primeiro combatente ativo
+            if (combatants.length > 0) {
+                combatants[0].active = true;
+                showTurnToast(combatants[0].name);
+            }
+
+            const round = 1;
+            logCombatEvent(`⚔️ Combate Iniciado! <strong>${combatants[0]?.name}</strong> tem a iniciativa mais alta (${combatants[0]?.init}).`, 'alert');
+            publishMessage('Combate', `⚔️ Combate Iniciado (Rodada 1)! O primeiro turno é de <strong>${combatants[0]?.name}</strong> (Iniciativa ${combatants[0]?.init}).`, true);
+
+            if (currentRoomId) {
+                await updateDoc(doc(db, "rooms", currentRoomId), {
+                    combatants,
+                    combatRound: round
+                });
+            } else {
+                localCombatState.combatants = combatants;
+                localCombatState.combatRound = round;
+                renderCombatantsList(combatants, round);
+            }
+        };
+
+        window.advanceCombatTurn = async function() {
+            if (currentRoomId && !isMaster) {
+                alert("Apenas o Mestre pode avançar turnos na sala.");
+                return;
+            }
+
+            const combatants = [...getActiveCombatants()];
             if (combatants.length === 0) return;
 
             let activeIdx = combatants.findIndex(c => c.active);
-            combatants.forEach(c => c.active = false);
+            if (activeIdx === -1) activeIdx = 0;
+
+            combatants[activeIdx].active = false;
 
             let nextIdx = (activeIdx + 1) % combatants.length;
-            let round = currentRoomData.combatRound || 1;
-            if (nextIdx === 0) round++;
+            let round = getActiveCombatRound();
 
-            combatants[nextIdx].active = true;
+            // Pula combatentes mortos
+            let attempts = 0;
+            while (combatants[nextIdx].isDead && attempts < combatants.length) {
+                nextIdx = (nextIdx + 1) % combatants.length;
+                attempts++;
+            }
 
-            await updateDoc(doc(db, "rooms", currentRoomId), {
-                combatants,
-                combatRound: round
-            });
+            if (nextIdx === 0) {
+                round++;
+                logCombatEvent(`⏳ <strong>Início da Rodada ${round}!</strong>`, 'alert');
+                publishMessage('Combate', `⏳ Início da <strong>Rodada ${round}</strong>!`, true);
+            }
+
+            const nextCombatant = combatants[nextIdx];
+            nextCombatant.active = true;
+            showTurnToast(nextCombatant.name);
+
+            // 3. Redução Automática da Duração de Condições no início do turno
+            if (nextCombatant.conditions && nextCombatant.conditions.length > 0) {
+                const processRes = CharacterSheetRules.processTurnConditions(nextCombatant.conditions);
+                nextCombatant.conditions = processRes.conditions;
+
+                processRes.expired.forEach(exp => {
+                    logCombatEvent(`✨ A condição <strong>${exp.name}</strong> de <strong>${nextCombatant.name}</strong> expirou!`, 'expired');
+                    publishMessage('Combate', `✨ A condição <strong>${exp.name}</strong> expirou para <strong>${nextCombatant.name}</strong>!`);
+                });
+
+                processRes.conditions.forEach(cond => {
+                    logCombatEvent(`⏳ Condição <strong>${cond.name}</strong> de <strong>${nextCombatant.name}</strong>: resta ${cond.duration} rodada(s).`);
+                });
+            }
+
+            // PROMPT 3: Teste de Morte Automático se PV <= 0
+            if (nextCombatant.pv <= 0 && !nextCombatant.isDead && !nextCombatant.isStabilized) {
+                const deathRes = CharacterSheetRules.resolveDeathSave(nextCombatant);
+                nextCombatant.deathFailures = deathRes.deathFailures;
+                nextCombatant.isStabilized = deathRes.isStabilized;
+                nextCombatant.isDead = deathRes.isDead;
+
+                logCombatEvent(deathRes.logString, deathRes.isDead ? 'alert' : 'info');
+                publishMessage('Morte', deathRes.logString, true);
+
+                if (deathRes.isDead) {
+                    nextCombatant.active = false;
+                }
+            }
+
+            logCombatEvent(`🎯 Turno ativo de: <strong>${nextCombatant.name}</strong> (Iniciativa ${nextCombatant.init})`);
+
+            if (currentRoomId) {
+                await updateDoc(doc(db, "rooms", currentRoomId), {
+                    combatants,
+                    combatRound: round
+                });
+            } else {
+                localCombatState.combatants = combatants;
+                localCombatState.combatRound = round;
+                renderCombatantsList(combatants, round);
+            }
         };
 
-        window.modifyCombatantPV = async function(combatantId, delta) {
-            if (!currentRoomId || !currentRoomData) return;
-            const combatants = (currentRoomData.combatants || []).map(c => {
+        // PROMPT 2: Resolução em 1 Clique (Ataque, Defesa Oposta, Dano e RD)
+        window.openAttackModal = function() {
+            const combatants = getActiveCombatants();
+            const sourceSelect = document.getElementById('attack-source-select');
+            const targetSelect = document.getElementById('attack-target-select');
+            if (!sourceSelect || !targetSelect) return;
+
+            sourceSelect.innerHTML = combatants.map(c => `
+                <option value="${c.id}">${c.name} (DES ${c.des || 2} &middot; FOR ${c.forVal || 2} &middot; PV ${c.pv}/${c.maxPv})</option>
+            `).join('');
+
+            targetSelect.innerHTML = combatants.map(c => `
+                <option value="${c.id}">${c.name} (RD ${c.rd || 0} &middot; PV ${c.pv}/${c.maxPv})</option>
+            `).join('');
+
+            document.getElementById('attack-modal').classList.remove('hidden');
+        };
+
+        window.closeAttackModal = () => document.getElementById('attack-modal')?.classList.add('hidden');
+
+        window.executeOneClickAttack = async function() {
+            const sourceId = document.getElementById('attack-source-select').value;
+            const targetId = document.getElementById('attack-target-select').value;
+            const weaponSelect = document.getElementById('attack-weapon-select');
+            const selectedWeaponOpt = weaponSelect.options[weaponSelect.selectedIndex];
+
+            const combatants = getActiveCombatants();
+            const attacker = combatants.find(c => c.id === sourceId);
+            const defender = combatants.find(c => c.id === targetId);
+
+            if (!attacker || !defender) return alert("Selecione atacante e alvo válidos.");
+
+            const weapon = {
+                name: selectedWeaponOpt.text,
+                baseDice: parseInt(selectedWeaponOpt.dataset.dice) || 1,
+                baseMod: parseInt(selectedWeaponOpt.dataset.mod) || 0
+            };
+
+            const attackRes = CharacterSheetRules.resolveAttackAndDamage({
+                attacker: {
+                    name: attacker.name,
+                    attrVal: attacker.des || 3,
+                    skillBonus: 2,
+                    forVal: attacker.forVal || 3
+                },
+                defender: {
+                    name: defender.name,
+                    des: defender.des || 2,
+                    defenseSkill: 1,
+                    rd: defender.rd || 0,
+                    pv: defender.pv,
+                    maxPv: defender.maxPv,
+                    con: defender.con || 2,
+                    forStat: defender.forVal || 2
+                },
+                weapon
+            });
+
+            // Atualiza os PVs do defensor
+            defender.pv = attackRes.newPv;
+            if (defender.pv <= 0) {
+                defender.isDying = true;
+                const conditions = defender.conditions || [];
+                if (!conditions.some(cond => cond.name.includes('Inconsciente'))) {
+                    conditions.push({
+                        id: 'cond-dying-' + Date.now(),
+                        name: 'Inconsciente / Morrendo',
+                        duration: 5,
+                        icon: 'fa-skull',
+                        color: 'text-red-500'
+                    });
+                }
+                defender.conditions = conditions;
+            }
+
+            logCombatEvent(attackRes.description, attackRes.isCrit ? 'alert' : 'info');
+            publishMessage('Combate', attackRes.description, true);
+
+            closeAttackModal();
+
+            if (currentRoomId) {
+                await updateDoc(doc(db, "rooms", currentRoomId), { combatants });
+            } else {
+                localCombatState.combatants = combatants;
+                renderCombatantsList();
+            }
+        };
+
+        window.healOrStabilizeCombatantAction = async function(combatantId) {
+            const combatants = getActiveCombatants().map(c => {
                 if (c.id === combatantId) {
-                    if (!isMaster && c.ownerUid !== currentUserId) return c; // Bloqueio
-                    return { ...c, pv: Math.max(0, Math.min(c.maxPv, c.pv + delta)) };
+                    const healRes = CharacterSheetRules.healOrStabilizeCombatant({ combatant: c, healAmount: 5 });
+                    logCombatEvent(healRes.message, 'expired');
+                    publishMessage('Cura', healRes.message, true);
+                    return {
+                        ...c,
+                        pv: healRes.newPv,
+                        deathFailures: 0,
+                        isStabilized: true,
+                        isDying: false,
+                        isDead: false,
+                        conditions: (c.conditions || []).filter(cond => !cond.name.includes('Inconsciente'))
+                    };
                 }
                 return c;
             });
-            await updateDoc(doc(db, "rooms", currentRoomId), { combatants });
-        };
 
-        window.rollAllCombatInitiatives = async function() {
-            if (!isMaster || !currentRoomId || !currentRoomData) {
-                alert("Apenas o Mestre pode rolar iniciativas de todos.");
-                return;
+            if (currentRoomId) {
+                await updateDoc(doc(db, "rooms", currentRoomId), { combatants });
+            } else {
+                localCombatState.combatants = combatants;
+                renderCombatantsList();
             }
-            const combatants = (currentRoomData.combatants || []).map(c => {
-                const d1 = Math.floor(Math.random() * 6) + 1;
-                const d2 = Math.floor(Math.random() * 6) + 1;
-                return { ...c, init: d1 + d2 + 2 };
-            });
-            combatants.sort((a, b) => b.init - a.init);
-            if (combatants.length > 0) combatants[0].active = true;
-
-            await updateDoc(doc(db, "rooms", currentRoomId), { combatants });
         };
+
 
         // =========================================================================
         // 5. CHAT & ROLAGENS SINCRONIZADAS EM TEMPO REAL
