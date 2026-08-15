@@ -11,16 +11,16 @@ const DiceRoller = require('../src/core/dice-roller.js');
 const TacticalGrid = require('../src/modules/tactical-grid.js');
 const RoomSync = require('../src/modules/room-sync.js');
 const UIController = require('../src/modules/ui-controller.js');
+const CombatController = require('../src/modules/combat-controller.js');
+const FirestoreService = require('../src/modules/firestore-service.js');
 
 QUnit.module('Arquitetura Modular: src/core/combat-engine.js', function () {
 
     QUnit.test('1. CombatEngine: Cálculo de Iniciativa (+2d6)', function (assert) {
-        // DES 2 -> Bônus 0, 2d6 forçado para 7 -> 7 + 2 + 0 = 9
         const res1 = CombatEngine.calcInitiative(2, 7);
         assert.strictEqual(res1.total, 9, 'DES 2 com rolagem 7 resulta em 9');
         assert.strictEqual(res1.bonus, 0, 'Bônus de DES 2 é 0');
 
-        // DES 4 -> Bônus 2, 2d6 forçado para 8 -> 8 + 4 + 2 = 14
         const res2 = CombatEngine.calcInitiative(4, 8);
         assert.strictEqual(res2.total, 14, 'DES 4 com rolagem 8 resulta em 14');
         assert.strictEqual(res2.bonus, 2, 'Bônus de DES 4 é 2');
@@ -55,8 +55,6 @@ QUnit.module('Arquitetura Modular: src/core/combat-engine.js', function () {
         const defender = { name: 'Orc', des: 2, defenseSkill: 0, pv: 20, rd: 2 };
         const weapon = { name: 'Espada Longa', dice: 1, mod: 2, attrType: 'FOR', skillBonus: 1 };
 
-        // Atacante: 2d6=8 + FOR(3) + Perícia(1) = 12. Defensor: 2d6=6 + DES(2) = 8.
-        // Dano: 1d6=4 + mod(2) + FOR extra(1) = 7. RD=2 -> Dano final=5. Novo PV: 20 - 5 = 15.
         const res = CombatEngine.resolveAttack({
             attacker,
             defender,
@@ -73,15 +71,12 @@ QUnit.module('Arquitetura Modular: src/core/combat-engine.js', function () {
     QUnit.test('5. CombatEngine: Teste de Morte e Estabilização', function (assert) {
         const dying = { name: 'Ferido', pv: 0, deathFailures: 1 };
 
-        // Rolagem 11 -> Estabilizou
         const res1 = CombatEngine.resolveDeathSave(dying, 11);
         assert.ok(res1.isStabilized, 'Rolagem >= 11 estabiliza');
 
-        // Rolagem 4 -> Falha
         const res2 = CombatEngine.resolveDeathSave(dying, 4);
         assert.strictEqual(res2.deathFailures, 2, 'Falha incrementou contador para 2');
 
-        // Cura
         const healed = CombatEngine.healOrStabilize(dying, 5);
         assert.strictEqual(healed.pv, 5, 'PV restaurado para 5');
         assert.ok(healed.isStabilized, 'Combatente estabilizado após cura');
@@ -97,17 +92,14 @@ QUnit.module('Arquitetura Modular: src/core/dice-roller.js', function () {
     });
 
     QUnit.test('2. DiceRoller: Execução de Teste 2d6 vs CD e Críticos', function (assert) {
-        // Crítico de Sucesso (6+6)
         const critSuccess = DiceRoller.roll({ attrValue: 2, cd: 20, forcedD1: 6, forcedD2: 6 });
         assert.ok(critSuccess.isCriticalSuccess, '6+6 é acerto crítico');
         assert.ok(critSuccess.success, 'Acerto crítico é sucesso automático');
 
-        // Crítico de Falha (1+1)
         const critFail = DiceRoller.roll({ attrValue: 10, cd: 5, forcedD1: 1, forcedD2: 1 });
         assert.ok(critFail.isCriticalFailure, '1+1 é falha crítica');
         assert.notOk(critFail.success, 'Falha crítica é fracasso automático');
 
-        // Teste Normal: 2d6=7 + Attr 3 + CD 10 -> Total 10 (Sucesso)
         const normalRoll = DiceRoller.roll({ attrValue: 3, cd: 10, forcedD1: 3, forcedD2: 4 });
         assert.ok(normalRoll.success, 'Total 10 atinge CD 10');
         assert.strictEqual(normalRoll.total, 10, 'Total calculado 10');
@@ -126,7 +118,7 @@ QUnit.module('Arquitetura Modular: src/modules/tactical-grid.js', function () {
 
     QUnit.test('2. TacticalGrid: Cálculo de Distância em Metros e Quadrados', function (assert) {
         const p1 = { x: 0, y: 0 };
-        const p2 = { x: 120, y: 160 }; // dx = 3q, dy = 4q -> hipotenusa = 5q = 7.5m
+        const p2 = { x: 120, y: 160 };
         const dist = TacticalGrid.calculateDistance(p1, p2, 40, 1.5);
 
         assert.strictEqual(dist.squares, 5, 'Distância em quadrados é 5q');
@@ -153,7 +145,36 @@ QUnit.module('Arquitetura Modular: src/modules/room-sync.js & ui-controller.js',
         assert.strictEqual(typeof UIController.updateStatusBadge, 'function', 'updateStatusBadge existe');
     });
 
-    QUnit.test('3. Integração com index.html: Verificação de Imports', function (assert) {
+    QUnit.test('3. CombatController: Gerenciamento de Turnos e Iniciativa', function (assert) {
+        const combatants = [
+            { id: '1', name: 'Guerreiro', des: 3 },
+            { id: '2', name: 'Ladrão', des: 4 }
+        ];
+
+        const rolled = CombatController.rollInitiativeForAll(combatants);
+        assert.ok(rolled.length === 2, '2 combatentes rolados');
+        assert.ok(rolled[0].active, 'Primeiro combatente ativo');
+
+        const turnAdv = CombatController.advanceTurn(rolled, 1);
+        assert.ok(turnAdv.nextCombatant, 'Próximo combatente selecionado');
+        assert.strictEqual(typeof turnAdv.round, 'number', 'Rodada atualizada');
+    });
+
+    QUnit.test('4. FirestoreService: Geração de Códigos e Payloads', function (assert) {
+        const code = FirestoreService.generateRoomCode();
+        assert.strictEqual(code.length, 6, 'Código de sala de 6 dígitos');
+
+        const payload = FirestoreService.buildMessagePayload('Arthur', 'Olá mesa!', true);
+        assert.strictEqual(payload.author, 'Arthur', 'Autor correto no payload');
+        assert.strictEqual(payload.text, 'Olá mesa!', 'Texto correto');
+        assert.ok(payload.isRoll, 'isRoll marcado como true');
+
+        const roomDoc = FirestoreService.buildRoomDocument('Mesa Kuar-Tor', 'uid123', 'Mestre Nitro');
+        assert.strictEqual(roomDoc.name, 'Mesa Kuar-Tor', 'Nome da sala correto');
+        assert.ok(Array.isArray(roomDoc.combatants), 'Combatentes padrão incluídos');
+    });
+
+    QUnit.test('5. Integração com index.html: Verificação de Imports', function (assert) {
         const indexPath = path.resolve(__dirname, '../index.html');
         const content = fs.readFileSync(indexPath, 'utf-8');
 
@@ -162,5 +183,7 @@ QUnit.module('Arquitetura Modular: src/modules/room-sync.js & ui-controller.js',
         assert.ok(content.includes('src/modules/tactical-grid.js'), 'Import de tactical-grid.js presente');
         assert.ok(content.includes('src/modules/room-sync.js'), 'Import de room-sync.js presente');
         assert.ok(content.includes('src/modules/ui-controller.js'), 'Import de ui-controller.js presente');
+        assert.ok(content.includes('src/modules/combat-controller.js'), 'Import de combat-controller.js presente');
+        assert.ok(content.includes('src/modules/firestore-service.js'), 'Import de firestore-service.js presente');
     });
 });
