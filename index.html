@@ -960,15 +960,14 @@
             enableIndexedDbPersistence
         } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 
-        // Firebase Config
+        // Firebase Config (Sem analytics/telemetria para evitar bloqueadores de anúncio)
         const firebaseConfig = {
             apiKey: "AIzaSyDzdmWbibdIDwd1VkgOzne1Nd8l4WVBDXw",
             authDomain: "rpg---mesa.firebaseapp.com",
             projectId: "rpg---mesa",
             storageBucket: "rpg---mesa.firebasestorage.app",
             messagingSenderId: "724621847047",
-            appId: "1:724621847047:web:cb561e9792b26b80ab98a2",
-            measurementId: "G-E9YVLZMB0W"
+            appId: "1:724621847047:web:cb561e9792b26b80ab98a2"
         };
 
         // 1. Inicialização do Firebase
@@ -985,7 +984,7 @@
 
         // Estado Global da Aplicação
         let currentUser = null;
-        let currentUserId = null;
+        let currentUserId = "local_player";
         let currentRoomId = null;
         let currentRoomData = null;
         let isMaster = false;
@@ -995,8 +994,15 @@
         let isFogToolActive = false;
         let selectedCD = 10;
 
-        // Auto-login Anônimo como Fallback Silencioso
-        signInAnonymously(auth).catch((err) => console.log("Login anônimo inicial:", err.message));
+        // Carrega ficha local imediatamente no início
+        loadLocalSheet();
+
+        // Auto-login Anônimo como Fallback Silencioso com proteção para adblockers
+        signInAnonymously(auth).catch((err) => {
+            console.warn("[VTT] Firebase bloqueado por adblock/extensão (ERR_BLOCKED_BY_CLIENT). Operando 100% em Modo Local.");
+            if (window.UIController) UIController.updateStatusBadge(true, "Modo Local (Offline)");
+            else updateStatusBadge(true, "Modo Local (Offline)");
+        });
 
         // 1. Observador de Autenticação
         onAuthStateChanged(auth, (user) => {
