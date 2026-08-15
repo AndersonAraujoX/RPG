@@ -2,29 +2,58 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Regras para a Campanha Kuar-Tor VTT (+2d6)
-    
-    // 1. Fichas de Personagens
-    match /characters/{userId} {
-      allow read, write: if true;
+    // ============================================================================
+    // Regras de Segurança do Portal Kuar-Tor & VTT Realtime (+2d6)
+    // ============================================================================
+
+    // 1. Usuários e Perfis
+    match /users/{userId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == userId;
+
+      // Grimório Arcana do Jogador
+      match /grimoire/{grimoireId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
     }
 
-    // 2. Salas de Campanha, Tokens, Combate e Grid Tático
-    match /rooms/{roomId} {
-      allow read, write: if true;
+    // 2. Fichas de Personagens e Inventários
+    match /characters/{charId} {
+      allow read: if true;
+      allow create: if request.auth != null || request.resource.data.ownerUid != null;
+      allow update, delete: if true; // Permissivo para sincronização rápida de VTT e transferências de itens
+    }
 
-      // Subcoleção de Mensagens da Sala
+    // 3. Salas de Campanha, Tokens, Combate, Névoa e Puzzles
+    match /rooms/{roomId} {
+      allow read: if true;
+      allow create, update: if true;
+      allow delete: if request.auth != null && resource.data.hostUid == request.auth.uid;
+
+      // Subcoleção de Mensagens, Chat e Rolagens 2d6 da Sala
       match /messages/{messageId} {
+        allow read, create: if true;
+        allow update, delete: if request.auth != null;
+      }
+
+      // Subcoleção de Puzzles da Sala
+      match /puzzles/{puzzleId} {
         allow read, write: if true;
       }
     }
 
-    // 3. Chat & Rolagens Globais
+    // 4. Mensagens e Logs Globais
     match /messages/{messageId} {
-      allow read, write: if true;
+      allow read, create: if true;
     }
 
-    // Fallback permissivo para desenvolvimento e testes
+    // 5. Diário de Expedição
+    match /expedition_logs/{logId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    // Fallback permissivo para ambiente de desenvolvimento e testes
     match /{document=**} {
       allow read, write: if true;
     }

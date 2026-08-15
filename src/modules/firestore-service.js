@@ -1,7 +1,8 @@
 /**
  * @file firestore-service.js
  * @description Serviço modular de persistência e sincronização em tempo real do Firebase Firestore.
- * Abstrai consultas, listeners de salas, chat e fichas de personagens.
+ * Abstrai consultas, listeners de salas, chat, fichas de personagens, transações atômicas de inventário
+ * e persistência da Biblioteca Arcana / Grimório.
  * @module FirestoreService
  */
 
@@ -68,6 +69,123 @@
                     { id: 't3', name: 'Orc', x: 240, y: 200, color: 'bg-red-600', icon: 'fa-skull' }
                 ],
                 fogOfWar: []
+            };
+        },
+
+        // ========================================================
+        // Gestão de Fichas de Personagens (CRUD & Nuvem)
+        // ========================================================
+
+        /**
+         * Monta um objeto seguro de ficha de personagem para persistência no Firestore.
+         * @param {Object} data - Dados brutos do personagem
+         * @param {string} [ownerUid] - UID do dono
+         * @returns {Object} Objeto de ficha formatado
+         */
+        buildCharacterPayload(data, ownerUid = 'anon') {
+            return {
+                id: data.id || ('char_' + Date.now()),
+                ownerUid: ownerUid || data.ownerUid || 'anon',
+                name: String(data.name || 'Herói Sem Nome').trim(),
+                concept: String(data.concept || 'Aventureiro'),
+                attributes: {
+                    forVal: Number(data.attributes?.forVal ?? data.forVal ?? 1),
+                    des: Number(data.attributes?.des ?? data.des ?? 1),
+                    intVal: Number(data.attributes?.intVal ?? data.intVal ?? 1),
+                    con: Number(data.attributes?.con ?? data.con ?? 1),
+                    car: Number(data.attributes?.car ?? data.car ?? 1),
+                    vont: Number(data.attributes?.vont ?? data.vont ?? 1),
+                    per: Number(data.attributes?.per ?? data.per ?? 1)
+                },
+                combatStats: {
+                    pv: Number(data.combatStats?.pv ?? data.pv ?? 12),
+                    maxPv: Number(data.combatStats?.maxPv ?? data.maxPv ?? 12),
+                    pe: Number(data.combatStats?.pe ?? data.pe ?? 6),
+                    maxPe: Number(data.combatStats?.maxPe ?? data.maxPe ?? 6),
+                    rd: Number(data.combatStats?.rd ?? data.rd ?? 0)
+                },
+                inventory: Array.isArray(data.inventory) ? data.inventory : [],
+                skills: Array.isArray(data.skills) ? data.skills : [],
+                avatar: String(data.avatar || ''),
+                updatedAt: new Date().toISOString()
+            };
+        },
+
+        /**
+         * Executa a lógica de transferência atômica de item entre dois inventários.
+         * Garante que o item seja removido da origem e adicionado ao destino sem perdas ou duplicações.
+         * @param {Array} sourceInventory - Inventário de origem
+         * @param {Array} targetInventory - Inventário de destino
+         * @param {string} itemId - ID do item a transferir
+         * @param {number} [quantity=1] - Quantidade a transferir
+         * @returns {{ success: boolean, sourceInventory: Array, targetInventory: Array, transferredItem: Object|null, error?: string }}
+         */
+        transferItemTransaction(sourceInventory, targetInventory, itemId, quantity = 1) {
+            if (!Array.isArray(sourceInventory) || !Array.isArray(targetInventory)) {
+                return { success: false, sourceInventory, targetInventory, transferredItem: null, error: 'Inventários inválidos.' };
+            }
+
+            const itemIndex = sourceInventory.findIndex(i => i.id === itemId || i.name === itemId);
+            if (itemIndex === -1) {
+                return { success: false, sourceInventory, targetInventory, transferredItem: null, error: 'Item não encontrado no inventário de origem.' };
+            }
+
+            const sourceItem = sourceInventory[itemIndex];
+            const transferQty = Math.min(Math.max(1, Number(quantity) || 1), sourceItem.quantity || 1);
+
+            const updatedSource = [...sourceInventory];
+            const updatedTarget = [...targetInventory];
+
+            if ((sourceItem.quantity || 1) <= transferQty) {
+                updatedSource.splice(itemIndex, 1);
+            } else {
+                updatedSource[itemIndex] = {
+                    ...sourceItem,
+                    quantity: sourceItem.quantity - transferQty
+                };
+            }
+
+            const targetIndex = updatedTarget.findIndex(i => i.name === sourceItem.name && i.type === sourceItem.type);
+            if (targetIndex !== -1) {
+                updatedTarget[targetIndex] = {
+                    ...updatedTarget[targetIndex],
+                    quantity: (updatedTarget[targetIndex].quantity || 1) + transferQty
+                };
+            } else {
+                updatedTarget.push({
+                    ...sourceItem,
+                    id: 'item_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
+                    quantity: transferQty
+                });
+            }
+
+            return {
+                success: true,
+                sourceInventory: updatedSource,
+                targetInventory: updatedTarget,
+                transferredItem: { ...sourceItem, quantity: transferQty }
+            };
+        },
+
+        // ========================================================
+        // Grimório Arcana & Persistência de Magias
+        // ========================================================
+
+        /**
+         * Monta o documento do Grimório do jogador para salvar na nuvem.
+         * @param {string} ownerUid - UID do jogador
+         * @param {Array} unlockedSpells - Lista de IDs ou nomes de magias desbloqueadas
+         * @param {number} spentXp - XP total investido na árvore
+         * @param {Array} customFusions - Lista de magias customizadas de fusão elemental
+         * @returns {Object} Documento do grimório
+         */
+        buildGrimoirePayload(ownerUid, unlockedSpells = [], spentXp = 0, customFusions = []) {
+            return {
+                ownerUid: String(ownerUid || 'anon'),
+                unlockedSpells: Array.isArray(unlockedSpells) ? unlockedSpells : [],
+                spentXp: Number(spentXp) || 0,
+                customFusions: Array.isArray(customFusions) ? customFusions : [],
+                updatedAt: new Date().toISOString()
             };
         }
     };

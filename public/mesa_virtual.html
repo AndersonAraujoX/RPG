@@ -21,9 +21,12 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
     <script src="../src/core/firebase-config.js"></script>
+    <script src="../src/core/vtt-firestore.js"></script>
+    <script src="../src/modules/puzzle-sync.js"></script>
 
-    <!-- PeerJS P2P Multiplayer -->
+    <!-- PeerJS P2P Multiplayer (Fallback) -->
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <script src="../src/core/vtt-p2p.js"></script>
 
@@ -685,11 +688,19 @@
                 </div>
             </div>
 
-            <!-- Custom URL -->
-            <div class="text-xs text-gray-400 mb-1">Ou insira URL de imagem:</div>
-            <div class="flex gap-2">
-                <input type="text" id="custom-map-url" placeholder="https://exemplo.com/mapa.jpg" class="flex-1 bg-black/80 border border-slate-700 rounded px-3 py-1.5 text-xs text-white">
-                <button onclick="setMapUrl(document.getElementById('custom-map-url').value)" class="px-4 py-1.5 bg-cyan-600 hover:bg-cyan-500 text-black font-cinzel font-bold text-xs rounded">Carregar</button>
+            <!-- Custom URL or File Upload -->
+            <div class="text-xs text-gray-400 mb-1">Ou insira URL de imagem / Arquivo local:</div>
+            <div class="flex flex-col gap-2">
+                <div class="flex gap-2">
+                    <input type="text" id="custom-map-url" placeholder="https://exemplo.com/mapa.jpg" class="flex-1 bg-black/80 border border-slate-700 rounded px-3 py-1.5 text-xs text-white">
+                    <button onclick="setMapUrl(document.getElementById('custom-map-url').value)" class="px-4 py-1.5 bg-cyan-600 hover:bg-cyan-500 text-black font-cinzel font-bold text-xs rounded">Carregar</button>
+                </div>
+                <div class="flex items-center gap-2">
+                    <label class="flex-1 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 border border-dashed border-cyan-500/50 rounded text-center cursor-pointer text-xs text-cyan-300 font-cinzel">
+                        <i class="fa-solid fa-cloud-arrow-up mr-1.5"></i> Fazer Upload de Mapa do Computador
+                        <input type="file" id="custom-map-file" accept="image/*" class="hidden" onchange="handleMapFileUpload(event)">
+                    </label>
+                </div>
             </div>
         </div>
     </div>
@@ -1362,31 +1373,111 @@
             document.getElementById('p2p-pane-client').className = tab === 'client' ? 'space-y-3' : 'space-y-3 hidden';
         }
 
-        function createHostRoom() { if (p2pNet) p2pNet.hostRoom(); }
+        // ==========================================
+        // Sincronização Firebase Realtime & P2P
+        // ==========================================
+        function setupFirestoreListeners() {
+            if (typeof VTTFirestore === 'undefined') return;
 
-        function connectAsPlayer() {
-            if (!p2pNet) return;
+            VTTFirestore.on('onRoomUpdate', (room) => {
+                if (room.mapUrl && mapImg.src !== room.mapUrl) {
+                    mapImg.src = room.mapUrl;
+                }
+                if (room.tokens) {
+                    Object.values(room.tokens).forEach(t => {
+                        const existing = state.tokens[t.id];
+                        state.tokens[t.id] = t;
+                        createTokenElement(t, false);
+                    });
+                    // Remove tokens deletados
+                    Object.keys(state.tokens).forEach(tokId => {
+                        if (!room.tokens[tokId]) {
+                            delete state.tokens[tokId];
+                            const el = document.getElementById(`token-${tokId}`);
+                            if (el) el.remove();
+                            removeCombatant(tokId);
+                        }
+                    });
+                }
+                if (room.combatants) {
+                    state.combatants = room.combatants;
+                    state.currentRound = room.currentRound || 1;
+                    state.currentTurnIndex = room.currentTurnIndex || 0;
+                    renderInitiativeUI();
+                }
+            });
+
+            VTTFirestore.on('onMessage', (msg) => {
+                const chatContainer = document.getElementById('chat-history');
+                if (!chatContainer) return;
+                const msgEl = document.createElement('div');
+                msgEl.className = msg.isRoll ? 'p-2 bg-slate-900 border border-cyan-500/40 rounded text-xs text-cyan-300' : 'p-2 bg-slate-950 rounded text-xs text-gray-200';
+                msgEl.innerHTML = `<strong class="text-white">${msg.author}:</strong> ${msg.text}`;
+                chatContainer.appendChild(msgEl);
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+            });
+        }
+
+        async function createHostRoom() {
+            if (typeof VTTFirestore !== 'undefined') {
+                try {
+                    const room = await VTTFirestore.createRoom('Campanha Kuar-Tor', mapImg.src);
+                    document.getElementById('p2p-room-id-display').innerText = room.id;
+                    document.getElementById('host-action-box').classList.add('hidden');
+                    document.getElementById('host-info-box').classList.remove('hidden');
+                    const indicator = document.getElementById('p2p-status-label');
+                    if (indicator) indicator.innerText = `Sala: ${room.id} (Nuvem)`;
+                    if (typeof PuzzleSync !== 'undefined') PuzzleSync.setActiveRoomId(room.id);
+                } catch (e) {
+                    console.warn('[VTT] Fallback para P2P:', e);
+                    if (p2pNet) p2pNet.hostRoom();
+                }
+            } else if (p2pNet) {
+                p2pNet.hostRoom();
+            }
+        }
+
+        async function connectAsPlayer() {
             const roomId = document.getElementById('p2p-target-room-id').value.trim();
             const playerName = document.getElementById('p2p-client-name').value.trim() || 'Jogador';
             if (!roomId) { alert('Digite o ID da Sala do Mestre.'); return; }
-            p2pNet.joinRoom(roomId, { playerName, characterName: playerName });
+
+            if (typeof VTTFirestore !== 'undefined') {
+                try {
+                    await VTTFirestore.joinRoom(roomId);
+                    closeMultiplayerModal();
+                    const indicator = document.getElementById('p2p-status-label');
+                    if (indicator) indicator.innerText = `Sala: ${roomId} (Conectado)`;
+                    if (typeof PuzzleSync !== 'undefined') PuzzleSync.setActiveRoomId(roomId);
+                    return;
+                } catch (e) {
+                    console.warn('[VTT] Fallback para P2P ao conectar:', e);
+                }
+            }
+
+            if (p2pNet) {
+                p2pNet.joinRoom(roomId, { playerName, characterName: playerName });
+            }
         }
 
         function copyRoomInviteLink() {
-            if (!p2pNet || !p2pNet.roomId) return;
-            const joinUrl = `${window.location.href.split('?')[0]}?room=${p2pNet.roomId}`;
+            const roomId = (typeof VTTFirestore !== 'undefined' && VTTFirestore.currentRoomId) || (p2pNet && p2pNet.roomId);
+            if (!roomId) return;
+            const joinUrl = `${window.location.href.split('?')[0]}?room=${roomId}`;
             navigator.clipboard.writeText(joinUrl);
+            alert('Link de convite copiado para a área de transferência!');
         }
 
         function toggleQRCode() { document.getElementById('p2p-qr-container').classList.toggle('hidden'); }
 
         function disconnectP2P() {
-            if (p2pNet) {
-                p2pNet.disconnect();
-                document.getElementById('p2p-net-indicator').innerText = 'Modo Offline';
-                document.getElementById('host-info-box').classList.add('hidden');
-                document.getElementById('host-action-box').classList.remove('hidden');
-            }
+            if (typeof VTTFirestore !== 'undefined') VTTFirestore.leaveRoom();
+            if (p2pNet) p2pNet.disconnect();
+            document.getElementById('p2p-net-indicator').innerText = 'Modo Offline';
+            document.getElementById('host-info-box').classList.add('hidden');
+            document.getElementById('host-action-box').classList.remove('hidden');
+            const indicator = document.getElementById('p2p-status-label');
+            if (indicator) indicator.innerText = 'Multijogador';
         }
 
         function openMapModal() { document.getElementById('map-modal').classList.remove('hidden'); }
@@ -1396,7 +1487,21 @@
             if (!url) return;
             mapImg.src = url;
             closeMapModal();
+            if (typeof VTTFirestore !== 'undefined' && VTTFirestore.currentRoomId) {
+                VTTFirestore.updateMap(url);
+            }
             if (p2pNet && p2pNet.isHost) p2pNet.broadcast('SYNC_SCENE', { mapUrl: url, tokens: state.tokens, combatants: state.combatants });
+        }
+
+        function handleMapFileUpload(event) {
+            const file = event.target.files?.[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const dataUrl = e.target.result;
+                setMapUrl(dataUrl);
+            };
+            reader.readAsDataURL(file);
         }
 
         function openCharacterModal() { document.getElementById('char-modal').classList.remove('hidden'); }
@@ -1406,6 +1511,7 @@
         spawnMonster('Lobo Sombrio', 10, 4, '#ef4444', 'https://images.unsplash.com/photo-1563089145-599997674d42?auto=format&fit=crop&w=200&q=80');
 
         window.addEventListener('DOMContentLoaded', () => {
+            setupFirestoreListeners();
             const urlParams = new URLSearchParams(window.location.search);
             const roomParam = urlParams.get('room');
             if (roomParam) {

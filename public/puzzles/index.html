@@ -25,7 +25,26 @@
             <a href="../main.html" class="btn-rpg btn-rpg-danger">Voltar ao Portal</a>
         </header>
 
-        <p class="text-xl mb-12 text-gray-300">Desafios lógicos e arcanos criados para testar a mente dos operativos da expedição.</p>
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4 bg-slate-900/60 p-4 rounded-lg border border-cyan-500/20">
+            <p class="text-sm text-gray-300">Desafios lógicos e arcanos criados para testar a mente dos operativos da expedição.</p>
+            <div id="vtt-sync-badge" class="px-3 py-1.5 bg-slate-950 border border-slate-700 rounded text-xs font-mono text-cyan-300 flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+                <span id="active-room-text">VTT: Nenhum vinculado</span>
+            </div>
+        </div>
+
+        <script src="../../src/modules/puzzle-sync.js"></script>
+        <script>
+            document.addEventListener('DOMContentLoaded', () => {
+                if (typeof PuzzleSync !== 'undefined') {
+                    const roomId = PuzzleSync.getActiveRoomId();
+                    if (roomId) {
+                        const badge = document.getElementById('active-room-text');
+                        if (badge) badge.innerText = `VTT Conectado: Sala #${roomId}`;
+                    }
+                }
+            });
+        </script>
 
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             
