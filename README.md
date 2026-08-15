@@ -1,103 +1,176 @@
-# 🌌 Portal Kuar-Tor: A Última Expedição
+# 🌌 Portal Kuar-Tor: A Última Expedição & VTT (+2d6)
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Status-Em%20Desenvolvimento-66FCF1?style=for-the-badge" alt="Status">
-  <img src="https://img.shields.io/badge/Vers%C3%A3o-2.0.0--SoC-1F2833?style=for-the-badge" alt="Versão">
-  <img src="https://img.shields.io/badge/Licen%C3%A7a-MIT-C5C6C7?style=for-the-badge" alt="Licença">
+  <img src="https://img.shields.io/badge/Status-Produção%20%2F%20Modular-66FCF1?style=for-the-badge" alt="Status">
+  <img src="https://img.shields.io/badge/Sistema-%2B2d6%20v2.3%20(Newton%20Rocha)-10B981?style=for-the-badge" alt="Sistema +2d6">
+  <img src="https://img.shields.io/badge/Testes-86%20Passing-34D399?style=for-the-badge" alt="Testes Unitários">
+  <img src="https://img.shields.io/badge/Licença-MIT-C5C6C7?style=for-the-badge" alt="Licença">
 </p>
 
 > *"Onde a magia antiga encontra a tecnologia proibida. Operativo, bem-vindo ao nexo da sua sobrevivência."*
 
-O **Portal Kuar-Tor** é uma plataforma integrada de suporte para campanhas de RPG (GURPS), projetada para oferecer uma experiência imersiva e funcional em um cenário de **Dark Fantasy / Sci-Fi**. Deixe para trás as fichas de papel rasgadas e mergulhe em um sistema centralizado de gestão de heróis, magias e combate.
+O **Portal Kuar-Tor** é uma plataforma integrada de Virtual Tabletop (VTT), gestão de fichas e suporte a campanhas de RPG baseadas no **Sistema +2d6 (v2.3 de Newton Rocha)** em um cenário épico de **Dark Fantasy / Cyber-Arcana**.
 
 ---
 
-## 🛠️ Funcionalidades de Elite
+## 🏗️ Arquitetura Modular e Separação de Responsabilidades (SoC)
 
-### 🔮 Biblioteca Arcana (Skill Tree)
-Uma visualização revolucionária de magias baseada em **Matemática Orbital**. Esqueça listas estáticas; explore o nexo de magias através de hexágonos rúnicos dinâmicos que se organizam de forma orgânica.
-- **Progressão Dinâmica:** Invista pontos de personagem (CP) e desbloqueie caminhos arcanos.
-- **Interface SVG:** Renderização nítida em qualquer resolução com efeitos de brilho neon.
+A base de código é estruturada em camadas independentes com alta coesão e baixo acoplamento:
 
-### 🎒 Inventário em Tempo Real
-Gestão completa de itens e equipamentos integrada ao **Firebase Realtime Database**.
-- **Categorização Automática:** Armas, armaduras, acessórios e consumíveis organizados.
-- **Persistência por Personagem:** Seus itens estão salvos com segurança na nuvem, vinculados ao seu herói.
+```mermaid
+graph TD
+    subgraph UI_Layer ["Camada de Apresentação (HTML / DOM)"]
+        Index["index.html (Portal VTT Hub)"]
+        Mesa2D["public/mesa_virtual.html (VTT 2D)"]
+        Forms["legado/Forms/formV6.html (Ficha +2d6)"]
+        Magia["public/arvore_magia.html (12 Caminhos)"]
+    end
 
-### 🛡️ Mesa Virtual (VTT) & Combate
-Um campo de batalha tático digital para visualização de posicionamento e estratégia em tempo real, permitindo que mestres e jogadores coordenem a "Última Expedição".
+    subgraph Modules_Layer ["Camada de Controladores (src/modules/)"]
+        Grid["tactical-grid.js (Snap, Metros e Quadrados)"]
+        Sync["room-sync.js (LocalStorage First + Debounce)"]
+        UI["ui-controller.js (Tabs, Modais, Toasts)"]
+    end
 
-### 🔑 Autenticação Biométrica Digital
-Segurança de dados utilizando **Firebase Auth**.
-- **Login Social:** Entre instantaneamente com sua conta Google.
-- **Perfil Global:** Codinome único vinculado à sua identidade de operativo.
+    subgraph Core_Layer ["Camada de Regras de Negócio Puras (src/core/)"]
+        Combat["combat-engine.js (Ataque, Críticos, RD, Morte)"]
+        Dice["dice-roller.js (2d6, CDs, Bônus Sobre-Humano)"]
+        Sheet["character-sheet.js (PV/PE, Dano FOR, Perícias)"]
+        P2P["vtt-p2p.js (PeerJS WebRTC Mesh)"]
+        AuthCore["auth.js (Firebase Auth & Sessão)"]
+    end
 
----
+    subgraph Cloud_Layer ["Infraestrutura de Dados & Nuvem"]
+        Firestore[("Firebase Firestore (rooms, characters, messages)")]
+        LocalStorage[("Navegador LocalStorage (Offline Mode)")]
+    end
 
-## 🏗️ Arquitetura SoC (Separation of Concerns)
+    Index --> UI
+    Index --> Sync
+    Index --> Grid
+    Index --> Combat
+    Index --> Dice
+    Index --> Sheet
 
-O projeto foi recentemente refatorado para seguir padrões modernos de engenharia de software, separando a lógica de negócio da interface do usuário.
-
-| Camada | Diretório | Função |
-| :--- | :--- | :--- |
-| **Ponto de Entrada** | `public/` | Arquivos HTML otimizados para deploy direto. |
-| **Core** | `src/core/` | Infraestrutura, conexões Firebase e lógica de autenticação. |
-| **Logic** | `src/logic/` | Regras de negócio, cálculos de sistema e scripts de dados. |
-| **UI Control** | `src/ui//` | Controladores de página (`pages/`) e componentes reutilizáveis. |
-| **Design System** | `src/styles/` | O coração visual: `theme.css` com todas as variáveis e estilos globais. |
-
----
-
-## 💻 Stack Tecnológica
-
-| Tecnologia | Uso |
-| :--- | :--- |
-| **HTML5 & JS ES6** | Estrutura e lógica reativa. |
-| **Vanilla CSS & Tailwind** | Estilização premium com Glassmorphism. |
-| **Firebase Firestore** | Banco de dados NoSQL para perfis e fichas. |
-| **Firebase RTDB** | Sincronização em milissegundos para itens e VTT. |
-| **Google Fonts** | Tipografia Cinzel (Épico) e Inter (Funcional). |
-
----
-
-## 🎨 Estilo Visual: Dark Future
-
-O design do portal utiliza técnicas avançadas de **Glassmorphism**, com superfícies translúcidas e desfoque de fundo (backdrop-filter), garantindo que a interface pareça um terminal de alta tecnologia de uma civilização antiga.
-
-- **Paleta de Cores:**
-  - `RPG Cyan (#66FCF1)` - Energia e Ações.
-  - `RPG Slate (#1F2833)` - Superfícies de Interface.
-  - `RPG Black (#0B0C10)` - Abismo e Fundo.
+    Combat --> Dice
+    Sheet --> Combat
+    Sheet --> Dice
+    Sync --> Firestore
+    Sync --> LocalStorage
+```
 
 ---
 
-## 🚀 Como Iniciar a Expedição
+## 📁 Estrutura de Diretórios
 
-### Pré-requisitos
-- [Firebase CLI](https://firebase.google.com/docs/cli) instalado.
-- Um navegador moderno (Chrome, Edge ou Firefox).
+```text
+RPG/
+├── index.html                   # Portal Principal & Mesa Virtual Integrada
+├── firestore.rules              # Regras de Segurança do Firebase Firestore
+├── tailwind.config.js           # Configurações do Design System Tailwind
+├── .agents/
+│   └── skills/
+│       └── code-refactoring/    # Skill oficial de refatoração segura (Regressão Zero)
+├── src/
+│   ├── core/                    # Regras de Negócio Puras (Sem dependência de DOM)
+│   │   ├── combat-engine.js     # Motor de combate, testes opostos, RD e testes de morte
+│   │   ├── dice-roller.js       # Mecânica 2d6, CDs, bônus sobre-humano/divino e logs
+│   │   ├── character-sheet.js   # Cálculos de ficha +2d6 v2.3, status derivados e perícias
+│   │   ├── vtt-p2p.js           # Módulo WebRTC PeerJS multiplayer sem servidor
+│   │   ├── auth.js              # Gerenciador de autenticação Firebase Auth e UI de perfil
+│   │   └── firebase-config.js   # Credenciais e inicialização do Firebase SDK
+│   ├── modules/                 # Controladores de Subsistemas do VTT
+│   │   ├── tactical-grid.js     # Gestão do Grid 2D, réguas de distância e snap magnético
+│   │   ├── room-sync.js         # Sincronização híbrida: LocalStorage First + Firestore
+│   │   └── ui-controller.js     # Gerenciamento de abas, gaveta de tomos e modais
+│   └── styles/
+│       └── theme.css            # Variáveis CSS, Glassmorphism e paleta Dark Fantasy
+├── tests/                       # Suíte Completa de Testes Automatizados (QUnit)
+│   ├── modular-architecture.test.js
+│   ├── combat-turn-manager.test.js
+│   ├── combat-resolution-and-death.test.js
+│   ├── character-sheet-rules.test.js
+│   ├── firebase-firestore-vtt.test.js
+│   ├── firebase-multi-room.test.js
+│   ├── firestore-permission-resilience.test.js
+│   ├── portal-redesign.test.js
+│   ├── skill-refactoring.test.js
+│   └── vtt-p2p.test.js
+└── public/                      # Páginas de recursos e tomos da campanha
+    ├── mesa_virtual.html        # Grid Tático VTT 2D Dedicado
+    ├── arvore_magia.html        # Biblioteca Arcana (12 Caminhos Daemon & Fusão)
+    ├── items.html               # Gerenciador de Inventário
+    └── puzzles/                 # Salão de Quebra-Cabeças
+```
 
-### Instalação Local
-1. Clone o repositório:
-   ```bash
-   git clone https://github.com/AndersonAraujoX/RPG.git
-   ```
-2. Acesse a pasta do projeto:
-   ```bash
-   cd RPG
-   ```
-3. Inicie o servidor local:
-   ```bash
-   firebase serve
-   ```
+---
+
+## ⚔️ Fluxo de Resolução de Combate em 1 Clique (+2d6)
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Atacante
+    participant UI as Interface (#attack-modal)
+    participant Engine as CombatEngine (src/core/)
+    participant Defender as Alvo (Defesa Oposta)
+    participant Sync as RoomSync / Firestore
+
+    Atacante->>UI: Seleciona Arma e Alvo na Lista
+    UI->>Engine: resolveAttack({ attacker, defender, weapon })
+    Engine->>Engine: Rola 2d6 + Atributo + Perícia (Ataque)
+    Engine->>Defender: Rola 2d6 + DES + Esquiva (Defesa Oposta)
+    alt Acerto Crítico (12 no 2d6)
+        Engine->>Engine: Dano Base Dobrado (2x dados)
+    else Falha Crítica (2 no 2d6)
+        Engine->>Engine: Ataque Falha Automaticamente
+    else Ataque >= Defesa
+        Engine->>Engine: Calcula Dano Base + FOR
+        Engine->>Engine: Deduz Redução de Dano (Dano Final = Dano - RD)
+    end
+    Engine->>Defender: Aplica Dano ao PV do Alvo
+    opt Alvo com PV <= 0
+        Engine->>Engine: Aplica Condição 💀 Inconsciente
+        Engine->>Engine: Executa Teste de Morte (2d6: >=11 Estabiliza, <6 Falha)
+    end
+    Engine->>Sync: Atualiza Estado da Sala e Publica no Chat
+    Sync-->>UI: Re-renderiza Lista de Iniciativa e Tokens
+```
+
+---
+
+## 🚀 Como Executar o Projeto Localmente
+
+### 1. Pré-requisitos
+- Node.js instalado (v16 ou superior).
+- Navegador moderno (Google Chrome, Edge, Firefox ou Safari).
+
+### 2. Executar a Suíte de Testes Unitários
+Para validar os **86 testes automatizados**:
+```bash
+npm test
+```
+
+### 3. Iniciar o Servidor de Desenvolvimento
+Você pode usar qualquer servidor estático ou o Firebase CLI:
+```bash
+# Opção A: Usando live-server / npx
+npx live-server --port=8080
+
+# Opção B: Usando Firebase CLI
+firebase serve --only hosting
+```
+
+---
+
+## 🔒 Regras de Segurança do Firestore (`firestore.rules`)
+
+Para habilitar sincronização em tempo real entre múltiplos dispositivos no Firebase Console:
+1. Acesse o [Firebase Console](https://console.firebase.google.com/).
+2. Selecione o projeto `rpg---mesa` &rarr; **Firestore Database** &rarr; **Regras (Rules)**.
+3. Copie o conteúdo de [`firestore.rules`](./firestore.rules) e clique em **Publicar**.
 
 ---
 
 ## 📜 Licença
-Distribuído sob a licença MIT. Veja `LICENSE` para mais informações.
-
----
-
-<p align="center">
-  Desenvolvido com ⚡ para a campanha <b>Kuar-Tor</b>.
-</p>
+Distribuído sob a licença MIT. Desenvolvido para a comunidade do Sistema +2d6 de RPG.

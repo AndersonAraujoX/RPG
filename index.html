@@ -919,8 +919,15 @@
         Kuar-Tor VTT &middot; Sistema +2d6 v2.3 de Newton Rocha &middot; Multi-Room Realtime Firestore
     </footer>
 
-    <!-- Core Rules (+2d6) -->
+    <!-- Core Pure Business Logic (+2d6) -->
+    <script src="src/core/combat-engine.js"></script>
+    <script src="src/core/dice-roller.js"></script>
     <script src="src/core/character-sheet.js"></script>
+
+    <!-- Application Modules -->
+    <script src="src/modules/tactical-grid.js"></script>
+    <script src="src/modules/room-sync.js"></script>
+    <script src="src/modules/ui-controller.js"></script>
 
     <!-- FIREBASE MODULAR (v10.8.0) INTEGRATION SCRIPT -->
     <script type="module">
@@ -1822,23 +1829,13 @@
         let sheetSaveDebounceTimer = null;
 
         function loadLocalSheet() {
-            try {
-                const saved = localStorage.getItem('kuartor_character_sheet');
-                if (saved) {
-                    const data = JSON.parse(saved);
-                    applySheetDataToUI(data);
-                }
-            } catch (e) {
-                console.warn("Erro ao ler localStorage:", e);
-            }
+            const data = RoomSync ? RoomSync.loadLocal('character_sheet') : null;
+            if (data) applySheetDataToUI(data);
         }
 
         function saveLocalSheet(sheetData) {
-            try {
-                localStorage.setItem('kuartor_character_sheet', JSON.stringify(sheetData));
-            } catch (e) {
-                console.warn("Erro ao salvar localStorage:", e);
-            }
+            if (RoomSync) RoomSync.saveLocal('character_sheet', sheetData);
+            else try { localStorage.setItem('kuartor_character_sheet', JSON.stringify(sheetData)); } catch(e){}
         }
 
         function listenToCharacterSheet(userId) {
@@ -1999,18 +1996,23 @@
         };
 
         window.switchTab = function(tabName) {
-            document.querySelectorAll('section[id^="tab-"]').forEach(sec => sec.classList.add('hidden'));
-            document.querySelectorAll('.nav-tab-btn').forEach(btn => btn.classList.remove('active'));
-
-            const activeSec = document.getElementById(`tab-${tabName}`);
-            const activeBtn = document.getElementById(`tab-btn-${tabName}`);
-            if (activeSec) activeSec.classList.remove('hidden');
-            if (activeBtn) activeBtn.classList.add('active');
+            if (window.UIController) UIController.switchTab(tabName);
+            else {
+                document.querySelectorAll('section[id^="tab-"]').forEach(sec => sec.classList.add('hidden'));
+                document.querySelectorAll('.nav-tab-btn').forEach(btn => btn.classList.remove('active'));
+                const activeSec = document.getElementById(`tab-${tabName}`);
+                const activeBtn = document.getElementById(`tab-btn-${tabName}`);
+                if (activeSec) activeSec.classList.remove('hidden');
+                if (activeBtn) activeBtn.classList.add('active');
+            }
         };
 
         window.togglePortalHub = function() {
-            const drawer = document.getElementById('portal-hub-drawer');
-            if (drawer) drawer.classList.toggle('hidden');
+            if (window.UIController) UIController.togglePortalHub();
+            else {
+                const drawer = document.getElementById('portal-hub-drawer');
+                if (drawer) drawer.classList.toggle('hidden');
+            }
         };
 
         window.setCD = function(cdVal) {
