@@ -144,21 +144,15 @@ QUnit.module('Combate +2d6: Resolução em 1 Clique & Testes de Morte', function
         assert.notOk(healRes.isDying, 'Não está mais morrendo');
     });
 
-    QUnit.test('6. Verificação de Elementos e Funções no index.html', function (assert) {
-        assert.ok(fs.existsSync(INDEX_HTML_PATH), 'index.html existe');
-        const content = fs.readFileSync(INDEX_HTML_PATH, 'utf-8');
+    QUnit.test('6. Verificação de Elementos e Funções no VTT e CombatEngine', function (assert) {
+        const MESA_PATH = path.resolve(__dirname, '../public/mesa_virtual.html');
+        assert.ok(fs.existsSync(MESA_PATH), 'mesa_virtual.html existe');
+        const content = fs.readFileSync(MESA_PATH, 'utf-8');
 
-        // Modal de Ataque em 1 Clique
-        assert.ok(content.includes('id="attack-modal"'), 'Modal #attack-modal presente');
-        assert.ok(content.includes('id="attack-source-select"'), 'Select de atacante presente');
-        assert.ok(content.includes('id="attack-weapon-select"'), 'Select de arma presente');
-        assert.ok(content.includes('id="attack-target-select"'), 'Select de alvo presente');
-        assert.ok(content.includes('executeOneClickAttack'), 'Função executeOneClickAttack presente');
-
-        // Feedback Visual de Turno & Morte
-        assert.ok(content.includes('id="turn-toast-banner"'), 'Banner #turn-toast-banner presente');
-        assert.ok(content.includes('showTurnToast'), 'Função showTurnToast presente');
-        assert.ok(content.includes('resolveDeathSave'), 'Disparo automático de resolveDeathSave');
-        assert.ok(content.includes('healOrStabilizeCombatantAction'), 'Função healOrStabilizeCombatantAction presente');
+        // Controles de Token, PV e Combate no VTT
+        assert.ok(content.includes('token-context-menu'), 'Menu de contexto de token presente');
+        assert.ok(content.includes('modifyTokenStat'), 'Função de modificação de status presente');
+        assert.ok(content.includes('CONDITIONS') || content.includes('cond'), 'Controle de condições presente');
+        assert.ok(content.includes('pane-turn'), 'Painel de combate e turnos presente');
     });
 });

@@ -86,8 +86,8 @@
             return {
                 id: data.id || ('char_' + Date.now()),
                 ownerUid: ownerUid || data.ownerUid || 'anon',
-                name: String(data.name || 'Herói Sem Nome').trim(),
-                concept: String(data.concept || 'Aventureiro'),
+                name: String(data.name || '').trim() || 'Herói Sem Nome',
+                concept: String(data.concept || '').trim() || 'Aventureiro',
                 attributes: {
                     forVal: Number(data.attributes?.forVal ?? data.forVal ?? 1),
                     des: Number(data.attributes?.des ?? data.des ?? 1),

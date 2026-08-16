@@ -43,17 +43,12 @@ QUnit.module('Portal de Kuar-Tor: Redesign & Cards da Campanha', function () {
         assert.ok(content.includes('public/login.html'), '10. Login & Sessão presente');
     });
 
-    QUnit.test('4. Barra de Navegação de Abas e Controle de Sessão do Usuário', function (assert) {
+    QUnit.test('4. Header Limpo, Controle de Sessão e Status do Firebase', function (assert) {
         const content = fs.readFileSync(INDEX_HTML_PATH, 'utf-8');
 
-        assert.ok(content.includes('id="tab-btn-rooms"'), 'Aba Salas & Mesas presente');
-        assert.ok(content.includes('id="tab-btn-tactical"'), 'Aba Grid Tático presente');
-        assert.ok(content.includes('id="tab-btn-roller"'), 'Aba Rolador 2d6 presente');
-        assert.ok(content.includes('id="tab-btn-sheet"'), 'Aba Ficha Interativa presente');
-        assert.ok(content.includes('id="tab-btn-combat"'), 'Aba Combate presente');
-        assert.ok(content.includes('id="tab-btn-bestiary"'), 'Aba Bestiário presente');
-        assert.ok(content.includes('id="tab-btn-compendium"'), 'Aba Compêndio presente');
-        assert.ok(content.includes('id="tab-btn-hub"'), 'Aba Tomos da Campanha presente');
-        assert.ok(content.includes('id="user-info"'), 'Header com perfil do usuário presente');
+        assert.ok(content.includes('id="user-info"'), 'Container de perfil do usuário presente');
+        assert.ok(content.includes('id="login-link"'), 'Botão de login/perfil presente');
+        assert.ok(content.includes('id="firebase-status-badge"'), 'Badge de status do Firebase presente');
+        assert.ok(content.includes('id="auth-modal"'), 'Modal de autenticação (Google, E-mail, Convidado) presente');
     });
 });

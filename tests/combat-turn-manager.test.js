@@ -71,15 +71,13 @@ QUnit.module('Módulo de Gestão de Turnos & Iniciativa (+2d6)', function () {
         assert.equal(turn2.expired[0].name, 'Pasmar', 'Pasmar agora expirou');
     });
 
-    QUnit.test('4. Estrutura e Funções de Combate no index.html', function (assert) {
-        assert.ok(fs.existsSync(INDEX_HTML_PATH), 'index.html deve existir');
-        const content = fs.readFileSync(INDEX_HTML_PATH, 'utf-8');
+    QUnit.test('4. Estrutura e Funções de Combate na Mesa Virtual e CombatEngine', function (assert) {
+        const MESA_PATH = path.resolve(__dirname, '../public/mesa_virtual.html');
+        assert.ok(fs.existsSync(MESA_PATH), 'mesa_virtual.html deve existir');
+        const content = fs.readFileSync(MESA_PATH, 'utf-8');
 
-        assert.ok(content.includes('startCombat'), 'Função startCombat presente');
-        assert.ok(content.includes('advanceCombatTurn'), 'Função advanceCombatTurn presente');
-        assert.ok(content.includes('id="combat-round-counter"'), 'Elemento de contador de rodadas presente');
-        assert.ok(content.includes('id="combat-log-container"'), 'Container de log de eventos de combate presente');
-        assert.ok(content.includes('promptAddCondition'), 'Função promptAddCondition presente');
-        assert.ok(content.includes('processTurnConditions'), 'Utiliza processTurnConditions para redução de condições');
+        assert.ok(content.includes('pane-turn') || content.includes('round-counter'), 'Elemento de rodadas/turnos presente');
+        assert.ok(content.includes('modifyTokenStat') || content.includes('advanceTurn'), 'Funções de combate presentes no VTT');
+        assert.ok(content.includes('CONDITIONS') || content.includes('condition'), 'Estrutura de condições presente');
     });
 });

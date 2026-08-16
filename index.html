@@ -179,34 +179,6 @@
                 </div>
             </div>
         </div>
-
-        <!-- Navigation Tabs Bar -->
-        <nav class="flex flex-wrap gap-2 p-1.5 bg-slate-950/90 border border-slate-800 rounded-2xl justify-center lg:justify-start">
-            <button onclick="switchTab('rooms')" id="tab-btn-rooms" class="nav-tab-btn active px-4 py-2.5 rounded-xl border border-transparent text-gray-400 hover:text-white flex items-center gap-2">
-                <i class="fa-solid fa-dungeon text-amber-400"></i> Salas & Mesas
-            </button>
-            <button onclick="switchTab('tactical')" id="tab-btn-tactical" class="nav-tab-btn px-4 py-2.5 rounded-xl border border-transparent text-gray-400 hover:text-white flex items-center gap-2">
-                <i class="fa-solid fa-chess-board text-cyan-400"></i> Grid Tático & Névoa
-            </button>
-            <button onclick="switchTab('roller')" id="tab-btn-roller" class="nav-tab-btn px-4 py-2.5 rounded-xl border border-transparent text-gray-400 hover:text-white flex items-center gap-2">
-                <i class="fa-solid fa-dice text-cyan-400"></i> Rolador 2d6
-            </button>
-            <button onclick="switchTab('sheet')" id="tab-btn-sheet" class="nav-tab-btn px-4 py-2.5 rounded-xl border border-transparent text-gray-400 hover:text-white flex items-center gap-2">
-                <i class="fa-solid fa-id-card text-emerald-400"></i> Ficha Interativa
-            </button>
-            <button onclick="switchTab('combat')" id="tab-btn-combat" class="nav-tab-btn px-4 py-2.5 rounded-xl border border-transparent text-gray-400 hover:text-white flex items-center gap-2">
-                <i class="fa-solid fa-swords text-red-400"></i> Combate
-            </button>
-            <button onclick="switchTab('bestiary')" id="tab-btn-bestiary" class="nav-tab-btn px-4 py-2.5 rounded-xl border border-transparent text-gray-400 hover:text-white flex items-center gap-2">
-                <i class="fa-solid fa-skull text-purple-400"></i> Bestiário
-            </button>
-            <button onclick="switchTab('compendium')" id="tab-btn-compendium" class="nav-tab-btn px-4 py-2.5 rounded-xl border border-transparent text-gray-400 hover:text-white flex items-center gap-2">
-                <i class="fa-solid fa-book-journal-whills text-amber-400"></i> Compêndio
-            </button>
-            <button onclick="togglePortalHub()" id="tab-btn-hub" class="nav-tab-btn px-4 py-2.5 rounded-xl bg-indigo-950/70 border border-indigo-500/60 hover:bg-indigo-900 text-indigo-300 flex items-center gap-2">
-                <i class="fa-solid fa-book-atlas"></i> Tomos da Campanha (10)
-            </button>
-        </nav>
     </header>
 
     <!-- Super Card em Destaque: Mesa Virtual (Kuar-Tor VTT 2D) com Multiplayer P2P -->
@@ -374,430 +346,6 @@
                 </a>
             </div>
         </div>
-    </section>
-
-    <!-- Main Container Grid -->
-    <main class="flex-1 max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-        <!-- Left 2 Cols: Main Viewports -->
-        <div class="lg:col-span-2 space-y-6">
-
-            <!-- TAB 0: GERENCIADOR DE SALAS (Multi-Room Architecture) -->
-            <section id="tab-rooms" class="glass-panel rounded-2xl p-6 shadow-2xl">
-                <div class="flex justify-between items-center mb-6 pb-3 border-b border-slate-800">
-                    <div>
-                        <h2 class="font-cinzel text-lg font-bold text-amber-300 flex items-center gap-2">
-                            <i class="fa-solid fa-dungeon text-amber-400"></i> Gerenciador de Salas de Campanha
-                        </h2>
-                        <p class="text-[11px] text-gray-400">Sincronização multi-jogador com controle de acesso Mestre / Jogador</p>
-                    </div>
-                    <div id="current-room-badge" class="hidden px-3 py-1 rounded-full bg-emerald-950 border border-emerald-500 text-emerald-300 text-xs font-mono font-bold">
-                        Sala: <span id="current-room-id-display">--</span> (<span id="user-role-display">Jogador</span>)
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <!-- Painel do Mestre: Criar Sala -->
-                    <div class="bg-slate-950/80 p-5 rounded-2xl border border-amber-500/30">
-                        <h3 class="font-cinzel text-sm font-bold text-amber-400 mb-2 flex items-center gap-2">
-                            <i class="fa-solid fa-crown"></i> Criar Nova Sala (Mestre)
-                        </h3>
-                        <p class="text-xs text-gray-400 mb-4">Gera um Código de 6 dígitos para os jogadores se conectarem ao seu grid.</p>
-                        
-                        <div class="space-y-3 mb-4">
-                            <div>
-                                <label class="block text-xs uppercase font-cinzel font-bold text-gray-400 mb-1">Nome da Campanha</label>
-                                <input type="text" id="create-campaign-name" value="Crônicas de Kuar-Tor" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-xs text-white focus:border-amber-400">
-                            </div>
-                        </div>
-
-                        <button type="button" onclick="createCampaignRoom()" class="w-full py-3 bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-slate-950 font-cinzel font-bold text-xs rounded-xl shadow-lg transition flex items-center justify-center gap-2">
-                            <i class="fa-solid fa-plus-circle"></i> Criar Sala como Mestre
-                        </button>
-                    </div>
-
-                    <!-- Painel do Jogador: Entrar na Sala -->
-                    <div class="bg-slate-950/80 p-5 rounded-2xl border border-cyan-500/30">
-                        <h3 class="font-cinzel text-sm font-bold text-cyan-400 mb-2 flex items-center gap-2">
-                            <i class="fa-solid fa-right-to-bracket"></i> Entrar em Sala Existente
-                        </h3>
-                        <p class="text-xs text-gray-400 mb-4">Digite o Código de Acesso de 6 dígitos fornecido pelo Mestre da Mesa.</p>
-                        
-                        <div class="space-y-3 mb-4">
-                            <div>
-                                <label class="block text-xs uppercase font-cinzel font-bold text-gray-400 mb-1">Código de Acesso (6 Dígitos)</label>
-                                <input type="text" id="join-room-code" placeholder="Ex: 849201" maxlength="6" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-center font-mono font-bold text-base text-cyan-300 focus:border-cyan-400 uppercase">
-                            </div>
-                        </div>
-
-                        <button type="button" onclick="joinCampaignRoom()" class="w-full py-3 bg-gradient-to-r from-cyan-600 to-cyan-500 hover:from-cyan-500 hover:to-cyan-400 text-slate-950 font-cinzel font-bold text-xs rounded-xl shadow-lg transition flex items-center justify-center gap-2">
-                            <i class="fa-solid fa-door-open"></i> Entrar na Mesa
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Detalhes da Sala Ativa -->
-                <div id="room-active-details" class="mt-6 p-4 rounded-xl bg-slate-950 border border-slate-800 hidden">
-                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-                        <div>
-                            <span class="text-xs text-gray-400 uppercase font-cinzel">Campanha Ativa:</span>
-                            <h4 id="active-campaign-title" class="font-cinzel font-bold text-white text-base">Nome da Campanha</h4>
-                            <p class="text-[11px] text-gray-400">Mestre: <span id="active-host-name" class="text-amber-300 font-bold">Mestre</span> &middot; Link de Convite: <span id="active-invite-code" class="text-cyan-400 font-mono font-bold">------</span></p>
-                        </div>
-                        <div class="flex gap-2">
-                            <button type="button" onclick="copyInviteLink()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-cyan-300 rounded-lg text-xs font-cinzel font-bold flex items-center gap-1 border border-slate-700">
-                                <i class="fa-solid fa-copy"></i> Copiar Link
-                            </button>
-                            <button type="button" onclick="leaveRoom()" class="px-3 py-1.5 bg-red-950/80 hover:bg-red-900 text-red-300 rounded-lg text-xs font-cinzel font-bold flex items-center gap-1 border border-red-800">
-                                Sair da Sala
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- TAB 1: GRID TÁTICO & NÉVOA DE GUERRA SINCRONIZADA -->
-            <section id="tab-tactical" class="glass-panel rounded-2xl p-6 shadow-2xl hidden">
-                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4 pb-3 border-b border-slate-800">
-                    <div>
-                        <h2 class="font-cinzel text-lg font-bold text-cyan-300 flex items-center gap-2">
-                            <i class="fa-solid fa-chess-board text-cyan-400"></i> Grid Tático & Névoa de Guerra
-                        </h2>
-                        <p class="text-[11px] text-gray-400">Mestres movem todos os tokens; Jogadores movem apenas seu personagem.</p>
-                    </div>
-
-                    <!-- Tactical Controls -->
-                    <div class="flex flex-wrap gap-2">
-                        <button type="button" id="btn-spawn-hero" onclick="spawnHeroToken()" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-slate-950 text-xs font-cinzel font-bold rounded-lg transition shadow flex items-center gap-1">
-                            <i class="fa-solid fa-user-plus"></i> Meu Token
-                        </button>
-                        <button type="button" id="btn-spawn-monster" onclick="spawnMonsterToken()" class="px-3 py-1.5 bg-red-600 hover:bg-red-500 text-white text-xs font-cinzel font-bold rounded-lg transition shadow flex items-center gap-1">
-                            <i class="fa-solid fa-dragon"></i> + Monstro (Mestre)
-                        </button>
-                        <button type="button" id="btn-toggle-fog" onclick="toggleFogTool()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-purple-300 border border-slate-600 text-xs font-cinzel font-bold rounded-lg transition flex items-center gap-1">
-                            <i class="fa-solid fa-eye-slash"></i> Revelar Névoa
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Tactical Battlefield Grid Container -->
-                <div class="relative w-full h-[520px] bg-slate-950 rounded-2xl border-2 border-slate-800 overflow-hidden shadow-inner flex items-center justify-center select-none" id="battlefield-wrapper">
-                    
-                    <!-- Tactical Grid Surface -->
-                    <div id="tactical-grid-canvas" class="relative w-[720px] h-[480px] bg-slate-900 vtt-grid rounded-xl overflow-hidden border border-slate-800 shadow-2xl">
-                        <!-- Tokens layer rendered dynamically -->
-                        <div id="tokens-layer" class="absolute inset-0 z-10 pointer-events-auto"></div>
-
-                        <!-- Fog of War Layer (Grid of Fog Cells) -->
-                        <div id="fog-layer" class="absolute inset-0 z-20 grid grid-cols-12 grid-rows-8 pointer-events-auto"></div>
-                    </div>
-
-                </div>
-
-                <div class="mt-3 flex justify-between items-center text-xs text-gray-400 font-mono">
-                    <span id="tactical-status-indicator">Tokens: 0 &middot; Névoa Ativa</span>
-                    <span class="text-[11px] text-cyan-400">Arraste para mover &middot; Snap Magnético (40px)</span>
-                </div>
-            </section>
-
-            <!-- TAB 2: ROLADOR DE DADOS 2D6 -->
-            <section id="tab-roller" class="glass-panel rounded-2xl p-6 shadow-2xl hidden">
-                <div class="flex justify-between items-center mb-6 pb-3 border-b border-slate-800">
-                    <h2 class="font-cinzel text-lg font-bold text-cyan-300 flex items-center gap-2">
-                        <i class="fa-solid fa-dice-d6 text-cyan-400"></i> Mecânica Central +2d6
-                    </h2>
-                    <span class="text-xs text-gray-400 font-mono">Crítico: 12 &middot; Falha: 2</span>
-                </div>
-
-                <!-- Controls Grid -->
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-                    <div>
-                        <label class="block text-xs uppercase font-cinzel font-bold text-gray-400 mb-1.5">Atributo Chave</label>
-                        <select id="roller-attr" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-xs text-white focus:border-cyan-400">
-                            <option value="FOR">FOR (Força)</option>
-                            <option value="DES" selected>DES (Destreza)</option>
-                            <option value="CON">CON (Constituição)</option>
-                            <option value="INT">INT (Inteligência)</option>
-                            <option value="SAB">SAB (Sabedoria)</option>
-                            <option value="CAR">CAR (Carisma)</option>
-                            <option value="POD">POD (Poder)</option>
-                        </select>
-                    </div>
-
-                    <div>
-                        <label class="block text-xs uppercase font-cinzel font-bold text-gray-400 mb-1.5">Nível da Perícia</label>
-                        <input type="number" id="roller-skill" value="2" min="0" max="10" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-xs text-white text-center focus:border-cyan-400 font-mono font-bold">
-                    </div>
-
-                    <div>
-                        <label class="block text-xs uppercase font-cinzel font-bold text-gray-400 mb-1.5">Classe de Dificuldade</label>
-                        <div class="grid grid-cols-4 gap-1">
-                            <button type="button" onclick="setCD(8)" class="cd-btn py-2 text-[11px] font-bold bg-slate-900 border border-slate-700 hover:border-emerald-400 text-emerald-400 rounded">8</button>
-                            <button type="button" onclick="setCD(10)" class="cd-btn active py-2 text-[11px] font-bold bg-cyan-950 border border-cyan-400 text-cyan-300 rounded">10</button>
-                            <button type="button" onclick="setCD(14)" class="cd-btn py-2 text-[11px] font-bold bg-slate-900 border border-slate-700 hover:border-amber-400 text-amber-400 rounded">14</button>
-                            <button type="button" onclick="setCD(18)" class="cd-btn py-2 text-[11px] font-bold bg-slate-900 border border-slate-700 hover:border-red-400 text-red-400 rounded">18</button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Modificador Slider -->
-                <div class="bg-slate-950/60 p-4 rounded-xl border border-slate-800 mb-6">
-                    <div class="flex justify-between items-center text-xs mb-2">
-                        <span class="font-cinzel text-gray-300">Modificador de Ocasião:</span>
-                        <span id="mod-display" class="font-mono font-bold text-cyan-400 text-sm">+0</span>
-                    </div>
-                    <input type="range" id="roller-mod" min="-6" max="6" value="0" class="w-full accent-cyan-400 cursor-pointer" oninput="document.getElementById('mod-display').innerText = (this.value >= 0 ? '+' : '') + this.value">
-                </div>
-
-                <!-- Actions -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
-                    <button type="button" onclick="roll2d6Action()" class="py-3.5 bg-gradient-to-r from-cyan-600 to-emerald-600 hover:from-cyan-500 hover:to-emerald-500 text-slate-950 font-cinzel font-bold text-sm rounded-xl shadow-lg transition flex items-center justify-center gap-2">
-                        <i class="fa-solid fa-dice"></i> Rolar Teste (+2d6)
-                    </button>
-                    <button type="button" onclick="rollDeathSave()" class="py-3.5 bg-red-950/80 hover:bg-red-900 border border-red-600 text-red-300 font-cinzel font-bold text-sm rounded-xl shadow transition flex items-center justify-center gap-2">
-                        <i class="fa-solid fa-skull-crossbones"></i> Teste de Morte (2d6)
-                    </button>
-                </div>
-
-                <!-- Roll Display Box -->
-                <div id="roller-result-card" class="bg-black/60 border border-slate-800 rounded-xl p-5 text-center">
-                    <div class="text-xs uppercase font-cinzel text-gray-400 mb-2">Resultado da Rolagem</div>
-                    <div class="flex justify-center items-center gap-4 my-2">
-                        <div id="dice-d1" class="w-12 h-12 rounded-xl bg-slate-900 border border-cyan-400 flex items-center justify-center font-mono font-bold text-xl text-cyan-300 shadow">?</div>
-                        <span class="text-gray-500 font-bold text-lg">+</span>
-                        <div id="dice-d2" class="w-12 h-12 rounded-xl bg-slate-900 border border-cyan-400 flex items-center justify-center font-mono font-bold text-xl text-cyan-300 shadow">?</div>
-                    </div>
-                    <div id="roll-total-text" class="text-2xl font-bold font-mono text-white mt-2">--</div>
-                    <div id="roll-outcome-badge" class="mt-2 text-xs font-cinzel font-bold text-gray-400">Aguardando rolagem...</div>
-                </div>
-            </section>
-
-            <!-- TAB 3: FICHA DE PERSONAGEM INTERATIVA -->
-            <section id="tab-sheet" class="glass-panel rounded-2xl p-6 shadow-2xl hidden">
-                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6 pb-3 border-b border-slate-800">
-                    <div>
-                        <h2 class="font-cinzel text-lg font-bold text-emerald-300 flex items-center gap-2">
-                            <i class="fa-solid fa-id-card text-emerald-400"></i> Ficha do Personagem
-                        </h2>
-                        <p class="text-[11px] text-gray-400">Sincronizada em tempo real no Firebase Firestore</p>
-                    </div>
-                    <div class="flex gap-2">
-                        <button type="button" onclick="saveSheetToCloud()" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-cinzel font-bold text-xs rounded-lg transition shadow flex items-center gap-1.5">
-                            <i class="fa-solid fa-cloud-arrow-up"></i> Salvar na Nuvem
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Info Header -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-                    <div>
-                        <label class="block text-xs uppercase font-cinzel font-bold text-gray-400 mb-1">Nome do Personagem</label>
-                        <input type="text" id="sheet-char-name" value="Operativo Kuar-Tor" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-xs text-white" onchange="onSheetFieldChange()">
-                    </div>
-                    <div>
-                        <label class="block text-xs uppercase font-cinzel font-bold text-gray-400 mb-1">Conceito / Arquétipo</label>
-                        <input type="text" id="sheet-concept" value="Guerreiro Tático" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-xs text-white" onchange="onSheetFieldChange()">
-                    </div>
-                </div>
-
-                <!-- Atributos Primários -->
-                <div class="text-xs uppercase font-cinzel font-bold text-cyan-400 mb-2">Atributos Primários</div>
-                <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2.5 mb-6 text-center">
-                    <div class="bg-slate-950 p-2.5 rounded-xl border border-slate-800">
-                        <label class="block text-[11px] font-bold text-gray-400 font-cinzel">FOR</label>
-                        <input type="number" id="attr-for" value="2" min="0" max="20" class="w-full bg-transparent text-center font-mono font-bold text-lg text-cyan-300 mt-1" onchange="onSheetFieldChange()" oninput="onSheetFieldChange()">
-                        <span id="badge-sh-for" class="hidden text-[9px] font-bold text-amber-300">+6 SH</span>
-                    </div>
-                    <div class="bg-slate-950 p-2.5 rounded-xl border border-slate-800">
-                        <label class="block text-[11px] font-bold text-gray-400 font-cinzel">DES</label>
-                        <input type="number" id="attr-des" value="3" min="0" max="20" class="w-full bg-transparent text-center font-mono font-bold text-lg text-cyan-300 mt-1" onchange="onSheetFieldChange()" oninput="onSheetFieldChange()">
-                        <span id="badge-sh-des" class="hidden text-[9px] font-bold text-amber-300">+6 SH</span>
-                    </div>
-                    <div class="bg-slate-950 p-2.5 rounded-xl border border-slate-800">
-                        <label class="block text-[11px] font-bold text-gray-400 font-cinzel">CON</label>
-                        <input type="number" id="attr-con" value="3" min="0" max="20" class="w-full bg-transparent text-center font-mono font-bold text-lg text-cyan-300 mt-1" onchange="onSheetFieldChange()" oninput="onSheetFieldChange()">
-                        <span id="badge-sh-con" class="hidden text-[9px] font-bold text-amber-300">+6 SH</span>
-                    </div>
-                    <div class="bg-slate-950 p-2.5 rounded-xl border border-slate-800">
-                        <label class="block text-[11px] font-bold text-gray-400 font-cinzel">INT</label>
-                        <input type="number" id="attr-int" value="2" min="0" max="20" class="w-full bg-transparent text-center font-mono font-bold text-lg text-cyan-300 mt-1" onchange="onSheetFieldChange()" oninput="onSheetFieldChange()">
-                        <span id="badge-sh-int" class="hidden text-[9px] font-bold text-amber-300">+6 SH</span>
-                    </div>
-                    <div class="bg-slate-950 p-2.5 rounded-xl border border-slate-800">
-                        <label class="block text-[11px] font-bold text-gray-400 font-cinzel">SAB</label>
-                        <input type="number" id="attr-sab" value="2" min="0" max="20" class="w-full bg-transparent text-center font-mono font-bold text-lg text-cyan-300 mt-1" onchange="onSheetFieldChange()" oninput="onSheetFieldChange()">
-                        <span id="badge-sh-sab" class="hidden text-[9px] font-bold text-amber-300">+6 SH</span>
-                    </div>
-                    <div class="bg-slate-950 p-2.5 rounded-xl border border-slate-800">
-                        <label class="block text-[11px] font-bold text-gray-400 font-cinzel">CAR</label>
-                        <input type="number" id="attr-car" value="2" min="0" max="20" class="w-full bg-transparent text-center font-mono font-bold text-lg text-cyan-300 mt-1" onchange="onSheetFieldChange()" oninput="onSheetFieldChange()">
-                        <span id="badge-sh-car" class="hidden text-[9px] font-bold text-amber-300">+6 SH</span>
-                    </div>
-                    <div class="bg-slate-950 p-2.5 rounded-xl border border-slate-800">
-                        <label class="block text-[11px] font-bold text-gray-400 font-cinzel">POD</label>
-                        <input type="number" id="attr-pod" value="2" min="0" max="20" class="w-full bg-transparent text-center font-mono font-bold text-lg text-cyan-300 mt-1" onchange="onSheetFieldChange()" oninput="onSheetFieldChange()">
-                        <span id="badge-sh-pod" class="hidden text-[9px] font-bold text-amber-300">+6 SH</span>
-                    </div>
-                </div>
-
-                <!-- Status Derivados (+2d6 v2.3) -->
-                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-                    <div class="bg-slate-950/80 p-3 rounded-xl border border-emerald-900/60 text-center">
-                        <span class="text-[10px] text-gray-400 font-cinzel">PV Máximo</span>
-                        <div id="sheet-pv-max" class="text-xl font-bold font-mono text-emerald-400 mt-0.5">20</div>
-                        <span class="text-[9px] text-gray-500">10+CON+FOR (+5 se CON&ge;3)</span>
-                    </div>
-                    <div class="bg-slate-950/80 p-3 rounded-xl border border-cyan-900/60 text-center">
-                        <span class="text-[10px] text-gray-400 font-cinzel">PE Máximo</span>
-                        <div id="sheet-pe-max" class="text-xl font-bold font-mono text-cyan-400 mt-0.5">12</div>
-                        <span class="text-[9px] text-gray-500">POD + 10</span>
-                    </div>
-                    <div class="bg-slate-950/80 p-3 rounded-xl border border-amber-900/60 text-center">
-                        <span class="text-[10px] text-gray-400 font-cinzel">Dano de Força</span>
-                        <div id="sheet-dmg-force" class="text-xl font-bold font-mono text-amber-400 mt-0.5">1d6-2</div>
-                        <span class="text-[9px] text-gray-500">Tabela Oficial</span>
-                    </div>
-                    <div class="bg-slate-950/80 p-3 rounded-xl border border-purple-900/60 text-center">
-                        <span class="text-[10px] text-gray-400 font-cinzel">Iniciativa</span>
-                        <div id="sheet-init-bonus" class="text-xl font-bold font-mono text-purple-400 mt-0.5">+1</div>
-                        <span class="text-[9px] text-gray-500">DES &minus; 2 (se DES&ge;3)</span>
-                    </div>
-                </div>
-
-                <!-- Perícias com Botões de Rolagem Direta -->
-                <div class="mb-6">
-                    <div class="flex justify-between items-center mb-2">
-                        <span class="text-xs uppercase font-cinzel font-bold text-cyan-400">Perícias Cadastradas (Rolagem Direta)</span>
-                        <button type="button" onclick="addNewSkillPrompt()" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-cyan-300 text-xs rounded border border-slate-700 font-cinzel">
-                            + Nova Perícia
-                        </button>
-                    </div>
-                    <div id="skills-list-container" class="space-y-1.5">
-                        <!-- Renderizado dinamicamente -->
-                    </div>
-                </div>
-            </section>
-
-            <!-- TAB 4: GERENCIADOR DE COMBATE (+2d6 v2.3) -->
-            <section id="tab-combat" class="glass-panel rounded-2xl p-6 shadow-2xl hidden">
-                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6 pb-3 border-b border-slate-800">
-                    <div>
-                        <h2 class="font-cinzel text-lg font-bold text-red-400 flex items-center gap-2">
-                            <i class="fa-solid fa-swords text-red-400"></i> Gestão de Turnos & Iniciativa (+2d6)
-                        </h2>
-                        <p class="text-[11px] text-gray-400">Iniciativa Oficial: 2d6 + DES + (DES&ge;3 ? DES - 2 : 0) &middot; Redução Automática de Condições</p>
-                    </div>
-                    <div class="flex flex-wrap gap-2">
-                        <button type="button" onclick="startCombat()" class="px-3.5 py-2 bg-gradient-to-r from-red-600 to-amber-600 hover:from-red-500 hover:to-amber-500 text-white text-xs rounded-xl font-cinzel font-bold shadow-lg transition flex items-center gap-1.5">
-                            <i class="fa-solid fa-play"></i> Iniciar Combate
-                        </button>
-                        <button type="button" onclick="openAttackModal()" class="px-3.5 py-2 bg-gradient-to-r from-cyan-600 to-emerald-600 hover:from-cyan-500 hover:to-emerald-500 text-slate-950 text-xs rounded-xl font-cinzel font-bold shadow-lg transition flex items-center gap-1.5">
-                            <i class="fa-solid fa-crosshairs"></i> Ataque em 1 Clique
-                        </button>
-                        <button type="button" onclick="advanceCombatTurn()" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-600 text-cyan-300 text-xs rounded-xl font-cinzel font-bold transition flex items-center gap-1.5">
-                            Próximo Turno <i class="fa-solid fa-forward ml-1"></i>
-                        </button>
-                        <button type="button" onclick="openAddCombatantPrompt()" class="px-3 py-2 bg-slate-900 hover:bg-slate-800 border border-slate-700 text-gray-300 text-xs rounded-xl font-cinzel transition">
-                            + Combatente
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Round Counter Banner -->
-                <div class="bg-slate-950/80 p-4 rounded-xl border border-slate-800 mb-4 flex justify-between items-center">
-                    <div class="flex items-center gap-2">
-                        <i class="fa-solid fa-hourglass-half text-amber-400"></i>
-                        <span class="text-xs uppercase font-cinzel text-gray-400">Estado da Batalha:</span>
-                    </div>
-                    <span id="combat-round-counter" class="font-cinzel font-bold text-amber-400 text-lg bg-amber-950/60 border border-amber-500/50 px-3 py-0.5 rounded-lg shadow">Rodada 1</span>
-                </div>
-
-                <!-- Combat Events Log (Expirations & Turn Changes) -->
-                <div id="combat-log-container" class="mb-4 p-3 rounded-xl bg-black/40 border border-slate-800/80 text-xs space-y-1 max-h-24 overflow-y-auto chat-scroll hidden">
-                    <!-- Avisos de condições e turnos -->
-                </div>
-
-                <!-- Combatants Table / Cards List -->
-                <div id="combatants-table-container" class="space-y-2.5">
-                    <!-- Tabela de Combatentes renderizada dinamicamente -->
-                </div>
-            </section>
-
-            <!-- TAB 5: BESTIÁRIO & PDMs -->
-            <section id="tab-bestiary" class="glass-panel rounded-2xl p-6 shadow-2xl hidden">
-                <div class="mb-6 pb-3 border-b border-slate-800">
-                    <h2 class="font-cinzel text-lg font-bold text-purple-300 flex items-center gap-2">
-                        <i class="fa-solid fa-skull text-purple-400"></i> Bestiário & Gerador por ND
-                    </h2>
-                    <p class="text-[11px] text-gray-400">Criaturas oficiais do manual +2d6 e balanceamento instantâneo</p>
-                </div>
-
-                <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5 mb-6">
-                    <button type="button" onclick="loadMonsterPreset('zumbi')" class="p-2.5 bg-slate-950 border border-slate-800 hover:border-purple-500 rounded-xl text-left transition">
-                        <div class="font-bold text-xs text-purple-300">Zumbi Capenga</div>
-                        <div class="text-[10px] text-gray-400">ND 1 &middot; PV 12 &middot; RD 1</div>
-                    </button>
-                    <button type="button" onclick="loadMonsterPreset('goblin')" class="p-2.5 bg-slate-950 border border-slate-800 hover:border-purple-500 rounded-xl text-left transition">
-                        <div class="font-bold text-xs text-purple-300">Chefe Goblin</div>
-                        <div class="text-[10px] text-gray-400">ND 3 &middot; PV 16 &middot; DES +3</div>
-                    </button>
-                    <button type="button" onclick="loadMonsterPreset('orc')" class="p-2.5 bg-slate-950 border border-slate-800 hover:border-purple-500 rounded-xl text-left transition">
-                        <div class="font-bold text-xs text-purple-300">General Orc</div>
-                        <div class="text-[10px] text-gray-400">ND 5 &middot; PV 28 &middot; Dano 2d6+4</div>
-                    </button>
-                    <button type="button" onclick="loadMonsterPreset('cthulhu')" class="p-2.5 bg-slate-950 border border-slate-800 hover:border-purple-500 rounded-xl text-left transition">
-                        <div class="font-bold text-xs text-purple-300">Cthulhu Cósmico</div>
-                        <div class="text-[10px] text-gray-400">ND 10 &middot; PV 90 &middot; Insanidade</div>
-                    </button>
-                    <button type="button" onclick="loadMonsterPreset('kratos')" class="p-2.5 bg-slate-950 border border-slate-800 hover:border-purple-500 rounded-xl text-left transition">
-                        <div class="font-bold text-xs text-purple-300">Kratos Espartano</div>
-                        <div class="text-[10px] text-gray-400">ND 10 &middot; PV 80 &middot; Fúria</div>
-                    </button>
-                </div>
-            </section>
-
-            <!-- TAB 6: COMPÊNDIO -->
-            <section id="tab-compendium" class="glass-panel rounded-2xl p-6 shadow-2xl hidden">
-                <div class="mb-6 pb-3 border-b border-slate-800">
-                    <h2 class="font-cinzel text-lg font-bold text-amber-300 flex items-center gap-2">
-                        <i class="fa-solid fa-book-journal-whills text-amber-400"></i> Compêndio de Regras (+2d6 v2.3)
-                    </h2>
-                    <p class="text-[11px] text-gray-400">Tabelas de armas brancas, armas de fogo, armaduras (RD) e magias</p>
-                </div>
-                <div id="compendium-list-container" class="space-y-2">
-                    <!-- Itens do Compêndio -->
-                </div>
-            </section>
-
-        </div>
-
-        <!-- Right Col: Real-time Cloud Chat & Roll Log (Firestore messages) -->
-        <div class="glass-panel rounded-2xl p-5 shadow-2xl flex flex-col h-[680px]">
-            <div class="flex justify-between items-center mb-3 pb-2 border-b border-slate-800">
-                <div class="flex items-center gap-2">
-                    <i class="fa-solid fa-comments text-cyan-400"></i>
-                    <h3 class="font-cinzel text-sm font-bold text-cyan-300">Chat & Rolagens da Sala</h3>
-                </div>
-                <span id="chat-room-sync-tag" class="text-[10px] text-emerald-400 font-mono font-bold">Nuvem Global</span>
-            </div>
-
-            <!-- Messages Log -->
-            <div id="firestore-messages-log" class="flex-1 overflow-y-auto space-y-2 pr-1 chat-scroll">
-                <div class="p-2.5 rounded-lg bg-slate-950/80 border border-slate-800 text-xs text-gray-400">
-                    <span class="text-cyan-400 font-bold font-cinzel">Sistema:</span> Conectando à nuvem para escutar rolagens e mensagens...
-                </div>
-            </div>
-
-            <!-- Input Box -->
-            <div class="mt-3 pt-3 border-t border-slate-800 flex gap-2">
-                <input type="text" id="chat-msg-input" placeholder="Mensagem narrativa ou rolagem..." class="flex-1 bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-400" onkeydown="if(event.key==='Enter') sendChatMessageAction()">
-                <button type="button" onclick="sendChatMessageAction()" class="p-2 bg-cyan-600 hover:bg-cyan-500 text-slate-950 font-bold rounded-lg transition text-xs">
-                    <i class="fa-solid fa-paper-plane"></i>
-                </button>
-            </div>
-        </div>
-
-    </main>
 
     <!-- Modal de Autenticação Completo (Google Login + E-mail/Senha + Convidado) -->
     <div id="auth-modal" class="fixed inset-0 bg-black/80 backdrop-blur-md hidden items-center justify-center p-4 z-50">
@@ -975,6 +523,14 @@
             appId: "1:724621847047:web:cb561e9792b26b80ab98a2"
         };
 
+        // Resiliência contra AdBlockers (ERR_BLOCKED_BY_CLIENT) e inicialização offline instantânea
+        window.addEventListener('error', (e) => {
+            if (e.message && (e.message.includes('ERR_BLOCKED_BY_CLIENT') || e.message.includes('blocked'))) {
+                console.warn('AdBlocker detectado (ERR_BLOCKED_BY_CLIENT). Alternando para Modo Local instantâneo.');
+                loadLocalSheet();
+            }
+        });
+
         // 1. Inicialização do Firebase
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
@@ -1022,13 +578,6 @@
         // Carrega ficha local imediatamente no início
         loadLocalSheet();
 
-        // Auto-login Anônimo como Fallback Silencioso com proteção para adblockers
-        signInAnonymously(auth).catch((err) => {
-            console.warn("[VTT] Firebase bloqueado por adblock/extensão (ERR_BLOCKED_BY_CLIENT). Operando 100% em Modo Local.");
-            if (window.UIController) UIController.updateStatusBadge(true, "Modo Local (Offline)");
-            else updateStatusBadge(true, "Modo Local (Offline)");
-        });
-
         // 1. Observador de Autenticação
         onAuthStateChanged(auth, (user) => {
             currentUser = user;
@@ -1038,9 +587,10 @@
             const userAvatarImg = document.getElementById('user-avatar');
             const loginLink = document.getElementById('login-link');
 
-            if (user) {
+            if (user && !user.isAnonymous) {
+                // Usuário Autenticado Real (Google ou E-mail)
                 currentUserId = user.uid;
-                const displayName = user.displayName || (user.isAnonymous ? `Convidado ${user.uid.substring(0, 4)}` : user.email?.split('@')[0]);
+                const displayName = user.displayName || user.email?.split('@')[0] || 'Operativo';
                 const photoURL = user.photoURL || 'https://images.unsplash.com/photo-1566492031773-4f4e44671857?w=80&auto=format&fit=crop&q=60';
 
                 updateStatusBadge(true, `UID: ${user.uid.substring(0, 5)}...`);
@@ -1049,12 +599,44 @@
                     userInfoDiv.style.display = 'flex';
                     userInfoDiv.classList.remove('hidden');
                     userNameSpan.textContent = displayName;
-                    if (userEmailSpan) userEmailSpan.textContent = user.isAnonymous ? 'Modo Convidado' : user.email;
+                    if (userEmailSpan) userEmailSpan.textContent = user.email || 'Conta Autenticada';
                     if (userAvatarImg) userAvatarImg.src = photoURL;
                 }
                 if (loginLink) loginLink.style.display = 'none';
 
                 listenToCharacterSheet(user.uid);
+            } else if (user && user.isAnonymous) {
+                // Modo Convidado / Anônimo
+                currentUserId = user.uid;
+                const guestName = `Convidado ${user.uid.substring(0, 4)}`;
+
+                updateStatusBadge(true, "Modo Convidado");
+
+                if (userInfoDiv && userNameSpan) {
+                    userInfoDiv.style.display = 'flex';
+                    userInfoDiv.classList.remove('hidden');
+                    userNameSpan.textContent = guestName;
+                    if (userEmailSpan) userEmailSpan.textContent = "Conecte sua conta Google ➔";
+                    if (userAvatarImg) userAvatarImg.src = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&auto=format&fit=crop&q=60';
+                }
+                if (loginLink) {
+                    loginLink.style.display = 'flex';
+                    loginLink.innerHTML = `<i class="fa-brands fa-google text-red-400"></i> Conectar com Google`;
+                }
+
+                listenToCharacterSheet(user.uid);
+            } else {
+                // Não Autenticado
+                updateStatusBadge(false, "Desconectado");
+                if (userInfoDiv) {
+                    userInfoDiv.style.display = 'none';
+                    userInfoDiv.classList.add('hidden');
+                }
+                if (loginLink) {
+                    loginLink.style.display = 'flex';
+                    loginLink.innerHTML = `<i class="fa-solid fa-user-shield"></i> Entrar / Login`;
+                }
+            }
 
                 // Auto-join via URL param: ?room=123456
                 const urlParams = new URLSearchParams(window.location.search);

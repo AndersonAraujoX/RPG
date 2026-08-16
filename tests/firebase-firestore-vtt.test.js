@@ -54,14 +54,12 @@ QUnit.module('Firebase Firestore & Auth VTT (index.html)', function () {
         assert.ok(content.includes('unimplemented'), 'Deve tratar código de erro unimplemented');
     });
 
-    QUnit.test('6. Estrutura VTT Single-File e Integração com Regras +2d6', function (assert) {
+    QUnit.test('6. Estrutura do Portal Hub e Integração com Mesa Virtual 2D', function (assert) {
         const content = fs.readFileSync(INDEX_HTML_PATH, 'utf-8');
 
-        assert.ok(content.includes('id="tab-roller"'), 'Deve conter aba do Rolador 2d6');
-        assert.ok(content.includes('id="tab-sheet"'), 'Deve conter aba da Ficha');
-        assert.ok(content.includes('id="tab-combat"'), 'Deve conter aba de Combate');
-        assert.ok(content.includes('id="tab-bestiary"'), 'Deve conter aba do Bestiário');
-        assert.ok(content.includes('id="tab-compendium"'), 'Deve conter aba do Compêndio');
-        assert.ok(content.includes('src="src/core/character-sheet.js"'), 'Deve carregar character-sheet.js para regras +2d6');
+        assert.ok(content.includes('href="public/mesa_virtual.html"'), 'Deve conter link direto para Mesa Virtual 2D');
+        assert.ok(content.includes('public/arvore_magia.html'), 'Deve conter link para Grimório Arcana');
+        assert.ok(content.includes('public/puzzles/index.html'), 'Deve conter link para Salão de Puzzles');
+        assert.ok(content.includes('public/items.html'), 'Deve conter link para Gerenciador de Itens');
     });
 });

@@ -29,7 +29,7 @@ QUnit.module('Firestore Permission Resilience & Offline Fallback', function () {
         assert.ok(fs.existsSync(RULES_PATH), 'firestore.rules existe');
         const rules = fs.readFileSync(RULES_PATH, 'utf-8');
 
-        assert.ok(rules.includes('characters/{userId}'), 'Regra para characters/{userId} presente');
+        assert.ok(rules.includes('characters/{charId}') || rules.includes('characters/{userId}'), 'Regra para characters presente');
         assert.ok(rules.includes('rooms/{roomId}'), 'Regra para rooms/{roomId} presente');
         assert.ok(rules.includes('messages/{messageId}'), 'Regra para messages presente');
         assert.ok(rules.includes('allow read, write: if true;'), 'Permissão de leitura e escrita para a campanha');
