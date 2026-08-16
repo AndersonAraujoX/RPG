@@ -938,6 +938,8 @@
             getAuth,
             signInAnonymously,
             signInWithPopup,
+            signInWithRedirect,
+            getRedirectResult,
             GoogleAuthProvider,
             signInWithEmailAndPassword,
             createUserWithEmailAndPassword,
@@ -946,6 +948,9 @@
         } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
         import {
             getFirestore,
+            initializeFirestore,
+            persistentLocalCache,
+            persistentMultipleTabManager,
             doc,
             setDoc,
             getDoc,
@@ -973,14 +978,34 @@
         // 1. Inicialização do Firebase
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
-        const db = getFirestore(app);
         const googleProvider = new GoogleAuthProvider();
 
-        // 4. Suporte Offline (Persistence IndexedDB)
-        enableIndexedDbPersistence(db).catch((err) => {
-            if (err.code === 'failed-precondition') console.warn("Persistência: Múltiplas abas abertas.");
-            else if (err.code === 'unimplemented') console.warn("Persistência não suportada pelo navegador.");
+        // Processa retorno de login por redirecionamento se houver
+        getRedirectResult(auth).then(result => {
+            if (result && result.user) {
+                console.log("Login com Google via redirecionamento concluído!");
+            }
+        }).catch(err => {
+            if (err.code !== 'auth/popup-closed-by-user') {
+                console.warn("Aviso de autenticação:", err.message);
+            }
         });
+
+        // 4. Suporte Offline Moderno (Persistent Local Cache sem warnings de depreciação)
+        let db;
+        try {
+            db = initializeFirestore(app, {
+                localCache: persistentLocalCache({
+                    tabManager: persistentMultipleTabManager()
+                })
+            });
+        } catch (e) {
+            db = getFirestore(app);
+            enableIndexedDbPersistence(db).catch((err) => {
+                if (err.code === 'failed-precondition') console.warn("Persistência: Múltiplas abas abertas.");
+                else if (err.code === 'unimplemented') console.warn("Persistência não suportada pelo navegador.");
+            });
+        }
 
         // Estado Global da Aplicação
         let currentUser = null;
@@ -1986,8 +2011,17 @@
                 await signInWithPopup(auth, googleProvider);
                 closeAuthModal();
             } catch (err) {
-                console.error("Erro Google Login:", err);
-                alert("Falha no login com Google: " + err.message);
+                if (err.code === 'auth/popup-blocked' || err.code === 'auth/cancelled-popup-request' || err.message?.includes('Cross-Origin')) {
+                    console.warn("Popup restrito por extensões ou política do navegador. Redirecionando...");
+                    try {
+                        await signInWithRedirect(auth, googleProvider);
+                    } catch (redirErr) {
+                        alert("Falha no login com Google: " + redirErr.message);
+                    }
+                } else if (err.code !== 'auth/popup-closed-by-user') {
+                    console.error("Erro Google Login:", err);
+                    alert("Falha no login com Google: " + err.message);
+                }
             }
         };
 
