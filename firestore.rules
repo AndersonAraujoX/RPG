@@ -3,57 +3,122 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     // ============================================================================
-    // Regras de Segurança do Portal Kuar-Tor & VTT Realtime (+2d6)
+    // 🏛️ 1. SANTUÁRIO & MAPA MUNDI / PINS
     // ============================================================================
 
-    // 1. Usuários e Perfis
+    // Estado global do Santuário (leitura pública, escrita autenticada)
+    match /santuario/estadoGlobal {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    // Marcadores de mapa (Pins)
+    match /map_pins/{pinId} {
+      allow read, write: if request.auth != null;
+    }
+
+    // Dados específicos de jogadores do Santuário (fundos, recursos, inventário)
+    match /jogadores/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // ============================================================================
+    // ⚔️ 2. MISSÕES & INSCRIÇÕES
+    // ============================================================================
+
+    // Lista de missões disponíveis
+    match /missions/{missionId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+
+    // Inscrições em missões (criação vinculada ao próprio UID)
+    match /mission_signups/{signupId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if request.auth != null && (resource.data.userId == request.auth.uid || request.auth.uid != null);
+    }
+
+    // ============================================================================
+    // 👤 3. USUÁRIOS, PERFIS & GRIMÓRIO ARCANA
+    // ============================================================================
+
+    // Documentos do usuário e subcoleções (Grimório, configurações, etc.)
     match /users/{userId} {
       allow read: if request.auth != null;
       allow write: if request.auth != null && request.auth.uid == userId;
 
-      // Grimório Arcana do Jogador
+      // Grimório Arcana do Jogador (12 Caminhos e Fusões)
       match /grimoire/{grimoireId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+
+      // Subcoleção de Fichas vinculadas ao usuário
+      match /characters/{charId} {
         allow read, write: if request.auth != null && request.auth.uid == userId;
       }
     }
 
-    // 2. Fichas de Personagens e Inventários
+    match /users/{userId}/{documents=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // ============================================================================
+    // 📜 4. FICHAS DE PERSONAGENS & INVENTÁRIOS (+2d6 / GURPS)
+    // ============================================================================
+
+    // Coleção /personagens (Sistema Legado / Santuário)
+    match /personagens/{characterId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if request.auth != null && (resource.data.userId == request.auth.uid || resource.data.ownerUid == request.auth.uid);
+    }
+
+    // Coleção /characters (Sistema Kuar-Tor VTT & Fichas Modulares)
     match /characters/{charId} {
       allow read: if true;
       allow create: if request.auth != null || request.resource.data.ownerUid != null;
-      allow update, delete: if true; // Permissivo para sincronização rápida de VTT e transferências de itens
+      allow update, delete: if true; // Permissivo para sincronização rápida de VTT, dano e transferências de itens
     }
 
-    // 3. Salas de Campanha, Tokens, Combate, Névoa e Puzzles
+    // ============================================================================
+    // 🎲 5. SALAS DE CAMPANHA, COMBATE, TOKENS, NÉVOA & PUZZLES (VTT)
+    // ============================================================================
+
     match /rooms/{roomId} {
       allow read: if true;
       allow create, update: if true;
       allow delete: if request.auth != null && resource.data.hostUid == request.auth.uid;
 
-      // Subcoleção de Mensagens, Chat e Rolagens 2d6 da Sala
+      // Subcoleção de Mensagens, Chat e Rolagens de Dados (+2d6) da Sala
       match /messages/{messageId} {
         allow read, create: if true;
         allow update, delete: if request.auth != null;
       }
 
-      // Subcoleção de Puzzles da Sala
+      // Subcoleção de Puzzles & Gatilhos de Masmorra da Sala
       match /puzzles/{puzzleId} {
         allow read, write: if true;
       }
     }
 
-    // 4. Mensagens e Logs Globais
+    // ============================================================================
+    // 💬 6. CHAT GLOBAL & DIÁRIO DE EXPEDIÇÃO
+    // ============================================================================
+
     match /messages/{messageId} {
       allow read, create: if true;
     }
 
-    // 5. Diário de Expedição
     match /expedition_logs/{logId} {
       allow read: if true;
       allow write: if request.auth != null;
     }
 
-    // Fallback permissivo para ambiente de desenvolvimento e testes
+    // ============================================================================
+    // 🛡️ 7. FALLBACK PERMISSIVO DE DESENVOLVIMENTO
+    // ============================================================================
+
     match /{document=**} {
       allow read, write: if true;
     }
