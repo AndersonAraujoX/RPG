@@ -17,7 +17,7 @@ function signInWithGoogle() {
     firebase.auth().signInWithPopup(provider)
         .then((result) => {
             // Redirect to the main portal on successful login.
-            window.location.href = 'main.html';
+            window.location.href = '../index.html';
         })
         .catch((error) => {
             console.error("Google Sign-In Error:", error);
@@ -91,7 +91,7 @@ document.addEventListener('DOMContentLoaded', function () {
             // --- User is Logged In ---
             // If we are on the login page, redirect to main.
             if (window.location.pathname.endsWith('login.html') || window.location.pathname.endsWith('login.html/')) {
-                window.location.href = 'main.html';
+                window.location.href = '../index.html';
                 return;
             }
             // Update UI on other pages (like main.html)

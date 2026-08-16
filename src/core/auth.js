@@ -15,7 +15,7 @@ function signInWithGoogle() {
     const provider = new firebase.auth.GoogleAuthProvider();
     firebase.auth().signInWithPopup(provider)
         .then((result) => {
-            window.location.href = 'main.html';
+            window.location.href = window.location.pathname.includes('/public/') ? '../index.html' : 'index.html';
         })
         .catch((error) => {
             console.error("Google Sign-In Error:", error);
@@ -102,7 +102,7 @@ document.addEventListener('DOMContentLoaded', function () {
     auth.onAuthStateChanged(function (user) {
         if (user) {
             if (window.location.pathname.endsWith('login.html') || window.location.pathname.endsWith('login.html/')) {
-                window.location.href = 'main.html';
+                window.location.href = window.location.pathname.includes('/public/') ? '../index.html' : 'index.html';
                 return;
             }
             if (loginLink) {
