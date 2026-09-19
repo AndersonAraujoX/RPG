@@ -433,6 +433,319 @@
                 </div>
             </div>
 
+            <!-- ========== TUTORIAL DE CRIAÇÃO DE PERSONAGEM ========== -->
+            <div id="tutorial-panel" class="no-print mb-6 rounded-lg border border-amber-500/30 bg-neutral-900/60 overflow-hidden">
+                <!-- Header do Tutorial (Clicável para expandir/colapsar) -->
+                <button type="button" id="tutorial-toggle"
+                    onclick="document.getElementById('tutorial-body').classList.toggle('hidden'); this.querySelector('#tutorial-chevron').classList.toggle('rotate-180');"
+                    class="w-full flex items-center justify-between px-5 py-3 bg-amber-900/20 hover:bg-amber-900/30 transition-colors duration-200 text-left">
+                    <span class="flex items-center gap-3">
+                        <i class="fa-solid fa-map text-amber-400 text-lg"></i>
+                        <span class="text-amber-400 font-bold text-base title-font">📜 Tutorial: Como Criar Seu Personagem (+2D6)</span>
+                    </span>
+                    <i id="tutorial-chevron" class="fa-solid fa-chevron-down text-amber-400 transition-transform duration-300"></i>
+                </button>
+
+                <!-- Corpo do Tutorial (começa oculto) -->
+                <div id="tutorial-body" class="hidden">
+
+                    <!-- Barra de Progresso das Etapas -->
+                    <div class="px-5 pt-4 pb-2">
+                        <div class="flex items-center justify-between gap-1 flex-wrap" id="tutorial-steps-bar">
+                            <!-- Gerado dinamicamente pelo JS abaixo -->
+                        </div>
+                    </div>
+
+                    <!-- Conteúdo da Etapa Atual -->
+                    <div id="tutorial-content" class="px-5 pb-4 pt-2 min-h-[220px]">
+                        <!-- Preenchido dinamicamente -->
+                    </div>
+
+                    <!-- Navegação Entre Etapas -->
+                    <div class="flex items-center justify-between px-5 pb-4">
+                        <button type="button" id="tutorial-prev"
+                            class="action-button action-button-secondary px-4 py-2 text-sm flex items-center gap-2 disabled:opacity-30 disabled:cursor-not-allowed"
+                            onclick="tutorialNavigate(-1)">
+                            <i class="fa-solid fa-arrow-left"></i> Anterior
+                        </button>
+                        <span id="tutorial-page-indicator" class="text-neutral-400 text-xs font-mono"></span>
+                        <button type="button" id="tutorial-next"
+                            class="action-button action-button-primary px-4 py-2 text-sm flex items-center gap-2"
+                            onclick="tutorialNavigate(1)">
+                            Próxima <i class="fa-solid fa-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <script>
+            // ---- Tutorial de Criação de Personagem ----
+            const TUTORIAL_STEPS = [
+                {
+                    icon: "fa-id-card",
+                    color: "text-sky-400",
+                    title: "Etapa 1 — Identidade do Personagem",
+                    section: "Identidade",
+                    content: `
+                        <p class="text-neutral-300 mb-3">Comece dando vida ao seu aventureiro preenchendo os dados básicos de quem ele é:</p>
+                        <ul class="space-y-2 text-sm text-neutral-400">
+                            <li class="flex gap-2"><i class="fa-solid fa-feather text-sky-400 mt-0.5 w-4 shrink-0"></i>
+                                <span><strong class="text-sky-300">Nome:</strong> O nome pelo qual será conhecido nos anais de Kuar-Tor.</span>
+                            </li>
+                            <li class="flex gap-2"><i class="fa-solid fa-paw text-sky-400 mt-0.5 w-4 shrink-0"></i>
+                                <span><strong class="text-sky-300">Raça:</strong> Sua origem — Humano, Élfon, Draconato, etc. Cada raça pode ter bônus temáticos (combine com o Mestre).</span>
+                            </li>
+                            <li class="flex gap-2"><i class="fa-solid fa-shield-halved text-sky-400 mt-0.5 w-4 shrink-0"></i>
+                                <span><strong class="text-sky-300">Classe:</strong> Seu arquétipo — Guerreiro, Mago, Ladrão, Clérigo... Define sua especialidade no grupo.</span>
+                            </li>
+                        </ul>
+                        <div class="mt-3 p-3 rounded-md bg-sky-900/20 border border-sky-700/40 text-xs text-sky-300">
+                            <i class="fa-solid fa-lightbulb mr-1"></i> <strong>Dica:</strong> A classe e a raça são descritivas no +2D6. O que realmente define o que você faz são os Atributos, Perícias e Vantagens!
+                        </div>
+                    `
+                },
+                {
+                    icon: "fa-star",
+                    color: "text-amber-400",
+                    title: "Etapa 2 — Distribuição de Atributos",
+                    section: "Atributos",
+                    content: `
+                        <p class="text-neutral-300 mb-3">Você possui <strong class="text-amber-400">14 pontos</strong> para distribuir entre os 7 atributos. Cada atributo vai de <strong>1</strong> (fraco) a <strong>5</strong> (excepcional).</p>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm mb-3">
+                            <div class="p-2 rounded bg-neutral-800/60 border border-neutral-700">
+                                <span class="font-bold text-amber-300">FOR</span> — <span class="text-neutral-400">Força: ataques físicos, carga, arrombamento.</span>
+                            </div>
+                            <div class="p-2 rounded bg-neutral-800/60 border border-neutral-700">
+                                <span class="font-bold text-amber-300">DES</span> — <span class="text-neutral-400">Destreza: furtividade, precisão, reflexos e iniciativa.</span>
+                            </div>
+                            <div class="p-2 rounded bg-neutral-800/60 border border-neutral-700">
+                                <span class="font-bold text-amber-300">CON</span> — <span class="text-neutral-400">Constituição: define Pontos de Vida (PV) e resistência física.</span>
+                            </div>
+                            <div class="p-2 rounded bg-neutral-800/60 border border-neutral-700">
+                                <span class="font-bold text-amber-300">INT</span> — <span class="text-neutral-400">Inteligência: lógica, memória, magia arcana.</span>
+                            </div>
+                            <div class="p-2 rounded bg-neutral-800/60 border border-neutral-700">
+                                <span class="font-bold text-amber-300">SAB</span> — <span class="text-neutral-400">Sabedoria: percepção, intuição, magia divina/primal.</span>
+                            </div>
+                            <div class="p-2 rounded bg-neutral-800/60 border border-neutral-700">
+                                <span class="font-bold text-amber-300">POD</span> — <span class="text-neutral-400">Poder: energia mágica, determina PE (Pontos de Energia).</span>
+                            </div>
+                            <div class="p-2 rounded bg-neutral-800/60 border border-neutral-700 sm:col-span-2">
+                                <span class="font-bold text-amber-300">CAR</span> — <span class="text-neutral-400">Carisma: persuasão, liderança, primeiras impressões sociais.</span>
+                            </div>
+                        </div>
+                        <div class="p-3 rounded-md bg-amber-900/20 border border-amber-700/40 text-xs text-amber-300">
+                            <i class="fa-solid fa-lightbulb mr-1"></i> <strong>Dica:</strong> Um guerreiro deve investir em FOR e CON. Um mago em INT/POD. Um ladrão em DES. O contador no topo da página mostra seus pontos restantes em tempo real!
+                        </div>
+                    `
+                },
+                {
+                    icon: "fa-bolt",
+                    color: "text-emerald-400",
+                    title: "Etapa 3 — Recursos de Combate (Calculados Automaticamente)",
+                    section: "Recursos de Combate",
+                    content: `
+                        <p class="text-neutral-300 mb-3">Esses valores são <strong class="text-emerald-400">calculados automaticamente</strong> ao preencher os atributos. Nenhuma ação extra é necessária!</p>
+                        <div class="space-y-2 text-sm">
+                            <div class="flex items-start gap-3 p-2 rounded bg-neutral-800/60 border border-neutral-700">
+                                <i class="fa-solid fa-heart text-red-400 mt-0.5 w-4 shrink-0"></i>
+                                <div>
+                                    <span class="font-bold text-emerald-300">PV Máximo</span> <span class="text-neutral-400">(Pontos de Vida):</span>
+                                    <span class="text-neutral-300 ml-1">10 + CON + FOR. Se CON ≥ 3, ganha +5 bônus de robustez.</span>
+                                </div>
+                            </div>
+                            <div class="flex items-start gap-3 p-2 rounded bg-neutral-800/60 border border-neutral-700">
+                                <i class="fa-solid fa-wand-magic-sparkles text-cyan-400 mt-0.5 w-4 shrink-0"></i>
+                                <div>
+                                    <span class="font-bold text-emerald-300">PE Máximo</span> <span class="text-neutral-400">(Pontos de Energia):</span>
+                                    <span class="text-neutral-300 ml-1">POD + 10. Usado para lançar magias e habilidades especiais.</span>
+                                </div>
+                            </div>
+                            <div class="flex items-start gap-3 p-2 rounded bg-neutral-800/60 border border-neutral-700">
+                                <i class="fa-solid fa-sword text-orange-400 mt-0.5 w-4 shrink-0"></i>
+                                <div>
+                                    <span class="font-bold text-emerald-300">Dano de Força:</span>
+                                    <span class="text-neutral-300 ml-1">Bônus de dano físico baseado na tabela oficial do +2D6 (ex: FOR 3 = 1d6).</span>
+                                </div>
+                            </div>
+                            <div class="flex items-start gap-3 p-2 rounded bg-neutral-800/60 border border-neutral-700">
+                                <i class="fa-solid fa-gauge-high text-purple-400 mt-0.5 w-4 shrink-0"></i>
+                                <div>
+                                    <span class="font-bold text-emerald-300">Bônus de Iniciativa:</span>
+                                    <span class="text-neutral-300 ml-1">DES − 2 (somente se DES ≥ 3). Determina quem age primeiro no combate.</span>
+                                </div>
+                            </div>
+                        </div>
+                    `
+                },
+                {
+                    icon: "fa-book",
+                    color: "text-violet-400",
+                    title: "Etapa 4 — Perícias, Vantagens e Desvantagens",
+                    section: "Habilidades",
+                    content: `
+                        <p class="text-neutral-300 mb-3">Você tem <strong class="text-violet-400">10 pontos de Perícia</strong> e <strong class="text-violet-400">5 pontos de Vantagem</strong> para gastar. Clique em <strong>"Gerir"</strong> em cada seção.</p>
+                        <div class="space-y-3 text-sm">
+                            <div class="p-3 rounded bg-neutral-800/60 border border-violet-700/40">
+                                <p class="font-bold text-violet-300 mb-1"><i class="fa-solid fa-graduation-cap mr-1"></i> Perícias (10 pontos)</p>
+                                <p class="text-neutral-400">Habilidades treináveis: Atletismo, Furtividade, Persuasão, Primeiros Socorros, Esgrima, etc. Cada perícia custa <strong>1 ponto</strong> por nível. O nível máximo é geralmente 3 em personagens iniciais.</p>
+                            </div>
+                            <div class="p-3 rounded bg-neutral-800/60 border border-amber-700/40">
+                                <p class="font-bold text-amber-300 mb-1"><i class="fa-solid fa-star mr-1"></i> Vantagens (5 pontos)</p>
+                                <p class="text-neutral-400">Traços especiais e excepcionais do personagem. Exemplos: <em>Ambidestria</em>, <em>Visão no Escuro</em>, <em>Sentidos Aguçados</em>. Cada vantagem tem um custo em pontos (consulte o PDF).</p>
+                            </div>
+                            <div class="p-3 rounded bg-neutral-800/60 border border-red-700/40">
+                                <p class="font-bold text-red-300 mb-1"><i class="fa-solid fa-skull mr-1"></i> Desvantagens</p>
+                                <p class="text-neutral-400">Fraquezas que adicionam drama e profundidade. São <strong>opcionais</strong> mas podem conceder pontos extras (combine com o Mestre). Ex: <em>Fobia</em>, <em>Impulsivo</em>, <em>Mau Cheiro</em>.</p>
+                            </div>
+                        </div>
+                    `
+                },
+                {
+                    icon: "fa-wand-sparkles",
+                    color: "text-indigo-400",
+                    title: "Etapa 5 — Magia & Rituais (Opcional)",
+                    section: "Magia",
+                    content: `
+                        <p class="text-neutral-300 mb-3">Se seu personagem é um conjurador, preencha esta seção. Personagens sem magia podem pular!</p>
+                        <div class="space-y-2 text-sm">
+                            <div class="p-2 rounded bg-neutral-800/60 border border-neutral-700">
+                                <p class="font-bold text-indigo-300 mb-1"><i class="fa-solid fa-fire-flame-curved mr-1 text-orange-400"></i> Tradição Mágica</p>
+                                <p class="text-neutral-400">Escolha o atributo que alimenta sua magia: <strong class="text-orange-300">Arcana (INT)</strong> para magos estudiosos, <strong class="text-green-300">Divina/Primal (SAB)</strong> para clérigos e druidas, <strong class="text-purple-300">Inata (POD)</strong> para seres de origem mágica.</p>
+                            </div>
+                            <div class="p-2 rounded bg-neutral-800/60 border border-neutral-700">
+                                <p class="font-bold text-indigo-300 mb-1"><i class="fa-solid fa-route mr-1 text-cyan-400"></i> Caminhos de Magia</p>
+                                <p class="text-neutral-400">Escolas ou domínios que você domina (ex: Fogo, Cura, Ilusão, Morte). Cada caminho tem feitiços e rituais únicos. Adicione um caminho com o botão <strong>"+ Adicionar Caminho"</strong>.</p>
+                            </div>
+                            <div class="p-2 rounded bg-neutral-800/60 border border-neutral-700">
+                                <p class="font-bold text-indigo-300 mb-1"><i class="fa-solid fa-table mr-1 text-amber-400"></i> Tabela de Efeitos Mágicos</p>
+                                <p class="text-neutral-400">Nível mágico vai de <strong>2 a 6+</strong>. O nível do feitiço determina Dano, Bônus/RD, Alcance, Duração e a CD para resistir (consulte a tabela logo abaixo desta seção na ficha).</p>
+                            </div>
+                        </div>
+                    `
+                },
+                {
+                    icon: "fa-backpack",
+                    color: "text-orange-400",
+                    title: "Etapa 6 — Equipamento & Passado Sombrio",
+                    section: "Equipamento",
+                    content: `
+                        <p class="text-neutral-300 mb-3">O toque final antes de gerar a ficha! Aqui você registra o que o personagem carrega e de onde veio.</p>
+                        <div class="space-y-2 text-sm">
+                            <div class="p-2 rounded bg-neutral-800/60 border border-neutral-700">
+                                <p class="font-bold text-orange-300 mb-1"><i class="fa-solid fa-sword mr-1"></i> Equipamento e Relíquias</p>
+                                <p class="text-neutral-400">Liste armas, armaduras, itens mágicos e relíquias que o personagem possui. Seja específico — "Adaga enferrujada com runa de gelo" é mais interessante que "adaga"!</p>
+                            </div>
+                            <div class="p-2 rounded bg-neutral-800/60 border border-neutral-700">
+                                <p class="font-bold text-orange-300 mb-1"><i class="fa-solid fa-scroll mr-1"></i> Passado Sombrio</p>
+                                <p class="text-neutral-400">A história de origem do personagem. O que o marcou? Qual tragédia ou segredo o motiva? Um bom backstory conecta as Desvantagens e Vantagens à narrativa e enriquece as sessões.</p>
+                            </div>
+                        </div>
+                        <div class="mt-3 p-3 rounded-md bg-orange-900/20 border border-orange-700/40 text-xs text-orange-300">
+                            <i class="fa-solid fa-lightbulb mr-1"></i> <strong>Dica:</strong> Combine passado sombrio com desvantagens — se o personagem tem <em>Fobia</em>, descreva de onde ela vem!
+                        </div>
+                    `
+                },
+                {
+                    icon: "fa-floppy-disk",
+                    color: "text-green-400",
+                    title: "Etapa 7 — Salvar, Gerar e Exportar a Ficha",
+                    section: "Salvar",
+                    content: `
+                        <p class="text-neutral-300 mb-3">Com tudo preenchido, é hora de registrar seu personagem para a eternidade!</p>
+                        <div class="space-y-2 text-sm">
+                            <div class="p-2 rounded bg-neutral-800/60 border border-neutral-700">
+                                <p class="font-bold text-green-300 mb-1"><i class="fa-solid fa-cloud mr-1 text-cyan-400"></i> Salvar na Nuvem (Firebase)</p>
+                                <p class="text-neutral-400">Se estiver <strong class="text-green-400">logado</strong>, clique em <strong>"Gerar e Salvar Ficha"</strong>. A ficha fica sincronizada na nuvem e você pode acessá-la de qualquer dispositivo. Fichas salvas aparecem na seção <em>"Crônicas Salvas na Nuvem"</em> no final da página.</p>
+                            </div>
+                            <div class="p-2 rounded bg-neutral-800/60 border border-neutral-700">
+                                <p class="font-bold text-green-300 mb-1"><i class="fa-solid fa-file-pdf mr-1 text-red-400"></i> Imprimir / Salvar em PDF</p>
+                                <p class="text-neutral-400">Após gerar a ficha, use o botão <strong>"Imprimir / Salvar em PDF"</strong> para criar uma versão printável. Use o diálogo do navegador para salvar como PDF.</p>
+                            </div>
+                            <div class="p-2 rounded bg-neutral-800/60 border border-neutral-700">
+                                <p class="font-bold text-green-300 mb-1"><i class="fa-solid fa-file-code mr-1 text-amber-400"></i> Exportar JSON / Markdown</p>
+                                <p class="text-neutral-400">Exporte um arquivo <strong>.json</strong> para backup local ou recarregar depois com "Importar Ficha". O formato <strong>Markdown</strong> é útil para colar em Discord, Notion ou Obsidian.</p>
+                            </div>
+                        </div>
+                        <div class="mt-3 p-3 rounded-md bg-green-900/20 border border-green-700/40 text-xs text-green-300">
+                            <i class="fa-solid fa-check-circle mr-1"></i> <strong>Pronto!</strong> Seu personagem está criado. Agora aventure-se por Kuar-Tor e que os dados sejam favoráveis!
+                        </div>
+                    `
+                }
+            ];
+
+            let currentTutorialStep = 0;
+
+            function renderTutorialStep(idx) {
+                const step = TUTORIAL_STEPS[idx];
+                const total = TUTORIAL_STEPS.length;
+
+                // Atualiza barra de progresso
+                const bar = document.getElementById('tutorial-steps-bar');
+                if (bar) {
+                    bar.innerHTML = TUTORIAL_STEPS.map((s, i) => `
+                        <button type="button"
+                            onclick="tutorialGoTo(${i})"
+                            title="${s.title}"
+                            class="flex-1 min-w-[28px] h-2.5 rounded-full transition-all duration-300 ${i === idx ? 'bg-amber-400' : i < idx ? 'bg-amber-700' : 'bg-neutral-700'} hover:bg-amber-500">
+                        </button>
+                    `).join('');
+                }
+
+                // Atualiza conteúdo
+                const content = document.getElementById('tutorial-content');
+                if (content) {
+                    content.innerHTML = `
+                        <div class="flex items-center gap-3 mb-4">
+                            <div class="w-10 h-10 rounded-full bg-neutral-800 border border-neutral-600 flex items-center justify-center shrink-0">
+                                <i class="fa-solid ${step.icon} ${step.color} text-lg"></i>
+                            </div>
+                            <h3 class="text-base font-bold title-font ${step.color}">${step.title}</h3>
+                        </div>
+                        <div>${step.content}</div>
+                    `;
+                }
+
+                // Indicador de página
+                const indicator = document.getElementById('tutorial-page-indicator');
+                if (indicator) indicator.textContent = `Etapa ${idx + 1} de ${total}`;
+
+                // Botões prev/next
+                const prev = document.getElementById('tutorial-prev');
+                const next = document.getElementById('tutorial-next');
+                if (prev) prev.disabled = idx === 0;
+                if (next) {
+                    if (idx === total - 1) {
+                        next.innerHTML = '<i class="fa-solid fa-check"></i> Concluir';
+                        next.onclick = () => {
+                            document.getElementById('tutorial-body').classList.add('hidden');
+                            document.getElementById('tutorial-chevron').classList.remove('rotate-180');
+                        };
+                    } else {
+                        next.innerHTML = 'Próxima <i class="fa-solid fa-arrow-right"></i>';
+                        next.onclick = () => tutorialNavigate(1);
+                    }
+                }
+            }
+
+            function tutorialNavigate(direction) {
+                const total = TUTORIAL_STEPS.length;
+                currentTutorialStep = Math.max(0, Math.min(total - 1, currentTutorialStep + direction));
+                renderTutorialStep(currentTutorialStep);
+            }
+
+            function tutorialGoTo(idx) {
+                currentTutorialStep = idx;
+                renderTutorialStep(currentTutorialStep);
+            }
+
+            // Inicializa o tutorial ao carregar
+            document.addEventListener('DOMContentLoaded', () => renderTutorialStep(0));
+            // Fallback imediato caso DOMContentLoaded já tenha disparado
+            if (document.readyState !== 'loading') renderTutorialStep(0);
+            </script>
+            <!-- ========================================================== -->
+
             <form id="rpgSheetForm" class="space-y-6">
                 <!-- Informações Básicas -->
                 <fieldset class="border border-neutral-700 p-4 rounded-md">
