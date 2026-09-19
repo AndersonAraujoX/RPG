@@ -5,6 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gerador de Ficha +2D6 Dark Fantasy - Kuar-Tor Final (Online)</title>
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚔️</text></svg>">
     <link rel="stylesheet" href="tailwind.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -168,6 +170,11 @@
 
         .points-value.negative {
             color: #ef4444;
+        }
+
+        .hidden,
+        .modal.hidden {
+            display: none !important;
         }
 
         .modal {
@@ -1636,43 +1643,25 @@
                 }
             });
 
-            // Adiciona o modal de confirmação e alerta
-            const modalHtml = `
-                <div id="custom-confirm-modal" class="modal hidden">
-                    <div class="modal-content">
-                        <div class="flex justify-between items-center mb-4">
-                            <h3 class="modal-title">Confirmação</h3>
-                            <button id="custom-cancel-button" class="modal-close-button">&times;</button>
-                        </div>
-                        <div class="modal-body">
-                            <p id="custom-confirm-message"></p>
-                        </div>
-                        <div class="mt-6 text-right space-x-2">
-                            <button id="custom-cancel-button-footer" class="action-button action-button-secondary px-4 py-2">Cancelar</button>
-                            <button id="custom-confirm-button" class="action-button action-button-primary px-4 py-2">Confirmar</button>
-                        </div>
-                    </div>
-                </div>
-            `;
-            document.body.insertAdjacentHTML('beforeend', modalHtml);
-            document.getElementById('custom-cancel-button').addEventListener('click', () => document.getElementById('custom-confirm-modal').classList.add('hidden'));
-            document.getElementById('custom-cancel-button-footer').addEventListener('click', () => document.getElementById('custom-confirm-modal').classList.add('hidden'));
-
-            const alertModalHtml = `
-                <div id="alert-modal" class="modal hidden">
-                    <div class="modal-content">
-                        <div class="flex justify-between items-center mb-4">
-                            <h3 id="alert-modal-title" class="modal-title"></h3>
-                            <button id="alert-modal-close" class="modal-close-button" title="Fechar">&times;</button>
-                        </div>
-                        <div class="modal-body">
-                            <p id="alert-modal-message"></p>
-                        </div>
-                    </div>
-                </div>
-            `;
-            document.body.insertAdjacentHTML('beforeend', alertModalHtml);
-            document.getElementById('alert-modal-close').addEventListener('click', () => document.getElementById('alert-modal').classList.add('hidden'));
+            // Configura os botões de fechar dos modais existentes no HTML
+            const customCancelBtn = document.getElementById('custom-cancel-button');
+            if (customCancelBtn) {
+                customCancelBtn.addEventListener('click', () => {
+                    document.getElementById('custom-confirm-modal')?.classList.add('hidden');
+                });
+            }
+            const customCancelBtnFooter = document.getElementById('custom-cancel-button-footer');
+            if (customCancelBtnFooter) {
+                customCancelBtnFooter.addEventListener('click', () => {
+                    document.getElementById('custom-confirm-modal')?.classList.add('hidden');
+                });
+            }
+            const alertCloseBtn = document.getElementById('alert-modal-close');
+            if (alertCloseBtn) {
+                alertCloseBtn.addEventListener('click', () => {
+                    document.getElementById('alert-modal')?.classList.add('hidden');
+                });
+            }
 
             // Vincula o callback de sincronização de autenticação
             onAuthSheetSync = loadSavedSheetsFromFirestore;
