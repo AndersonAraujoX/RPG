@@ -805,47 +805,58 @@
         let currentUserId = null;
         let currentSheetId = null;
         let unsubscribeFromSheets = null;
+        let isAppInitialized = false;
 
-        // A lógica principal da aplicação é executada somente após a autenticação
+        // Callback dinâmico para carregar fichas após inicialização da UI
+        let onAuthSheetSync = null;
+
+        function ensureAppInitialized() {
+            if (!isAppInitialized) {
+                isAppInitialized = true;
+                mainAppLogic();
+            }
+        }
+
+        // A lógica principal da aplicação é inicializada imediatamente (Offline-First)
+        ensureAppInitialized();
+
+        // Observador de Autenticação
         onAuthStateChanged(auth, async (user) => {
             const authStatusEl = document.getElementById('auth-status');
             if (user) {
                 currentUserId = user.uid;
-                authStatusEl.textContent = "Carregando perfil...";
+                if (authStatusEl) authStatusEl.textContent = "Carregando perfil...";
 
                 // Get nickname from global users collection
                 try {
                     const userDocRef = doc(db, "users", currentUserId);
                     const userDoc = await getDoc(userDocRef);
                     if (userDoc.exists() && userDoc.data().nickname) {
-                        authStatusEl.innerHTML = `<span class="text-green-400 font-bold">${userDoc.data().nickname}</span> | ID: <span class="text-xs text-neutral-500">${currentUserId.substring(0, 8)}...</span>`;
+                        if (authStatusEl) authStatusEl.innerHTML = `<span class="text-green-400 font-bold">${userDoc.data().nickname}</span> | ID: <span class="text-xs text-neutral-400">${currentUserId.substring(0, 8)}...</span>`;
                     } else {
-                        authStatusEl.innerHTML = `Conectado! <span class="text-xs text-neutral-500 break-all">ID: ${currentUserId}</span>`;
+                        if (authStatusEl) authStatusEl.innerHTML = `<span class="text-green-400 font-bold">Conectado!</span> <span class="text-xs text-neutral-400 break-all">ID: ${currentUserId.substring(0, 8)}...</span>`;
                     }
                 } catch (e) {
-                    console.error("Error fetching nickname:", e);
-                    authStatusEl.innerHTML = `Conectado! <span class="text-xs text-neutral-500 break-all">ID: ${currentUserId}</span>`;
+                    console.warn("Aviso ao buscar perfil no Firestore:", e.message);
+                    if (authStatusEl) authStatusEl.innerHTML = `<span class="text-green-400 font-bold">Conectado!</span> <span class="text-xs text-neutral-400 break-all">ID: ${currentUserId.substring(0, 8)}...</span>`;
                 }
 
                 console.log("Usuário autenticado:", currentUserId);
-                mainAppLogic();
+                if (typeof onAuthSheetSync === 'function') onAuthSheetSync();
             } else {
-                authStatusEl.textContent = "Autenticando...";
-                console.log("Nenhum usuário logado. Tentando login anônimo.");
+                currentUserId = null;
+                if (authStatusEl) authStatusEl.innerHTML = `<span class="text-amber-400 font-semibold">Modo Local (Navegador)</span> | <a href="login.html" class="underline text-cyan-400 hover:text-white font-semibold">Fazer Login</a> para nuvem`;
+                if (typeof onAuthSheetSync === 'function') onAuthSheetSync();
+
+                // Tentativa suave de login anônimo (caso habilitado no Firebase Console)
                 try {
                     if (typeof __initial_auth_token !== 'undefined') {
                         await signInWithCustomToken(auth, __initial_auth_token);
                     } else {
-                        // Tenta login anônimo, mas captura falha se desativado no console
                         await signInAnonymously(auth);
                     }
                 } catch (error) {
-                    console.error("Erro na autenticação:", error);
-                    if (error.code === 'auth/admin-restricted-operation') {
-                        authStatusEl.innerHTML = `<span class="text-amber-500">Modo Visitante (Apenas Leitura)</span>. <a href="login.html" class="underline hover:text-white">Fazer Login</a> para salvar.`;
-                    } else {
-                        authStatusEl.textContent = "Falha na conexão. Tente recarregar ou fazer login.";
-                    }
+                    console.warn("Login anônimo não disponível no Firebase Console. Operando em Modo Local:", error.code || error.message);
                 }
             }
         });
@@ -1153,11 +1164,14 @@
                                 const shBonus = typeof CharacterSheetRules !== 'undefined' ? CharacterSheetRules.calcSuperhumanBonus(attrVal).bonus : 0;
                                 const totalBonus = (p.valor || 0) + attrVal + shBonus;
 
+                                const safeSkillName = (p.nome || '').replace(/"/g, '&quot;');
+                                const safeSkillAttr = (p.atributo || 'DES').replace(/"/g, '&quot;');
+
                                 return `
                                     <div class="inline-flex items-center gap-1.5 bg-neutral-900 border border-neutral-700 hover:border-cyan-500/50 rounded-md px-2.5 py-1 text-xs transition shadow">
                                         <span class="font-bold text-gray-200">${p.nome}</span>
                                         <span class="text-cyan-400 font-mono font-bold">+${p.valor} (${p.atributo})</span>
-                                        <button type="button" onclick="rollSkillFromSheet('${p.nome}', ${p.valor}, '${p.atributo}')" class="ml-1 px-1.5 py-0.5 bg-cyan-600 hover:bg-cyan-500 text-black font-cinzel font-bold text-[10px] rounded transition shadow flex items-center gap-1">
+                                        <button type="button" data-skill-name="${safeSkillName}" data-skill-val="${p.valor || 0}" data-skill-attr="${safeSkillAttr}" onclick="rollSkillFromSheet(this.dataset.skillName, Number(this.dataset.skillVal), this.dataset.skillAttr)" class="ml-1 px-1.5 py-0.5 bg-cyan-600 hover:bg-cyan-500 text-black font-cinzel font-bold text-[10px] rounded transition shadow flex items-center gap-1">
                                             <i class="fa-solid fa-dice"></i> Rolar (+${totalBonus})
                                         </button>
                                     </div>
@@ -1256,114 +1270,193 @@
                 updateAllStats();
             }
 
-            // --- FUNÇÕES DO FIREBASE ---
-            async function saveSheetToFirestore() {
-                if (!currentUserId) {
-                    console.error("Usuário não autenticado. Não é possível salvar.");
-                    showModalMessage('Erro', 'Você precisa estar conectado para salvar. Tente recarregar a página.');
-                    return;
-                }
-
-                const sheetIdToSave = currentSheetId || crypto.randomUUID();
-                const sheetData = getFormAsJson();
-
-                const sheetDocRef = doc(db, `users/${currentUserId}/characters`, sheetIdToSave);
-
+            // --- FUNÇÕES DE PERSISTÊNCIA (HÍBRIDA: LOCALSTORAGE + FIRESTORE) ---
+            function saveSheetToLocalStorage(sheetId, sheetData) {
                 try {
-                    await setDoc(sheetDocRef, {
+                    const localSheets = JSON.parse(localStorage.getItem('kuar_tor_saved_sheets') || '{}');
+                    localSheets[sheetId] = {
+                        id: sheetId,
                         name: sheetData.charName || 'Sem Nome',
-                        lastUpdated: serverTimestamp(),
-                        sheetData: sheetData
-                    });
-                    console.log(`Ficha ${sheetIdToSave} salva no Firestore.`);
-                    currentSheetId = sheetIdToSave;
-                } catch (error) {
-                    console.error("Erro ao salvar ficha:", error);
-                    showModalMessage('Erro', 'Falha ao salvar a ficha. Verifique sua conexão e tente novamente.');
+                        lastUpdated: new Date().toISOString(),
+                        sheetData: sheetData,
+                        isCloud: false
+                    };
+                    localStorage.setItem('kuar_tor_saved_sheets', JSON.stringify(localSheets));
+                } catch (e) {
+                    console.warn('Erro ao salvar no localStorage:', e);
                 }
             }
 
+            async function saveSheetToFirestore() {
+                const sheetIdToSave = currentSheetId || crypto.randomUUID();
+                const sheetData = getFormAsJson();
+                const sheetName = sheetData.charName || 'Sem Nome';
+
+                // Salva sempre no LocalStorage primeiro (Garantia Offline)
+                saveSheetToLocalStorage(sheetIdToSave, sheetData);
+                currentSheetId = sheetIdToSave;
+
+                if (!currentUserId) {
+                    showModalMessage('Salvo no Navegador', 'Sua ficha foi salva na memória local do navegador. Para sincronizar na nuvem do Firebase, faça login.');
+                    loadSavedSheetsFromFirestore();
+                    return;
+                }
+
+                const sheetDocRef = doc(db, `users/${currentUserId}/characters`, sheetIdToSave);
+                try {
+                    await setDoc(sheetDocRef, {
+                        name: sheetName,
+                        lastUpdated: serverTimestamp(),
+                        sheetData: sheetData
+                    });
+                    console.log(`Ficha ${sheetIdToSave} sincronizada no Firestore.`);
+                    showModalMessage('Sucesso', 'Ficha sincronizada com a nuvem do Firebase com sucesso!');
+                } catch (error) {
+                    console.warn("Erro ao salvar ficha no Firestore:", error);
+                    showModalMessage('Aviso', 'Ficha salva localmente no navegador! A sincronização na nuvem falhou (verifique a conexão ou faça login).');
+                }
+                loadSavedSheetsFromFirestore();
+            }
+
             function loadSavedSheetsFromFirestore() {
-                if (!currentUserId) return;
+                let localSheets = {};
+                try {
+                    localSheets = JSON.parse(localStorage.getItem('kuar_tor_saved_sheets') || '{}');
+                } catch (e) {}
+
+                if (!currentUserId) {
+                    const localList = Object.values(localSheets);
+                    renderSheetsList(localList, false);
+                    return;
+                }
 
                 if (unsubscribeFromSheets) {
                     unsubscribeFromSheets();
                 }
 
-                const sheetsCollectionRef = collection(db, `users/${currentUserId}/characters`);
-                const q = query(sheetsCollectionRef);
-
-                unsubscribeFromSheets = onSnapshot(q, (snapshot) => {
-                    const sheets = [];
-                    snapshot.forEach(doc => {
-                        sheets.push({ id: doc.id, ...doc.data() });
-                    });
-
-                    savedSheetsListDiv.innerHTML = sheets.map(item => `
-                        <div class="flex justify-between items-center p-2 bg-neutral-700 rounded-md">
-                            <span>${item.name}</span>
-                            <div>
-                                <button class="load-sheet-btn text-xs action-button action-button-secondary px-2 py-1" data-id="${item.id}">Carregar</button>
-                                <button class="delete-sheet-btn text-xs action-button action-button-primary px-2 py-1" data-id="${item.id}">Excluir</button>
-                            </div>
-                        </div>
-                    `).join('') || '<p class="text-neutral-500 text-center">Nenhuma crônica registrada na nuvem.</p>';
-
-                }, (error) => {
-                    console.error("Erro ao carregar fichas:", error);
-                    savedSheetsListDiv.innerHTML = '<p class="text-red-500 text-center">Erro ao carregar crônicas. Tente recarregar a página.</p>';
-                });
-            }
-
-            async function loadSheetFromFirestore(sheetId) {
-                if (!currentUserId || !sheetId) return;
-                console.log("Tentando carregar ficha com ID:", sheetId);
-                const sheetDocRef = doc(db, `users/${currentUserId}/characters`, sheetId);
-
                 try {
-                    const docSnap = await getDoc(sheetDocRef);
-                    if (docSnap.exists()) {
-                        const data = docSnap.data();
-                        loadFormFromJson(data.sheetData);
-                        currentSheetId = sheetId;
-                        console.log(`Ficha ${sheetId} carregada.`);
-                    } else {
-                        console.log("Nenhuma ficha encontrada com este ID!");
-                        showModalMessage('Erro', 'Nenhuma ficha encontrada com este ID.');
-                    }
-                } catch (error) {
-                    console.error("Erro ao carregar ficha:", error);
-                    showModalMessage('Erro', 'Falha ao carregar a ficha. Verifique sua conexão e tente novamente.');
+                    const sheetsCollectionRef = collection(db, `users/${currentUserId}/characters`);
+                    const q = query(sheetsCollectionRef);
+
+                    unsubscribeFromSheets = onSnapshot(q, (snapshot) => {
+                        const cloudSheets = [];
+                        snapshot.forEach(docSnap => {
+                            cloudSheets.push({ id: docSnap.id, ...docSnap.data(), isCloud: true });
+                        });
+
+                        // Mesclar locais e nuvem
+                        const merged = [...cloudSheets];
+                        Object.values(localSheets).forEach(local => {
+                            if (!cloudSheets.some(c => c.id === local.id)) {
+                                merged.push(local);
+                            }
+                        });
+
+                        renderSheetsList(merged, true);
+                    }, (error) => {
+                        console.warn("Aviso ao escutar Firestore (operando em modo local):", error.message);
+                        renderSheetsList(Object.values(localSheets), false);
+                    });
+                } catch (err) {
+                    console.warn("Falha ao inicializar query do Firestore:", err.message);
+                    renderSheetsList(Object.values(localSheets), false);
                 }
             }
 
+            function renderSheetsList(sheets, isOnline) {
+                if (!savedSheetsListDiv) return;
+                if (!sheets || sheets.length === 0) {
+                    savedSheetsListDiv.innerHTML = '<p class="text-neutral-500 text-center text-xs py-2">Nenhuma crônica registrada.</p>';
+                    return;
+                }
+
+                savedSheetsListDiv.innerHTML = sheets.map(item => `
+                    <div class="flex justify-between items-center p-2 bg-neutral-800 border border-neutral-700 rounded-md shadow-sm mb-1.5">
+                        <div class="flex items-center gap-2 truncate">
+                            <i class="fa-solid ${item.isCloud ? 'fa-cloud text-cyan-400' : 'fa-hard-drive text-amber-400'} text-xs" title="${item.isCloud ? 'Sincronizada na Nuvem' : 'Salva Localmente'}"></i>
+                            <span class="text-sm font-semibold text-gray-200 truncate">${item.name || 'Sem Nome'}</span>
+                        </div>
+                        <div class="flex items-center gap-1.5 flex-shrink-0">
+                            <button class="load-sheet-btn text-xs action-button action-button-secondary px-2.5 py-1" data-id="${item.id}">Carregar</button>
+                            <button class="delete-sheet-btn text-xs action-button action-button-primary px-2.5 py-1" data-id="${item.id}">Excluir</button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            async function loadSheetFromFirestore(sheetId) {
+                if (!sheetId) return;
+
+                // 1. Tenta carregar do Firestore se autenticado
+                if (currentUserId) {
+                    try {
+                        const sheetDocRef = doc(db, `users/${currentUserId}/characters`, sheetId);
+                        const docSnap = await getDoc(sheetDocRef);
+                        if (docSnap.exists()) {
+                            const data = docSnap.data();
+                            loadFormFromJson(data.sheetData);
+                            currentSheetId = sheetId;
+                            showModalMessage('Sucesso', `Ficha "${data.name || ''}" carregada da nuvem.`);
+                            return;
+                        }
+                    } catch (error) {
+                        console.warn("Erro ao buscar no Firestore, tentando LocalStorage:", error);
+                    }
+                }
+
+                // 2. Fallback do LocalStorage
+                try {
+                    const localSheets = JSON.parse(localStorage.getItem('kuar_tor_saved_sheets') || '{}');
+                    if (localSheets[sheetId]) {
+                        loadFormFromJson(localSheets[sheetId].sheetData);
+                        currentSheetId = sheetId;
+                        showModalMessage('Sucesso', `Ficha "${localSheets[sheetId].name || ''}" carregada do armazenamento local.`);
+                        return;
+                    }
+                } catch (e) {
+                    console.warn("Erro ao carregar do LocalStorage:", e);
+                }
+
+                showModalMessage('Erro', 'Ficha não encontrada.');
+            }
+
             function deleteSheetFromFirestore(sheetId) {
-                if (!currentUserId || !sheetId) return;
+                if (!sheetId) return;
 
                 const confirmModal = document.getElementById('custom-confirm-modal');
                 const confirmButton = document.getElementById('custom-confirm-button');
                 const cancelButton = document.getElementById('custom-cancel-button');
                 const messageText = document.getElementById('custom-confirm-message');
 
-                messageText.textContent = 'Tem certeza que deseja excluir esta ficha da nuvem? Esta ação não pode ser desfeita.';
+                messageText.textContent = 'Tem certeza que deseja excluir esta ficha? Esta ação não pode ser desfeita.';
                 confirmModal.classList.remove('hidden');
 
                 const handleConfirm = async () => {
-                    const sheetDocRef = doc(db, `users/${currentUserId}/characters`, sheetId);
+                    // Remove do localStorage
                     try {
-                        await deleteDoc(sheetDocRef);
-                        console.log(`Ficha ${sheetId} excluída.`);
-                        if (currentSheetId === sheetId) {
-                            clearFormButton.click();
+                        const localSheets = JSON.parse(localStorage.getItem('kuar_tor_saved_sheets') || '{}');
+                        delete localSheets[sheetId];
+                        localStorage.setItem('kuar_tor_saved_sheets', JSON.stringify(localSheets));
+                    } catch (e) {}
+
+                    // Remove do Firestore se autenticado
+                    if (currentUserId) {
+                        try {
+                            const sheetDocRef = doc(db, `users/${currentUserId}/characters`, sheetId);
+                            await deleteDoc(sheetDocRef);
+                            console.log(`Ficha ${sheetId} excluída do Firestore.`);
+                        } catch (error) {
+                            console.warn("Aviso ao excluir do Firestore:", error);
                         }
-                        confirmModal.classList.add('hidden');
-                        confirmButton.removeEventListener('click', handleConfirm);
-                        cancelButton.removeEventListener('click', handleCancel);
-                    } catch (error) {
-                        console.error("Erro ao excluir ficha:", error);
-                        showModalMessage('Erro', 'Falha ao excluir a ficha. Verifique sua conexão e tente novamente.');
-                        confirmModal.classList.add('hidden');
                     }
+
+                    if (currentSheetId === sheetId) {
+                        clearFormButton.click();
+                    }
+                    loadSavedSheetsFromFirestore();
+                    confirmModal.classList.add('hidden');
+                    confirmButton.removeEventListener('click', handleConfirm);
+                    cancelButton.removeEventListener('click', handleCancel);
                 };
 
                 const handleCancel = () => {
@@ -1506,8 +1599,8 @@
             importSheetButton.addEventListener('click', () => fileInput.click());
             fileInput.addEventListener('change', (e) => {
                 const file = e.target.files[0];
-                if (!file || !currentUserId) {
-                    showModalMessage('Erro na Importação', 'Usuário não autenticado ou nenhum arquivo selecionado.');
+                if (!file) {
+                    showModalMessage('Aviso', 'Nenhum arquivo selecionado.');
                     return;
                 }
 
@@ -1518,7 +1611,7 @@
                         loadFormFromJson(data);
                         currentSheetId = crypto.randomUUID();
                         await saveSheetToFirestore();
-                        showModalMessage('Importação Concluída', 'A ficha foi importada com sucesso e salva na nuvem.');
+                        showModalMessage('Importação Concluída', 'A ficha foi importada com sucesso.');
                     } catch (error) {
                         console.error("Erro ao importar ficha:", error);
                         showModalMessage('Erro na Importação', 'O arquivo selecionado não é um arquivo de ficha JSON válido.');
@@ -1581,7 +1674,10 @@
             document.body.insertAdjacentHTML('beforeend', alertModalHtml);
             document.getElementById('alert-modal-close').addEventListener('click', () => document.getElementById('alert-modal').classList.add('hidden'));
 
-            // Inicia o carregamento das fichas após a autenticação ser estabelecida.
+            // Vincula o callback de sincronização de autenticação
+            onAuthSheetSync = loadSavedSheetsFromFirestore;
+
+            // Inicia o carregamento das fichas locais/remotas e atualiza estatísticas
             loadSavedSheetsFromFirestore();
             updateAllStats();
         }
