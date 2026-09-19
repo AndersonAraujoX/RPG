@@ -5,23 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gerador de Ficha +2D6 Dark Fantasy - Kuar-Tor Final (Online)</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        rpg: {
-                            black: '#0B0C10',
-                            cyan: '#66FCF1',
-                            slate: '#1F2833',
-                            silver: '#C5C6C7',
-                        }
-                    }
-                }
-            }
-        }
-    </script>
+    <link rel="stylesheet" href="tailwind.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
@@ -30,7 +14,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
     <!-- Core Rules & Calculations (+2d6 v2.3) -->
-    <script src="../../src/core/character-sheet.js"></script>
+    <script src="../src/core/character-sheet.js"></script>
 
     <style>
         body {
@@ -386,7 +370,7 @@
                 <h1 class="text-3xl font-bold text-amber-500 title-font text-center md:text-left mb-4 md:mb-0"
                     style="text-shadow: 2px 2px 4px #000;">Ficha de Personagem +2D6</h1>
                 <div class="flex gap-2 items-center flex-wrap">
-                    <a href="../../index.html" id="backToMenuButton"
+                    <a href="../index.html" id="backToMenuButton"
                         class="action-button action-button-secondary px-4 py-2 font-bold no-underline text-center inline-flex items-center gap-2">
                         <i class="fa-solid fa-arrow-left"></i> Voltar ao Menu
                     </a>
@@ -407,19 +391,19 @@
                     Recursos Rápidos & Manuais (+2D6)
                 </h3>
                 <div class="flex justify-center flex-wrap gap-3">
-                    <a href="../Arquivos/medieval2d6-livreto.pdf" target="_blank" rel="noopener noreferrer"
+                    <a href="Arquivos/medieval2d6-livreto.pdf" target="_blank" rel="noopener noreferrer"
                         class="px-4 py-2 action-button action-button-resource rounded-md text-sm inline-flex items-center gap-2">
                         <i class="fa-solid fa-book-open text-amber-400"></i> Livreto +2D6 (PDF)
                     </a>
-                    <a href="../Arquivos/Sistema.pdf" target="_blank" rel="noopener noreferrer"
+                    <a href="Arquivos/Sistema.pdf" target="_blank" rel="noopener noreferrer"
                         class="px-4 py-2 action-button action-button-resource rounded-md text-sm inline-flex items-center gap-2">
                         <i class="fa-solid fa-scroll text-amber-400"></i> Sistema Oficial +2D6 (PDF)
                     </a>
-                    <a href="../Arquivos/Vantagens.pdf" target="_blank" rel="noopener noreferrer"
+                    <a href="Arquivos/Vantagens.pdf" target="_blank" rel="noopener noreferrer"
                         class="px-4 py-2 action-button action-button-resource rounded-md text-sm inline-flex items-center gap-2">
                         <i class="fa-solid fa-star text-amber-400"></i> Vantagens (PDF)
                     </a>
-                    <a href="../Arquivos/desvantagens.pdf" target="_blank" rel="noopener noreferrer"
+                    <a href="Arquivos/desvantagens.pdf" target="_blank" rel="noopener noreferrer"
                         class="px-4 py-2 action-button action-button-resource rounded-md text-sm inline-flex items-center gap-2">
                         <i class="fa-solid fa-skull text-amber-400"></i> Desvantagens (PDF)
                     </a>
@@ -858,7 +842,7 @@
                 } catch (error) {
                     console.error("Erro na autenticação:", error);
                     if (error.code === 'auth/admin-restricted-operation') {
-                        authStatusEl.innerHTML = `<span class="text-amber-500">Modo Visitante (Apenas Leitura)</span>. <a href="../login.html" class="underline hover:text-white">Fazer Login</a> para salvar.`;
+                        authStatusEl.innerHTML = `<span class="text-amber-500">Modo Visitante (Apenas Leitura)</span>. <a href="login.html" class="underline hover:text-white">Fazer Login</a> para salvar.`;
                     } else {
                         authStatusEl.textContent = "Falha na conexão. Tente recarregar ou fazer login.";
                     }
