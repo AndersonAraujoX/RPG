@@ -32,7 +32,7 @@ QUnit.module('Portal de Kuar-Tor: Redesign & Cards da Campanha', function () {
         const content = fs.readFileSync(INDEX_HTML_PATH, 'utf-8');
 
         assert.ok(content.includes('legado/Site/siteV1.1.html'), '1. O Mundo de Kuar-Tor presente');
-        assert.ok(content.includes('legado/Forms/formV6.html'), '2. Gerador de Fichas presente');
+        assert.ok(content.includes('public/formV6.html'), '2. Gerador de Fichas presente');
         assert.ok(content.includes('public/arvore_magia.html'), '3. Biblioteca Arcana presente');
         assert.ok(content.includes('legado/Dados/dados.html'), '4. Tomo dos Dados presente');
         assert.ok(content.includes('public/items.html'), '5. Gerenciador de Itens presente');

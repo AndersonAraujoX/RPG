@@ -148,13 +148,13 @@ QUnit.module('Ficha de Personagem — Regras +2d6 v2.3 (Newton Rocha)', function
         assert.ok(lastRoll.total > 0, 'Total calculado');
     });
 
-    QUnit.test('Integração: legado/Forms/formV6.html deve conter regras e botões de rolagem de perícias', function (assert) {
+    QUnit.test('Integração: public/formV6.html deve conter regras e botões de rolagem de perícias', function (assert) {
         const fs = require('fs');
-        const formHtmlPath = path.resolve(__dirname, '../legado/Forms/formV6.html');
-        assert.ok(fs.existsSync(formHtmlPath), 'formV6.html deve existir');
+        const formHtmlPath = path.resolve(__dirname, '../public/formV6.html');
+        assert.ok(fs.existsSync(formHtmlPath), 'public/formV6.html deve existir');
 
         const htmlContent = fs.readFileSync(formHtmlPath, 'utf-8');
-        assert.ok(htmlContent.includes('src="../../src/core/character-sheet.js"'), 'Deve importar character-sheet.js');
+        assert.ok(htmlContent.includes('src="../src/core/character-sheet.js"'), 'Deve importar character-sheet.js');
         assert.ok(htmlContent.includes('id="danoForcaDisplay"'), 'Deve conter campo de Dano de Força');
         assert.ok(htmlContent.includes('id="iniciativaDisplay"'), 'Deve conter campo de Bônus de Iniciativa');
         assert.ok(htmlContent.includes('rollSkillFromSheet'), 'Deve implementar função rollSkillFromSheet para botões de rolagem');

@@ -10,7 +10,8 @@ const path = require('path');
 const { CharacterResourceManager, OFFICIAL_PDFS } = require('../src/core/character-resources');
 
 const ROOT_DIR = path.resolve(__dirname, '..');
-const FORMV6_PATH = path.join(ROOT_DIR, 'legado/Forms/formV6.html');
+const FORMV6_PATH = path.join(ROOT_DIR, 'public/formV6.html');
+const LEGACY_FORMV6_PATH = path.join(ROOT_DIR, 'legado/Forms/formV6.html');
 const FORMV5_PATH = path.join(ROOT_DIR, 'legado/Forms/formV5.html');
 const INDEX_PATH = path.join(ROOT_DIR, 'index.html');
 
@@ -168,23 +169,23 @@ QUnit.module('Character Creator PDFs & Rulebooks (+2D6)', function (hooks) {
     // -------------------------------------------------------------
     // 5. Integração com o Criador de Personagens (formV6.html)
     // -------------------------------------------------------------
-    QUnit.test('7. Integração formV6.html: Todos os 4 PDFs devem estar acessíveis sem links 404', function (assert) {
+    QUnit.test('7. Integração formV6.html: Todos os 4 PDFs devem estar acessíveis sem links 404 em public/formV6.html', function (assert) {
         // Arrange
-        assert.ok(fs.existsSync(FORMV6_PATH), 'formV6.html deve existir');
+        assert.ok(fs.existsSync(FORMV6_PATH), 'public/formV6.html deve existir');
         const content = fs.readFileSync(FORMV6_PATH, 'utf-8');
 
         const expectedRelativeHrefs = [
-            '../Arquivos/medieval2d6-livreto.pdf',
-            '../Arquivos/Sistema.pdf',
-            '../Arquivos/Vantagens.pdf',
-            '../Arquivos/desvantagens.pdf'
+            'Arquivos/medieval2d6-livreto.pdf',
+            'Arquivos/Sistema.pdf',
+            'Arquivos/Vantagens.pdf',
+            'Arquivos/desvantagens.pdf'
         ];
 
         // Act & Assert
         expectedRelativeHrefs.forEach(href => {
             assert.ok(content.includes(`href="${href}"`), `formV6.html deve conter link relativo exato: ${href}`);
 
-            // Verificar que o caminho físico relativo a partir de legado/Forms/ existe
+            // Verificar que o caminho físico relativo a partir de public/ existe
             const resolvedDiskPath = path.resolve(path.dirname(FORMV6_PATH), href);
             assert.ok(fs.existsSync(resolvedDiskPath), `O arquivo físico apontado por "${href}" deve existir no disco`);
         });
@@ -236,20 +237,15 @@ QUnit.module('Character Creator PDFs & Rulebooks (+2D6)', function (hooks) {
     // -------------------------------------------------------------
     // 7. Navegação: Botão Voltar ao Menu
     // -------------------------------------------------------------
-    QUnit.test('10. Navegação: Botão "Voltar ao Menu" deve estar presente em formV6 (legado e public)', function (assert) {
+    QUnit.test('10. Navegação e Migração: formV6 deve ser removido de legado e mantido em public com botão "Voltar ao Menu"', function (assert) {
         // Arrange
         const PUBLIC_FORM_PATH = path.join(ROOT_DIR, 'public/formV6.html');
-        assert.ok(fs.existsSync(FORMV6_PATH), 'legado/Forms/formV6.html deve existir');
+        assert.notOk(fs.existsSync(LEGACY_FORMV6_PATH), 'legado/Forms/formV6.html NÃO deve mais existir (removido do legado)');
         assert.ok(fs.existsSync(PUBLIC_FORM_PATH), 'public/formV6.html deve existir');
 
-        const legadoContent = fs.readFileSync(FORMV6_PATH, 'utf-8');
         const publicContent = fs.readFileSync(PUBLIC_FORM_PATH, 'utf-8');
 
         // Act & Assert
-        assert.ok(legadoContent.includes('id="backToMenuButton"'), 'formV6 legado deve ter id="backToMenuButton"');
-        assert.ok(legadoContent.includes('Voltar ao Menu'), 'formV6 legado deve ter texto "Voltar ao Menu"');
-        assert.ok(legadoContent.includes('href="../../index.html"'), 'formV6 legado deve apontar para ../../index.html');
-
         assert.ok(publicContent.includes('id="backToMenuButton"'), 'public/formV6.html deve ter id="backToMenuButton"');
         assert.ok(publicContent.includes('Voltar ao Menu'), 'public/formV6.html deve ter texto "Voltar ao Menu"');
         assert.ok(publicContent.includes('href="../index.html"'), 'public/formV6.html deve apontar para ../index.html');

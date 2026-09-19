@@ -38,7 +38,7 @@ QUnit.module('Portal Principal Hub (index.html)', function () {
         const expectedLinks = [
             { name: 'Mesa Virtual (VTT)', href: 'public/mesa_virtual.html' },
             { name: 'O Mundo de Kuar-Tor', href: 'legado/Site/siteV1.1.html' },
-            { name: 'Gerador de Fichas', href: 'legado/Forms/formV6.html' },
+            { name: 'Gerador de Fichas', href: 'public/formV6.html' },
             { name: 'Biblioteca Arcana', href: 'public/arvore_magia.html' },
             { name: 'Tomo dos Dados', href: 'legado/Dados/dados.html' },
             { name: 'Gerenciador de Itens', href: 'public/items.html' },

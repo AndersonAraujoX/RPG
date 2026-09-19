@@ -22,7 +22,7 @@ graph TD
     subgraph UI_Layer ["Camada de Apresentação (HTML / DOM)"]
         Index["index.html (Portal VTT Hub)"]
         Mesa2D["public/mesa_virtual.html (VTT 2D)"]
-        Forms["legado/Forms/formV6.html (Ficha +2d6)"]
+        Forms["public/formV6.html (Ficha +2d6)"]
         Magia["public/arvore_magia.html (12 Caminhos)"]
     end
 

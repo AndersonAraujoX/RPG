@@ -238,7 +238,7 @@
                     <p class="text-xs text-gray-400 mb-4 leading-relaxed">Forje seu personagem para a expedição. Salve, importe e gerencie suas fichas de forma prática e rápida.</p>
                 </div>
                 <div>
-                    <a href="legado/Forms/formV6.html" class="block w-full py-2.5 text-center bg-slate-900 hover:bg-emerald-950 border border-emerald-500/40 text-emerald-300 hover:text-emerald-200 font-cinzel font-bold text-xs rounded-xl transition no-underline shadow">
+                    <a href="public/formV6.html" class="block w-full py-2.5 text-center bg-slate-900 hover:bg-emerald-950 border border-emerald-500/40 text-emerald-300 hover:text-emerald-200 font-cinzel font-bold text-xs rounded-xl transition no-underline shadow">
                         Criar Personagem
                     </a>
                     <div class="mt-3 pt-3 border-t border-emerald-500/20 flex flex-wrap items-center justify-between gap-1 text-[11px] text-gray-400">
@@ -654,18 +654,13 @@
                 }
             }
 
-                // Auto-join via URL param: ?room=123456
-                const urlParams = new URLSearchParams(window.location.search);
-                const roomParam = urlParams.get('room');
-                if (roomParam && roomParam !== currentRoomId) {
-                    joinRoomById(roomParam);
-                } else if (!currentRoomId) {
-                    listenToGlobalMessages();
-                }
-            } else {
-                updateStatusBadge(false, "Desconectado");
-                if (userInfoDiv) userInfoDiv.style.display = 'none';
-                if (loginLink) loginLink.style.display = 'flex';
+            // Auto-join via URL param: ?room=123456
+            const urlParams = new URLSearchParams(window.location.search);
+            const roomParam = urlParams.get('room');
+            if (roomParam && roomParam !== currentRoomId) {
+                joinRoomById(roomParam);
+            } else if (!currentRoomId) {
+                listenToGlobalMessages();
             }
         });
 
