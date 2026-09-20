@@ -619,6 +619,138 @@
         @keyframes rotate-ccw { from { transform: translate(-50%, -50%) rotate(0deg); } to { transform: translate(-50%, -50%) rotate(-360deg); } }
         @keyframes mana-flow { 0% { stroke-dashoffset: 0; } 100% { stroke-dashoffset: 1000; } }
         @keyframes highlight-pulse { 0% { transform: scale(1.18); } 100% { transform: scale(1.3); } }
+
+        /* ===== MODAL: TABELA DE FUSÕES ===== */
+        #fusion-table-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 200;
+            background: rgba(3, 7, 18, 0.92);
+            backdrop-filter: blur(12px);
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+            overflow-y: auto;
+            padding: 80px 16px 40px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        #fusion-table-overlay.open {
+            opacity: 1;
+            pointer-events: all;
+        }
+        .fusion-table-modal {
+            width: 100%;
+            max-width: 1100px;
+            background: linear-gradient(135deg, rgba(15, 23, 42, 0.99), rgba(3, 7, 18, 0.99));
+            border: 1px solid rgba(102, 252, 241, 0.25);
+            border-radius: 18px;
+            box-shadow: 0 25px 80px rgba(0,0,0,0.9), 0 0 40px rgba(102, 252, 241, 0.12);
+            padding: 32px;
+            position: relative;
+        }
+        .fusion-table-modal h2 {
+            font-family: 'Cinzel', serif;
+            font-size: 22px;
+            font-weight: 800;
+            color: var(--rpg-cyan);
+            text-shadow: 0 0 20px rgba(102,252,241,0.5);
+            margin-bottom: 6px;
+        }
+        .fusion-table-modal h3 {
+            font-family: 'Cinzel', serif;
+            font-size: 14px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin: 28px 0 10px;
+            padding-bottom: 6px;
+            border-bottom: 1px solid rgba(102, 252, 241, 0.2);
+        }
+        .fusion-tbl {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+        .fusion-tbl thead tr {
+            background: rgba(102, 252, 241, 0.08);
+        }
+        .fusion-tbl th {
+            font-family: 'Cinzel', serif;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--rpg-cyan);
+            padding: 10px 12px;
+            text-align: left;
+            border-bottom: 1px solid rgba(102,252,241,0.2);
+            white-space: nowrap;
+        }
+        .fusion-tbl td {
+            padding: 9px 12px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            vertical-align: top;
+            color: #cbd5e1;
+            line-height: 1.5;
+        }
+        .fusion-tbl tr:hover td {
+            background: rgba(102, 252, 241, 0.04);
+        }
+        .fusion-tbl td:nth-child(3) {
+            font-weight: 700;
+            color: #fbbf24;
+        }
+        .fusion-tbl td:last-child {
+            font-style: italic;
+            color: #94a3b8;
+            font-size: 12px;
+        }
+        .fusion-search {
+            background: rgba(15, 23, 42, 0.9);
+            border: 1px solid rgba(102,252,241,0.3);
+            border-radius: 10px;
+            padding: 10px 16px;
+            color: #e2e8f0;
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+            width: 100%;
+            max-width: 420px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .fusion-search:focus { border-color: var(--rpg-cyan); box-shadow: 0 0 12px rgba(102,252,241,0.2); }
+        .fusion-search::placeholder { color: #475569; }
+        .fusion-section { display: block; }
+        .fusion-section.hidden-section { display: none; }
+        .btn-close-modal {
+            position: absolute;
+            top: 18px;
+            right: 18px;
+            background: rgba(30,41,59,0.9);
+            border: 1px solid rgba(148,163,184,0.3);
+            border-radius: 8px;
+            color: #94a3b8;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.2s;
+        }
+        .btn-close-modal:hover { background: rgba(239,68,68,0.2); border-color: #ef4444; color: #ef4444; }
+        .section-badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            margin-left: 8px;
+            vertical-align: middle;
+        }
     </style>
 </head>
 
@@ -650,6 +782,11 @@
             <button onclick="toggleFusionAltar()" class="btn-fusion-toggle">
                 <i class="fa-solid fa-flask-round-potion"></i>
                 <span>Altar de Fusão</span>
+            </button>
+
+            <button onclick="toggleFusionTable()" class="btn-fusion-toggle" style="background: linear-gradient(135deg, rgba(251,191,36,0.25), rgba(180,142,173,0.2)); border-color: #fbbf24; color: #fbbf24; box-shadow: 0 0 15px rgba(251,191,36,0.2);">
+                <i class="fa-solid fa-table"></i>
+                <span class="hidden md:inline">Tabela de Fusões</span>
             </button>
 
             <a href="../index.html" class="btn-top">
@@ -769,6 +906,120 @@
             <div id="roll-result-display" class="mt-2 text-xs text-gray-300 min-h-[24px]"></div>
         </div>
     </div>
+
+    <!-- ===== MODAL: TABELA COMPLETA DE FUSÕES DE CAMINHOS ===== -->
+    <div id="fusion-table-overlay" onclick="closeFusionTableOnBackdrop(event)">
+        <div class="fusion-table-modal">
+            <button class="btn-close-modal" onclick="toggleFusionTable()" title="Fechar"><i class="fa-solid fa-xmark"></i></button>
+
+            <h2><i class="fa-solid fa-table mr-2"></i>Tabela de Fusões de Caminhos</h2>
+            <p style="color:#94a3b8; font-size:13px; margin-bottom:20px;">Combine dois Caminhos Primários para descobrir o Caminho Secundário resultante. Todas as fusões do sistema +2D6 de Kuar-Tor.</p>
+
+            <!-- Busca -->
+            <div style="margin-bottom:24px;">
+                <input type="search" id="fusion-search-input" class="fusion-search" placeholder="🔍  Buscar fusão (ex: Fogo, Plasma, Cristal...)" oninput="filterFusionTable(this.value)">
+            </div>
+
+            <!-- FUSÕES ELEMENTAIS -->
+            <div class="fusion-section" id="fsec-elemental">
+                <h3 style="color:#38bdf8;"><i class="fa-solid fa-fire-flame-curved mr-2"></i>Fusões Elementais <span class="section-badge" style="background:rgba(56,189,248,0.15); color:#38bdf8; border:1px solid rgba(56,189,248,0.3);">6 Elementais</span></h3>
+                <div style="overflow-x:auto;">
+                <table class="fusion-tbl">
+                    <thead><tr>
+                        <th>Caminho Primário 1</th><th>Caminho Primário 2</th><th>Caminho Secundário</th><th>Descrição</th><th>Exemplos de Magias</th>
+                    </tr></thead>
+                    <tbody>
+                        <tr><td>🔥 <strong>Fogo</strong></td><td>💧 <strong>Água</strong></td><td>♨️ Magia (Vapor)</td><td>Manipula o vapor, a pressão e a umidade.</td><td>Criar geiseres de vapor, cozinhar inimigos em suas armaduras, criar névoa densa e quente.</td></tr>
+                        <tr><td>🔥 <strong>Fogo</strong></td><td>💨 <strong>Ar</strong></td><td>💥 Magia (Plasma)</td><td>Controla energia superaquecida e ionizada.</td><td>Lançar raios de plasma, criar auras de calor intenso, superaquecer o ar para criar explosões.</td></tr>
+                        <tr><td>🔥 <strong>Fogo</strong></td><td>⛰️ <strong>Terra</strong></td><td>🌋 Magia (Magma)</td><td>Domina a rocha derretida, vulcões e obsidiana.</td><td>Lançar rios de lava, criar paredes de obsidiana afiada, invocar pequenos vulcões.</td></tr>
+                        <tr><td>🔥 <strong>Fogo</strong></td><td>☀️ <strong>Luz</strong></td><td>✨ Magia (Solar)</td><td>Canaliza a energia pura do sol e das estrelas.</td><td>Lançar rajadas de luz solar concentrada, criar ilusões de calor, invocar chamas sagradas.</td></tr>
+                        <tr><td>🔥 <strong>Fogo</strong></td><td>🌑 <strong>Trevas</strong></td><td>💣 Magia (Cinzas)</td><td>Controla a combustão sombria, fumaça e fuligem.</td><td>Sufocar inimigos com fumaça tóxica, criar explosões de chamas negras, se ocultar em nuvens de cinzas.</td></tr>
+                        <tr><td>💧 <strong>Água</strong></td><td>💨 <strong>Ar</strong></td><td>⛈️ Magia (Tempestade)</td><td>Comanda o clima, relâmpagos e a pressão atmosférica.</td><td>Invocar tempestades, lançar relâmpagos, criar furacões em miniatura.</td></tr>
+                        <tr><td>💧 <strong>Água</strong></td><td>⛰️ <strong>Terra</strong></td><td>🌱 Magia (Lama)</td><td>Manipula a lama, o barro e a areia movediça.</td><td>Criar armadilhas de lama, atirar projéteis de barro endurecido, transformar o chão em um pântano.</td></tr>
+                        <tr><td>💧 <strong>Água</strong></td><td>☀️ <strong>Luz</strong></td><td>🌈 Magia (Prisma)</td><td>Controla a refração da luz na água, criando ilusões.</td><td>Criar miragens, dobrar a luz para ficar invisível, gerar padrões de luz que confundem.</td></tr>
+                        <tr><td>💧 <strong>Água</strong></td><td>🌑 <strong>Trevas</strong></td><td>☣️ Magia (Ácido)</td><td>Domina substâncias corrosivas e venenos líquidos.</td><td>Lançar jatos de ácido, criar poças corrosivas, envenenar fontes de água.</td></tr>
+                        <tr><td>💨 <strong>Ar</strong></td><td>⛰️ <strong>Terra</strong></td><td>🌪️ Magia (Areia)</td><td>Manipula a areia, tempestades de areia e erosão.</td><td>Criar tempestades de areia que cegam e cortam, construir estruturas de arenito, erodir defesas.</td></tr>
+                        <tr><td>💨 <strong>Ar</strong></td><td>☀️ <strong>Luz</strong></td><td>🎶 Magia (Som)</td><td>Controla as ondas sonoras, vibrações e harmonia.</td><td>Criar explosões sônicas, gerar silêncio absoluto, encantar com melodias mágicas.</td></tr>
+                        <tr><td>💨 <strong>Ar</strong></td><td>🌑 <strong>Trevas</strong></td><td>👻 Magia (Vácuo)</td><td>Domina a ausência de ar, o silêncio e a pressão.</td><td>Criar bolhas de vácuo para sufocar, implodir objetos com pressão negativa, silenciar magos.</td></tr>
+                        <tr><td>⛰️ <strong>Terra</strong></td><td>☀️ <strong>Luz</strong></td><td>💎 Magia (Cristal)</td><td>Controla gemas, cristais e a luz que os atravessa.</td><td>Criar barreiras de cristal, lançar cacos de quartzo afiados, focar luz através de gemas para criar raios.</td></tr>
+                        <tr><td>⛰️ <strong>Terra</strong></td><td>🌑 <strong>Trevas</strong></td><td>🧲 Magia (Metal)</td><td>Manipula metais, magnetismo e a gravidade metálica.</td><td>Controlar armas e armaduras de metal, criar campos magnéticos, lançar estacas de ferro das sombras.</td></tr>
+                        <tr><td>☀️ <strong>Luz</strong></td><td>🌑 <strong>Trevas</strong></td><td>🌀 Magia (Crepúsculo)</td><td>Equilibra a luz e a sombra, manipulando o contraste.</td><td>Criar zonas de penumbra, cegar com luz e depois mergulhar em trevas, manipular emoções através do contraste.</td></tr>
+                    </tbody>
+                </table>
+                </div>
+            </div>
+
+            <!-- FUSÕES VITAIS -->
+            <div class="fusion-section" id="fsec-vital">
+                <h3 style="color:#84cc16;"><i class="fa-solid fa-leaf mr-2"></i>Fusões Vitais <span class="section-badge" style="background:rgba(132,204,22,0.15); color:#84cc16; border:1px solid rgba(132,204,22,0.3);">Fonte: Sabedoria</span></h3>
+                <div style="overflow-x:auto;">
+                <table class="fusion-tbl">
+                    <thead><tr>
+                        <th>Caminho Primário 1</th><th>Caminho Primário 2</th><th>Caminho Secundário</th><th>Descrição</th><th>Exemplos de Magias</th>
+                    </tr></thead>
+                    <tbody>
+                        <tr><td>🐾 <strong>Animais</strong></td><td>👤 <strong>Humanos</strong></td><td>🦍 Magia (Primal)</td><td>Acessa o instinto selvagem e a força ancestral.</td><td>Assumir a fúria de um urso, ganhar a percepção de uma águia, comunicar-se através de instintos básicos.</td></tr>
+                        <tr><td>🐾 <strong>Animais</strong></td><td>🌿 <strong>Plantas</strong></td><td>🍄 Magia (Fungos)</td><td>Controla fungos, esporos e a decomposição.</td><td>Liberar nuvens de esporos venenosos, criar cogumelos alucinógenos, acelerar a decomposição.</td></tr>
+                        <tr><td>👤 <strong>Humanos</strong></td><td>🌿 <strong>Plantas</strong></td><td>🧬 Magia (Vida)</td><td>Manipula a essência da vida, cura e crescimento.</td><td>Curar ferimentos graves, regenerar membros perdidos, acelerar o crescimento para criar barreiras vivas.</td></tr>
+                    </tbody>
+                </table>
+                </div>
+            </div>
+
+            <!-- FUSÕES ARCANAS -->
+            <div class="fusion-section" id="fsec-arcana">
+                <h3 style="color:#a855f7;"><i class="fa-solid fa-infinity mr-2"></i>Fusões Arcanas <span class="section-badge" style="background:rgba(168,85,247,0.15); color:#a855f7; border:1px solid rgba(168,85,247,0.3);">Fonte: Sabedoria</span></h3>
+                <div style="overflow-x:auto;">
+                <table class="fusion-tbl">
+                    <thead><tr>
+                        <th>Caminho Primário 1</th><th>Caminho Primário 2</th><th>Caminho Secundário</th><th>Descrição</th><th>Exemplos de Magias</th>
+                    </tr></thead>
+                    <tbody>
+                        <tr><td>👻 <strong>Spiritum</strong></td><td>👿 <strong>Arkanum</strong></td><td>👽 Magia (Vazio)</td><td>Lida com a energia do Vazio, o nada e a corrupção.</td><td>Drenar a sanidade, invocar horrores do Vazio, criar portais para o nada, apagar memórias.</td></tr>
+                        <tr><td>👻 <strong>Spiritum</strong></td><td>✨ <strong>Metamagia</strong></td><td>⏳ Magia (Tempo)</td><td>Manipula o fluxo do tempo e as linhas do destino.</td><td>Acelerar ou retardar o tempo em uma área, vislumbrar o futuro, voltar alguns segundos no tempo.</td></tr>
+                        <tr><td>👿 <strong>Arkanum</strong></td><td>✨ <strong>Metamagia</strong></td><td>🔗 Magia (Runas)</td><td>Usa símbolos arcanos para prender e fortalecer magias.</td><td>Criar armadilhas rúnicas, inscrever runas em armas para efeitos mágicos, anular magia com selos.</td></tr>
+                    </tbody>
+                </table>
+                </div>
+            </div>
+
+            <!-- FUSÕES HÍBRIDAS -->
+            <div class="fusion-section" id="fsec-hibrida">
+                <h3 style="color:#fbbf24;"><i class="fa-solid fa-dna mr-2"></i>Fusões Híbridas <span class="section-badge" style="background:rgba(251,191,36,0.15); color:#fbbf24; border:1px solid rgba(251,191,36,0.3);">INT ou SAB</span></h3>
+                <div style="overflow-x:auto;">
+                <table class="fusion-tbl">
+                    <thead><tr>
+                        <th>Caminho Primário 1</th><th>Caminho Primário 2</th><th>Caminho Secundário</th><th>Descrição</th><th>Exemplos de Magias</th>
+                    </tr></thead>
+                    <tbody>
+                        <tr><td>🔥 <strong>Fogo</strong></td><td>🐾 <strong>Animais</strong></td><td>🐉 Magia (Dracônica)</td><td>Canaliza o poder dos dragões e bestas ígneas.</td><td>Sopro de fogo, escamas de dragão, invocar um familiar dracônico.</td></tr>
+                        <tr><td>🔥 <strong>Fogo</strong></td><td>👤 <strong>Humanos</strong></td><td>❤️‍🔥 Magia (Paixão)</td><td>Influencia emoções com a intensidade do fogo.</td><td>Incitar fúria incontrolável, inspirar coragem ardente, criar laços de empatia fervorosos.</td></tr>
+                        <tr><td>🔥 <strong>Fogo</strong></td><td>🌿 <strong>Plantas</strong></td><td>🌵 Magia (Deserto)</td><td>Combina o calor do fogo com a resiliência das plantas.</td><td>Criar plantas que explodem em chamas, invocar tempestades de areia escaldante, sobreviver em ambientes áridos.</td></tr>
+                        <tr><td>💧 <strong>Água</strong></td><td>🐾 <strong>Animais</strong></td><td>🦑 Magia (Abissal)</td><td>Controla as criaturas das profundezas e a pressão da água.</td><td>Invocar lulas gigantes, assumir a forma de uma criatura abissal, esmagar alvos com a pressão do oceano.</td></tr>
+                        <tr><td>💧 <strong>Água</strong></td><td>👻 <strong>Spiritum</strong></td><td>🌊 Magia (Marés)</td><td>Controla os espíritos da água e as profundezas.</td><td>Invocar elementais da água, afogar os espíritos dos inimigos, criar portais através da água.</td></tr>
+                        <tr><td>💨 <strong>Ar</strong></td><td>🐾 <strong>Animais</strong></td><td>🦅 Magia (Celestial)</td><td>Comanda as criaturas dos céus e os ventos astrais.</td><td>Invocar grifos, transformar-se em uma águia de vento, voar em correntes de ar etéreas.</td></tr>
+                        <tr><td>💨 <strong>Ar</strong></td><td>✨ <strong>Metamagia</strong></td><td>🌌 Magia (Éter)</td><td>Manipula a tessitura do espaço e da magia.</td><td>Teletransporte, criar bolsões dimensionais, distorcer a realidade em pequenas áreas.</td></tr>
+                        <tr><td>⛰️ <strong>Terra</strong></td><td>👤 <strong>Humanos</strong></td><td>🗿 Magia (Colossal)</td><td>Encarna a força e a resiliência da terra em um corpo.</td><td>Pele de pedra, força de gigante, criar tremores ao caminhar.</td></tr>
+                        <tr><td>⛰️ <strong>Terra</strong></td><td>👻 <strong>Spiritum</strong></td><td>🦴 Magia (Fóssil)</td><td>Comunica-se com os espíritos presos na terra e rochas.</td><td>Animar esqueletos de criaturas fossilizadas, extrair memórias de pedras antigas, prender espíritos em rocha.</td></tr>
+                        <tr><td>☀️ <strong>Luz</strong></td><td>👤 <strong>Humanos</strong></td><td>🙏 Magia (Fé)</td><td>Canaliza a luz através da força de vontade e crença coletiva.</td><td>Curar em massa, criar avatares de pura fé, banir o mal com a força da convicção de um grupo.</td></tr>
+                        <tr><td>☀️ <strong>Luz</strong></td><td>🌿 <strong>Plantas</strong></td><td>🌸 Magia (Florescer)</td><td>Usa a luz para nutrir e controlar a vida vegetal sagrada.</td><td>Criar flores que curam, chicotes de vinhas luminosas, purificar a terra com luz.</td></tr>
+                        <tr><td>☀️ <strong>Luz</strong></td><td>👻 <strong>Spiritum</strong></td><td>✨ Magia (Aura)</td><td>Lê, manipula e projeta a energia espiritual como luz.</td><td>Ler a alma de uma pessoa, fortalecer a aura de aliados, criar explosões de energia espiritual.</td></tr>
+                        <tr><td>🌑 <strong>Trevas</strong></td><td>🌿 <strong>Plantas</strong></td><td>🥀 Magia (Decomposição)</td><td>Controla o ciclo de morte e renascimento na natureza.</td><td>Acelerar o apodrecimento, criar pragas de insetos sombrios, comunicar-se com plantas mortas.</td></tr>
+                        <tr><td>🌑 <strong>Trevas</strong></td><td>👻 <strong>Spiritum</strong></td><td>😱 Magia (Pesadelo)</td><td>Invade os sonhos e manifesta os medos como sombras.</td><td>Criar ilusões aterrorizantes, prender alguém em um pesadelo lúcido, dar forma física aos medos.</td></tr>
+                        <tr><td>🌑 <strong>Trevas</strong></td><td>👿 <strong>Arkanum</strong></td><td>🧛 Magia (Sangue)</td><td>Usa a força vital e o sangue para poder sombrio.</td><td>Drenar vida, controlar o sangue de outros, criar construtos de sangue.</td></tr>
+                    </tbody>
+                </table>
+                </div>
+            </div>
+
+            <!-- rodapé -->
+            <div style="margin-top:28px; padding-top:16px; border-top:1px solid rgba(102,252,241,0.15); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+                <span style="font-size:12px; color:#475569;">Total: <strong style="color:#94a3b8;">30 fusões</strong> catalogadas · Sistema +2D6 Kuar-Tor</span>
+                <button onclick="toggleFusionTable()" class="btn-fusion-toggle" style="font-size:12px; padding:8px 16px;"><i class="fa-solid fa-xmark mr-1"></i>Fechar</button>
+            </div>
+        </div>
+    </div>
+    <!-- ===================================================== -->
 
     <script>
         // =========================================================================
@@ -1360,6 +1611,53 @@
 
         // Inicialização
         renderTree();
+
+        // =========================================================================
+        // Tabela de Fusões — Modal Controls
+        // =========================================================================
+        const fusionTableOverlay = document.getElementById('fusion-table-overlay');
+
+        function toggleFusionTable() {
+            fusionTableOverlay.classList.toggle('open');
+            // limpa busca ao abrir
+            if (fusionTableOverlay.classList.contains('open')) {
+                const inp = document.getElementById('fusion-search-input');
+                if (inp) { inp.value = ''; filterFusionTable(''); inp.focus(); }
+            }
+        }
+
+        function closeFusionTableOnBackdrop(e) {
+            if (e.target === fusionTableOverlay) toggleFusionTable();
+        }
+
+        function filterFusionTable(query) {
+            const q = query.toLowerCase().trim();
+            const sections = ['fsec-elemental', 'fsec-vital', 'fsec-arcana', 'fsec-hibrida'];
+
+            sections.forEach(secId => {
+                const sec = document.getElementById(secId);
+                if (!sec) return;
+                const rows = sec.querySelectorAll('tbody tr');
+                let anyVisible = false;
+
+                rows.forEach(row => {
+                    const text = row.textContent.toLowerCase();
+                    const match = !q || text.includes(q);
+                    row.style.display = match ? '' : 'none';
+                    if (match) anyVisible = true;
+                });
+
+                // Esconde/mostra a seção inteira se nenhum resultado
+                sec.classList.toggle('hidden-section', !anyVisible);
+            });
+        }
+
+        // Fechar com Escape
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape' && fusionTableOverlay.classList.contains('open')) {
+                toggleFusionTable();
+            }
+        });
     </script>
 </body>
 
