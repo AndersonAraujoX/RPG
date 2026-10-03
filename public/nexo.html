@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Nexo do Paradoxo — refúgio dos aventureiros de Kuar-Tor, com cômodos liberados em tempo real pelo mestre.">
+    <title>Nexo do Paradoxo</title>
+    <link rel="stylesheet" href="tailwind.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --black: #0B0C10; --cyan: #66FCF1; --slate: #1F2833; --silver: #C5C6C7; }
+        * { box-sizing: border-box; }
+        body { margin: 0; min-height: 100vh; padding: 2rem; background: var(--black); color: var(--silver); font-family: 'Inter', sans-serif; }
+        .font-cinzel { font-family: 'Cinzel', serif; }
+        .container { max-width: 80rem; margin: 0 auto; }
+        header.top { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap; }
+        header.top h1 { margin: 0; text-align: center; font-size: 2.6rem; color: var(--cyan); letter-spacing: .08em; text-shadow: 0 0 10px rgba(102,252,241,.4); }
+        header.top p { margin: .4rem 0 0; text-align: center; }
+        .btn { display: inline-block; border: 0; cursor: pointer; font-weight: 700; padding: .55rem 1.1rem; border-radius: .6rem; text-decoration: none; transition: all .3s ease; }
+        .btn-primary { background: var(--cyan); color: var(--black); }
+        .btn-primary:hover { background: #45EBE0; transform: scale(1.05); }
+        .btn-secondary { background: var(--slate); border: 1px solid var(--cyan); color: var(--cyan); }
+        .btn-secondary:hover { background: rgba(102,252,241,.1); }
+        #comodos-grid { display: grid; gap: 1.5rem; grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr)); }
+        .card { display: flex; flex-direction: column; background: rgba(31,40,51,.9); border: 1px solid rgba(75,85,99,.8); border-radius: .7rem; padding: 1.5rem; backdrop-filter: blur(10px); transition: all .3s ease; }
+        .card.open { cursor: pointer; }
+        .card.open:hover { transform: translateY(-5px) scale(1.02); box-shadow: 0 10px 20px rgba(102,252,241,.15); border-color: var(--cyan); }
+        .card h3 { margin: 0 0 .5rem; font-size: 1.5rem; color: var(--cyan); }
+        .card p { margin: 0; flex-grow: 1; }
+        .card .more { text-align: right; margin-top: 1rem; font-weight: 600; color: var(--cyan); }
+        .card.locked { opacity: .65; align-items: center; justify-content: center; text-align: center; }
+        .card.locked h3 { color: #6b7280; }
+        .card.locked .cost { color: #9ca3af; font-size: .85rem; margin-top: .4rem; }
+        .admin-btn { margin-top: 1rem; font-size: .85rem; color: #fff; padding: .25rem .8rem; border-radius: .4rem; border: 0; cursor: pointer; }
+        .admin-btn.block { background: #dc2626; }
+        .admin-btn.release { background: #16a34a; }
+        .overlay { position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center; padding: 1rem; background: rgba(0,0,0,.75); }
+        .overlay.hidden { display: none; }
+        .modal { width: 100%; max-width: 42rem; max-height: 90vh; display: flex; flex-direction: column; background: rgba(11,12,16,.97); border: 1px solid var(--cyan); border-radius: .7rem; }
+        .modal.small { max-width: 24rem; }
+        .modal-head, .modal-body, .modal-foot { padding: 1.25rem 1.5rem; }
+        .modal-head { border-bottom: 1px solid #374151; }
+        .modal-head h2, .modal-head h3 { margin: 0; color: var(--cyan); }
+        .modal-body { overflow-y: auto; }
+        .modal-foot { border-top: 1px solid #374151; text-align: right; display: flex; gap: 1rem; justify-content: flex-end; }
+        .acao { margin-bottom: 1rem; padding: 1rem; background: var(--slate); border: 1px solid #374151; border-radius: .6rem; transition: border-color .3s; }
+        .acao:hover { border-color: var(--cyan); }
+        .acao h4 { margin: 0 0 .3rem; color: var(--cyan); }
+        .acao p { margin: 0 0 .6rem; }
+        input[type=password] { width: 100%; background: var(--slate); border: 1px solid var(--cyan); color: #fff; border-radius: .5rem; padding: .6rem; }
+        .error { color: #f87171; font-size: .85rem; margin-top: .5rem; }
+        .error.hidden { display: none; }
+        #status { text-align: center; font-size: .85rem; margin-bottom: 1rem; }
+        #status.offline { color: #fbbf24; }
+        #status.online { color: #4ade80; }
+        h2.log-title { text-align: center; margin: 3rem 0 1rem; }
+        #log-container { height: 12rem; overflow-y: auto; padding: 1rem; background: rgba(17,24,39,.6); border: 1px solid #374151; border-radius: .6rem; }
+        #log-container p { margin: 0 0 .5rem; animation: fadeIn .5s ease-out; }
+        .log-info { color: #9ca3af; } .log-sucesso { color: #4ade80; } .log-erro { color: #f87171; } .log-aviso { color: #facc15; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+        ::-webkit-scrollbar { width: 8px; } ::-webkit-scrollbar-track { background: #1f2937; }
+        ::-webkit-scrollbar-thumb { background: #4f46e5; border-radius: 4px; }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header class="top">
+            <a href="../index.html" class="btn btn-primary" id="btn-voltar">&larr; Voltar ao Portal</a>
+            <div>
+                <h1 class="font-cinzel">Nexo do Paradoxo</h1>
+                <p>Um refúgio forjado entre a Ordem e o Caos.</p>
+            </div>
+            <button id="admin-login-button" class="btn btn-primary">Admin</button>
+        </header>
+
+        <div id="status" class="offline">Conectando ao Firebase…</div>
+
+        <main id="comodos-grid" aria-label="Cômodos do Nexo"></main>
+
+        <h2 class="font-cinzel log-title">Registro de Atividades</h2>
+        <div id="log-container">
+            <p class="log-info"><em>Bem-vindo ao Nexo. Suas ações serão registradas aqui.</em></p>
+        </div>
+    </div>
+
+    <!-- Modal de Senha -->
+    <div id="passwordModal" class="overlay hidden">
+        <div class="modal small">
+            <div class="modal-head"><h3>Acesso de Administrador</h3></div>
+            <div class="modal-body">
+                <label for="passwordInput">Palavra-Passe</label>
+                <input type="password" id="passwordInput" autocomplete="off">
+                <p id="passwordError" class="error hidden">Palavra-passe incorreta.</p>
+            </div>
+            <div class="modal-foot">
+                <button id="cancelPasswordButton" class="btn btn-secondary">Cancelar</button>
+                <button id="submitPasswordButton" class="btn btn-primary">Entrar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Ações -->
+    <div id="modal-acoes" class="overlay hidden">
+        <div class="modal">
+            <div class="modal-head"><h2 id="modal-title" class="font-cinzel">Nome do Cômodo</h2></div>
+            <div id="modal-body" class="modal-body"></div>
+            <div class="modal-foot"><button id="modal-close-btn" class="btn btn-primary">Fechar</button></div>
+        </div>
+    </div>
+
+    <!-- Firebase (Firestore) -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <script src="../src/core/firebase-config.js"></script>
+    <script src="../src/modules/nexo-state.js"></script>
+    <script>
+        const ADMIN_PASSWORD = 'fungus';
+        const db = firebase.firestore();
+        const auth = firebase.auth();
+        const repo = NexoState.createNexoRepository(db);
+
+        let comodos = NexoState.criarComodosPadrao();
+        let isAdminMode = false;
+        let currentUser = null;
+
+        const $ = id => document.getElementById(id);
+        const grid = $('comodos-grid');
+
+        function adicionarLog(msg, tipo = 'info') {
+            const p = document.createElement('p');
+            p.className = 'log-' + tipo;
+            p.textContent = '> ' + msg;
+            $('log-container').appendChild(p);
+            $('log-container').scrollTop = $('log-container').scrollHeight;
+        }
+
+        function setStatus(texto, online) {
+            const el = $('status');
+            el.textContent = texto;
+            el.className = online ? 'online' : 'offline';
+        }
+
+        function renderizar() {
+            grid.innerHTML = '';
+            comodos.forEach(c => {
+                const card = document.createElement('div');
+                const adminBtn = isAdminMode
+                    ? `<button data-comodo-id="${c.id}" class="admin-btn ${c.disponivel ? 'block' : 'release'}">${c.disponivel ? 'Bloquear' : 'Liberar'}</button>`
+                    : '';
+                if (c.disponivel) {
+                    card.className = 'card open';
+                    card.innerHTML = `<h3 class="font-cinzel">${c.nome}</h3><p>${c.descricao}</p><div class="more">Ver Ações</div>${adminBtn}`;
+                    card.addEventListener('click', e => { if (!e.target.classList.contains('admin-btn')) abrirModal(c); });
+                } else {
+                    card.className = 'card locked';
+                    card.innerHTML = `<h3 class="font-cinzel">🔒 ${c.nome}</h3><p style="flex-grow:0">Bloqueado</p><div class="cost">Custo: ${c.custo}</div>${adminBtn}`;
+                }
+                grid.appendChild(card);
+            });
+        }
+
+        function abrirModal(c) {
+            $('modal-title').textContent = c.nome;
+            $('modal-body').innerHTML = c.acoes.map(a => `
+                <div class="acao">
+                    <h4>${a.nome}</h4><p>${a.desc}</p>
+                    <button class="btn btn-primary" data-acao="${a.nome}" data-comodo="${c.nome}">Realizar</button>
+                </div>`).join('');
+            $('modal-acoes').classList.remove('hidden');
+        }
+        const fecharModal = () => $('modal-acoes').classList.add('hidden');
+
+        $('modal-body').addEventListener('click', e => {
+            const btn = e.target.closest('button[data-acao]');
+            if (!btn) return;
+            adicionarLog(`Ação "${btn.dataset.acao}" iniciada em "${btn.dataset.comodo}".`, 'aviso');
+            setTimeout(() => adicionarLog(`Resultado de "${btn.dataset.acao}"… (Simulação)`, 'info'), 1000);
+            fecharModal();
+        });
+        $('modal-close-btn').addEventListener('click', fecharModal);
+        $('modal-acoes').addEventListener('click', e => { if (e.target === $('modal-acoes')) fecharModal(); });
+
+        // Admin
+        $('admin-login-button').addEventListener('click', () => {
+            if (isAdminMode) {
+                isAdminMode = false; renderizar();
+                adicionarLog('Modo de administrador desativado.', 'info');
+            } else {
+                $('passwordModal').classList.remove('hidden');
+                $('passwordInput').focus();
+            }
+        });
+        $('cancelPasswordButton').addEventListener('click', () => $('passwordModal').classList.add('hidden'));
+        function tentarLogin() {
+            if ($('passwordInput').value === ADMIN_PASSWORD) {
+                isAdminMode = true; renderizar();
+                $('passwordModal').classList.add('hidden');
+                $('passwordInput').value = '';
+                adicionarLog('Modo de administrador ativado.', 'sucesso');
+            } else {
+                $('passwordError').classList.remove('hidden');
+                setTimeout(() => $('passwordError').classList.add('hidden'), 3000);
+            }
+        }
+        $('submitPasswordButton').addEventListener('click', tentarLogin);
+        $('passwordInput').addEventListener('keydown', e => { if (e.key === 'Enter') tentarLogin(); });
+
+        grid.addEventListener('click', async e => {
+            const btn = e.target.closest('.admin-btn');
+            if (!btn) return;
+            const c = comodos.find(x => x.id === btn.dataset.comodoId);
+            if (!c) return;
+            const novo = !c.disponivel;
+            try {
+                await repo.setComodo(c.id, novo, currentUser && currentUser.uid);
+                adicionarLog(`O cômodo "${c.nome}" foi ${novo ? 'liberado' : 'bloqueado'}.`, 'sucesso');
+            } catch (err) {
+                console.error(err);
+                adicionarLog('Falha ao salvar no Firebase: ' + err.message, 'erro');
+            }
+        });
+
+        // Tempo real: qualquer liberação do mestre aparece para todos sem recarregar
+        function iniciar() {
+            repo.subscribe(
+                mapa => {
+                    comodos = NexoState.mesclarEstado(NexoState.criarComodosPadrao(), mapa);
+                    setStatus('Sincronizado com o Firebase em tempo real.', true);
+                    renderizar();
+                },
+                err => {
+                    console.error(err);
+                    setStatus('Sem conexão com o Firebase: exibindo estado padrão.', false);
+                    adicionarLog('Erro ao ler o Firebase: ' + err.message, 'erro');
+                }
+            );
+        }
+
+        renderizar();
+        auth.onAuthStateChanged(user => {
+            if (!user) { window.location.href = 'login.html'; return; }
+            currentUser = user;
+            iniciar();
+        });
+    </script>
+</body>
+
+</html>
