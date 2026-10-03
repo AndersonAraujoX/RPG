@@ -159,4 +159,10 @@ QUnit.module('Ficha de Personagem — Regras +2d6 v2.3 (Newton Rocha)', function
         assert.ok(htmlContent.includes('id="iniciativaDisplay"'), 'Deve conter campo de Bônus de Iniciativa');
         assert.ok(htmlContent.includes('rollSkillFromSheet'), 'Deve implementar função rollSkillFromSheet para botões de rolagem');
     });
+
+    QUnit.test('Regras +2d6: Constantes de Vantagens e Desvantagens', function (assert) {
+        assert.equal(CharacterSheetRules.MAX_DISADVANTAGE_POINTS, 5, 'Máximo de pontos de desvantagens é 5');
+        assert.equal(CharacterSheetRules.INITIAL_ADVANTAGE_POINTS, 5, 'Pontos base iniciais de vantagens é 5');
+        assert.equal(CharacterSheetRules.INITIAL_MAX_ADVANTAGES_COUNT, 5, 'Quantidade máxima de vantagens iniciais é 5');
+    });
 });

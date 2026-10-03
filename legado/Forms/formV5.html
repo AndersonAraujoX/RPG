@@ -784,7 +784,7 @@
                 const disadvantages = JSON.parse(document.getElementById('desvantagensInput').value || '[]');
                 const advantagesSpent = advantages.reduce((total, adv) => total + (adv.custo || 0), 0);
                 const disadvantagesBonus = disadvantages.reduce((total, dis) => total + (dis.bonus || 0), 0);
-                const advantagePointsPool = Math.min(disadvantagesBonus, 3) + pontosVantagemAdd;
+                const advantagePointsPool = 5 + Math.min(disadvantagesBonus, 5) + pontosVantagemAdd;
                 advantagePointsValueDiv.textContent = `${advantagesSpent}/${advantagePointsPool}`;
                 advantagePointsValueDiv.classList.toggle('negative', advantagesSpent > advantagePointsPool);
 

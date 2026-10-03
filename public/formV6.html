@@ -431,6 +431,10 @@
                     <div class="points-label">Vantagens</div>
                     <div id="advantagePointsValue" class="points-value">0/5</div>
                 </div>
+                <div class="points-block">
+                    <div class="points-label">Desvantagens</div>
+                    <div id="disadvantagePointsValue" class="points-value">0/5</div>
+                </div>
             </div>
 
             <!-- ========== TUTORIAL DE CRIAÇÃO DE PERSONAGEM ========== -->
@@ -584,19 +588,19 @@
                     title: "Etapa 4 — Perícias, Vantagens e Desvantagens",
                     section: "Habilidades",
                     content: `
-                        <p class="text-neutral-300 mb-3">Você tem <strong class="text-violet-400">10 pontos de Perícia</strong> e <strong class="text-violet-400">5 pontos de Vantagem</strong> para gastar. Clique em <strong>"Gerir"</strong> em cada seção.</p>
+                        <p class="text-neutral-300 mb-3">Você tem <strong class="text-violet-400">10 pontos de Perícia</strong> e <strong class="text-amber-400">5 pontos de Vantagem base</strong> (inicialmente pode colocar até <strong class="text-amber-400">5 vantagens</strong>). O máximo permitido de pontos de Desvantagens é <strong class="text-red-400">5</strong>. Clique em <strong>"Gerir"</strong> em cada seção.</p>
                         <div class="space-y-3 text-sm">
                             <div class="p-3 rounded bg-neutral-800/60 border border-violet-700/40">
                                 <p class="font-bold text-violet-300 mb-1"><i class="fa-solid fa-graduation-cap mr-1"></i> Perícias (10 pontos)</p>
                                 <p class="text-neutral-400">Habilidades treináveis: Atletismo, Furtividade, Persuasão, Primeiros Socorros, Esgrima, etc. Cada perícia custa <strong>1 ponto</strong> por nível. O nível máximo é geralmente 3 em personagens iniciais.</p>
                             </div>
                             <div class="p-3 rounded bg-neutral-800/60 border border-amber-700/40">
-                                <p class="font-bold text-amber-300 mb-1"><i class="fa-solid fa-star mr-1"></i> Vantagens (5 pontos)</p>
-                                <p class="text-neutral-400">Traços especiais e excepcionais do personagem. Exemplos: <em>Ambidestria</em>, <em>Visão no Escuro</em>, <em>Sentidos Aguçados</em>. Cada vantagem tem um custo em pontos (consulte o PDF).</p>
+                                <p class="font-bold text-amber-300 mb-1"><i class="fa-solid fa-star mr-1"></i> Vantagens (5 pontos base — máx. 5 vantagens iniciais)</p>
+                                <p class="text-neutral-400">Traços especiais e excepcionais do personagem. Inicialmente a quantidade máxima de vantagens que você pode colocar é <strong>5</strong>. Cada vantagem tem um custo em pontos (consulte o PDF).</p>
                             </div>
                             <div class="p-3 rounded bg-neutral-800/60 border border-red-700/40">
-                                <p class="font-bold text-red-300 mb-1"><i class="fa-solid fa-skull mr-1"></i> Desvantagens</p>
-                                <p class="text-neutral-400">Fraquezas que adicionam drama e profundidade. São <strong>opcionais</strong> mas podem conceder pontos extras (combine com o Mestre). Ex: <em>Fobia</em>, <em>Impulsivo</em>, <em>Mau Cheiro</em>.</p>
+                                <p class="font-bold text-red-300 mb-1"><i class="fa-solid fa-skull mr-1"></i> Desvantagens (Máximo 5 pontos)</p>
+                                <p class="text-neutral-400">Fraquezas que adicionam drama e concedem pontos extras para gastar em vantagens. O limite máximo de pontos obtidos via desvantagens é de <strong>5 pontos</strong>.</p>
                             </div>
                         </div>
                     `
@@ -1200,6 +1204,7 @@
             const attributePointsValueDiv = document.getElementById('attributePointsValue');
             const skillPointsValueDiv = document.getElementById('skillPointsValue');
             const advantagePointsValueDiv = document.getElementById('advantagePointsValue');
+            const disadvantagePointsValueDiv = document.getElementById('disadvantagePointsValue');
 
             const expInput = document.getElementById('expPoints');
             const earnedAttributePointsDiv = document.getElementById('earnedAttributePoints');
@@ -1302,9 +1307,16 @@
 
                 const advantagesSpent = advantages.reduce((total, adv) => total + (adv.custo || 0), 0) + pontosGastosCaminho;
                 const disadvantagesBonus = disadvantages.reduce((total, dis) => total + (dis.bonus || 0), 0);
-                const advantagePointsPool = 5 + Math.min(disadvantagesBonus, 3) + pontosVantagemAdd;
+                const advantagePointsPool = typeof CharacterSheetRules !== 'undefined' && CharacterSheetRules.calcAdvantagePointsPool
+                    ? CharacterSheetRules.calcAdvantagePointsPool(disadvantagesBonus, pontosVantagemAdd)
+                    : (5 + Math.min(disadvantagesBonus, 5) + pontosVantagemAdd);
                 advantagePointsValueDiv.textContent = `${advantagesSpent}/${advantagePointsPool}`;
-                advantagePointsValueDiv.classList.toggle('negative', advantagesSpent > advantagePointsPool);
+                advantagePointsValueDiv.classList.toggle('negative', advantagesSpent > advantagePointsPool || advantages.length > 5);
+
+                if (disadvantagePointsValueDiv) {
+                    disadvantagePointsValueDiv.textContent = `${disadvantagesBonus}/5`;
+                    disadvantagePointsValueDiv.classList.toggle('negative', disadvantagesBonus > 5);
+                }
             }
 
             function adicionarCaminho(caminhoData = { nome: '', nivel: 0, customName: '' }) {
@@ -1393,9 +1405,17 @@
                         <button type="button" id="addPvdItemButton" class="mt-3 action-button action-button-main px-3 py-1 text-sm">Adicionar Perícia</button>`;
                 } else if (type === 'vantagens' || type === 'desvantagens') {
                     const isAdvantage = type === 'vantagens';
-                    title = isAdvantage ? "Gerir Vantagens" : "Gerir Desvantagens";
+                    title = isAdvantage ? "Gerir Vantagens (Inicialmente até 5 vantagens)" : "Gerir Desvantagens (Máximo 5 pontos)";
                     const costOrBonus = isAdvantage ? 'Custo' : 'Bônus';
+                    const noticeHtml = isAdvantage
+                        ? `<div class="mb-3 p-2.5 rounded bg-amber-950/40 border border-amber-600/40 text-xs text-amber-200">
+                            <i class="fa-solid fa-star mr-1 text-amber-400"></i> Inicialmente a quantidade máxima de vantagens que pode colocar é <strong>5</strong>.
+                           </div>`
+                        : `<div class="mb-3 p-2.5 rounded bg-red-950/40 border border-red-600/40 text-xs text-red-200">
+                            <i class="fa-solid fa-triangle-exclamation mr-1 text-red-400"></i> O máximo de pontos de desvantagens permitido é <strong>5 pontos</strong>.
+                           </div>`;
                     formHtml = `
+                        ${noticeHtml}
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-3 items-end">
                             <div><label for="pvdName" class="block text-xs font-medium text-neutral-400">Nome:</label><input type="text" id="pvdName" class="mt-1 block w-full p-2 text-sm bg-neutral-700 border-neutral-600 rounded-md"></div>
                             <div><label for="pvdCost" class="block text-xs font-medium text-neutral-400">${costOrBonus} (1-5):</label><input type="number" id="pvdCost" min="1" max="5" value="1" class="mt-1 block w-full p-2 text-sm bg-neutral-700 border-neutral-600 rounded-md"></div>
@@ -1435,6 +1455,24 @@
                     cost = parseInt(document.getElementById('pvdCost').value);
                     description = descInput.value.trim();
                     if (!name || isNaN(cost)) return;
+                    if (cost < 1) {
+                        alert('O valor deve ser no mínimo 1.');
+                        return;
+                    }
+
+                    if (currentEditingPVDType === 'vantagens') {
+                        if (tempPVDList.length >= 5) {
+                            alert('Inicialmente a quantidade máxima de vantagens que pode colocar é 5.');
+                            return;
+                        }
+                    } else if (currentEditingPVDType === 'desvantagens') {
+                        const currentBonus = tempPVDList.reduce((sum, item) => sum + (item.bonus || 0), 0);
+                        if (currentBonus + cost > 5) {
+                            alert(`O máximo de pontos de desvantagens é 5. Você já alocou ${currentBonus} ponto(s) e adicionar +${cost} ultrapassaria o limite.`);
+                            return;
+                        }
+                    }
+
                     const item = { id: Date.now(), nome: name, descricao: description };
                     if (currentEditingPVDType === 'vantagens') item.custo = cost;
                     else item.bonus = cost;
@@ -1450,18 +1488,38 @@
             }
 
             function renderPVDList() {
-                pvdListContainer.innerHTML = tempPVDList.map(item => {
+                let summaryHeader = '';
+                if (currentEditingPVDType === 'vantagens') {
+                    const count = tempPVDList.length;
+                    summaryHeader = `<div class="mb-2 p-1.5 rounded bg-neutral-800 text-xs font-semibold ${count > 5 ? 'text-red-400' : 'text-amber-300'}">Total de Vantagens: ${count}/5 (Inicialmente até 5 vantagens)</div>`;
+                } else if (currentEditingPVDType === 'desvantagens') {
+                    const totalPoints = tempPVDList.reduce((sum, item) => sum + (item.bonus || 0), 0);
+                    summaryHeader = `<div class="mb-2 p-1.5 rounded bg-neutral-800 text-xs font-semibold ${totalPoints > 5 ? 'text-red-400' : 'text-red-300'}">Total de Pontos: ${totalPoints}/5 (Máximo 5 pontos)</div>`;
+                }
+
+                pvdListContainer.innerHTML = summaryHeader + (tempPVDList.map(item => {
                     let text = `<strong>${item.nome}</strong>`;
                     if (item.valor) text += ` (${item.atributo}: ${item.valor})`;
                     if (item.custo) text += ` (Custo: ${item.custo})`;
                     if (item.bonus) text += ` (Bônus: ${item.bonus})`;
                     if (item.descricao) text += `<span class="description">${item.descricao}</span>`;
                     return `<div class="pvd-item"><div class="pvd-item-details flex-grow">${text}</div><button type="button" data-id="${item.id}" class="remove-pvd-item-btn text-red-500 hover:text-red-400 font-bold text-xs ml-2 p-1">X</button></div>`;
-                }).join('') || `<p class="text-sm text-neutral-500">Nenhum item.</p>`;
+                }).join('') || `<p class="text-sm text-neutral-500">Nenhum item.</p>`);
                 pvdListContainer.querySelectorAll('.remove-pvd-item-btn').forEach(btn => btn.addEventListener('click', e => removePvdItem(e.target.dataset.id)));
             }
 
             function savePVDChanges() {
+                if (currentEditingPVDType === 'vantagens' && tempPVDList.length > 5) {
+                    alert('Inicialmente a quantidade máxima de vantagens que pode colocar é 5.');
+                    return;
+                }
+                if (currentEditingPVDType === 'desvantagens') {
+                    const totalPoints = tempPVDList.reduce((sum, item) => sum + (item.bonus || 0), 0);
+                    if (totalPoints > 5) {
+                        alert('O máximo de pontos de desvantagens permitido é 5.');
+                        return;
+                    }
+                }
                 document.getElementById(currentEditingPVDType + 'Input').value = JSON.stringify(tempPVDList);
                 pvdModal.classList.add('hidden');
                 updateDisplayPVDs();

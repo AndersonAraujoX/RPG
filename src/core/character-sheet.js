@@ -376,6 +376,111 @@
                 isSuccess: diceSum === 12 || (diceSum !== 2 && total >= cd),
                 formulaString: `2d6 [${d1}+${d2}] + Perícia (${skill}) + ${attrName} (${baseAttr}${shBonus ? `+${shBonus} Sobre-Humano` : ''}) + Mod (${mod}) = ${total} vs CD ${cd}`
             };
+        },
+
+        /**
+         * 4. Constantes de Criação de Personagem (+2d6 v2.3 Newton Rocha)
+         */
+        MAX_DISADVANTAGE_POINTS: 5,
+        INITIAL_ADVANTAGE_POINTS: 5,
+        INITIAL_MAX_ADVANTAGES_COUNT: 5,
+
+        /**
+         * 5. Cálculo do Pool de Pontos de Vantagens (+2d6)
+         * - Base inicial de vantagens: 5 pontos
+         * - Bônus por desvantagens: até o máximo de 5 pontos
+         * - Pontos adicionais por avanço/nível
+         */
+        calcAdvantagePointsPool(disadvantagesBonus = 0, extraPoints = 0) {
+            const rawDisadvantages = parseInt(disadvantagesBonus) || 0;
+            const extra = parseInt(extraPoints) || 0;
+            const cappedDisadvantages = Math.max(0, Math.min(rawDisadvantages, this.MAX_DISADVANTAGE_POINTS));
+            return this.INITIAL_ADVANTAGE_POINTS + cappedDisadvantages + extra;
+        },
+
+        /**
+         * 6. Validação de Desvantagens (+2d6)
+         * - O máximo de pontos de desvantagens é 5
+         */
+        validateDisadvantages(disadvantages = []) {
+            if (!Array.isArray(disadvantages)) {
+                if (disadvantages === null || disadvantages === undefined) {
+                    disadvantages = [];
+                } else {
+                    throw new TypeError('Disadvantages deve ser um array ou nulo/indefinido');
+                }
+            }
+
+            const totalPoints = disadvantages.reduce((sum, item) => {
+                if (!item || typeof item !== 'object') return sum;
+                const pts = parseInt(item.bonus !== undefined ? item.bonus : (item.pontos !== undefined ? item.pontos : item.valor)) || 0;
+                if (pts < 0) {
+                    throw new RangeError(`Pontos de desvantagem não podem ser negativos: ${pts}`);
+                }
+                return sum + pts;
+            }, 0);
+
+            const isValid = totalPoints <= this.MAX_DISADVANTAGE_POINTS;
+            return {
+                isValid,
+                totalPoints,
+                maxAllowed: this.MAX_DISADVANTAGE_POINTS,
+                exceeded: Math.max(0, totalPoints - this.MAX_DISADVANTAGE_POINTS),
+                error: isValid ? null : `O total de pontos de desvantagens (${totalPoints}) excede o limite máximo permitido de ${this.MAX_DISADVANTAGE_POINTS} pontos.`
+            };
+        },
+
+        /**
+         * 7. Validação de Vantagens (+2d6)
+         * - Inicialmente a quantidade máxima de vantagens que pode colocar é 5
+         * - O total de pontos gastos não deve exceder o pool disponível
+         */
+        validateAdvantages(advantages = [], options = {}) {
+            if (!Array.isArray(advantages)) {
+                if (advantages === null || advantages === undefined) {
+                    advantages = [];
+                } else {
+                    throw new TypeError('Advantages deve ser um array ou nulo/indefinido');
+                }
+            }
+
+            const maxCount = options.maxCount !== undefined ? options.maxCount : this.INITIAL_MAX_ADVANTAGES_COUNT;
+            const count = advantages.length;
+            const isCountValid = count <= maxCount;
+
+            const totalCost = advantages.reduce((sum, item) => {
+                if (!item || typeof item !== 'object') return sum;
+                const cost = parseInt(item.custo !== undefined ? item.custo : (item.cost !== undefined ? item.cost : (item.valor !== undefined ? item.valor : item.pontos))) || 0;
+                if (cost < 0) {
+                    throw new RangeError(`Custo de vantagem não pode ser negativo: ${cost}`);
+                }
+                return sum + cost;
+            }, 0);
+
+            const pool = options.pool !== undefined 
+                ? options.pool 
+                : this.calcAdvantagePointsPool(options.disadvantagesBonus || 0, options.extraPoints || 0);
+
+            const isCostValid = totalCost <= pool;
+            const isValid = isCountValid && isCostValid;
+
+            let error = null;
+            if (!isCountValid) {
+                error = `A quantidade de vantagens (${count}) excede o limite inicial permitido de ${maxCount} vantagens.`;
+            } else if (!isCostValid) {
+                error = `Os pontos gastos em vantagens (${totalCost}) excedem o pool disponível de ${pool} pontos.`;
+            }
+
+            return {
+                isValid,
+                count,
+                maxCount,
+                isCountValid,
+                totalCost,
+                pool,
+                isCostValid,
+                error
+            };
         }
     };
 
@@ -587,6 +692,63 @@
         removeSkill(index) {
             this.data.skills.splice(index, 1);
             this.renderSkillsList();
+        }
+
+        getDisadvantagesBonus() {
+            return (this.data.disadvantages || []).reduce((sum, item) => {
+                if (typeof item === 'string') return sum + 1;
+                return sum + (parseInt(item.bonus !== undefined ? item.bonus : (item.pontos !== undefined ? item.pontos : item.valor)) || 0);
+            }, 0);
+        }
+
+        getAdvantagePointsPool(extraPoints = 0) {
+            const disBonus = this.getDisadvantagesBonus();
+            return CharacterSheetRules.calcAdvantagePointsPool(disBonus, extraPoints);
+        }
+
+        getAdvantagesSpent() {
+            return (this.data.advantages || []).reduce((sum, item) => {
+                if (typeof item === 'string') return sum + 1;
+                return sum + (parseInt(item.custo !== undefined ? item.custo : (item.cost !== undefined ? item.cost : (item.valor !== undefined ? item.valor : item.pontos))) || 0);
+            }, 0);
+        }
+
+        addAdvantage(advantage) {
+            const item = typeof advantage === 'string' ? { name: advantage, custo: 1 } : { ...advantage };
+            const currentList = this.data.advantages || [];
+            if (currentList.length >= CharacterSheetRules.INITIAL_MAX_ADVANTAGES_COUNT) {
+                throw new Error(`Inicialmente a quantidade máxima de vantagens que pode colocar é ${CharacterSheetRules.INITIAL_MAX_ADVANTAGES_COUNT}.`);
+            }
+            currentList.push(item);
+            this.data.advantages = currentList;
+            return item;
+        }
+
+        removeAdvantage(index) {
+            if (this.data.advantages && this.data.advantages[index] !== undefined) {
+                return this.data.advantages.splice(index, 1)[0];
+            }
+            return null;
+        }
+
+        addDisadvantage(disadvantage) {
+            const item = typeof disadvantage === 'string' ? { name: disadvantage, bonus: 1 } : { ...disadvantage };
+            const cost = parseInt(item.bonus !== undefined ? item.bonus : (item.pontos !== undefined ? item.pontos : item.valor)) || 0;
+            const currentBonus = this.getDisadvantagesBonus();
+            if (currentBonus + cost > CharacterSheetRules.MAX_DISADVANTAGE_POINTS) {
+                throw new Error(`O total de pontos de desvantagens não pode exceder ${CharacterSheetRules.MAX_DISADVANTAGE_POINTS} pontos.`);
+            }
+            const currentList = this.data.disadvantages || [];
+            currentList.push(item);
+            this.data.disadvantages = currentList;
+            return item;
+        }
+
+        removeDisadvantage(index) {
+            if (this.data.disadvantages && this.data.disadvantages[index] !== undefined) {
+                return this.data.disadvantages.splice(index, 1)[0];
+            }
+            return null;
         }
     }
 
