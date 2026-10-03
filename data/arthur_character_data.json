@@ -1,0 +1,94 @@
+{
+  "id": "ae12becd-170e-45bb-abf4-37bb824c9364",
+  "userId": "nFVDNBezGkhtNb3OqrmqSXfH6kk1",
+  "name": "Arthur",
+  "lastUpdated": "2026-10-03T17:18:58.531Z",
+  "sheetData": {
+    "charName": "Arthur",
+    "charClass": "mago/marinheiro",
+    "charRace": "humano",
+    "for": "1",
+    "des": "1",
+    "con": "4",
+    "int": "1",
+    "sab": "1",
+    "car": "1",
+    "pod": "5",
+    "tradicaoMagica": "POD",
+    "pontosVida": "18",
+    "pontosEnergia": "19",
+    "bonusPV": "0",
+    "bonusPE": "0",
+    "iniciativa": "+0",
+    "danoForca": "1d6-4",
+    "equipment": "Armadura leve (redução de dano 1)\nEscudo médio (aparar)",
+    "backstory": "",
+    "expPoints": "0",
+    "pontosPericiaAdicionais": "0",
+    "pontosVantagemAdicionais": "0",
+    "pericias": [
+      {
+        "id": 1791044771563,
+        "nome": "Erudição",
+        "atributo": "INT",
+        "valor": 3,
+        "descricao": ""
+      },
+      {
+        "id": 1791045032183,
+        "nome": "Mecânico",
+        "atributo": "INT",
+        "valor": 2,
+        "descricao": ""
+      },
+      {
+        "id": 1791045047773,
+        "nome": "Navegador",
+        "atributo": "INT",
+        "valor": 2,
+        "descricao": ""
+      },
+      {
+        "id": 1791045058134,
+        "nome": "Ocultismo",
+        "atributo": "INT",
+        "valor": 3,
+        "descricao": ""
+      }
+    ],
+    "vantagens": [
+      {
+        "id": 1791046312644,
+        "nome": "Duro de matar",
+        "custo": 1,
+        "descricao": "O personagem tem +6 PVs extras."
+      }
+    ],
+    "desvantagens": [
+      {
+        "id": 1791046602791,
+        "nome": "Claustrofobia",
+        "bonus": 3,
+        "descricao": "Penalidade nos testes de medo quando entra em ambientes muito pequenos."
+      },
+      {
+        "id": 1791046720310,
+        "nome": "Fobia",
+        "bonus": 2,
+        "descricao": "Medo de ratos."
+      }
+    ],
+    "caminhosMagia": [
+      {
+        "nome": "Magia (Água)",
+        "nivel": 3,
+        "customName": ""
+      },
+      {
+        "nome": "Magia (Arkanum)",
+        "nivel": 3,
+        "customName": ""
+      }
+    ]
+  }
+}
