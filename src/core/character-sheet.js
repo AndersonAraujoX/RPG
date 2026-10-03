@@ -48,35 +48,54 @@
 
         /**
          * 2. Status Derivados
-         * - PV Máximo = (CONSTITUIÇÃO * 2) + 10
+         * - PV Máximo = (CONSTITUIÇÃO * 2) + 10 + Bônus (Vantagens, itens, talentos)
          *
-         * @param {number|Object} conOrAttrs - Valor da Constituição ou Objeto de atributos { CON, ... }
-         * @param {number} [forStat=0] - Mantido para compatibilidade retroativa de assinatura
+         * @param {number|Object} conOrAttrs - Valor da Constituição ou Objeto de atributos { CON, bonusPV, ... }
+         * @param {number|Object} [bonusPV=0] - Bônus adicional de PV (numérico ou objeto { bonus, bonusPV })
          * @returns {number}
          */
-        calcMaxPV(conOrAttrs, forStat = 0) {
-            const c = (conOrAttrs && typeof conOrAttrs === 'object')
-                ? (parseInt(conOrAttrs.CON ?? conOrAttrs.con) || 0)
-                : (parseInt(conOrAttrs) || 0);
-            return (c * 2) + 10;
+        calcMaxPV(conOrAttrs, bonusPV = 0) {
+            let c = 0;
+            let bonus = 0;
+
+            if (conOrAttrs && typeof conOrAttrs === 'object') {
+                c = parseInt(conOrAttrs.CON ?? conOrAttrs.con) || 0;
+                bonus = parseInt(conOrAttrs.bonusPV ?? conOrAttrs.bonus_pv ?? conOrAttrs.bonus ?? 0) || 0;
+                if (typeof bonusPV === 'object' && bonusPV !== null) {
+                    bonus += parseInt(bonusPV.bonusPV ?? bonusPV.bonus_pv ?? bonusPV.bonus ?? 0) || 0;
+                } else {
+                    bonus += parseInt(bonusPV) || 0;
+                }
+            } else {
+                c = parseInt(conOrAttrs) || 0;
+                if (typeof bonusPV === 'object' && bonusPV !== null) {
+                    bonus = parseInt(bonusPV.bonusPV ?? bonusPV.bonus_pv ?? bonusPV.bonus ?? 0) || 0;
+                } else {
+                    bonus = parseInt(bonusPV) || 0;
+                }
+            }
+
+            return (c * 2) + 10 + bonus;
         },
 
         /**
-         * - PE Máximo = Atributo de Conjuração + CONSTITUIÇÃO + 10
-         *   Fórmula oficial: PE = Atributo de Conjuração + CONSTITUIÇÃO + 10
+         * - PE Máximo = Atributo de Conjuração + CONSTITUIÇÃO + 10 + Bônus (Vantagens, itens, talentos)
+         *   Fórmula oficial: PE = Atributo de Conjuração + CONSTITUIÇÃO + 10 + Bônus
          *   
          *   Suporta:
-         *   - calcMaxPE(conjurAttr, con)
-         *   - calcMaxPE(attributesObject, traditionName)
-         *   - calcMaxPE(conjurAttr) // Se apenas um argumento for fornecido, considera con = 0 como fallback
+         *   - calcMaxPE(conjurAttr, con, bonusPE)
+         *   - calcMaxPE(attributesObject, traditionName, bonusPE)
+         *   - calcMaxPE(conjurAttr) // Se apenas um argumento for fornecido, considera con = 0 e bonus = 0 como fallback
          *
-         * @param {number|Object} conjurOrAttrs - Valor do Atributo de Conjuração ou Objeto com atributos { CON, INT, SAB, POD... }
+         * @param {number|Object} conjurOrAttrs - Valor do Atributo de Conjuração ou Objeto com atributos { CON, INT, SAB, POD, bonusPE... }
          * @param {number|string} [conOrTradition=0] - Valor de CONSTITUIÇÃO ou Nome da Tradição Mágica ('INT'/'Arcana', 'SAB'/'Divina', 'POD'/'Inata')
+         * @param {number|Object} [bonusPE=0] - Bônus adicional de PE (numérico ou objeto { bonus, bonusPE })
          * @returns {number}
          */
-        calcMaxPE(conjurOrAttrs, conOrTradition = 0) {
+        calcMaxPE(conjurOrAttrs, conOrTradition = 0, bonusPE = 0) {
             let conjurVal = 0;
             let conVal = 0;
+            let bonus = 0;
 
             if (conjurOrAttrs && typeof conjurOrAttrs === 'object') {
                 const attrs = conjurOrAttrs;
@@ -86,12 +105,57 @@
                     : 'POD';
                 const attrKey = this.getConjurationAttributeName(tradition);
                 conjurVal = parseInt(attrs[attrKey] ?? attrs[attrKey.toLowerCase()] ?? attrs.POD ?? attrs.pod) || 0;
+                bonus = parseInt(attrs.bonusPE ?? attrs.bonus_pe ?? attrs.bonus ?? 0) || 0;
+                if (typeof bonusPE === 'object' && bonusPE !== null) {
+                    bonus += parseInt(bonusPE.bonusPE ?? bonusPE.bonus_pe ?? bonusPE.bonus ?? 0) || 0;
+                } else {
+                    bonus += parseInt(bonusPE) || 0;
+                }
             } else {
                 conjurVal = parseInt(conjurOrAttrs) || 0;
                 conVal = parseInt(conOrTradition) || 0;
+                if (typeof bonusPE === 'object' && bonusPE !== null) {
+                    bonus = parseInt(bonusPE.bonusPE ?? bonusPE.bonus_pe ?? bonusPE.bonus ?? 0) || 0;
+                } else {
+                    bonus = parseInt(bonusPE) || 0;
+                }
             }
 
-            return conjurVal + conVal + 10;
+            return conjurVal + conVal + 10 + bonus;
+        },
+
+        /**
+         * Calcula o bônus total de PV ou PE acumulado a partir de uma lista de vantagens ou itens
+         * @param {Array<Object|string>} advantagesList
+         * @param {'PV'|'PE'} resourceType
+         * @returns {number}
+         */
+        calcResourceBonusFromAdvantages(advantagesList, resourceType = 'PV') {
+            if (!Array.isArray(advantagesList)) return 0;
+            const target = (resourceType || 'PV').toUpperCase();
+            return advantagesList.reduce((sum, item) => {
+                if (!item) return sum;
+                if (typeof item === 'object') {
+                    if (target === 'PV') {
+                        if (item.bonusPV != null) return sum + (parseInt(item.bonusPV) || 0);
+                        if (item.bonus_pv != null) return sum + (parseInt(item.bonus_pv) || 0);
+                    }
+                    if (target === 'PE') {
+                        if (item.bonusPE != null) return sum + (parseInt(item.bonusPE) || 0);
+                        if (item.bonus_pe != null) return sum + (parseInt(item.bonus_pe) || 0);
+                    }
+                    if (item.resource && item.resource.toUpperCase() === target && item.bonus != null) {
+                        return sum + (parseInt(item.bonus) || 0);
+                    }
+                    const text = `${item.name || ''} ${item.desc || ''} ${item.descricao || ''}`;
+                    const match = text.match(new RegExp(`\\+(\\d+)\\s*${target}`, 'i'));
+                    if (match) return sum + parseInt(match[1]);
+                } else if (typeof item === 'string') {
+                    const match = item.match(new RegExp(`\\+(\\d+)\\s*${target}`, 'i'));
+                    if (match) return sum + parseInt(match[1]);
+                }
+                return sum;
+            }, 0);
         },
 
         /**
@@ -543,6 +607,9 @@
             this.data = {
                 charName: 'Operativo',
                 concept: 'Guerreiro de Kuar-Tor',
+                tradicaoMagica: 'INT',
+                bonusPV: 0,
+                bonusPE: 0,
                 attributes: {
                     FOR: 2,
                     DES: 2,
@@ -577,7 +644,7 @@
         }
 
         /**
-         * Vincula eventos onchange/input aos campos de atributos e tradição mágica
+         * Vincula eventos onchange/input aos campos de atributos, tradição mágica e bônus
          */
         bindAttributeEvents() {
             const attrKeys = ['FOR', 'DES', 'CON', 'INT', 'SAB', 'CAR', 'POD'];
@@ -612,6 +679,37 @@
                 input.onchange = handler;
                 input.oninput = handler;
             });
+
+            // Suporte reativo a Bônus / Vantagens de PV e PE
+            const bonusPvInputs = [
+                document.getElementById('bonusPV'),
+                document.getElementById('bonus-pv'),
+                document.getElementById('input-bonus-pv')
+            ].filter(Boolean);
+
+            bonusPvInputs.forEach(input => {
+                const handler = (e) => {
+                    this.data.bonusPV = parseInt(e.target.value) || 0;
+                    this.recalculateAllStats();
+                };
+                input.onchange = handler;
+                input.oninput = handler;
+            });
+
+            const bonusPeInputs = [
+                document.getElementById('bonusPE'),
+                document.getElementById('bonus-pe'),
+                document.getElementById('input-bonus-pe')
+            ].filter(Boolean);
+
+            bonusPeInputs.forEach(input => {
+                const handler = (e) => {
+                    this.data.bonusPE = parseInt(e.target.value) || 0;
+                    this.recalculateAllStats();
+                };
+                input.onchange = handler;
+                input.oninput = handler;
+            });
         }
 
         handleAttributeChange(attr, value) {
@@ -638,17 +736,43 @@
             const conjurAttrName = CharacterSheetRules.getConjurationAttributeName(activeTradition);
             const conjurAttrVal = attrs[conjurAttrName] ?? attrs.POD ?? 0;
 
+            // Identificar bônus diretos do DOM (se existirem)
+            const bonusPvEl = (typeof document !== 'undefined')
+                ? (document.getElementById('bonusPV') || document.getElementById('bonus-pv'))
+                : null;
+            if (bonusPvEl && bonusPvEl.value !== '') {
+                this.data.bonusPV = parseInt(bonusPvEl.value) || 0;
+            }
+
+            const bonusPeEl = (typeof document !== 'undefined')
+                ? (document.getElementById('bonusPE') || document.getElementById('bonus-pe'))
+                : null;
+            if (bonusPeEl && bonusPeEl.value !== '') {
+                this.data.bonusPE = parseInt(bonusPeEl.value) || 0;
+            }
+
+            // Bônus derivados da lista de vantagens
+            const advBonusPV = CharacterSheetRules.calcResourceBonusFromAdvantages(this.data.advantages, 'PV');
+            const advBonusPE = CharacterSheetRules.calcResourceBonusFromAdvantages(this.data.advantages, 'PE');
+
+            const totalBonusPV = (parseInt(this.data.bonusPV) || 0) + advBonusPV;
+            const totalBonusPE = (parseInt(this.data.bonusPE) || 0) + advBonusPE;
+
             // 1. Cálculos de Regras (+2d6)
-            // PV = (CONSTITUIÇÃO * 2) + 10
-            const maxPV = CharacterSheetRules.calcMaxPV(attrs.CON);
-            // PE = Atributo de Conjuração + CONSTITUIÇÃO + 10
-            const maxPE = CharacterSheetRules.calcMaxPE(conjurAttrVal, attrs.CON);
+            // PV = (CONSTITUIÇÃO * 2) + 10 + Bônus
+            const maxPV = CharacterSheetRules.calcMaxPV(attrs.CON, totalBonusPV);
+            // PE = Atributo de Conjuração + CONSTITUIÇÃO + 10 + Bônus
+            const maxPE = CharacterSheetRules.calcMaxPE(conjurAttrVal, attrs.CON, totalBonusPE);
             const forceDamage = CharacterSheetRules.calcForceDamage(attrs.FOR);
             const initiativeBonus = CharacterSheetRules.calcInitiativeBonus(attrs.DES);
 
             // 2. Atualização dos Elementos no DOM
             this.updateFieldText(['#display-pv-max', '#pontosVida', '#pv-max', '#char-pv'], maxPV);
             this.updateFieldText(['#display-pe-max', '#pontosEnergia', '#pe-max', '#char-pe'], maxPE);
+            this.updateFieldText(['#bonusPV', '#bonus-pv'], this.data.bonusPV);
+            this.updateFieldText(['#bonusPE', '#bonus-pe'], this.data.bonusPE);
+            this.updateFieldText(['#pv-base', '#pvBaseDisplay'], `Base: ${(parseInt(attrs.CON) || 0) * 2 + 10}${totalBonusPV > 0 ? ` (+${totalBonusPV} bônus)` : ''}`);
+            this.updateFieldText(['#pe-base', '#peBaseDisplay'], `Base: ${conjurAttrVal + (parseInt(attrs.CON) || 0) + 10}${totalBonusPE > 0 ? ` (+${totalBonusPE} bônus)` : ''}`);
             this.updateFieldText(['#display-dano-forca', '#dano-forca', '#danoForca', '#char-dmg'], forceDamage);
             this.updateFieldText(['#display-iniciativa', '#iniciativa-bonus', '#iniciativaBonus', '#char-init'], `+${initiativeBonus}`);
 

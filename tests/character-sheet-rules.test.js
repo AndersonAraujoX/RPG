@@ -37,26 +37,28 @@ QUnit.module('Ficha de Personagem — Regras +2d6 v2.3 (Newton Rocha)', function
         assert.equal(CharacterSheetRules.calcMaxPV(4), 18, 'CON 4 = (4 * 2) + 10 = 18 PVs');
         assert.equal(CharacterSheetRules.calcMaxPV(6), 22, 'CON 6 = (6 * 2) + 10 = 22 PVs');
 
-        // Compatibilidade com passagem de objeto ou segundo parâmetro legado
+        // Compatibilidade com passagem de objeto ou bônus adicional
         assert.equal(CharacterSheetRules.calcMaxPV({ CON: 5 }), 20, 'CON 5 via objeto = (5 * 2) + 10 = 20 PVs');
-        assert.equal(CharacterSheetRules.calcMaxPV(3, 4), 16, 'Passagem com segundo parâmetro legado preserva cálculo de CON: 16 PVs');
+        assert.equal(CharacterSheetRules.calcMaxPV(3, 4), 20, 'CON 3 com bônus de +4 PVs = 16 + 4 = 20 PVs');
     });
 
-    QUnit.test('2. Status Derivados: PE Máximo (Atributo de Conjuração + CONSTITUIÇÃO + 10)', function (assert) {
-        // Fórmula Oficial: PE = Atributo de Conjuração + CONSTITUIÇÃO + 10
-        // Parâmetros diretos: calcMaxPE(conjurAttr, con)
+    QUnit.test('2. Status Derivados: PE Máximo (Atributo de Conjuração + CONSTITUIÇÃO + 10 + Bônus)', function (assert) {
+        // Fórmula Oficial: PE = Atributo de Conjuração + CONSTITUIÇÃO + 10 + Bônus
+        // Parâmetros diretos: calcMaxPE(conjurAttr, con, bonusPE)
         assert.equal(CharacterSheetRules.calcMaxPE(0, 0), 10, 'Conjuração 0 + CON 0 = 10 PEs');
         assert.equal(CharacterSheetRules.calcMaxPE(2, 2), 14, 'Conjuração 2 + CON 2 = 14 PEs');
         assert.equal(CharacterSheetRules.calcMaxPE(3, 2), 15, 'Conjuração 3 + CON 2 = 15 PEs');
         assert.equal(CharacterSheetRules.calcMaxPE(4, 3), 17, 'Conjuração 4 + CON 3 = 17 PEs');
+        assert.equal(CharacterSheetRules.calcMaxPE(4, 3, 5), 22, 'Conjuração 4 + CON 3 + 10 + Bônus 5 = 22 PEs');
 
-        // Suporte a objeto de atributos + tradição mágica
+        // Suporte a objeto de atributos + tradição mágica + bônus
         const heroAttrs = { FOR: 2, DES: 2, CON: 2, INT: 4, SAB: 3, POD: 1 };
         assert.equal(CharacterSheetRules.calcMaxPE(heroAttrs, 'INT'), 16, 'Tradição Arcana (INT 4 + CON 2 + 10 = 16 PEs)');
         assert.equal(CharacterSheetRules.calcMaxPE(heroAttrs, 'SAB'), 15, 'Tradição Divina/Primal (SAB 3 + CON 2 + 10 = 15 PEs)');
         assert.equal(CharacterSheetRules.calcMaxPE(heroAttrs, 'POD'), 13, 'Tradição Inata (POD 1 + CON 2 + 10 = 13 PEs)');
+        assert.equal(CharacterSheetRules.calcMaxPE(heroAttrs, 'INT', 4), 20, 'Tradição Arcana com +4 bônus = 16 + 4 = 20 PEs');
 
-        // Fallback seguro se apenas 1 argumento for passado (con = 0)
+        // Fallback seguro se apenas 1 argumento for passado (con = 0, bonus = 0)
         assert.equal(CharacterSheetRules.calcMaxPE(2), 12, 'Fallback 1 argumento (Conjuração 2 + CON 0 = 12 PEs)');
     });
 
@@ -150,7 +152,8 @@ QUnit.module('Ficha de Personagem — Regras +2d6 v2.3 (Newton Rocha)', function
         controller.data.attributes.DES = 5;
 
         // Validar recálculo dos dados internos
-        assert.equal(CharacterSheetRules.calcMaxPV(controller.data.attributes.CON, controller.data.attributes.FOR), 16, 'PV recalculado ((3 * 2) + 10 = 16)');
+        assert.equal(CharacterSheetRules.calcMaxPV(controller.data.attributes.CON), 16, 'PV recalculado ((3 * 2) + 10 = 16)');
+        assert.equal(CharacterSheetRules.calcMaxPV(controller.data.attributes.CON, 4), 20, 'PV recalculado com bônus ((3 * 2) + 10 + 4 = 20)');
         assert.equal(CharacterSheetRules.calcInitiativeBonus(controller.data.attributes.DES), 3, 'Iniciativa recalculada');
 
         // Executar rolagem direta

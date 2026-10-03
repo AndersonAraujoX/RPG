@@ -47,16 +47,18 @@ QUnit.module('Cálculo de PV Máximo ((Constituição x 2) + 10)', function () {
         assert.equal(pvLower, 16, 'Objeto com chave minúscula { con: 3 } = (3 x 2) + 10 = 16');
     });
 
-    QUnit.test('1. Caminho Feliz: Compatibilidade com assinatura retroativa (con, forStat)', function (assert) {
+    QUnit.test('1. Caminho Feliz: Suporte a Bônus e Vantagens em PV', function (assert) {
         // Arrange
         const con = 3;
-        const legacyFor = 5;
+        const bonusPV = 5;
 
         // Act
-        const actual = CharacterSheetRules.calcMaxPV(con, legacyFor);
+        const actual = CharacterSheetRules.calcMaxPV(con, bonusPV);
+        const objWithBonus = CharacterSheetRules.calcMaxPV({ CON: 3, bonusPV: 5 });
 
         // Assert
-        assert.equal(actual, 16, 'Segundo argumento legado não afeta o cálculo: (3 x 2) + 10 = 16');
+        assert.equal(actual, 21, 'CON 3 com bônus de 5: (3 x 2) + 10 + 5 = 21 PVs');
+        assert.equal(objWithBonus, 21, 'Objeto { CON: 3, bonusPV: 5 } = 21 PVs');
     });
 
     // =========================================================================
