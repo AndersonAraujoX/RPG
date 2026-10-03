@@ -154,7 +154,7 @@
                     : '';
                 if (c.disponivel) {
                     card.className = 'card open';
-                    card.innerHTML = `<h3 class="font-cinzel">${c.nome}</h3><p>${c.descricao}</p><div class="more">Ver Ações</div>${adminBtn}`;
+                    card.innerHTML = `<h3 class="font-cinzel">${c.nome}</h3><p>${c.descricao}</p><div class="more-row" style="margin-top:1rem;display:flex;justify-content:space-between;align-items:center"><span style="font-size:0.75rem;color:#4ade80;font-family:monospace">✦ Disponível</span><button type="button" class="btn btn-secondary btn-ver-acoes" style="padding:0.35rem 0.8rem;font-size:0.85rem">Ver Ações &rarr;</button></div>${adminBtn}`;
                     card.addEventListener('click', e => { if (!e.target.classList.contains('admin-btn')) abrirModal(c); });
                 } else {
                     card.className = 'card locked';
