@@ -219,6 +219,35 @@
             box-shadow: 0 0 15px rgba(102, 252, 241, 0.6) !important;
             transform: scale(1.03) !important;
         }
+
+        .banner-bloqueio {
+            background: linear-gradient(180deg, rgba(20, 20, 30, 0.95) 0%, rgba(10, 10, 15, 0.98) 100%) !important;
+            border: 2px solid rgba(239, 68, 68, 0.6) !important;
+            border-radius: 1rem !important;
+            box-shadow: 0 0 35px rgba(239, 68, 68, 0.25), 0 20px 40px rgba(0, 0, 0, 0.9) !important;
+            padding: 2.5rem 1.5rem !important;
+            text-align: center !important;
+            max-width: 48rem !important;
+            margin: 2rem auto !important;
+            backdrop-filter: blur(10px) !important;
+        }
+
+        .banner-bloqueio.hidden, .admin-bar.hidden {
+            display: none !important;
+        }
+
+        .admin-bar {
+            background: rgba(15, 23, 42, 0.9) !important;
+            border: 1px solid rgba(102, 252, 241, 0.4) !important;
+            border-radius: 0.75rem !important;
+            padding: 0.85rem 1.25rem !important;
+            display: flex !important;
+            flex-wrap: wrap !important;
+            justify-content: space-between !important;
+            align-items: center !important;
+            gap: 1rem !important;
+            margin-bottom: 1.5rem !important;
+        }
     </style>
 
     <!-- Firebase SDK -->
@@ -263,13 +292,47 @@
             <button id="admin-login-button" class="btn-primary font-bold py-2 px-4 rounded-lg">Admin</button>
         </header>
 
+        <!-- Barra de Controle do Mestre para Bloqueio Global -->
+        <div id="admin-global-bar" class="admin-bar hidden">
+            <div class="flex items-center gap-3">
+                <span class="text-rpg-cyan font-cinzel font-bold text-sm">Painel do Mestre:</span>
+                <span id="admin-status-text" class="text-xs px-2.5 py-1 rounded font-mono font-bold bg-red-950 text-red-400 border border-red-600/40">
+                    🔒 Bloqueado para Jogadores
+                </span>
+            </div>
+            <button id="btn-toggle-bloqueio-geral" type="button" class="btn-primary text-xs font-bold py-1.5 px-4 rounded cursor-pointer">
+                Alternar Bloqueio de Jogadores
+            </button>
+        </div>
+
+        <!-- Tela de Selamento do Nexo para Jogadores -->
+        <div id="bloqueio-jogadores-banner" class="banner-bloqueio">
+            <div style="font-size: 3rem; margin-bottom: 1rem; filter: drop-shadow(0 0 15px rgba(239, 68, 68, 0.7));">🔒</div>
+            <h2 class="text-3xl font-cinzel font-bold text-red-400 mb-3 tracking-wide" style="text-shadow: 0 0 10px rgba(239, 68, 68, 0.5);">Nexo do Paradoxo Selado</h2>
+            <p class="text-gray-300 text-base mb-6 leading-relaxed max-w-xl mx-auto">
+                O Nexo está temporariamente protegido e selado pelo Mestre da Mesa.
+                O acesso às instalações e ao painel de ações dos cômodos está bloqueado para os jogadores por enquanto.
+            </p>
+            <div style="display: inline-block; padding: 0.35rem 1rem; border-radius: 9999px; background: rgba(127, 29, 29, 0.4); border: 1px solid rgba(239, 68, 68, 0.4); color: #fca5a5; font-family: monospace; font-size: 0.8rem; margin-bottom: 1.5rem;">
+                ✦ Status: Acesso Restrito pelo Mestre
+            </div>
+            <div class="flex justify-center gap-4 flex-wrap">
+                <button id="btn-admin-desbloquear" type="button" class="btn-primary font-bold py-2.5 px-6 rounded-lg cursor-pointer">
+                    🔑 Acesso de Administrador (Mestre)
+                </button>
+                <a href="../index.html" class="btn-secondary font-bold py-2.5 px-6 rounded-lg no-underline inline-flex items-center">
+                    &larr; Voltar ao Portal
+                </a>
+            </div>
+        </div>
+
         <!-- Grid de Cômodos -->
-        <main id="comodos-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <main id="comodos-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 hidden">
             <!-- Os cards dos cômodos serão inseridos aqui pelo JavaScript -->
         </main>
 
         <!-- Log de Atividades -->
-        <div class="mt-12">
+        <div id="log-section" class="mt-12 hidden">
             <h2 class="text-2xl font-cinzel text-center mb-4">Registro de Atividades</h2>
             <div id="log-container"
                 class="bg-gray-900/60 border border-gray-700 rounded-lg p-4 h-48 overflow-y-auto space-y-2">
@@ -422,9 +485,9 @@
             };
 
             // --- ELEMENTOS DO DOM ---
-            // --- ELEMENTOS DO DOM ---
             const comodosGrid = document.getElementById('comodos-grid');
             const logContainer = document.getElementById('log-container');
+            const logSection = document.getElementById('log-section');
             const modal = document.getElementById('modal-acoes');
             const modalTitle = document.getElementById('modal-title');
             const modalBody = document.getElementById('modal-body');
@@ -435,16 +498,73 @@
             const passwordError = document.getElementById('passwordError');
             const cancelPasswordButton = document.getElementById('cancelPasswordButton');
             const submitPasswordButton = document.getElementById('submitPasswordButton');
+            const bloqueioBanner = document.getElementById('bloqueio-jogadores-banner');
+            const adminGlobalBar = document.getElementById('admin-global-bar');
+            const adminStatusText = document.getElementById('admin-status-text');
+            const btnToggleBloqueioGeral = document.getElementById('btn-toggle-bloqueio-geral');
+            const btnAdminDesbloquear = document.getElementById('btn-admin-desbloquear');
 
             // --- ESTADO DO JOGO ---
             let isAdminMode = false;
+            let bloqueadoJogadores = true;
             const ADMIN_PASSWORD = 'fungus'; // Senha para o modo admin
 
             // --- FUNÇÕES ---
 
+            /** Atualiza a interface de acordo com o bloqueio do mestre */
+            function atualizarVisibilidadeBloqueio() {
+                if (adminGlobalBar && adminStatusText && btnToggleBloqueioGeral) {
+                    if (isAdminMode) {
+                        adminGlobalBar.classList.remove('hidden');
+                        if (bloqueadoJogadores) {
+                            adminStatusText.textContent = '🔒 Bloqueado para Jogadores';
+                            adminStatusText.className = 'text-xs px-2.5 py-1 rounded font-mono font-bold bg-red-950 text-red-400 border border-red-600/40';
+                            btnToggleBloqueioGeral.textContent = '🔓 Liberar Acesso aos Jogadores';
+                            btnToggleBloqueioGeral.className = 'text-xs font-bold py-1.5 px-4 rounded bg-green-600 hover:bg-green-500 text-white transition cursor-pointer';
+                        } else {
+                            adminStatusText.textContent = '✦ Liberado para Jogadores';
+                            adminStatusText.className = 'text-xs px-2.5 py-1 rounded font-mono font-bold bg-green-950 text-green-400 border border-green-600/40';
+                            btnToggleBloqueioGeral.textContent = '🔒 Bloquear para Jogadores';
+                            btnToggleBloqueioGeral.className = 'text-xs font-bold py-1.5 px-4 rounded bg-red-600 hover:bg-red-500 text-white transition cursor-pointer';
+                        }
+                    } else {
+                        adminGlobalBar.classList.add('hidden');
+                    }
+                }
+
+                if (bloqueadoJogadores && !isAdminMode) {
+                    if (bloqueioBanner) bloqueioBanner.classList.remove('hidden');
+                    if (comodosGrid) comodosGrid.classList.add('hidden');
+                    if (logSection) logSection.classList.add('hidden');
+                } else {
+                    if (bloqueioBanner) bloqueioBanner.classList.add('hidden');
+                    if (comodosGrid) comodosGrid.classList.remove('hidden');
+                    if (logSection) logSection.classList.remove('hidden');
+                }
+            }
+
+            /** Alterna o bloqueio global de jogadores no Firestore */
+            async function toggleBloqueioJogadores() {
+                try {
+                    const novoValor = !bloqueadoJogadores;
+                    await db.collection('nexo').doc('estado').set({
+                        bloqueadoJogadores: novoValor,
+                        updatedAt: new Date().toISOString(),
+                        updatedBy: 'mestre'
+                    }, { merge: true });
+                    bloqueadoJogadores = novoValor;
+                    atualizarVisibilidadeBloqueio();
+                    adicionarLog(`O acesso dos jogadores ao Nexo foi ${novoValor ? 'bloqueado' : 'liberado'}.`, novoValor ? 'aviso' : 'sucesso');
+                } catch (error) {
+                    console.error("Erro ao alterar bloqueio de jogadores:", error);
+                    adicionarLog("Erro ao salvar bloqueio no Firebase: " + error.message, "erro");
+                }
+            }
+
             /** Ativa ou desativa o modo de administrador */
             function setAdminMode(isAdmin) {
                 isAdminMode = isAdmin;
+                atualizarVisibilidadeBloqueio();
                 renderizarComodos(); // Re-renderiza os cômodos com ou sem os controles de admin
             }
 
@@ -613,12 +733,16 @@
                     db.collection('nexo').doc('estado').onSnapshot((doc) => {
                         if (doc && doc.exists) {
                             const data = doc.data();
+                            if (data && data.bloqueadoJogadores !== undefined) {
+                                bloqueadoJogadores = Boolean(data.bloqueadoJogadores);
+                            }
                             const comodosState = data && data.comodos ? data.comodos : {};
                             gameState.comodos.forEach(comodo => {
                                 if (comodosState[comodo.id] !== undefined) {
                                     comodo.disponivel = Boolean(comodosState[comodo.id]);
                                 }
                             });
+                            atualizarVisibilidadeBloqueio();
                             renderizarComodos();
                         }
                     }, (error) => {
@@ -631,19 +755,33 @@
 
             // --- INICIALIZAÇÃO ---
             function init() {
-                // 1. Renderiza imediatamente com estado inicial para não ficar tela preta
+                // 1. Atualiza visibilidade inicial
+                atualizarVisibilidadeBloqueio();
+
+                // 2. Renderiza imediatamente com estado inicial
                 renderizarComodos();
 
-                // 2. Conecta em tempo real ao Firestore
+                // 3. Conecta em tempo real ao Firestore
                 syncComodosState();
 
-                // 3. Event Listeners do Modal
+                // 4. Event Listeners do Modal e Controles
                 modalCloseBtn.addEventListener('click', fecharModal);
                 modal.addEventListener('click', (e) => {
                     if (e.target === modal) {
                         fecharModal();
                     }
                 });
+
+                if (btnToggleBloqueioGeral) {
+                    btnToggleBloqueioGeral.addEventListener('click', toggleBloqueioJogadores);
+                }
+
+                if (btnAdminDesbloquear) {
+                    btnAdminDesbloquear.addEventListener('click', () => {
+                        passwordModal.classList.remove('hidden');
+                        passwordInput.focus();
+                    });
+                }
 
                 comodosGrid.addEventListener('click', (e) => {
                     if (e.target.classList.contains('admin-btn')) {

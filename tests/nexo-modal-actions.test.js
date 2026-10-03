@@ -200,4 +200,89 @@ QUnit.module('Nexo do Paradoxo: Modal de Ações e Botões "Ver Ações"', funct
         // Assert
         assert.true(modalAberto, 'Clicar no card ou em Ver Ações deve abrir o modal');
     });
+
+    // =========================================================================
+    // 4. BLOQUEIO DE ACESSO DO NEXO PARA JOGADORES (ESTADO & REPOSITÓRIO)
+    // =========================================================================
+
+    QUnit.test('7. Caminho Feliz: setBloqueioJogadores grava no documento nexo/estado com merge (AAA)', async function (assert) {
+        // Arrange
+        const calls = { set: [] };
+        const docRef = {
+            set: async (payload, opts) => {
+                calls.set.push({ payload, opts });
+            }
+        };
+        const dbMock = {
+            collection: () => ({ doc: () => docRef })
+        };
+        const NexoState = require('../src/modules/nexo-state.js');
+        const repo = NexoState.createNexoRepository(dbMock, () => '2026-10-03T19:00:00Z');
+
+        // Act
+        await repo.setBloqueioJogadores(true, 'mestre-uid');
+
+        // Assert
+        assert.equal(calls.set.length, 1, 'Gravou uma vez');
+        assert.deepEqual(calls.set[0].payload, {
+            bloqueadoJogadores: true,
+            updatedAt: '2026-10-03T19:00:00Z',
+            updatedBy: 'mestre-uid'
+        }, 'Payload de bloqueio correto');
+        assert.deepEqual(calls.set[0].opts, { merge: true }, 'Usou merge true');
+    });
+
+    QUnit.test('8. Caminho Feliz: subscribe envia metadados de bloqueioJogadores aos assinantes (AAA)', function (assert) {
+        // Arrange
+        let listenerOk;
+        const docRef = {
+            onSnapshot: (ok) => { listenerOk = ok; return () => {}; }
+        };
+        const dbMock = {
+            collection: () => ({ doc: () => docRef })
+        };
+        const NexoState = require('../src/modules/nexo-state.js');
+        const repo = NexoState.createNexoRepository(dbMock);
+        let recebidoMeta = null;
+
+        // Act
+        repo.subscribe((mapa, meta) => {
+            recebidoMeta = meta;
+        });
+        listenerOk({
+            exists: true,
+            data: () => ({
+                comodos: { forja: true },
+                bloqueadoJogadores: true,
+                updatedAt: '2026-10-03T19:00:00Z'
+            })
+        });
+
+        // Assert
+        assert.ok(recebidoMeta, 'Recebeu metadados');
+        assert.true(recebidoMeta.bloqueadoJogadores, 'bloqueadoJogadores é true');
+    });
+
+    QUnit.test('9. Casos de Borda e Erros: setBloqueioJogadores valida parâmetro booleano (AAA)', async function (assert) {
+        // Arrange
+        const NexoState = require('../src/modules/nexo-state.js');
+        const repo = NexoState.createNexoRepository({ collection: () => ({ doc: () => ({}) }) });
+
+        // Act & Assert
+        await assert.rejects(repo.setBloqueioJogadores('sim'), /booleano/, 'Rejeita string');
+        await assert.rejects(repo.setBloqueioJogadores(null), /booleano/, 'Rejeita null');
+        await assert.rejects(repo.setBloqueioJogadores(1), /booleano/, 'Rejeita número');
+    });
+
+    QUnit.test('10. Integração: Elementos visuais de selamento presentes em legado/nexo.html e index.html (AAA)', function (assert) {
+        // Arrange
+        const legadoHtml = fs.readFileSync(legadoHtmlPath, 'utf8');
+        const indexHtml = fs.readFileSync(path.join(__dirname, '../index.html'), 'utf8');
+
+        // Act & Assert
+        assert.ok(legadoHtml.includes('id="bloqueio-jogadores-banner"'), 'Banner de selamento presente em legado/nexo.html');
+        assert.ok(legadoHtml.includes('id="admin-global-bar"'), 'Barra de mestre presente em legado/nexo.html');
+        assert.ok(legadoHtml.includes('id="btn-toggle-bloqueio-geral"'), 'Botão de alternância presente em legado/nexo.html');
+        assert.ok(indexHtml.includes('Selado'), 'Badge de selamento presente no Card do Nexo em index.html');
+    });
 });

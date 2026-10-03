@@ -79,11 +79,47 @@
 
         <div id="status" class="offline">Conectando ao Firebase…</div>
 
-        <main id="comodos-grid" aria-label="Cômodos do Nexo"></main>
+        <!-- Barra de Controle do Mestre para Bloqueio Global -->
+        <div id="admin-global-bar" class="admin-bar hidden" style="margin-bottom:1.5rem;padding:0.8rem 1.2rem;background:rgba(15,23,42,0.9);border:1px solid rgba(102,252,241,0.4);border-radius:0.7rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;">
+            <div style="display:flex;align-items:center;gap:0.75rem;">
+                <span class="font-cinzel" style="color:var(--cyan);font-weight:bold;font-size:0.9rem;">Painel do Mestre:</span>
+                <span id="admin-status-text" style="font-size:0.8rem;padding:0.25rem 0.6rem;border-radius:0.4rem;font-family:monospace;font-weight:bold;background:#450a0a;color:#f87171;border:1px solid rgba(239,68,68,0.4);">
+                    🔒 Bloqueado para Jogadores
+                </span>
+            </div>
+            <button id="btn-toggle-bloqueio-geral" type="button" class="btn btn-primary" style="font-size:0.8rem;padding:0.35rem 0.8rem;">
+                Alternar Bloqueio de Jogadores
+            </button>
+        </div>
 
-        <h2 class="font-cinzel log-title">Registro de Atividades</h2>
-        <div id="log-container">
-            <p class="log-info"><em>Bem-vindo ao Nexo. Suas ações serão registradas aqui.</em></p>
+        <!-- Tela de Selamento do Nexo para Jogadores -->
+        <div id="bloqueio-jogadores-banner" class="banner-bloqueio" style="background:linear-gradient(180deg, rgba(20,20,30,0.95) 0%, rgba(10,10,15,0.98) 100%);border:2px solid rgba(239,68,68,0.6);border-radius:1rem;box-shadow:0 0 35px rgba(239,68,68,0.25);padding:2.5rem 1.5rem;text-align:center;max-width:48rem;margin:2rem auto;">
+            <div style="font-size:3rem;margin-bottom:1rem;">🔒</div>
+            <h2 class="font-cinzel" style="color:#f87171;margin-bottom:0.75rem;font-size:2rem;">Nexo do Paradoxo Selado</h2>
+            <p style="color:#d1d5db;margin-bottom:1.5rem;line-height:1.6;max-width:36rem;margin-left:auto;margin-right:auto;">
+                O Nexo está temporariamente protegido e selado pelo Mestre da Mesa.
+                O acesso às instalações e ao painel de ações dos cômodos está bloqueado para os jogadores por enquanto.
+            </p>
+            <div style="display:inline-block;padding:0.35rem 1rem;border-radius:9999px;background:rgba(127,29,29,0.4);border:1px solid rgba(239,68,68,0.4);color:#fca5a5;font-family:monospace;font-size:0.8rem;margin-bottom:1.5rem;">
+                ✦ Status: Acesso Restrito pelo Mestre
+            </div>
+            <div style="display:flex;justify-content:center;gap:1rem;flex-wrap:wrap;">
+                <button id="btn-admin-desbloquear" type="button" class="btn btn-primary">
+                    🔑 Acesso de Administrador (Mestre)
+                </button>
+                <a href="../index.html" class="btn btn-secondary" style="text-decoration:none;">
+                    &larr; Voltar ao Portal
+                </a>
+            </div>
+        </div>
+
+        <main id="comodos-grid" aria-label="Cômodos do Nexo" class="hidden"></main>
+
+        <div id="log-section" class="hidden">
+            <h2 class="font-cinzel log-title">Registro de Atividades</h2>
+            <div id="log-container">
+                <p class="log-info"><em>Bem-vindo ao Nexo. Suas ações serão registradas aqui.</em></p>
+            </div>
         </div>
     </div>
 
@@ -186,9 +222,65 @@
         $('modal-acoes').addEventListener('click', e => { if (e.target === $('modal-acoes')) fecharModal(); });
 
         // Admin
+        let bloqueadoJogadores = true;
+
+        function atualizarVisibilidadeBloqueio() {
+            const adminBar = $('admin-global-bar');
+            const adminStatusText = $('admin-status-text');
+            const btnToggle = $('btn-toggle-bloqueio-geral');
+            const banner = $('bloqueio-jogadores-banner');
+            const logSection = $('log-section');
+
+            if (adminBar && adminStatusText && btnToggle) {
+                if (isAdminMode) {
+                    adminBar.classList.remove('hidden');
+                    if (bloqueadoJogadores) {
+                        adminStatusText.textContent = '🔒 Bloqueado para Jogadores';
+                        adminStatusText.style.background = '#450a0a';
+                        adminStatusText.style.color = '#f87171';
+                        btnToggle.textContent = '🔓 Liberar Acesso aos Jogadores';
+                        btnToggle.className = 'btn btn-primary';
+                    } else {
+                        adminStatusText.textContent = '✦ Liberado para Jogadores';
+                        adminStatusText.style.background = '#052e16';
+                        adminStatusText.style.color = '#4ade80';
+                        btnToggle.textContent = '🔒 Bloquear para Jogadores';
+                        btnToggle.className = 'btn btn-secondary';
+                    }
+                } else {
+                    adminBar.classList.add('hidden');
+                }
+            }
+
+            if (bloqueadoJogadores && !isAdminMode) {
+                if (banner) banner.classList.remove('hidden');
+                if (grid) grid.classList.add('hidden');
+                if (logSection) logSection.classList.add('hidden');
+            } else {
+                if (banner) banner.classList.add('hidden');
+                if (grid) grid.classList.remove('hidden');
+                if (logSection) logSection.classList.remove('hidden');
+            }
+        }
+
+        async function toggleBloqueioJogadores() {
+            try {
+                const novo = !bloqueadoJogadores;
+                await repo.setBloqueioJogadores(novo, currentUser && currentUser.uid);
+                bloqueadoJogadores = novo;
+                atualizarVisibilidadeBloqueio();
+                adicionarLog(`O acesso dos jogadores ao Nexo foi ${novo ? 'bloqueado' : 'liberado'}.`, novo ? 'aviso' : 'sucesso');
+            } catch (err) {
+                console.error(err);
+                adicionarLog('Falha ao salvar bloqueio no Firebase: ' + err.message, 'erro');
+            }
+        }
+
         $('admin-login-button').addEventListener('click', () => {
             if (isAdminMode) {
-                isAdminMode = false; renderizar();
+                isAdminMode = false;
+                atualizarVisibilidadeBloqueio();
+                renderizar();
                 adicionarLog('Modo de administrador desativado.', 'info');
             } else {
                 $('passwordModal').classList.remove('hidden');
@@ -198,7 +290,9 @@
         $('cancelPasswordButton').addEventListener('click', () => $('passwordModal').classList.add('hidden'));
         function tentarLogin() {
             if ($('passwordInput').value === ADMIN_PASSWORD) {
-                isAdminMode = true; renderizar();
+                isAdminMode = true;
+                atualizarVisibilidadeBloqueio();
+                renderizar();
                 $('passwordModal').classList.add('hidden');
                 $('passwordInput').value = '';
                 adicionarLog('Modo de administrador ativado.', 'sucesso');
@@ -227,10 +321,23 @@
 
         // Tempo real: qualquer liberação do mestre aparece para todos sem recarregar
         function iniciar() {
+            atualizarVisibilidadeBloqueio();
+            const btnToggle = $('btn-toggle-bloqueio-geral');
+            if (btnToggle) btnToggle.addEventListener('click', toggleBloqueioJogadores);
+            const btnAdmin = $('btn-admin-desbloquear');
+            if (btnAdmin) btnAdmin.addEventListener('click', () => {
+                $('passwordModal').classList.remove('hidden');
+                $('passwordInput').focus();
+            });
+
             repo.subscribe(
-                mapa => {
+                (mapa, meta) => {
+                    if (meta && typeof meta.bloqueadoJogadores === 'boolean') {
+                        bloqueadoJogadores = meta.bloqueadoJogadores;
+                    }
                     comodos = NexoState.mesclarEstado(NexoState.criarComodosPadrao(), mapa);
                     setStatus('Sincronizado com o Firebase em tempo real.', true);
+                    atualizarVisibilidadeBloqueio();
                     renderizar();
                 },
                 err => {

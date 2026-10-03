@@ -134,13 +134,21 @@
         return {
             /**
              * Assina o estado em tempo real.
+             * @param {Function} onChange - recebe (comodosMap, meta)
+             * @param {Function} [onError]
              * @returns {Function} função para cancelar a assinatura
              */
             subscribe(onChange, onError) {
                 return ref().onSnapshot(
                     snap => {
                         const data = snap && snap.exists ? snap.data() : null;
-                        onChange((data && data.comodos) || {});
+                        const comodosMap = (data && data.comodos) || {};
+                        const meta = {
+                            bloqueadoJogadores: Boolean(data && data.bloqueadoJogadores),
+                            updatedAt: (data && data.updatedAt) || null,
+                            updatedBy: (data && data.updatedBy) || null
+                        };
+                        onChange(comodosMap, meta);
                     },
                     err => { if (typeof onError === 'function') onError(err); }
                 );
@@ -152,6 +160,16 @@
                 if (typeof disponivel !== 'boolean') throw new Error('Disponibilidade deve ser booleana');
                 await ref().set({
                     comodos: { [id]: disponivel },
+                    updatedAt: clock(),
+                    updatedBy: userId || null
+                }, { merge: true });
+            },
+
+            /** Grava o bloqueio geral de acesso para jogadores. */
+            async setBloqueioJogadores(bloqueado, userId) {
+                if (typeof bloqueado !== 'boolean') throw new Error('Bloqueio deve ser booleano');
+                await ref().set({
+                    bloqueadoJogadores: bloqueado,
                     updatedAt: clock(),
                     updatedBy: userId || null
                 }, { merge: true });
