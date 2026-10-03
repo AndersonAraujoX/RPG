@@ -48,21 +48,67 @@
 
         /**
          * 2. Status Derivados
-         * - PV Máximo = 10 + CON + FOR + (se CON >= 3 ganha +5 PVs extras)
+         * - PV Máximo = (CONSTITUIÇÃO * 2) + 10
+         *
+         * @param {number|Object} conOrAttrs - Valor da Constituição ou Objeto de atributos { CON, ... }
+         * @param {number} [forStat=0] - Mantido para compatibilidade retroativa de assinatura
+         * @returns {number}
          */
-        calcMaxPV(con, forStat) {
-            const c = parseInt(con) || 0;
-            const f = parseInt(forStat) || 0;
-            const conBonus = c >= 3 ? 5 : 0;
-            return 10 + c + f + conBonus;
+        calcMaxPV(conOrAttrs, forStat = 0) {
+            const c = (conOrAttrs && typeof conOrAttrs === 'object')
+                ? (parseInt(conOrAttrs.CON ?? conOrAttrs.con) || 0)
+                : (parseInt(conOrAttrs) || 0);
+            return (c * 2) + 10;
         },
 
         /**
-         * - PE Máximo = POD + 10
+         * - PE Máximo = Atributo de Conjuração + CONSTITUIÇÃO + 10
+         *   Fórmula oficial: PE = Atributo de Conjuração + CONSTITUIÇÃO + 10
+         *   
+         *   Suporta:
+         *   - calcMaxPE(conjurAttr, con)
+         *   - calcMaxPE(attributesObject, traditionName)
+         *   - calcMaxPE(conjurAttr) // Se apenas um argumento for fornecido, considera con = 0 como fallback
+         *
+         * @param {number|Object} conjurOrAttrs - Valor do Atributo de Conjuração ou Objeto com atributos { CON, INT, SAB, POD... }
+         * @param {number|string} [conOrTradition=0] - Valor de CONSTITUIÇÃO ou Nome da Tradição Mágica ('INT'/'Arcana', 'SAB'/'Divina', 'POD'/'Inata')
+         * @returns {number}
          */
-        calcMaxPE(pod) {
-            const p = parseInt(pod) || 0;
-            return p + 10;
+        calcMaxPE(conjurOrAttrs, conOrTradition = 0) {
+            let conjurVal = 0;
+            let conVal = 0;
+
+            if (conjurOrAttrs && typeof conjurOrAttrs === 'object') {
+                const attrs = conjurOrAttrs;
+                conVal = parseInt(attrs.CON ?? attrs.con) || 0;
+                const tradition = (typeof conOrTradition === 'string' && conOrTradition.trim())
+                    ? conOrTradition.trim()
+                    : 'POD';
+                const attrKey = this.getConjurationAttributeName(tradition);
+                conjurVal = parseInt(attrs[attrKey] ?? attrs[attrKey.toLowerCase()] ?? attrs.POD ?? attrs.pod) || 0;
+            } else {
+                conjurVal = parseInt(conjurOrAttrs) || 0;
+                conVal = parseInt(conOrTradition) || 0;
+            }
+
+            return conjurVal + conVal + 10;
+        },
+
+        /**
+         * Resolve o nome do atributo de conjuração baseado na tradição mágica (+2d6)
+         * - Arcana (ou INT) -> 'INT'
+         * - Divina / Primal (ou SAB) -> 'SAB'
+         * - Inata (ou POD) -> 'POD'
+         * @param {string} tradition
+         * @returns {'INT'|'SAB'|'POD'}
+         */
+        getConjurationAttributeName(tradition) {
+            if (!tradition || typeof tradition !== 'string') return 'POD';
+            const norm = tradition.trim().toUpperCase();
+            if (norm === 'INT' || norm === 'ARCANA') return 'INT';
+            if (norm === 'SAB' || norm === 'DIVINA' || norm === 'PRIMAL') return 'SAB';
+            if (norm === 'POD' || norm === 'INATA') return 'POD';
+            return norm;
         },
 
         /**
@@ -531,7 +577,7 @@
         }
 
         /**
-         * Vincula eventos onchange/input aos campos de atributos
+         * Vincula eventos onchange/input aos campos de atributos e tradição mágica
          */
         bindAttributeEvents() {
             const attrKeys = ['FOR', 'DES', 'CON', 'INT', 'SAB', 'CAR', 'POD'];
@@ -550,6 +596,22 @@
                     input.oninput = (e) => this.handleAttributeChange(attr, e.target.value);
                 });
             });
+
+            // Suporte reativo à mudança de Tradição Mágica
+            const tradicaoInputs = [
+                document.getElementById('tradicaoMagica'),
+                document.getElementById('sheet-tradicao'),
+                document.getElementById('tradicao')
+            ].filter(Boolean);
+
+            tradicaoInputs.forEach(input => {
+                const handler = (e) => {
+                    this.data.tradicaoMagica = e.target.value;
+                    this.recalculateAllStats();
+                };
+                input.onchange = handler;
+                input.oninput = handler;
+            });
         }
 
         handleAttributeChange(attr, value) {
@@ -565,9 +627,22 @@
         recalculateAllStats() {
             const attrs = this.data.attributes;
 
-            // 1. Cálculos de Regras
-            const maxPV = CharacterSheetRules.calcMaxPV(attrs.CON, attrs.FOR);
-            const maxPE = CharacterSheetRules.calcMaxPE(attrs.POD);
+            // Identificar Tradição Mágica ativa e Atributo de Conjuração
+            const tradicaoEl = (typeof document !== 'undefined')
+                ? (document.getElementById('tradicaoMagica') || document.getElementById('sheet-tradicao') || document.getElementById('tradicao'))
+                : null;
+            if (tradicaoEl && tradicaoEl.value) {
+                this.data.tradicaoMagica = tradicaoEl.value;
+            }
+            const activeTradition = this.data.tradicaoMagica || 'INT';
+            const conjurAttrName = CharacterSheetRules.getConjurationAttributeName(activeTradition);
+            const conjurAttrVal = attrs[conjurAttrName] ?? attrs.POD ?? 0;
+
+            // 1. Cálculos de Regras (+2d6)
+            // PV = (CONSTITUIÇÃO * 2) + 10
+            const maxPV = CharacterSheetRules.calcMaxPV(attrs.CON);
+            // PE = Atributo de Conjuração + CONSTITUIÇÃO + 10
+            const maxPE = CharacterSheetRules.calcMaxPE(conjurAttrVal, attrs.CON);
             const forceDamage = CharacterSheetRules.calcForceDamage(attrs.FOR);
             const initiativeBonus = CharacterSheetRules.calcInitiativeBonus(attrs.DES);
 
@@ -599,10 +674,13 @@
             selectors.forEach(sel => {
                 const el = document.querySelector(sel);
                 if (el) {
-                    if (el.tagName === 'INPUT') {
+                    if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
                         el.value = value;
                     } else {
                         el.innerText = value;
+                        if (el.value !== undefined) {
+                            el.value = value;
+                        }
                     }
                 }
             });

@@ -555,14 +555,14 @@
                                 <i class="fa-solid fa-heart text-red-400 mt-0.5 w-4 shrink-0"></i>
                                 <div>
                                     <span class="font-bold text-emerald-300">PV Máximo</span> <span class="text-neutral-400">(Pontos de Vida):</span>
-                                    <span class="text-neutral-300 ml-1">10 + CON + FOR. Se CON ≥ 3, ganha +5 bônus de robustez.</span>
+                                    <span class="text-neutral-300 ml-1">(CONSTITUIÇÃO &times; 2) + 10.</span>
                                 </div>
                             </div>
                             <div class="flex items-start gap-3 p-2 rounded bg-neutral-800/60 border border-neutral-700">
                                 <i class="fa-solid fa-wand-magic-sparkles text-cyan-400 mt-0.5 w-4 shrink-0"></i>
                                 <div>
                                     <span class="font-bold text-emerald-300">PE Máximo</span> <span class="text-neutral-400">(Pontos de Energia):</span>
-                                    <span class="text-neutral-300 ml-1">POD + 10. Usado para lançar magias e habilidades especiais.</span>
+                                    <span class="text-neutral-300 ml-1">Atributo de Conjuração + CONSTITUIÇÃO + 10. Usado para lançar magias e habilidades especiais.</span>
                                 </div>
                             </div>
                             <div class="flex items-start gap-3 p-2 rounded bg-neutral-800/60 border border-neutral-700">
@@ -842,12 +842,12 @@
                         <div>
                             <label for="pontosVida" class="block text-sm font-bold title-font text-gray-300">PV Máximo</label>
                             <input type="number" id="pontosVida" name="pontosVida" class="attribute-input mt-1 w-20 text-emerald-400 font-bold" value="14" readonly>
-                            <p class="text-[10px] text-gray-500 mt-0.5">10+CON+FOR (+5 se CON&ge;3)</p>
+                            <p class="text-[10px] text-gray-500 mt-0.5">(CON &times; 2) + 10</p>
                         </div>
                         <div>
                             <label for="pontosEnergia" class="block text-sm font-bold title-font text-gray-300">PE Máximo</label>
-                            <input type="number" id="pontosEnergia" name="pontosEnergia" class="attribute-input mt-1 w-20 text-cyan-400 font-bold" value="12" readonly>
-                            <p class="text-[10px] text-gray-500 mt-0.5">POD + 10</p>
+                            <input type="number" id="pontosEnergia" name="pontosEnergia" class="attribute-input mt-1 w-20 text-cyan-400 font-bold" value="14" readonly>
+                            <p class="text-[10px] text-gray-500 mt-0.5">Conjuração + CON + 10</p>
                         </div>
                         <div>
                             <label class="block text-sm font-bold title-font text-gray-300">Dano de Força</label>
@@ -1271,15 +1271,23 @@
                 const forVal = parseInt(allAtributosInputs.for.value) || 0;
                 const desVal = parseInt(allAtributosInputs.des.value) || 0;
                 const conVal = parseInt(allAtributosInputs.con.value) || 0;
+                const intVal = parseInt(allAtributosInputs.int.value) || 0;
+                const sabVal = parseInt(allAtributosInputs.sab.value) || 0;
                 const podVal = parseInt(allAtributosInputs.pod.value) || 0;
 
+                const tradicao = tradicaoMagicaSelect ? tradicaoMagicaSelect.value : 'INT';
+                let atributoConjuraVal = podVal;
+                if (tradicao === 'INT') atributoConjuraVal = intVal;
+                else if (tradicao === 'SAB') atributoConjuraVal = sabVal;
+                else if (tradicao === 'POD') atributoConjuraVal = podVal;
+
                 if (typeof CharacterSheetRules !== 'undefined') {
-                    // PVs = 10 + CON + FOR (+5 se CON >= 3)
-                    const maxPV = CharacterSheetRules.calcMaxPV(conVal, forVal);
+                    // PVs = (CONSTITUIÇÃO * 2) + 10
+                    const maxPV = CharacterSheetRules.calcMaxPV(conVal);
                     pontosVidaInput.value = maxPV;
 
-                    // PEs = POD + 10
-                    const maxPE = CharacterSheetRules.calcMaxPE(podVal);
+                    // PEs = Atributo de Conjuração + CONSTITUIÇÃO + 10
+                    const maxPE = CharacterSheetRules.calcMaxPE(atributoConjuraVal, conVal);
                     pontosEnergiaInput.value = maxPE;
 
                     // Dano de Força
@@ -1885,6 +1893,7 @@
                 });
             });
             tradicaoMagicaSelect.addEventListener('input', updateAllStats);
+            tradicaoMagicaSelect.addEventListener('change', updateAllStats);
             addCaminhoBtn.addEventListener('click', () => adicionarCaminho());
             expInput.addEventListener('input', updateAllStats);
             spendOnSkillButton.addEventListener('click', () => { pontosPericiaAdicionaisInput.value = parseInt(pontosPericiaAdicionaisInput.value) + 1; updateAllStats(); });

@@ -28,24 +28,36 @@ QUnit.module('Ficha de Personagem — Regras +2d6 v2.3 (Newton Rocha)', function
         assert.equal(CharacterSheetRules.calcSuperhumanBonus(12).tier, 'divine', 'Tier é divine');
     });
 
-    QUnit.test('2. Status Derivados: PV Máximo (Bônus CON >= 3)', function (assert) {
-        // PV Máximo = 10 + CON + FOR + (se CON >= 3 ganha +5 PVs extras)
-        assert.equal(CharacterSheetRules.calcMaxPV(2, 2), 14, 'CON 2 + FOR 2 = 14 PVs (Sem bônus extra de CON)');
-        assert.equal(CharacterSheetRules.calcMaxPV(0, 0), 10, 'CON 0 + FOR 0 = 10 PVs');
-        assert.equal(CharacterSheetRules.calcMaxPV(1, 3), 14, 'CON 1 + FOR 3 = 14 PVs');
+    QUnit.test('2. Status Derivados: PV Máximo ((Constituição x 2) + 10)', function (assert) {
+        // PV Máximo = (CONSTITUIÇÃO * 2) + 10
+        assert.equal(CharacterSheetRules.calcMaxPV(0), 10, 'CON 0 = (0 * 2) + 10 = 10 PVs');
+        assert.equal(CharacterSheetRules.calcMaxPV(1), 12, 'CON 1 = (1 * 2) + 10 = 12 PVs');
+        assert.equal(CharacterSheetRules.calcMaxPV(2), 14, 'CON 2 = (2 * 2) + 10 = 14 PVs');
+        assert.equal(CharacterSheetRules.calcMaxPV(3), 16, 'CON 3 = (3 * 2) + 10 = 16 PVs');
+        assert.equal(CharacterSheetRules.calcMaxPV(4), 18, 'CON 4 = (4 * 2) + 10 = 18 PVs');
+        assert.equal(CharacterSheetRules.calcMaxPV(6), 22, 'CON 6 = (6 * 2) + 10 = 22 PVs');
 
-        // Com CON >= 3 (+5 PVs extras)
-        assert.equal(CharacterSheetRules.calcMaxPV(3, 2), 20, 'CON 3 + FOR 2 = 10 + 3 + 2 + 5 = 20 PVs');
-        assert.equal(CharacterSheetRules.calcMaxPV(4, 4), 23, 'CON 4 + FOR 4 = 10 + 4 + 4 + 5 = 23 PVs');
-        assert.equal(CharacterSheetRules.calcMaxPV(6, 6), 27, 'CON 6 + FOR 6 = 10 + 6 + 6 + 5 = 27 PVs');
+        // Compatibilidade com passagem de objeto ou segundo parâmetro legado
+        assert.equal(CharacterSheetRules.calcMaxPV({ CON: 5 }), 20, 'CON 5 via objeto = (5 * 2) + 10 = 20 PVs');
+        assert.equal(CharacterSheetRules.calcMaxPV(3, 4), 16, 'Passagem com segundo parâmetro legado preserva cálculo de CON: 16 PVs');
     });
 
-    QUnit.test('2. Status Derivados: PE Máximo', function (assert) {
-        // PE Máximo = POD + 10
-        assert.equal(CharacterSheetRules.calcMaxPE(0), 10, 'POD 0 = 10 PEs');
-        assert.equal(CharacterSheetRules.calcMaxPE(2), 12, 'POD 2 = 12 PEs');
-        assert.equal(CharacterSheetRules.calcMaxPE(5), 15, 'POD 5 = 15 PEs');
-        assert.equal(CharacterSheetRules.calcMaxPE(8), 18, 'POD 8 = 18 PEs');
+    QUnit.test('2. Status Derivados: PE Máximo (Atributo de Conjuração + CONSTITUIÇÃO + 10)', function (assert) {
+        // Fórmula Oficial: PE = Atributo de Conjuração + CONSTITUIÇÃO + 10
+        // Parâmetros diretos: calcMaxPE(conjurAttr, con)
+        assert.equal(CharacterSheetRules.calcMaxPE(0, 0), 10, 'Conjuração 0 + CON 0 = 10 PEs');
+        assert.equal(CharacterSheetRules.calcMaxPE(2, 2), 14, 'Conjuração 2 + CON 2 = 14 PEs');
+        assert.equal(CharacterSheetRules.calcMaxPE(3, 2), 15, 'Conjuração 3 + CON 2 = 15 PEs');
+        assert.equal(CharacterSheetRules.calcMaxPE(4, 3), 17, 'Conjuração 4 + CON 3 = 17 PEs');
+
+        // Suporte a objeto de atributos + tradição mágica
+        const heroAttrs = { FOR: 2, DES: 2, CON: 2, INT: 4, SAB: 3, POD: 1 };
+        assert.equal(CharacterSheetRules.calcMaxPE(heroAttrs, 'INT'), 16, 'Tradição Arcana (INT 4 + CON 2 + 10 = 16 PEs)');
+        assert.equal(CharacterSheetRules.calcMaxPE(heroAttrs, 'SAB'), 15, 'Tradição Divina/Primal (SAB 3 + CON 2 + 10 = 15 PEs)');
+        assert.equal(CharacterSheetRules.calcMaxPE(heroAttrs, 'POD'), 13, 'Tradição Inata (POD 1 + CON 2 + 10 = 13 PEs)');
+
+        // Fallback seguro se apenas 1 argumento for passado (con = 0)
+        assert.equal(CharacterSheetRules.calcMaxPE(2), 12, 'Fallback 1 argumento (Conjuração 2 + CON 0 = 12 PEs)');
     });
 
     QUnit.test('2. Status Derivados: Tabela Oficial de Dano de Força', function (assert) {
@@ -138,7 +150,7 @@ QUnit.module('Ficha de Personagem — Regras +2d6 v2.3 (Newton Rocha)', function
         controller.data.attributes.DES = 5;
 
         // Validar recálculo dos dados internos
-        assert.equal(CharacterSheetRules.calcMaxPV(controller.data.attributes.CON, controller.data.attributes.FOR), 22, 'PV recalculado');
+        assert.equal(CharacterSheetRules.calcMaxPV(controller.data.attributes.CON, controller.data.attributes.FOR), 16, 'PV recalculado ((3 * 2) + 10 = 16)');
         assert.equal(CharacterSheetRules.calcInitiativeBonus(controller.data.attributes.DES), 3, 'Iniciativa recalculada');
 
         // Executar rolagem direta

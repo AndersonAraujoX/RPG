@@ -1565,11 +1565,19 @@
             const forStat = parseInt(document.getElementById('attr-for')?.value) || 2;
             const des = parseInt(document.getElementById('attr-des')?.value) || 2;
             const con = parseInt(document.getElementById('attr-con')?.value) || 2;
+            const intStat = parseInt(document.getElementById('attr-int')?.value) || 2;
+            const sab = parseInt(document.getElementById('attr-sab')?.value) || 2;
             const pod = parseInt(document.getElementById('attr-pod')?.value) || 2;
+            const tradicao = document.getElementById('tradicaoMagica')?.value || document.getElementById('sheet-tradicao')?.value || 'POD';
 
             if (typeof CharacterSheetRules !== 'undefined') {
-                const pv = CharacterSheetRules.calcMaxPV(con, forStat);
-                const pe = CharacterSheetRules.calcMaxPE(pod);
+                const pv = CharacterSheetRules.calcMaxPV(con);
+                let conjurAttr = pod;
+                if (tradicao === 'INT' || tradicao === 'ARCANA') conjurAttr = intStat;
+                else if (tradicao === 'SAB' || tradicao === 'DIVINA' || tradicao === 'PRIMAL') conjurAttr = sab;
+                else if (tradicao === 'POD' || tradicao === 'INATA') conjurAttr = pod;
+
+                const pe = CharacterSheetRules.calcMaxPE(conjurAttr, con);
                 const dmg = CharacterSheetRules.calcForceDamage(forStat);
                 const init = CharacterSheetRules.calcInitiativeBonus(des);
 
