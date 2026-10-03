@@ -147,14 +147,15 @@
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     <script src="./firebase-config.js"></script>
     <script>
         // Initialize Firebase
-        const app = firebase.initializeApp(firebaseConfig);
-        const database = firebase.database();
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const db = firebase.firestore();
         const auth = firebase.auth();
-    </script>
     </script>
 </head>
 
@@ -488,40 +489,53 @@
                 }
             }
 
-            /** Salva o estado de um cômodo no Firebase */
-            function saveComodoState(comodoId, disponivel) {
-                database.ref('nexo/comodos/' + comodoId).set(disponivel);
+            /** Salva o estado de um cômodo no Firebase Firestore */
+            async function saveComodoState(comodoId, disponivel) {
+                try {
+                    await db.collection('nexo').doc('estado').set({
+                        comodos: {
+                            [comodoId]: disponivel
+                        },
+                        updatedAt: new Date().toISOString()
+                    }, { merge: true });
+                    adicionarLog(`Alteração salva no Firebase.`, "sucesso");
+                } catch (error) {
+                    console.error("Erro ao salvar no Firestore:", error);
+                    adicionarLog("Erro ao salvar no Firebase: " + error.message, "erro");
+                }
             }
 
-            /** Carrega o estado dos cômodos do Firebase */
-            function loadComodosState() {
-                database.ref('nexo/comodos').once('value', (snapshot) => {
-                    const comodosState = snapshot.val();
-                    if (comodosState) {
-                        gameState.comodos.forEach(comodo => {
-                            if (comodosState[comodo.id] !== undefined) {
-                                comodo.disponivel = comodosState[comodo.id];
-                            }
-                        });
-                    }
-                    renderizarComodos();
-                });
+            /** Sincroniza o estado dos cômodos do Firebase Firestore em tempo real */
+            function syncComodosState() {
+                try {
+                    db.collection('nexo').doc('estado').onSnapshot((doc) => {
+                        if (doc && doc.exists) {
+                            const data = doc.data();
+                            const comodosState = data && data.comodos ? data.comodos : {};
+                            gameState.comodos.forEach(comodo => {
+                                if (comodosState[comodo.id] !== undefined) {
+                                    comodo.disponivel = Boolean(comodosState[comodo.id]);
+                                }
+                            });
+                            renderizarComodos();
+                        }
+                    }, (error) => {
+                        console.warn("Aviso ao conectar Firestore:", error);
+                    });
+                } catch (e) {
+                    console.error("Falha ao inicializar listener Firestore:", e);
+                }
             }
 
             // --- INICIALIZAÇÃO ---
-            auth.onAuthStateChanged(user => {
-                if (user) {
-                    init();
-                } else {
-                    // Redireciona para a página de login se não estiver logado
-                    window.location.href = 'login.html';
-                }
-            });
-
             function init() {
-                loadComodosState();
+                // 1. Renderiza imediatamente com estado inicial para não ficar tela preta
+                renderizarComodos();
 
-                // Event Listeners do Modal
+                // 2. Conecta em tempo real ao Firestore
+                syncComodosState();
+
+                // 3. Event Listeners do Modal
                 modalCloseBtn.addEventListener('click', fecharModal);
                 modal.addEventListener('click', (e) => {
                     if (e.target === modal) {
@@ -536,6 +550,9 @@
                     }
                 });
             }
+
+            // Inicia imediatamente (jogadores podem visualizar mesmo sem login)
+            init();
 
         </script>
 </body>

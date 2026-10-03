@@ -242,10 +242,9 @@
         }
 
         renderizar();
+        iniciar();
         auth.onAuthStateChanged(user => {
-            if (!user) { window.location.href = 'login.html'; return; }
             currentUser = user;
-            iniciar();
         });
     </script>
 </body>
