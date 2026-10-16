@@ -23,6 +23,7 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <script src="../src/core/firebase-config.js"></script>
     <script src="../src/modules/firestore-service.js"></script>
+    <script src="../src/core/magic-tree-engine.js"></script>
     
     <style>
         :root {
@@ -128,7 +129,7 @@
         .header-stats {
             display: flex;
             align-items: center;
-            gap: 14px;
+            gap: 12px;
         }
 
         /* Badges HUD */
@@ -145,10 +146,12 @@
 
         .hud-val {
             font-family: 'Cinzel', serif;
-            font-size: 20px;
+            font-size: 18px;
             font-weight: 700;
             color: #fbbf24;
             text-shadow: 0 0 10px rgba(251, 191, 36, 0.6);
+            min-width: 20px;
+            text-align: center;
         }
 
         .btn-fusion-toggle {
@@ -412,7 +415,8 @@
             display: flex;
             flex-direction: column;
             gap: 10px;
-            max-width: 280px;
+            max-width: 310px;
+            width: 310px;
         }
 
         .glass-panel {
@@ -451,37 +455,95 @@
         .paths-list {
             display: flex;
             flex-direction: column;
-            gap: 5px;
-            max-height: 240px;
+            gap: 6px;
+            max-height: 270px;
             overflow-y: auto;
+            padding-right: 2px;
         }
 
-        .path-row-btn {
+        /* Linha de Caminho com Controles de Pontos (+ e -) */
+        .path-row-box {
             background: rgba(15, 23, 42, 0.7);
             border: 1px solid rgba(71, 85, 105, 0.4);
-            border-radius: 6px;
-            padding: 6px 10px;
-            font-size: 11px;
-            color: #cbd5e1;
-            cursor: pointer;
+            border-radius: 8px;
+            padding: 5px 8px;
             display: flex;
             align-items: center;
             justify-content: space-between;
+            gap: 8px;
             transition: all 0.2s;
         }
-        .path-row-btn:hover {
+        .path-row-box:hover {
             border-color: rgba(255, 255, 255, 0.4);
-            color: #ffffff;
-            transform: translateX(3px);
+            background: rgba(30, 41, 59, 0.8);
         }
 
-        /* PAINEL DE FUSÃO / ALTAR DE SÍNTESE (Gaveta/Altar Lateral/Modal) */
+        .path-row-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            flex: 1;
+            font-size: 11px;
+            color: #e2e8f0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .path-row-info:hover {
+            color: var(--rpg-cyan);
+        }
+
+        /* Controles de Pontos (+ e -) */
+        .point-controls {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            background: rgba(15, 23, 42, 0.9);
+            border: 1px solid rgba(148, 163, 184, 0.25);
+            border-radius: 6px;
+            padding: 2px 4px;
+            flex-shrink: 0;
+        }
+        .btn-point {
+            width: 20px;
+            height: 20px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(30, 41, 59, 0.8);
+            border: 1px solid rgba(102, 252, 241, 0.3);
+            color: #e2e8f0;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .btn-point:hover:not(:disabled) {
+            background: var(--rpg-cyan);
+            color: var(--rpg-black);
+            box-shadow: 0 0 8px rgba(102, 252, 241, 0.5);
+        }
+        .btn-point.dec:hover:not(:disabled) {
+            background: #ef4444;
+            color: #ffffff;
+            border-color: #ef4444;
+            box-shadow: 0 0 8px rgba(239, 68, 68, 0.5);
+        }
+        .btn-point:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+            border-color: rgba(148, 163, 184, 0.2);
+        }
+
+        /* PAINEL DE FUSÃO / ALTAR DE SÍNTESE (Gaveta Lateral) */
         #fusion-altar {
             position: fixed;
             top: 70px;
             right: 0;
             bottom: 0;
-            width: 440px;
+            width: 480px;
             max-width: 95vw;
             background: linear-gradient(135deg, rgba(15, 23, 42, 0.98) 0%, rgba(3, 7, 18, 0.99) 100%);
             backdrop-filter: blur(18px);
@@ -505,7 +567,7 @@
             align-items: center;
             justify-content: center;
             gap: 12px;
-            margin: 20px 0;
+            margin: 16px 0;
         }
 
         .fusion-slot {
@@ -519,99 +581,157 @@
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            transition: all 0.25s;
+            transition: all 0.25s ease;
             text-align: center;
             padding: 6px;
         }
+
         .fusion-slot.filled {
             border-style: solid;
             background: rgba(30, 41, 59, 0.9);
-            box-shadow: 0 0 15px rgba(102, 252, 241, 0.3);
+            box-shadow: 0 0 15px rgba(102, 252, 241, 0.2);
         }
 
         .fusion-plus {
-            font-size: 18px;
+            font-size: 20px;
             color: var(--rpg-cyan);
-            font-weight: bold;
+            text-shadow: 0 0 10px var(--rpg-cyan);
         }
 
-        /* Form Selector (Criar / Controlar / Entender) */
         .forma-selector {
             display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
+            grid-template-columns: repeat(3, 1fr);
             gap: 8px;
-            margin-bottom: 20px;
+            margin-bottom: 16px;
         }
 
         .forma-card {
-            background: rgba(15, 23, 42, 0.8);
-            border: 1px solid rgba(148, 163, 184, 0.3);
-            border-radius: 10px;
-            padding: 10px 6px;
+            background: rgba(15, 23, 42, 0.7);
+            border: 1px solid rgba(148, 163, 184, 0.25);
+            border-radius: 8px;
+            padding: 8px 6px;
             text-align: center;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all 0.2s ease;
         }
+
         .forma-card.active {
             border-color: #fbbf24;
             background: rgba(251, 191, 36, 0.15);
-            box-shadow: 0 0 15px rgba(251, 191, 36, 0.3);
+            box-shadow: 0 0 12px rgba(251, 191, 36, 0.3);
         }
 
         .fusion-result-box {
-            background: rgba(11, 15, 25, 0.9);
-            border: 1px solid rgba(180, 142, 173, 0.4);
+            background: rgba(15, 23, 42, 0.85);
+            border: 1px solid rgba(102, 252, 241, 0.3);
             border-radius: 12px;
             padding: 16px;
-            margin-bottom: 20px;
-            min-height: 140px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
+            margin-bottom: 16px;
+            box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.5);
         }
 
         .dice-roll-box {
-            background: rgba(15, 23, 42, 0.9);
-            border: 1px solid rgba(102, 252, 241, 0.3);
-            border-radius: 10px;
+            background: linear-gradient(135deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.9));
+            border: 1px solid rgba(102, 252, 241, 0.4);
+            border-radius: 12px;
             padding: 12px;
-            margin-top: 14px;
             text-align: center;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+            margin-bottom: 16px;
         }
 
-        /* Floating Viewport Controls */
+        /* Cartão de Habilidade Aprendida no Grimório */
+        .grimoire-card {
+            background: rgba(15, 23, 42, 0.85);
+            border: 1px solid rgba(102, 252, 241, 0.25);
+            border-radius: 10px;
+            padding: 12px;
+            margin-bottom: 8px;
+            transition: all 0.2s ease;
+        }
+        .grimoire-card:hover {
+            border-color: var(--rpg-cyan);
+            box-shadow: 0 0 12px rgba(102, 252, 241, 0.2);
+        }
+
+        /* Zoom Controls */
         .zoom-controls {
             position: absolute;
             bottom: 24px;
             right: 24px;
             z-index: 40;
             display: flex;
-            gap: 8px;
-            background: rgba(11, 15, 25, 0.85);
-            backdrop-filter: blur(14px);
-            border: 1px solid rgba(148, 163, 184, 0.25);
-            border-radius: 12px;
+            flex-direction: column;
+            gap: 6px;
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            border-radius: 10px;
             padding: 6px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6);
         }
 
         .zoom-btn {
             width: 36px;
             height: 36px;
-            background: rgba(30, 41, 59, 0.8);
+            background: rgba(30, 41, 59, 0.9);
             border: 1px solid rgba(148, 163, 184, 0.3);
-            border-radius: 8px;
-            color: #e2e8f0;
+            border-radius: 6px;
+            color: #cbd5e1;
             font-size: 14px;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: all 0.2s ease;
+            transition: all 0.2s;
         }
         .zoom-btn:hover {
-            background: rgba(102, 252, 241, 0.2);
+            background: var(--rpg-cyan);
+            color: var(--rpg-black);
             border-color: var(--rpg-cyan);
-            color: var(--rpg-cyan);
+        }
+
+        /* Toast de Feedback */
+        .toast-msg {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%) translateY(30px);
+            z-index: 999;
+            background: rgba(15, 23, 42, 0.96);
+            border: 1px solid var(--rpg-cyan);
+            color: #ffffff;
+            padding: 10px 22px;
+            border-radius: 10px;
+            font-size: 13px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.8), 0 0 20px rgba(102,252,241,0.3);
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .toast-msg.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        /* Modal Overlay Genérico */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 210;
+            background: rgba(3, 7, 18, 0.92);
+            backdrop-filter: blur(12px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.25s ease;
+        }
+        .modal-overlay.open {
+            opacity: 1;
+            pointer-events: all;
         }
 
         /* Animações */
@@ -685,17 +805,15 @@
             padding: 10px 12px;
             text-align: left;
             border-bottom: 1px solid rgba(102,252,241,0.2);
-            white-space: nowrap;
         }
         .fusion-tbl td {
-            padding: 9px 12px;
-            border-bottom: 1px solid rgba(255,255,255,0.05);
-            vertical-align: top;
+            padding: 10px 12px;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.1);
             color: #cbd5e1;
-            line-height: 1.5;
+            vertical-align: top;
         }
-        .fusion-tbl tr:hover td {
-            background: rgba(102, 252, 241, 0.04);
+        .fusion-tbl tbody tr:hover {
+            background: rgba(102, 252, 241, 0.05);
         }
         .fusion-tbl td:nth-child(3) {
             font-weight: 700;
@@ -771,19 +889,39 @@
         </div>
 
         <div class="header-stats">
+            <!-- Badge de Poderes Mágicos (PM) com Gestão de Pontos -->
             <div class="hud-badge">
                 <i class="fa-solid fa-sparkles text-amber-400 text-base"></i>
                 <div>
                     <div style="font-size: 9px; text-transform: uppercase; letter-spacing: 1px; color: #94a3b8;">Poderes Mágicos</div>
-                    <div class="hud-val" id="pm-display">3</div>
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                        <button onclick="adjustPMTotal(-1)" class="btn-point dec" title="Diminuir PM total">-</button>
+                        <div class="hud-val" id="pm-display">4</div>
+                        <button onclick="adjustPMTotal(1)" class="btn-point inc" title="Aumentar PM total">+</button>
+                        <button onclick="resetAllPoints()" class="text-[9px] text-amber-400/80 hover:text-amber-300 ml-1 underline cursor-pointer bg-transparent border-0" title="Resetar e reembolsar todos os pontos investidos">↺ Reset</button>
+                    </div>
                 </div>
             </div>
 
+            <!-- Botão de Vincular Ficha e Gerenciar POD -->
+            <button onclick="openSyncSheetModal()" class="btn-fusion-toggle" style="background: linear-gradient(135deg, rgba(6,182,212,0.25), rgba(59,130,246,0.2)); border-color: #06b6d4; color: #67e8f9;" title="Vincular Ficha do Personagem ou Calcular PM a partir do Atributo POD">
+                <i class="fa-solid fa-id-card"></i>
+                <span class="hidden md:inline" id="hud-sync-sheet-label">Vincular Ficha (POD)</span>
+            </button>
+
+            <!-- Botão de Grimório Pessoal -->
+            <button onclick="toggleFusionAltar(true)" class="btn-fusion-toggle" style="background: linear-gradient(135deg, rgba(168,85,247,0.25), rgba(102,252,241,0.2)); border-color:#a855f7; color:#d8b4fe;">
+                <i class="fa-solid fa-book-sparkles"></i>
+                <span>Grimório (<span id="hud-grimoire-count">0</span>)</span>
+            </button>
+
+            <!-- Botão do Altar de Fusão -->
             <button onclick="toggleFusionAltar()" class="btn-fusion-toggle">
                 <i class="fa-solid fa-flask-round-potion"></i>
                 <span>Altar de Fusão</span>
             </button>
 
+            <!-- Botão da Tabela de Fusões -->
             <button onclick="toggleFusionTable()" class="btn-fusion-toggle" style="background: linear-gradient(135deg, rgba(251,191,36,0.25), rgba(180,142,173,0.2)); border-color: #fbbf24; color: #fbbf24; box-shadow: 0 0 15px rgba(251,191,36,0.2);">
                 <i class="fa-solid fa-table"></i>
                 <span class="hidden md:inline">Tabela de Fusões</span>
@@ -812,11 +950,16 @@
         <!-- Tooltip Dinâmico -->
         <div id="info-tooltip" class="tooltip"></div>
 
-        <!-- Barra Lateral Flutuante: Navegação dos 12 Caminhos -->
+        <!-- Barra Lateral Flutuante: Navegação dos 12 Caminhos com Gestão de Pontos -->
         <div class="floating-sidebar">
             <div class="glass-panel">
-                <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--rpg-cyan); margin-bottom: 8px; font-family: 'Cinzel', serif;">
-                    <i class="fa-solid fa-circle-nodes"></i> 12 Caminhos de Magia
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 8px;">
+                    <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--rpg-cyan); font-family: 'Cinzel', serif;">
+                        <i class="fa-solid fa-circle-nodes"></i> 12 Caminhos
+                    </div>
+                    <div style="font-size: 10px; color:#fbbf24;">
+                        PM Disp: <strong id="sidebar-pm-disp">4</strong>
+                    </div>
                 </div>
                 
                 <div class="category-tab">
@@ -827,7 +970,7 @@
                 </div>
 
                 <div class="paths-list" id="paths-list-container">
-                    <!-- Gerado via JS -->
+                    <!-- Gerado via JS com botões de retirar (-) e adicionar (+) pontos -->
                 </div>
             </div>
         </div>
@@ -840,7 +983,7 @@
         </div>
     </div>
 
-    <!-- ALTAR DE FUSÃO ARCANA (GAVETA / MODAL LATERAL) -->
+    <!-- ALTAR DE FUSÃO ARCANA & GRIMÓRIO (GAVETA LATERAL) -->
     <div id="fusion-altar">
         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(102, 252, 241, 0.2); padding-bottom: 12px;">
             <div style="display: flex; align-items: center; gap: 10px;">
@@ -904,6 +1047,21 @@
                 <i class="fa-solid fa-dice-d6"></i> Rolar 2d6 Mágico
             </button>
             <div id="roll-result-display" class="mt-2 text-xs text-gray-300 min-h-[24px]"></div>
+        </div>
+
+        <!-- SEÇÃO: GRIMÓRIO DE HABILIDADES APRENDIDAS -->
+        <div class="mt-4 pt-4 border-t border-cyan-500/20" id="grimoire-section">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                <div style="font-size:11px; font-weight:700; text-transform:uppercase; color:var(--rpg-cyan); font-family:'Cinzel',serif; display:flex; align-items:center; gap:6px;">
+                    <i class="fa-solid fa-book-sparkles text-amber-400"></i> Grimório de Habilidades (<span id="altar-grimoire-count">0</span>)
+                </div>
+                <button onclick="openCustomAbilityModal()" class="text-[10px] text-cyan-300 hover:text-white underline cursor-pointer bg-transparent border-0 font-cinzel">
+                    + Nova Magia
+                </button>
+            </div>
+            <div id="learned-abilities-list" class="space-y-2 max-h-[340px] overflow-y-auto pr-1">
+                <!-- Preenchido dinamicamente via JS -->
+            </div>
         </div>
     </div>
 
@@ -1019,7 +1177,119 @@
             </div>
         </div>
     </div>
-    <!-- ===================================================== -->
+
+    <!-- ===== MODAL: CUSTOMIZAR MAGIA / HABILIDADE DE FUSÃO ===== -->
+    <div id="custom-ability-overlay" class="modal-overlay" onclick="closeCustomAbilityOnBackdrop(event)">
+        <div class="glass-panel" style="max-width: 480px; width: 95%; background: rgba(15, 23, 42, 0.98); border-color: rgba(102,252,241,0.4);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; border-bottom:1px solid rgba(102,252,241,0.2); padding-bottom:8px;">
+                <h3 class="font-cinzel text-base font-bold text-cyan-300"><i class="fa-solid fa-wand-magic-sparkles mr-2"></i>Nova Magia / Fusão Customizada</h3>
+                <button onclick="closeCustomAbilityModal()" class="text-gray-400 hover:text-white bg-transparent border-0 text-base cursor-pointer"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form onsubmit="saveCustomAbility(event)" class="space-y-3">
+                <div>
+                    <label class="block text-[11px] font-cinzel text-gray-300 mb-1">Nome da Magia / Habilidade</label>
+                    <input type="text" id="custom-spell-name" class="w-full bg-slate-900 border border-slate-700 rounded px-3 py-1.5 text-xs text-white outline-none focus:border-cyan-400" required placeholder="Ex: Tempestade de Relâmpagos Escuros">
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block text-[11px] font-cinzel text-gray-300 mb-1">Caminho 1</label>
+                        <select id="custom-spell-path1" class="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1.5 text-xs text-white outline-none"></select>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-cinzel text-gray-300 mb-1">Caminho 2 (Opcional)</label>
+                        <select id="custom-spell-path2" class="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1.5 text-xs text-white outline-none"></select>
+                    </div>
+                </div>
+                <div class="grid grid-cols-3 gap-2">
+                    <div>
+                        <label class="block text-[11px] font-cinzel text-gray-300 mb-1">Forma</label>
+                        <select id="custom-spell-forma" class="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1.5 text-xs text-white outline-none">
+                            <option value="Criar">Criar</option>
+                            <option value="Controlar">Controlar</option>
+                            <option value="Entender">Entender</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-cinzel text-gray-300 mb-1">CD (Dificuldade)</label>
+                        <input type="number" id="custom-spell-cd" class="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1.5 text-xs text-white outline-none" value="10" min="4" max="30">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-cinzel text-gray-300 mb-1">Custo (PE)</label>
+                        <input type="number" id="custom-spell-pe" class="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1.5 text-xs text-white outline-none" value="3" min="0" max="20">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-[11px] font-cinzel text-gray-300 mb-1">Descrição do Efeito (+2d6)</label>
+                    <textarea id="custom-spell-desc" class="w-full bg-slate-900 border border-slate-700 rounded px-3 py-1.5 text-xs text-white outline-none focus:border-cyan-400" rows="3" placeholder="Descreva o efeito mágico, dano, alcance ou condições..."></textarea>
+                </div>
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="button" onclick="closeCustomAbilityModal()" class="px-3 py-1.5 text-xs rounded border border-slate-600 text-gray-300 hover:bg-slate-800">Cancelar</button>
+                    <button type="submit" class="px-4 py-1.5 text-xs rounded bg-cyan-500 hover:bg-cyan-400 text-black font-bold font-cinzel">Salvar no Grimório</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ===== MODAL: VINCULAR FICHA DE PERSONAGEM & PONTOS DE PODER (POD) ===== -->
+    <div id="sync-sheet-overlay" class="modal-overlay" onclick="closeSyncSheetOnBackdrop(event)">
+        <div class="glass-panel" style="max-width: 680px; width: 95%; background: rgba(15, 23, 42, 0.98); border-color: rgba(6,182,212,0.4); max-height: 90vh; overflow-y: auto;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; border-bottom:1px solid rgba(6,182,212,0.2); padding-bottom:10px;">
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <i class="fa-solid fa-id-card text-cyan-400 text-lg"></i>
+                    <h3 class="font-cinzel text-base font-bold text-cyan-300">Vincular Ficha & Pontos de Poder (+2d6)</h3>
+                </div>
+                <button onclick="closeSyncSheetModal()" class="text-gray-400 hover:text-white bg-transparent border-0 text-base cursor-pointer"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <!-- Como Funciona / Explicação dos Pontos de Poder -->
+            <div style="background: rgba(30, 41, 59, 0.6); border: 1px solid rgba(102, 252, 241, 0.2); border-radius: 10px; padding: 14px; margin-bottom: 16px;">
+                <h4 class="font-cinzel text-xs font-bold text-amber-400 mb-2 flex items-center gap-1.5">
+                    <i class="fa-solid fa-sparkles"></i> Como Aumentar os Pontos de Poder (POD) no Sistema:
+                </h4>
+                <ul class="text-xs text-gray-300 space-y-1.5 pl-4 list-disc leading-relaxed">
+                    <li><strong class="text-white">Na Criação da Ficha (<a href="formV6.html" class="text-cyan-400 hover:underline">Ficha formV6</a>):</strong> Distribua pontos no atributo <strong class="text-amber-300">POD (Poder)</strong>. O total inicial é de 14 pontos distribuídos entre os 7 atributos.</li>
+                    <li><strong class="text-white">Evolução por Experiência (EXP):</strong> A cada <strong>20 EXP</strong> acumulados em missões, o personagem ganha <strong>+1 Ponto de Atributo</strong>, que você pode colocar diretamente em POD.</li>
+                    <li><strong class="text-white">Relação POD &rarr; PM:</strong> No sistema +2d6 Daemon, cada <strong>1 ponto de POD</strong> concede <strong>2 Poderes Mágicos (PM)</strong> para adquirir ou subir níveis de Caminhos Místicos, além de aumentar seus Pontos de Energia (PE Máximo).</li>
+                    <li><strong class="text-white">Ajuste Livre no HUD:</strong> Você também pode usar os botões <strong class="text-cyan-300">[+]</strong> e <strong class="text-cyan-300">[-]</strong> no topo da tela para alterar seus PMs livres a qualquer momento.</li>
+                </ul>
+            </div>
+
+            <!-- Fichas Salvas no Navegador (localStorage) -->
+            <div class="mb-4">
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-xs font-cinzel text-cyan-300 font-bold"><i class="fa-solid fa-floppy-disk mr-1"></i> Fichas Salvas no Navegador</span>
+                    <a href="formV6.html" class="text-[11px] text-amber-400/90 hover:text-amber-300 underline"><i class="fa-solid fa-arrow-up-right-from-square mr-1"></i>Abrir Criador de Fichas</a>
+                </div>
+                <div id="saved-sheets-container" class="space-y-2 max-h-48 overflow-y-auto pr-1">
+                    <div class="text-xs text-gray-500 italic p-3 text-center bg-slate-900/60 rounded border border-slate-800">
+                        Carregando fichas...
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sincronização Manual por Valor de POD -->
+            <div style="background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(148, 163, 184, 0.2); border-radius: 8px; padding: 12px;">
+                <span class="text-xs font-cinzel text-gray-300 font-bold block mb-2"><i class="fa-solid fa-calculator mr-1 text-cyan-400"></i> Definir POD Manualmente:</span>
+                <div class="flex items-center gap-3">
+                    <div class="flex items-center gap-2">
+                        <label class="text-xs text-gray-400">Atributo POD:</label>
+                        <input type="number" id="manual-pod-input" min="0" max="10" value="2" class="w-16 bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs text-center text-amber-300 font-bold outline-none focus:border-cyan-400" oninput="updateManualPMPredict()">
+                    </div>
+                    <span class="text-xs text-gray-400">&rarr; Concede: <strong id="manual-pm-predict" class="text-cyan-300">4 PM</strong></span>
+                    <button type="button" onclick="applyManualPOD()" class="ml-auto px-3 py-1.5 text-xs rounded bg-cyan-600 hover:bg-cyan-500 text-white font-bold font-cinzel">
+                        Aplicar PM
+                    </button>
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-2 mt-4 pt-3 border-t border-slate-800">
+                <button type="button" onclick="closeSyncSheetModal()" class="px-3 py-1.5 text-xs rounded border border-slate-700 text-gray-300 hover:bg-slate-800">Fechar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast de Notificação -->
+    <div id="tree-toast" class="toast-msg"></div>
 
     <script>
         // =========================================================================
@@ -1100,8 +1370,14 @@
             "Entender": { cdBase: 6, peCost: 1, desc: "Analisar, detectar ou comunicar-se com o elemento." }
         };
 
-        // Matriz de Fusões Arcanas (Combinações Temáticas +2d6)
+        // Matriz de Fusões Arcanas (Combinações Temáticas +2d6 Daemon)
         const spellFusions = {
+            "fogo+agua": {
+                name: "Vapor & Pressão Térmica",
+                Criar: { spell: "Geiser de Vapor Escaldante", desc: "Ergue coluna de vapor sob alta pressão que queima e empurra.", cd: 11, pe: 4 },
+                Controlar: { spell: "Névoa Térmica Ofuscante", desc: "Cobre a área com vapor denso, cegando e superaquecendo inimigos.", cd: 9, pe: 2 },
+                Entender: { spell: "Termobarometria Arcana", desc: "Mede variações de pressão e temperatura no ambiente.", cd: 7, pe: 1 }
+            },
             "fogo+ar": {
                 name: "Plasma & Eletricidade Ígnea",
                 Criar: { spell: "Tempestade de Plasma", desc: "Detona um raio elétrico superaquecido causando 3d6 de dano térmico/elétrico.", cd: 12, pe: 4 },
@@ -1121,16 +1397,136 @@
                 Entender: { spell: "Discernir Trevas e Ilusões", desc: "Dissipa camuflagens ópticas e mágicas.", cd: 7, pe: 2 }
             },
             "fogo+trevas": {
-                name: "Fogo Negro Abissal",
+                name: "Fogo Negro Abissal / Cinzas",
                 Criar: { spell: "Labaredas Queima-Alma", desc: "Chamas negras que danificam diretamente a fadiga/alma.", cd: 12, pe: 5 },
                 Controlar: { spell: "Dreno de Calor", desc: "Absorve calor de um ambiente gerando escuridão gélida.", cd: 9, pe: 3 },
                 Entender: { spell: "Rastrear Pecados", desc: "Sente a presença de atos violentos recentes.", cd: 8, pe: 2 }
             },
             "agua+ar": {
-                name: "Gelo & Nevasca",
+                name: "Gelo & Tempestade Glacial",
                 Criar: { spell: "Prisão Glacial de Granizo", desc: "Congela a umidade gerando espinhos de gelo e imobilização.", cd: 11, pe: 4 },
                 Controlar: { spell: "Nevoeiro Congelante", desc: "Cobre a área com cerração que reduz mobilidade inimiga.", cd: 9, pe: 2 },
                 Entender: { spell: "Pressentir Tempestades", desc: "Lê a umidade e pressão atmosférica com precisão.", cd: 6, pe: 1 }
+            },
+            "agua+terra": {
+                name: "Lama & Sedimento Fértil",
+                Criar: { spell: "Pântano Instantâneo", desc: "Transforma o solo sólido em lama movediça profunda que prende alvos.", cd: 11, pe: 4 },
+                Controlar: { spell: "Armadura de Barro Endurecido", desc: "Envolve o corpo em camada de barro que absorve impactos.", cd: 9, pe: 3 },
+                Entender: { spell: "Sentido Sísmico Aquoso", desc: "Detecta vibrações transmitidas pela umidade do solo.", cd: 7, pe: 1 }
+            },
+            "agua+luz": {
+                name: "Prisma & Espectro Ilusório",
+                Criar: { spell: "Miragem Prismática", desc: "Cria cópias ilusórias refratadas que confundem agressores.", cd: 11, pe: 3 },
+                Controlar: { spell: "Distorcer Reflexos", desc: "Dobra os feixes de luz para tornar alvos translúcidos.", cd: 9, pe: 2 },
+                Entender: { spell: "Claridade Óptica", desc: "Identifica ilusões e padrões espectrais na luz visível.", cd: 6, pe: 1 }
+            },
+            "agua+trevas": {
+                name: "Ácido & Corrosão Abissal",
+                Criar: { spell: "Geiser Ácido Corrosivo", desc: "Dispara jato cáustico que dissolve armaduras e causa dano contínuo.", cd: 12, pe: 4 },
+                Controlar: { spell: "Poça Viscosa Dissolvente", desc: "Direciona fluxo ácido no chão derretendo obstáculos.", cd: 9, pe: 3 },
+                Entender: { spell: "Análise Toxicológica", desc: "Detecta venenos, toxinas e pureza de substâncias químicas.", cd: 7, pe: 2 }
+            },
+            "ar+terra": {
+                name: "Areia & Tempestade Sísmica",
+                Criar: { spell: "Vórtice de Areia Cortante", desc: "Levanta turbilhão de grãos minerais que cega e causa cortes.", cd: 11, pe: 4 },
+                Controlar: { spell: "Muralha de Arenito", desc: "Comprime areia solta em barreiras rígidas instantâneas.", cd: 9, pe: 3 },
+                Entender: { spell: "Leitura de Dunas", desc: "Sente pegadas, trilhas e movimento sobre o solo arenoso.", cd: 6, pe: 1 }
+            },
+            "ar+luz": {
+                name: "Som & Ressonância Harmônica",
+                Criar: { spell: "Estrondo Sônico Detonante", desc: "Dispara onda de choque audível que atordoa e empurra oponentes.", cd: 11, pe: 3 },
+                Controlar: { spell: "Esfera de Silêncio Místico", desc: "Anula vibrações sonoras em uma área para furtividade absoluta.", cd: 8, pe: 2 },
+                Entender: { spell: "Ecolocalização Astral", desc: "Enxerga através de reverberações sonoras no ar.", cd: 6, pe: 1 }
+            },
+            "ar+trevas": {
+                name: "Vácuo & Implosão Negativa",
+                Criar: { spell: "Bolha de Vácuo Sufocante", desc: "Remove todo o oxigênio ao redor de um alvo impedindo respiração e conjuração.", cd: 12, pe: 5 },
+                Controlar: { spell: "Implosão de Pressão", desc: "Cria diferencial de pressão atraindo objetos e inimigos para o centro.", cd: 10, pe: 3 },
+                Entender: { spell: "Detectar Correntes de Éter", desc: "Identifica zonas rarefeitas e bolsas de ar no ambiente.", cd: 7, pe: 2 }
+            },
+            "terra+luz": {
+                name: "Cristal & Refracção Mineral",
+                Criar: { spell: "Baluarte de Cristal Lapidado", desc: "Ergue espigões de quartzo reluzente que refletem projéteis e feixes.", cd: 11, pe: 4 },
+                Controlar: { spell: "Refração em Cacos", desc: "Manipula lascas cristalinas como projéteis teleguiados.", cd: 9, pe: 3 },
+                Entender: { spell: "Ressonância Cristalina", desc: "Canaliza vibrações minerais para captar energias mágicas latentes.", cd: 7, pe: 1 }
+            },
+            "terra+trevas": {
+                name: "Metal & Magnetismo Negro",
+                Criar: { spell: "Estacas de Ferro Negro", desc: "Faz brotar lanças metálicas afiadas do solo perfurando blindagens.", cd: 12, pe: 4 },
+                Controlar: { spell: "Pulso Magnético Oculto", desc: "Arranca armas e itens metálicos das mãos dos oponentes.", cd: 9, pe: 3 },
+                Entender: { spell: "Sentir Minérios", desc: "Localiza jazidas de metais e ligas escondidas sob a terra.", cd: 6, pe: 1 }
+            },
+            "luz+trevas": {
+                name: "Crepúsculo & Penumbra Mística",
+                Criar: { spell: "Zona de Penumbra Ilusória", desc: "Gera espaço onde a luz e sombra dançam desorientando a visão.", cd: 11, pe: 3 },
+                Controlar: { spell: "Teia de Contraste Óptico", desc: "Ofusca alvos alternando clarões cegantes e escuridão súbita.", cd: 9, pe: 2 },
+                Entender: { spell: "Discernir Máscaras da Alma", desc: "Revela segredos e motivações ocultas por trás de palavras.", cd: 7, pe: 2 }
+            },
+            "animais+humanos": {
+                name: "Primal & Fúria Ancestral",
+                Criar: { spell: "Fúria do Predador Astral", desc: "Desperta garras etéreas e ferocidade dobrando bônus de dano.", cd: 11, pe: 4 },
+                Controlar: { spell: "Intimidação Bestial", desc: "Projeta presença aterrorizante que paralisa alvos mais fracos.", cd: 9, pe: 2 },
+                Entender: { spell: "Percepção Selvagem", desc: "Olfato e reflexos de fera para rastrear presas e ameaças.", cd: 6, pe: 1 }
+            },
+            "animais+plantas": {
+                name: "Fungos & Esporos da Floresta",
+                Criar: { spell: "Nuvem de Esporos Alucinógenos", desc: "Libera névoa micelial que causa confusão mental e fraqueza.", cd: 11, pe: 3 },
+                Controlar: { spell: "Proliferação Fúngica", desc: "Acelera a decomposição de matéria orgânica criando atalhos.", cd: 9, pe: 2 },
+                Entender: { spell: "Rede Micelial", desc: "Conecta-se à teia fúngica subterrânea para obter informações da floresta.", cd: 7, pe: 1 }
+            },
+            "humanos+plantas": {
+                name: "Vida & Bio-Regeneração",
+                Criar: { spell: "Regeneração Celular Acelerada", desc: "Cura 2d6+2 PVs e restaura tecidos vivos feridos.", cd: 11, pe: 4 },
+                Controlar: { spell: "Barreira de Raízes Protetoras", desc: "Brota muralha vegetal viva que absorve dano direcionado a aliados.", cd: 9, pe: 3 },
+                Entender: { spell: "Diagnóstico Biológico", desc: "Identifica debilidades físicas, envenenamentos e estado de saúde.", cd: 6, pe: 1 }
+            },
+            "spiritum+arkanum": {
+                name: "Vazio Cósmico & Entropia",
+                Criar: { spell: "Fenda de Entropia Cósmica", desc: "Abre mini-fenda que suga energia vital causando dano psíquico/físico.", cd: 13, pe: 5 },
+                Controlar: { spell: "Dreno de Sanidade", desc: "Perturba mentes inimigas impondo penalidades em rolagens de ataque.", cd: 10, pe: 4 },
+                Entender: { spell: "Comunicação com Horrores do Abismo", desc: "Compreende idiomas estranhos e sussurros de outras realidades.", cd: 8, pe: 2 }
+            },
+            "spiritum+metamagia": {
+                name: "Tempo & Clarividência Cósmica",
+                Criar: { spell: "Fenda no Espaço-Tempo", desc: "Abre uma janela para observar qualquer ponto da ilha.", cd: 12, pe: 4 },
+                Controlar: { spell: "Banish Astral", desc: "Expulsa espíritos e intrusos planares de volta ao éter.", cd: 10, pe: 3 },
+                Entender: { spell: "Premonição (+2d6)", desc: "Recebe +3 no próximo teste de Esquiva ou Iniciativa.", cd: 7, pe: 2 }
+            },
+            "arkanum+metamagia": {
+                name: "Runas & Selos Extraplanares",
+                Criar: { spell: "Selo Rúnico de Aprisionamento", desc: "Grava glifo no solo que detona ou sela o primeiro a pisar.", cd: 12, pe: 4 },
+                Controlar: { spell: "Sobrecarga de Runas", desc: "Amplifica o efeito de itens mágicos ou rituais ativos.", cd: 10, pe: 3 },
+                Entender: { spell: "Decifração Rúnica Ancestral", desc: "Lê inscrições arcanas perdidas e desativa armadilhas mágicas.", cd: 7, pe: 2 }
+            },
+            "fogo+animais": {
+                name: "Magia Dracônica",
+                Criar: { spell: "Sopro Dracônico de Fogo", desc: "Expele cone de chamas devastador causando 3d6 de dano em área.", cd: 12, pe: 5 },
+                Controlar: { spell: "Escamas Ígneas Protetoras", desc: "Endurece a pele conferindo RD 4 contra fogo e cortes.", cd: 9, pe: 3 },
+                Entender: { spell: "Empatia Dracônica", desc: "Comunica-se com répteis e monstros míticos afins ao fogo.", cd: 7, pe: 2 }
+            },
+            "fogo+humanos": {
+                name: "Chama da Paixão & Ímpeto",
+                Criar: { spell: "Chama do Ímpeto Heróico", desc: "Infunde um aliado com coragem extrema, concedendo +2 em ataques e dano.", cd: 10, pe: 3 },
+                Controlar: { spell: "Incitar Fúria Cega", desc: "Faz um oponente perder o controle tático e atacar sem defesa.", cd: 9, pe: 3 },
+                Entender: { spell: "Leitura de Paixões", desc: "Detecta as emoções dominantes e laços afetivos de uma pessoa.", cd: 6, pe: 1 }
+            },
+            "fogo+plantas": {
+                name: "Deserto & Fogo Botânico",
+                Criar: { spell: "Cacto Explosivo de Fogo", desc: "Materializa espinhos ardentes que se cravam e explodem.", cd: 11, pe: 4 },
+                Controlar: { spell: "Onda de Seca Drástica", desc: "Desidrata vegetação e madeira tornando-as inflamáveis.", cd: 8, pe: 2 },
+                Entender: { spell: "Resiliência do Deserto", desc: "Encontra fontes de água e resiste à insolação extrema.", cd: 6, pe: 1 }
+            },
+            "agua+animais": {
+                name: "Magia Abissal Marinha",
+                Criar: { spell: "Tentáculos de Água Negra", desc: "Materializa tentáculos aquáticos que esmagam e afogam inimigos.", cd: 12, pe: 4 },
+                Controlar: { spell: "Vórtice Trator Aquático", desc: "Puxa alvos para o redemoinho submerso desarmando-os.", cd: 9, pe: 3 },
+                Entender: { spell: "Visão Abissal & Falar com Criaturas do Mar", desc: "Enxerga na escuridão subaquática e conversa com seres marinhos.", cd: 7, pe: 1 }
+            },
+            "agua+spiritum": {
+                name: "Marés & Espíritos das Águas",
+                Criar: { spell: "Espelho Espiritual de Água", desc: "Cria portal na superfície da água para espiar ou atravessar distâncias.", cd: 12, pe: 4 },
+                Controlar: { spell: "Chicote Fluídico Espiritual", desc: "Ataca a substância etérea de fantasmas e oponentes.", cd: 9, pe: 2 },
+                Entender: { spell: "Lembranças das Águas", desc: "Acessa acontecimentos passados refletidos naquela fonte de água.", cd: 7, pe: 2 }
             },
             "agua+plantas": {
                 name: "Pântano & Toxinas Botânicas",
@@ -1138,17 +1534,71 @@
                 Controlar: { spell: "Cipós Aquáticos Constritores", desc: "Raízes submersas puxam alvos para o fundo.", cd: 9, pe: 3 },
                 Entender: { spell: "Detectar Venenos & Água Pura", desc: "Identifica propriedades de qualquer extrato líquido.", cd: 6, pe: 1 }
             },
+            "ar+animais": {
+                name: "Magia Celestial das Aves",
+                Criar: { spell: "Asas de Falcão Etéreo", desc: "Concede voo veloz ao conjurador por 1 cena.", cd: 11, pe: 4 },
+                Controlar: { spell: "Guarda da Águia Tempestuosa", desc: "Desvia projéteis com rajadas de vento defensivas.", cd: 8, pe: 2 },
+                Entender: { spell: "Visão Panorâmica Aérea", desc: "Enxerga a quilômetros como uma ave de rapina.", cd: 6, pe: 1 }
+            },
+            "ar+metamagia": {
+                name: "Éter & Dobra Espacial",
+                Criar: { spell: "Salto Espacial Instantâneo", desc: "Teleporta o conjurador para um ponto visível a até 20 metros.", cd: 12, pe: 4 },
+                Controlar: { spell: "Distorção de Projéteis", desc: "Curva o espaço para que ataques à distância errem o alvo.", cd: 10, pe: 3 },
+                Entender: { spell: "Sentido Dimensional", desc: "Detecta distorções espaciais, portais e seres fora de fase.", cd: 7, pe: 2 }
+            },
+            "terra+humanos": {
+                name: "Titã Colossal Telúrico",
+                Criar: { spell: "Forma de Titã Telúrico", desc: "Aumenta o porte físico concedendo +3 em FOR e RD 3 por 1 cena.", cd: 11, pe: 4 },
+                Controlar: { spell: "Impacto Sísmico com os Pés", desc: "Pisa no solo gerando tremor que derruba oponentes próximos.", cd: 9, pe: 3 },
+                Entender: { spell: "Afinidade com Minerais Corpóreos", desc: "Avalia a resistência óssea e mineral de seres vivos.", cd: 6, pe: 1 }
+            },
+            "terra+spiritum": {
+                name: "Fóssil & Espíritos da Rocha",
+                Criar: { spell: "Animar Ossada Fossilizada", desc: "Ergue construto fóssil ancestral para lutar ao seu lado.", cd: 12, pe: 5 },
+                Controlar: { spell: "Grito dos Ancestrais de Pedra", desc: "Emana lamento rochoso que ensurdece e aterroriza inimigos.", cd: 9, pe: 3 },
+                Entender: { spell: "Memória Geológica da Rocha", desc: "Ouve memórias gravadas nas pedras sobre séculos passados.", cd: 7, pe: 2 }
+            },
             "terra+metamagia": {
                 name: "Portais Rúnicos de Pedra",
                 Criar: { spell: "Portal Monolítico", desc: "Ergue duas lajes de pedra interligadas para teletransporte tático.", cd: 13, pe: 5 },
                 Controlar: { spell: "Barreira de Ressonância", desc: "Reflete magias direcionadas contra a muralha rochosa.", cd: 10, pe: 4 },
                 Entender: { spell: "Sondar Linhas de Ley", desc: "Mapeia correntes de poder místico na crosta terrestre.", cd: 7, pe: 2 }
             },
-            "humanos+spiritum": {
-                name: "Mediunidade & Projeção",
-                Criar: { spell: "Corpo Astral Duplo", desc: "Manifesta um avatar espectral capaz de agir à distância.", cd: 12, pe: 4 },
-                Controlar: { spell: "Marionete Espiritual", desc: "Comanda impulsos motores de um alvo por 1 rodada.", cd: 11, pe: 4 },
-                Entender: { spell: "Leitura de Memórias da Alma", desc: "Acessa recordações profundas de alguém desacordado.", cd: 8, pe: 2 }
+            "luz+humanos": {
+                name: "Bio-Radiância Sagrada & Fé",
+                Criar: { spell: "Regeneração Fotônica", desc: "Cura 2d6 PVs e estanca todos os sangramentos instantaneamente.", cd: 10, pe: 3 },
+                Controlar: { spell: "Aura da Verdade", desc: "Emite um brilho que impede mentiras voluntárias em cena.", cd: 9, pe: 2 },
+                Entender: { spell: "Diagnóstico da Alma", desc: "Revela doenças, venenos e maldições no organismo.", cd: 6, pe: 1 }
+            },
+            "luz+plantas": {
+                name: "Florescer & Luz Vegetal",
+                Criar: { spell: "Lótus de Luz Purificadora", desc: "Brota flor radiante que dissipa venenos, maldições e restaura vitalidade.", cd: 11, pe: 3 },
+                Controlar: { spell: "Cipós Cintilantes Aprisionadores", desc: "Prende alvos em vinhas que brilham cegando e contendo.", cd: 9, pe: 2 },
+                Entender: { spell: "Comunicação com Árvores Antigas", desc: "Acessa a sabedoria das plantas veneráveis de uma região.", cd: 6, pe: 1 }
+            },
+            "luz+spiritum": {
+                name: "Aura Espiritual Resplandecente",
+                Criar: { spell: "Escudo de Aura Resplandecente", desc: "Gera barreira que repele seres das trevas e absorve dano mágico.", cd: 11, pe: 4 },
+                Controlar: { spell: "Clarão Revelador de Almas", desc: "Exibe a verdadeira forma de transmorfos e fantasmas ocultos.", cd: 8, pe: 2 },
+                Entender: { spell: "Leitura de Aura", desc: "Lê emoções, intenções e alinhamento do alvo pelas cores da aura.", cd: 6, pe: 1 }
+            },
+            "trevas+plantas": {
+                name: "Decomposição & Podridão Negra",
+                Criar: { spell: "Praga da Podridão Negra", desc: "Espalha necrose vegetal acelerada deteriorando estruturas de madeira e carne.", cd: 11, pe: 4 },
+                Controlar: { spell: "Cipós Espinhosos Necróticos", desc: "Vinhas de espinhos negros que drenam energia de quem tocam.", cd: 9, pe: 3 },
+                Entender: { spell: "Sentir Morte Orgânica", desc: "Detecta cadáveres e focos de apodrecimento a grandes distâncias.", cd: 6, pe: 1 }
+            },
+            "trevas+spiritum": {
+                name: "Pesadelos & Espectros do Medo",
+                Criar: { spell: "Materializar Medo Ancestral", desc: "Invoca espectro sob a forma do maior terror do alvo.", cd: 12, pe: 5 },
+                Controlar: { spell: "Mortalha Onírica Sombria", desc: "Mergulha a vítima em ilusão de pesadelo paralisante.", cd: 10, pe: 3 },
+                Entender: { spell: "Sondar Fobias e Pesadelos", desc: "Descobre os segredos e medos mais íntimos de quem dorme.", cd: 7, pe: 2 }
+            },
+            "trevas+arkanum": {
+                name: "Magia de Sangue & Pacto Sombrio",
+                Criar: { spell: "Agulhas de Sangue Cristalizado", desc: "Molda o próprio sangue ou de inimigos em dardos perfurantes.", cd: 12, pe: 4 },
+                Controlar: { spell: "Hemo-Cinese de Contenção", desc: "Manipula o fluxo sanguíneo do alvo paralisando seus movimentos.", cd: 11, pe: 4 },
+                Entender: { spell: "Rastreio por Linhagem Sanguínea", desc: "Localiza parentes e vestígios biológicos a partir de uma gota de sangue.", cd: 7, pe: 2 }
             },
             "animais+trevas": {
                 name: "Quimera das Sombras",
@@ -1162,32 +1612,67 @@
                 Controlar: { spell: "Correntes de Fogo Abissal", desc: "Aprisiona o alvo em laços flamejantes inextinguíveis.", cd: 10, pe: 4 },
                 Entender: { spell: "Decifrar Contratos Arcanos", desc: "Lê runas demoníacas e termos de pactos ocultos.", cd: 8, pe: 2 }
             },
-            "luz+humanos": {
-                name: "Bio-Radiância Sagrada",
-                Criar: { spell: "Regeneração Fotônica", desc: "Cura 2d6 PVs e estanca todos os sangramentos instantaneamente.", cd: 10, pe: 3 },
-                Controlar: { spell: "Aura da Verdade", desc: "Emite um brilho que impede mentiras voluntárias em cena.", cd: 9, pe: 2 },
-                Entender: { spell: "Diagnóstico da Alma", desc: "Revela doenças, venenos e maldições no organismo.", cd: 6, pe: 1 }
-            },
-            "spiritum+metamagia": {
-                name: "Clarividência Cósmica",
-                Criar: { spell: "Fenda no Espaço-Tempo", desc: "Abre uma janela para observar qualquer ponto da ilha.", cd: 12, pe: 4 },
-                Controlar: { spell: "Banish Astral", desc: "Expulsa espíritos e intrusos planares de volta ao éter.", cd: 10, pe: 3 },
-                Entender: { spell: "Premonição (+2d6)", desc: "Recebe +3 no próximo teste de Esquiva ou Iniciativa.", cd: 7, pe: 2 }
+            "humanos+spiritum": {
+                name: "Mediunidade & Projeção",
+                Criar: { spell: "Corpo Astral Duplo", desc: "Manifesta um avatar espectral capaz de agir à distância.", cd: 12, pe: 4 },
+                Controlar: { spell: "Marionete Espiritual", desc: "Comanda impulsos motores de um alvo por 1 rodada.", cd: 11, pe: 4 },
+                Entender: { spell: "Leitura de Memórias da Alma", desc: "Acessa recordações profundas de alguém desacordado.", cd: 8, pe: 2 }
             }
         };
 
-        // Estado do Personagem
-        let characterSkills = {
-            "fogo": 2,
-            "luz": 1,
-            "metamagia": 1
-        };
-        let userPM = 4; // Poderes Mágicos
+        // =========================================================================
+        // Inicialização do Estado com Suporte a Persistência (MagicTreeEngine)
+        // =========================================================================
+        const STORAGE_KEY = 'rpg_kuartor_magic_tree_state';
+        const engine = (typeof MagicTreeEngine !== 'undefined') ? MagicTreeEngine : null;
+
+        function loadInitialState() {
+            try {
+                const saved = localStorage.getItem(STORAGE_KEY);
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    if (engine) return engine.createCharacterState(parsed);
+                    return parsed;
+                }
+            } catch (e) {
+                console.warn('Erro ao carregar estado do localStorage', e);
+            }
+            if (engine) {
+                return engine.createCharacterState({
+                    availablePM: 4,
+                    skills: { "fogo": 2, "luz": 1, "metamagia": 1 },
+                    learnedAbilities: []
+                });
+            }
+            return {
+                availablePM: 4,
+                skills: { "fogo": 2, "luz": 1, "metamagia": 1 },
+                learnedAbilities: []
+            };
+        }
+
+        const characterState = loadInitialState();
+        // Aliases globais para sincronia com scripts legados
+        let characterSkills = characterState.skills;
+        let userPM = characterState.availablePM;
         let selectedPath1 = null;
         let selectedPath2 = null;
         let activeForma = "Criar";
+        let activeFusionData = null;
 
+        function saveState() {
+            try {
+                characterState.availablePM = userPM;
+                characterState.skills = characterSkills;
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(characterState));
+            } catch (e) {
+                console.warn('Erro ao salvar estado no localStorage', e);
+            }
+        }
+
+        // =========================================================================
         // Coordenadas dos Nós (12 Caminhos Orbitais)
+        // =========================================================================
         const pathNodes = {};
         function computePathLayout() {
             const centerNode = { id: "nexus_core", name: "Nexo Arcano", x: 0, y: 0, icon: "fa-solid fa-atom" };
@@ -1214,13 +1699,26 @@
         const svgContainer = document.getElementById('connections-svg');
         const tooltip = document.getElementById('info-tooltip');
 
+        function updateHUD() {
+            const pmDisp = document.getElementById('pm-display');
+            if (pmDisp) pmDisp.innerText = userPM;
+            const sidePm = document.getElementById('sidebar-pm-disp');
+            if (sidePm) sidePm.innerText = userPM;
+
+            const grimoireCount = (characterState.learnedAbilities || []).length;
+            const hudGCount = document.getElementById('hud-grimoire-count');
+            if (hudGCount) hudGCount.innerText = grimoireCount;
+            const altarGCount = document.getElementById('altar-grimoire-count');
+            if (altarGCount) altarGCount.innerText = grimoireCount;
+        }
+
         function renderTree() {
             centerPoint.querySelectorAll('.hex-node').forEach(n => n.remove());
             svgContainer.innerHTML = '';
 
             const svgOffset = 2500;
 
-            // 1. Linhas de Conexão com o Centro e entre pares afins
+            // 1. Linhas de Conexão com o Centro
             Object.keys(pathNodes).forEach(id => {
                 if (id === 'nexus_core') return;
                 const node = pathNodes[id];
@@ -1232,7 +1730,7 @@
                 line.setAttribute('y2', node.y + svgOffset);
                 line.setAttribute('class', 'conn-line');
 
-                if (characterSkills[id] > 0) {
+                if ((characterSkills[id] || 0) > 0) {
                     line.classList.add('active');
                     line.style.stroke = node.color;
                     line.style.filter = `drop-shadow(0 0 6px ${node.color})`;
@@ -1247,6 +1745,8 @@
             });
 
             renderSidebarPaths('all');
+            renderGrimoire();
+            updateHUD();
         }
 
         function createCoreNode() {
@@ -1296,6 +1796,11 @@
             el.appendChild(shape);
 
             el.onclick = () => handlePathClick(id);
+            // Botão direito retira ponto diretamente do nó
+            el.oncontextmenu = (e) => {
+                e.preventDefault();
+                removePointFromPath(id);
+            };
             el.addEventListener('mouseenter', (e) => showPathTooltip(e, id));
             el.addEventListener('mouseleave', hideTooltip);
 
@@ -1331,7 +1836,8 @@
                 <p style="font-size:12px; color:#cbd5e1; line-height:1.4; margin-bottom:10px;">${p.desc}</p>
                 <div style="background:rgba(15,23,42,0.8); padding:8px; border-radius:8px; border:1px solid rgba(148,163,184,0.15); font-size:11px;">
                     <div style="color:#94a3b8;"><i class="fa-solid fa-dice"></i> Bônus no Teste (+2d6): <strong style="color:#ffffff;">+${lvl}</strong></div>
-                    <div style="color:#94a3b8; margin-top:2px;"><i class="fa-solid fa-sparkles"></i> Clique para adicionar ao Altar de Fusão.</div>
+                    <div style="color:#94a3b8; margin-top:4px;"><i class="fa-solid fa-mouse-pointer"></i> Clique esquerdo: Selecionar para Fusão.</div>
+                    <div style="color:#fbbf24; margin-top:2px;"><i class="fa-solid fa-minus-circle"></i> Botão direito: Retirar 1 ponto (Reembolsa PM).</div>
                 </div>
             `;
 
@@ -1349,11 +1855,118 @@
         function hideTooltip() { tooltip.classList.remove('show'); }
 
         // =========================================================================
-        // Lógica do Altar de Fusão
+        // Gestão de Pontos: Adicionar e Retirar Pontos (Reembolso de PM)
+        // =========================================================================
+        function addPointToPath(pathKey, event) {
+            if (event) event.stopPropagation();
+
+            let res;
+            if (engine) {
+                characterState.availablePM = userPM;
+                characterState.skills = characterSkills;
+                res = engine.addPoint(characterState, pathKey);
+                if (res.success) {
+                    userPM = characterState.availablePM;
+                    characterSkills = characterState.skills;
+                }
+            } else {
+                if (userPM <= 0) {
+                    res = { success: false, reason: 'no_pm_available' };
+                } else {
+                    characterSkills[pathKey] = (characterSkills[pathKey] || 0) + 1;
+                    userPM -= 1;
+                    res = { success: true };
+                }
+            }
+
+            if (res.success) {
+                saveState();
+                renderTree();
+                updateFusionResult();
+                showToast(`+1 ponto investido em ${magicPaths[pathKey].name} (Nível ${characterSkills[pathKey]})`);
+            } else if (res.reason === 'no_pm_available') {
+                showToast(`Você não possui Poderes Mágicos (PM) disponíveis para investir.`, 'warning');
+            }
+        }
+
+        function removePointFromPath(pathKey, event) {
+            if (event) event.stopPropagation();
+
+            let res;
+            if (engine) {
+                characterState.availablePM = userPM;
+                characterState.skills = characterSkills;
+                res = engine.removePoint(characterState, pathKey);
+                if (res.success) {
+                    userPM = characterState.availablePM;
+                    characterSkills = characterState.skills;
+                }
+            } else {
+                if ((characterSkills[pathKey] || 0) <= 0) {
+                    res = { success: false, reason: 'level_zero' };
+                } else {
+                    characterSkills[pathKey] -= 1;
+                    userPM += 1;
+                    res = { success: true };
+                }
+            }
+
+            if (res.success) {
+                saveState();
+                renderTree();
+                updateFusionResult();
+                showToast(`Ponto retirado de ${magicPaths[pathKey].name}! 1 PM reembolsado para a reserva.`);
+            } else if (res.reason === 'level_zero') {
+                showToast(`Este caminho já está no nível 0. Nenhum ponto para retirar.`, 'warning');
+            }
+        }
+
+        function adjustPMTotal(delta) {
+            const nextPM = Math.max(0, userPM + delta);
+            userPM = nextPM;
+            characterState.availablePM = userPM;
+            saveState();
+            updateHUD();
+            renderSidebarPaths('all');
+            showToast(`Poderes Mágicos totais ajustados para: ${userPM}`);
+        }
+
+        function resetAllPoints() {
+            if (!confirm('Deseja resetar todos os caminhos e reembolsar todos os pontos para Poderes Mágicos?')) return;
+
+            let refunded = 0;
+            if (engine) {
+                const res = engine.resetPoints(characterState);
+                refunded = res.refundedPoints;
+                userPM = characterState.availablePM;
+                characterSkills = characterState.skills;
+            } else {
+                Object.keys(characterSkills).forEach(k => {
+                    refunded += characterSkills[k] || 0;
+                    characterSkills[k] = 0;
+                });
+                userPM += refunded;
+                characterState.availablePM = userPM;
+            }
+
+            saveState();
+            renderTree();
+            updateFusionResult();
+            showToast(`Pontos resetados com sucesso! ${refunded} PMs reembolsados para a reserva.`);
+        }
+
+        // =========================================================================
+        // Lógica do Altar de Fusão Arcana & Grimório
         // =========================================================================
         const altarEl = document.getElementById('fusion-altar');
-        function toggleFusionAltar() {
+        function toggleFusionAltar(openGrimoire = false) {
             altarEl.classList.toggle('open');
+            if (altarEl.classList.contains('open') && openGrimoire) {
+                const grimoireSec = document.getElementById('grimoire-section');
+                if (grimoireSec) {
+                    grimoireSec.scrollIntoView({ behavior: 'smooth' });
+                }
+            }
         }
 
         function selectSlot(slotNum) {
@@ -1406,7 +2019,8 @@
         function setForma(forma) {
             activeForma = forma;
             document.querySelectorAll('.forma-card').forEach(c => c.classList.remove('active'));
-            document.getElementById(`forma-${forma.toLowerCase()}`).classList.add('active');
+            const cardEl = document.getElementById(`forma-${forma.toLowerCase()}`);
+            if (cardEl) cardEl.classList.add('active');
             updateFusionResult();
         }
 
@@ -1421,6 +2035,7 @@
         function updateFusionResult() {
             const display = document.getElementById('fusion-result-display');
             const formulaDisplay = document.getElementById('test-formula-display');
+            activeFusionData = null;
 
             if (!selectedPath1 && !selectedPath2) {
                 display.innerHTML = `<div class="text-center text-gray-500 text-xs italic">Selecione dois caminhos na árvore cósmica para forjar uma fusão.</div>`;
@@ -1436,13 +2051,31 @@
                 const lvl = characterSkills[singleKey] || 0;
                 const cd = formaInfo.cdBase;
 
+                activeFusionData = {
+                    id: `pure_${singleKey}_${activeForma}`,
+                    spell: `${activeForma} ${path.name.replace('Magia (', '').replace(')', '')}`,
+                    categoryName: `Magia Pura (${path.name.replace('Magia ', '')})`,
+                    path1: singleKey,
+                    path2: null,
+                    forma: activeForma,
+                    desc: `${formaInfo.desc} Concentrado na essência pura de ${path.name}.`,
+                    cd: cd,
+                    pe: formaInfo.peCost,
+                    bonus: lvl
+                };
+
                 display.innerHTML = `
                     <div style="font-size:10px; font-weight:700; color:${path.color}; text-transform:uppercase;">Magia Pura &middot; ${activeForma} ${path.name.replace('Magia ', '')}</div>
-                    <h3 class="font-cinzel text-base font-bold text-white my-1">${activeForma} ${path.name.replace('Magia (', '').replace(')', '')}</h3>
-                    <p class="text-xs text-gray-300 mb-2">${formaInfo.desc} Concentrado no elemento ${path.name}.</p>
-                    <div style="display:flex; justify-content:space-between; font-size:11px; color:#fbbf24; border-top:1px solid rgba(148,163,184,0.2); padding-top:6px;">
+                    <h3 class="font-cinzel text-base font-bold text-white my-1">${activeFusionData.spell}</h3>
+                    <p class="text-xs text-gray-300 mb-2">${activeFusionData.desc}</p>
+                    <div style="display:flex; justify-content:space-between; font-size:11px; color:#fbbf24; border-top:1px solid rgba(148,163,184,0.2); padding-top:6px; margin-bottom:12px;">
                         <span><i class="fa-solid fa-bullseye"></i> Dificuldade: <strong>CD ${cd}</strong></span>
                         <span><i class="fa-solid fa-bolt"></i> Custo: <strong>${formaInfo.peCost} PEs</strong></span>
+                    </div>
+                    <div style="display:flex; gap:8px;">
+                        <button onclick="learnActiveFusionAbility()" class="btn-fusion-toggle flex-1 py-2 justify-center text-xs" style="background:linear-gradient(135deg, rgba(16,185,129,0.25), rgba(102,252,241,0.2)); border-color:#10b981; color:#6ee7b7;">
+                            <i class="fa-solid fa-sparkles"></i> Adicionar ao Grimório
+                        </button>
                     </div>
                 `;
                 formulaDisplay.innerText = `2d6 + ${lvl} (${path.name.replace('Magia ', '')}) vs CD ${cd}`;
@@ -1460,27 +2093,270 @@
 
             let fusionData = null;
             if (fusionKey && spellFusions[fusionKey] && spellFusions[fusionKey][activeForma]) {
-                fusionData = spellFusions[fusionKey][activeForma];
-            } else {
+                const raw = spellFusions[fusionKey];
                 fusionData = {
-                    spell: `${activeForma} ${p1.name.replace('Magia (', '').replace(')', '')}-${p2.name.replace('Magia (', '').replace(')', '')}`,
+                    id: `fusion_${selectedPath1}_${selectedPath2}_${activeForma}`,
+                    spell: raw[activeForma].spell,
+                    categoryName: raw.name,
+                    path1: selectedPath1,
+                    path2: selectedPath2,
+                    forma: activeForma,
+                    desc: raw[activeForma].desc,
+                    cd: raw[activeForma].cd,
+                    pe: raw[activeForma].pe,
+                    bonus: avgLevel
+                };
+            } else {
+                const name1 = p1.name.replace('Magia (', '').replace(')', '');
+                const name2 = p2.name.replace('Magia (', '').replace(')', '');
+                fusionData = {
+                    id: `fusion_${selectedPath1}_${selectedPath2}_${activeForma}`,
+                    spell: `${activeForma} ${name1}-${name2}`,
+                    categoryName: `Síntese Arcana (${name1} & ${name2})`,
+                    path1: selectedPath1,
+                    path2: selectedPath2,
+                    forma: activeForma,
                     desc: `Síntese arcana combinando as propriedades de ${p1.name} e ${p2.name}. Causa 2d6+${avgLevel} de efeito híbrido.`,
                     cd: formaInfo.cdBase + 2,
-                    pe: formaInfo.peCost + 1
+                    pe: formaInfo.peCost + 1,
+                    bonus: avgLevel
                 };
             }
+
+            activeFusionData = fusionData;
 
             display.innerHTML = `
                 <div style="font-size:10px; font-weight:700; color:var(--rpg-cyan); text-transform:uppercase;"><i class="fa-solid fa-sparkles"></i> Fusão Mística Híbrida &middot; Forma ${activeForma}</div>
                 <h3 class="font-cinzel text-base font-bold text-white my-1" style="text-shadow:0 0 10px var(--rpg-cyan);">${fusionData.spell}</h3>
                 <p class="text-xs text-gray-300 mb-2">${fusionData.desc}</p>
-                <div style="display:flex; justify-content:space-between; font-size:11px; color:#fbbf24; border-top:1px solid rgba(148,163,184,0.2); padding-top:6px;">
+                <div style="display:flex; justify-content:space-between; font-size:11px; color:#fbbf24; border-top:1px solid rgba(148,163,184,0.2); padding-top:6px; margin-bottom:12px;">
                     <span><i class="fa-solid fa-bullseye"></i> Dificuldade: <strong>CD ${fusionData.cd}</strong></span>
                     <span><i class="fa-solid fa-bolt"></i> Custo: <strong>${fusionData.pe} PEs</strong></span>
+                </div>
+                <div style="display:flex; gap:8px;">
+                    <button onclick="learnActiveFusionAbility()" class="btn-fusion-toggle flex-1 py-2 justify-center text-xs" style="background:linear-gradient(135deg, rgba(16,185,129,0.3), rgba(102,252,241,0.25)); border-color:#10b981; color:#6ee7b7;">
+                        <i class="fa-solid fa-sparkles"></i> Adicionar ao Grimório
+                    </button>
+                    <button onclick="openCustomAbilityModal()" class="btn-top py-2 px-3 text-xs" title="Customizar Nome e Efeito da Magia">
+                        <i class="fa-solid fa-pen-to-square"></i>
+                    </button>
                 </div>
             `;
 
             formulaDisplay.innerText = `2d6 + ${avgLevel} (Média ${lvl1}&${lvl2}) vs CD ${fusionData.cd}`;
+        }
+
+        // =========================================================================
+        // Aprendizado de Habilidades & Gestão do Grimório Pessoal
+        // =========================================================================
+        function learnActiveFusionAbility() {
+            if (!activeFusionData) {
+                showToast('Selecione caminhos para gerar uma magia antes de adicionar.', 'warning');
+                return;
+            }
+
+            let res;
+            if (engine) {
+                res = engine.addLearnedAbility(characterState, activeFusionData);
+            } else {
+                if (!characterState.learnedAbilities) characterState.learnedAbilities = [];
+                const idx = characterState.learnedAbilities.findIndex(a => a.id === activeFusionData.id);
+                if (idx >= 0) characterState.learnedAbilities[idx] = activeFusionData;
+                else characterState.learnedAbilities.push(activeFusionData);
+                res = { success: true, ability: activeFusionData };
+            }
+
+            if (res.success) {
+                saveState();
+                renderGrimoire();
+                updateHUD();
+                showToast(`🔮 Magia "${res.ability.spell}" adicionada com sucesso ao seu Grimório!`);
+            }
+        }
+
+        function removeLearnedAbility(abilityId) {
+            if (!confirm('Deseja realmente remover esta magia do seu Grimório?')) return;
+
+            let res;
+            if (engine) {
+                res = engine.removeLearnedAbility(characterState, abilityId);
+            } else {
+                characterState.learnedAbilities = (characterState.learnedAbilities || []).filter(a => a.id !== abilityId);
+                res = { success: true };
+            }
+
+            if (res.success) {
+                saveState();
+                renderGrimoire();
+                updateHUD();
+                showToast('Magia removida do Grimório.');
+            }
+        }
+
+        function renderGrimoire() {
+            const listEl = document.getElementById('learned-abilities-list');
+            if (!listEl) return;
+
+            const abilities = characterState.learnedAbilities || [];
+            if (abilities.length === 0) {
+                listEl.innerHTML = `
+                    <div class="text-center text-gray-500 text-xs italic py-4">
+                        Nenhuma magia aprendida ainda.<br>
+                        Combine caminhos no Altar de Fusão e clique em <strong>"Adicionar ao Grimório"</strong>.
+                    </div>
+                `;
+                return;
+            }
+
+            listEl.innerHTML = abilities.map(a => {
+                const p1 = a.path1 && magicPaths[a.path1] ? magicPaths[a.path1] : null;
+                const p2 = a.path2 && magicPaths[a.path2] ? magicPaths[a.path2] : null;
+
+                const pathBadges = [];
+                if (p1) pathBadges.push(`<span style="color:${p1.color}; font-size:10px;"><i class="${p1.icon}"></i> ${p1.name.replace('Magia ', '')}</span>`);
+                if (p2) pathBadges.push(`<span style="color:${p2.color}; font-size:10px;"><i class="${p2.icon}"></i> ${p2.name.replace('Magia ', '')}</span>`);
+
+                return `
+                    <div class="grimoire-card">
+                        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:4px;">
+                            <div>
+                                <h4 class="font-cinzel text-sm font-bold text-white">${a.spell}</h4>
+                                <div style="display:flex; gap:6px; align-items:center; margin-top:2px;">
+                                    <span class="text-[9px] px-1.5 py-0.5 rounded bg-cyan-950 text-cyan-300 font-bold uppercase">${a.forma}</span>
+                                    ${pathBadges.join('<span class="text-gray-500 text-[10px]">+</span>')}
+                                </div>
+                            </div>
+                            <button onclick="removeLearnedAbility('${a.id}')" class="text-gray-500 hover:text-red-400 text-xs bg-transparent border-0 cursor-pointer p-1" title="Remover do Grimório">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </div>
+                        <p class="text-[11px] text-gray-300 my-1">${a.desc}</p>
+                        <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid rgba(148,163,184,0.15); padding-top:6px; margin-top:6px; font-size:10px;">
+                            <span class="text-amber-400">CD <strong>${a.cd}</strong> &middot; Custo <strong>${a.pe} PE</strong></span>
+                            <button onclick="rollLearnedAbilityTest('${a.id}')" class="px-2 py-1 rounded bg-slate-800 hover:bg-cyan-500 hover:text-black border border-cyan-500/40 text-cyan-300 font-bold cursor-pointer transition-all">
+                                <i class="fa-solid fa-dice-d6 mr-1"></i> Rolar
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function rollLearnedAbilityTest(abilityId) {
+            const ability = (characterState.learnedAbilities || []).find(a => a.id === abilityId);
+            if (!ability) return;
+
+            const lvl1 = ability.path1 ? (characterSkills[ability.path1] || 0) : 0;
+            const lvl2 = ability.path2 ? (characterSkills[ability.path2] || 0) : 0;
+            const bonus = ability.path2 ? Math.floor((lvl1 + lvl2) / 2) : lvl1;
+
+            const d1 = Math.floor(Math.random() * 6) + 1;
+            const d2 = Math.floor(Math.random() * 6) + 1;
+            const diceTotal = d1 + d2;
+            const total = diceTotal + bonus;
+            const cd = ability.cd;
+
+            const rollDisplay = document.getElementById('roll-result-display');
+            let outcome = '';
+            if (diceTotal === 12) {
+                outcome = `<span class="text-amber-400 font-bold">✨ ACERTO CRÍTICO (12 nos dados)! Efeito Maximo Ampliado!</span>`;
+            } else if (diceTotal === 2) {
+                outcome = `<span class="text-red-500 font-bold">💥 FALHA CRÍTICA (2 nos dados)! Retorno de Mana Incontrolável!</span>`;
+            } else if (total >= cd) {
+                outcome = `<span class="text-emerald-400 font-bold">✓ SUCESSO! (${total} vs CD ${cd}) Feitiço Conjurado com Maestria!</span>`;
+            } else {
+                outcome = `<span class="text-red-400">✗ FALHA (${total} vs CD ${cd}). A magia se dissipou sem efeito.</span>`;
+            }
+
+            rollDisplay.innerHTML = `
+                <div style="font-size:12px; font-family:'Cinzel',serif; color:#6ee7b7; margin-bottom:2px;"><i class="fa-solid fa-sparkles"></i> ${ability.spell} (${ability.forma})</div>
+                <div style="font-size:13px; font-family:'Cinzel',serif;">🎲 Dados: [${d1}] + [${d2}] = <strong>${diceTotal}</strong> + ${bonus} bônus = <strong class="text-white">${total}</strong></div>
+                <div style="margin-top:2px;">${outcome}</div>
+            `;
+            rollDisplay.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // =========================================================================
+        // Modal de Criação / Customização de Magia
+        // =========================================================================
+        const customModalOverlay = document.getElementById('custom-ability-overlay');
+
+        function openCustomAbilityModal() {
+            // Preencher selects de caminhos
+            const sel1 = document.getElementById('custom-spell-path1');
+            const sel2 = document.getElementById('custom-spell-path2');
+            sel1.innerHTML = '';
+            sel2.innerHTML = '<option value="">-- Nenhum (Magia Pura) --</option>';
+
+            Object.keys(magicPaths).forEach(k => {
+                const opt1 = document.createElement('option');
+                opt1.value = k;
+                opt1.text = magicPaths[k].name;
+                if (selectedPath1 === k) opt1.selected = true;
+                sel1.appendChild(opt1);
+
+                const opt2 = document.createElement('option');
+                opt2.value = k;
+                opt2.text = magicPaths[k].name;
+                if (selectedPath2 === k) opt2.selected = true;
+                sel2.appendChild(opt2);
+            });
+
+            // Se havia uma fusão ativa, pré-preencher
+            if (activeFusionData) {
+                document.getElementById('custom-spell-name').value = activeFusionData.spell;
+                document.getElementById('custom-spell-forma').value = activeFusionData.forma;
+                document.getElementById('custom-spell-cd').value = activeFusionData.cd;
+                document.getElementById('custom-spell-pe').value = activeFusionData.pe;
+                document.getElementById('custom-spell-desc').value = activeFusionData.desc;
+            }
+
+            customModalOverlay.classList.add('open');
+        }
+
+        function closeCustomAbilityModal() {
+            customModalOverlay.classList.remove('open');
+        }
+
+        function closeCustomAbilityOnBackdrop(e) {
+            if (e.target === customModalOverlay) closeCustomAbilityModal();
+        }
+
+        function saveCustomAbility(event) {
+            event.preventDefault();
+
+            const name = document.getElementById('custom-spell-name').value.trim();
+            const p1 = document.getElementById('custom-spell-path1').value;
+            const p2 = document.getElementById('custom-spell-path2').value || null;
+            const forma = document.getElementById('custom-spell-forma').value;
+            const cd = parseInt(document.getElementById('custom-spell-cd').value) || 10;
+            const pe = parseInt(document.getElementById('custom-spell-pe').value) || 3;
+            const desc = document.getElementById('custom-spell-desc').value.trim() || 'Feitiço personalizado no sistema +2d6.';
+
+            const customAbility = {
+                id: `custom_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
+                spell: name,
+                categoryName: p2 ? `Fusão (${magicPaths[p1].name} & ${magicPaths[p2].name})` : `Magia (${magicPaths[p1].name})`,
+                path1: p1,
+                path2: p2,
+                forma: forma,
+                cd: cd,
+                pe: pe,
+                desc: desc
+            };
+
+            if (engine) {
+                engine.addLearnedAbility(characterState, customAbility);
+            } else {
+                if (!characterState.learnedAbilities) characterState.learnedAbilities = [];
+                characterState.learnedAbilities.push(customAbility);
+            }
+
+            saveState();
+            renderGrimoire();
+            updateHUD();
+            closeCustomAbilityModal();
+            showToast(`✨ Magia customizada "${name}" salva no Grimório!`);
         }
 
         function rollSpellTest() {
@@ -1528,10 +2404,11 @@
         }
 
         // =========================================================================
-        // Sidebar e Filtros
+        // Sidebar e Filtros com Controles de Ponto
         // =========================================================================
         function renderSidebarPaths(category) {
             const container = document.getElementById('paths-list-container');
+            if (!container) return;
             container.innerHTML = '';
 
             Object.keys(magicPaths).forEach(key => {
@@ -1539,18 +2416,27 @@
                 if (category !== 'all' && p.category !== category) return;
                 const lvl = characterSkills[key] || 0;
 
-                const btn = document.createElement('button');
-                btn.className = 'path-row-btn';
-                btn.style.borderLeft = `3px solid ${p.color}`;
-                btn.innerHTML = `
-                    <span><i class="${p.icon}" style="color:${p.color}; width:16px;"></i> ${p.name.replace('Magia ', '')}</span>
-                    <span style="color:#fbbf24; font-weight:700;">Nv. ${lvl}</span>
+                const row = document.createElement('div');
+                row.className = 'path-row-box';
+                row.style.borderLeft = `3px solid ${p.color}`;
+                row.innerHTML = `
+                    <div class="path-row-info" title="Clique para selecionar este caminho no Altar de Fusão">
+                        <i class="${p.icon}" style="color:${p.color}; width:16px;"></i>
+                        <span>${p.name.replace('Magia ', '')}</span>
+                    </div>
+                    <div class="point-controls">
+                        <button class="btn-point dec" onclick="removePointFromPath('${key}', event)" title="Retirar 1 ponto deste caminho (reembolsa 1 PM)" ${lvl <= 0 ? 'disabled' : ''}>-</button>
+                        <span style="color:#fbbf24; font-weight:700; font-size:11px; min-width:32px; text-align:center;">Nv. ${lvl}</span>
+                        <button class="btn-point inc" onclick="addPointToPath('${key}', event)" title="Adicionar 1 ponto a este caminho (custa 1 PM)" ${userPM <= 0 ? 'disabled' : ''}>+</button>
+                    </div>
                 `;
-                btn.onclick = () => {
+
+                row.querySelector('.path-row-info').onclick = () => {
                     handlePathClick(key);
                     focusPath(key);
                 };
-                container.appendChild(btn);
+
+                container.appendChild(row);
             });
         }
 
@@ -1569,6 +2455,20 @@
             setTransform();
         }
 
+        // Toast de Feedback
+        let toastTimeout = null;
+        function showToast(msg, type = 'info') {
+            const t = document.getElementById('tree-toast');
+            if (!t) return;
+            t.innerText = msg;
+            t.style.borderColor = type === 'warning' ? '#f59e0b' : 'var(--rpg-cyan)';
+            t.classList.add('show');
+            if (toastTimeout) clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => {
+                t.classList.remove('show');
+            }, 3000);
+        }
+
         // =========================================================================
         // Câmera Espacial
         // =========================================================================
@@ -1579,7 +2479,7 @@
         function setTransform() { map.style.transform = `translate(${pointX}px, ${pointY}px) scale(${scale})`; }
 
         viewport.onmousedown = function (e) {
-            if (e.button !== 0 || e.target.closest('.hex-node') || e.target.closest('.glass-panel') || e.target.closest('.zoom-controls') || e.target.closest('#fusion-altar')) return;
+            if (e.button !== 0 || e.target.closest('.hex-node') || e.target.closest('.glass-panel') || e.target.closest('.zoom-controls') || e.target.closest('#fusion-altar') || e.target.closest('.modal-overlay')) return;
             e.preventDefault();
             start = { x: e.clientX - pointX, y: e.clientY - pointY };
             panning = true;
@@ -1609,7 +2509,7 @@
         function zoomOut() { scale = Math.max(scale / 1.25, 0.3); setTransform(); }
         function resetView() { scale = 1; pointX = 0; pointY = 0; setTransform(); }
 
-        // Inicialização
+        // Inicialização Visual
         renderTree();
 
         // =========================================================================
@@ -1619,7 +2519,6 @@
 
         function toggleFusionTable() {
             fusionTableOverlay.classList.toggle('open');
-            // limpa busca ao abrir
             if (fusionTableOverlay.classList.contains('open')) {
                 const inp = document.getElementById('fusion-search-input');
                 if (inp) { inp.value = ''; filterFusionTable(''); inp.focus(); }
@@ -1647,17 +2546,166 @@
                     if (match) anyVisible = true;
                 });
 
-                // Esconde/mostra a seção inteira se nenhum resultado
                 sec.classList.toggle('hidden-section', !anyVisible);
             });
         }
 
         // Fechar com Escape
         document.addEventListener('keydown', e => {
-            if (e.key === 'Escape' && fusionTableOverlay.classList.contains('open')) {
-                toggleFusionTable();
+            if (e.key === 'Escape') {
+                if (fusionTableOverlay && fusionTableOverlay.classList.contains('open')) toggleFusionTable();
+                if (customModalOverlay && customModalOverlay.classList.contains('open')) closeCustomAbilityModal();
+                if (syncSheetOverlay && syncSheetOverlay.classList.contains('open')) closeSyncSheetModal();
             }
         });
+
+        // =========================================================================
+        // Sincronização de Ficha & Gestão de Pontos de Poder (POD)
+        // =========================================================================
+        const syncSheetOverlay = document.getElementById('sync-sheet-overlay');
+
+        function openSyncSheetModal() {
+            if (!syncSheetOverlay) return;
+            syncSheetOverlay.classList.add('open');
+            renderSavedSheetsList();
+            const podInp = document.getElementById('manual-pod-input');
+            if (podInp) {
+                podInp.value = characterState.characterPOD !== undefined ? characterState.characterPOD : 2;
+                updateManualPMPredict();
+            }
+        }
+
+        function closeSyncSheetModal() {
+            if (syncSheetOverlay) syncSheetOverlay.classList.remove('open');
+        }
+
+        function closeSyncSheetOnBackdrop(e) {
+            if (e.target === syncSheetOverlay) closeSyncSheetModal();
+        }
+
+        function updateManualPMPredict() {
+            const podInp = document.getElementById('manual-pod-input');
+            const predEl = document.getElementById('manual-pm-predict');
+            if (!podInp || !predEl) return;
+            const pod = parseInt(podInp.value) || 0;
+            const pm = engine ? engine.calculatePMFromPOD(pod) : pod * 2;
+            predEl.innerText = `${pm} PM`;
+        }
+
+        function applyManualPOD() {
+            const podInp = document.getElementById('manual-pod-input');
+            if (!podInp) return;
+            const pod = parseInt(podInp.value) || 0;
+            const totalPM = engine ? engine.calculatePMFromPOD(pod) : pod * 2;
+
+            // Pontos atualmente investidos nos caminhos
+            let pointsSpent = 0;
+            Object.keys(characterSkills).forEach(k => {
+                pointsSpent += characterSkills[k] || 0;
+            });
+
+            userPM = Math.max(0, totalPM - pointsSpent);
+            characterState.availablePM = userPM;
+            characterState.characterPOD = pod;
+            characterState.totalPM = totalPM;
+
+            saveState();
+            updateHUD();
+            renderSidebarPaths('all');
+            closeSyncSheetModal();
+            showToast(`✨ Atributo POD definido como ${pod}! Total: ${totalPM} PMs (${userPM} disponíveis).`);
+        }
+
+        function renderSavedSheetsList() {
+            const container = document.getElementById('saved-sheets-container');
+            if (!container) return;
+
+            let localSheets = {};
+            try {
+                localSheets = JSON.parse(localStorage.getItem('kuar_tor_saved_sheets') || '{}');
+            } catch (e) {
+                console.warn('Erro ao carregar fichas salvas:', e);
+            }
+
+            const sheetKeys = Object.keys(localSheets);
+            if (sheetKeys.length === 0) {
+                container.innerHTML = `
+                    <div class="text-xs text-gray-400 p-3 text-center bg-slate-900/60 rounded border border-slate-800">
+                        <i class="fa-solid fa-folder-open text-gray-500 text-lg block mb-1"></i>
+                        Nenhuma ficha encontrada no navegador.<br>
+                        Crie e salve um personagem em <a href="formV6.html" class="text-cyan-400 hover:underline">Ficha do Personagem</a> para sincronizar automaticamente!
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = sheetKeys.map(key => {
+                const sheet = localSheets[key];
+                const data = sheet.sheetData || {};
+                const name = sheet.name || data.charName || 'Sem Nome';
+                const pod = data.pod !== undefined ? data.pod : (data.atributos && data.atributos.pod !== undefined ? data.atributos.pod : 2);
+                const calcPM = engine ? engine.calculatePMFromPOD(pod) : (parseInt(pod) || 0) * 2;
+                const caminhosCount = (data.caminhosMagia || []).length;
+
+                return `
+                    <div class="flex items-center justify-between p-2.5 bg-slate-900/80 hover:bg-slate-800 border border-slate-700 hover:border-cyan-500/50 rounded transition-all">
+                        <div>
+                            <div class="text-xs font-bold text-white flex items-center gap-1.5">
+                                <i class="fa-solid fa-user-shield text-cyan-400"></i> ${name}
+                            </div>
+                            <div class="text-[11px] text-gray-400 mt-0.5">
+                                Atributo POD: <strong class="text-amber-300">${pod}</strong> &middot; Concede: <strong class="text-cyan-300">${calcPM} PM</strong> &middot; ${caminhosCount} caminho(s) salvos
+                            </div>
+                        </div>
+                        <button type="button" onclick="syncSheetById('${key}')" class="px-3 py-1 text-xs rounded bg-cyan-600 hover:bg-cyan-500 text-white font-cinzel font-bold">
+                            Sincronizar
+                        </button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function syncSheetById(sheetId) {
+            try {
+                const localSheets = JSON.parse(localStorage.getItem('kuar_tor_saved_sheets') || '{}');
+                const sheet = localSheets[sheetId];
+                if (!sheet || !sheet.sheetData) {
+                    showToast('Ficha não encontrada.', 'warning');
+                    return;
+                }
+
+                if (engine) {
+                    const res = engine.syncWithSheet(characterState, sheet.sheetData);
+                    userPM = characterState.availablePM;
+                    characterSkills = characterState.skills;
+                    saveState();
+                    renderTree();
+                    updateHUD();
+                    closeSyncSheetModal();
+                    showToast(`✨ Ficha "${res.charName}" vinculada! POD: ${res.pod} (${res.totalPM} PMs totais, ${res.availablePM} livres).`);
+                } else {
+                    const data = sheet.sheetData;
+                    const pod = parseInt(data.pod) || 2;
+                    userPM = pod * 2;
+                    characterState.availablePM = userPM;
+                    characterState.characterPOD = pod;
+                    saveState();
+                    renderTree();
+                    updateHUD();
+                    closeSyncSheetModal();
+                    showToast(`✨ Ficha vinculada! POD ${pod} &rarr; ${userPM} PMs.`);
+                }
+
+                // Atualizar label no HUD se houver
+                const label = document.getElementById('hud-sync-sheet-label');
+                if (label && characterState.characterName) {
+                    label.innerText = characterState.characterName.substring(0, 14);
+                }
+            } catch (e) {
+                console.error('Erro ao sincronizar com ficha:', e);
+                showToast('Erro ao sincronizar com ficha.', 'warning');
+            }
+        }
     </script>
 </body>
 
