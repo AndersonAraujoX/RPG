@@ -309,6 +309,7 @@
             const state = {
                 availablePM: typeof initial.availablePM === 'number' ? Math.max(0, initial.availablePM) : 4,
                 skills: {},
+                fusionSkills: initial.fusionSkills ? { ...initial.fusionSkills } : {},
                 learnedAbilities: Array.isArray(initial.learnedAbilities) ? [...initial.learnedAbilities] : []
             };
 
@@ -377,6 +378,67 @@
                 success: true,
                 pathKey,
                 newLevel: state.skills[pathKey],
+                availablePM: state.availablePM
+            };
+        },
+
+        /**
+         * Adiciona 1 ponto a um nó de fusão (Secundus ou Terceirus) consumindo 1 PM
+         */
+        addFusionPoint(state, fusionId) {
+            if (!state || typeof state !== 'object') {
+                throw new Error("Estado inválido fornecido para addFusionPoint.");
+            }
+            if (!fusionId || typeof fusionId !== 'string') {
+                return { success: false, reason: "invalid_fusion_id", fusionId };
+            }
+            if (typeof state.availablePM !== 'number' || state.availablePM <= 0) {
+                return { success: false, reason: "no_pm_available", availablePM: state.availablePM || 0 };
+            }
+
+            if (!state.fusionSkills) state.fusionSkills = {};
+            const currentLevel = state.fusionSkills[fusionId] || 0;
+            state.fusionSkills[fusionId] = currentLevel + 1;
+            state.availablePM -= 1;
+
+            return {
+                success: true,
+                fusionId,
+                newLevel: state.fusionSkills[fusionId],
+                availablePM: state.availablePM
+            };
+        },
+
+        /**
+         * Retira 1 ponto de um nó de fusão (Secundus ou Terceirus) e reembolsa 1 PM para a reserva
+         */
+        removeFusionPoint(state, fusionId) {
+            if (!state || typeof state !== 'object') {
+                throw new Error("Estado inválido fornecido para removeFusionPoint.");
+            }
+            if (!fusionId || typeof fusionId !== 'string') {
+                return { success: false, reason: "invalid_fusion_id", fusionId };
+            }
+
+            if (!state.fusionSkills) state.fusionSkills = {};
+            const currentLevel = state.fusionSkills[fusionId] || 0;
+            if (currentLevel <= 0) {
+                return {
+                    success: false,
+                    reason: "level_zero",
+                    fusionId,
+                    newLevel: 0,
+                    availablePM: state.availablePM
+                };
+            }
+
+            state.fusionSkills[fusionId] = currentLevel - 1;
+            state.availablePM = (typeof state.availablePM === 'number' ? state.availablePM : 0) + 1;
+
+            return {
+                success: true,
+                fusionId,
+                newLevel: state.fusionSkills[fusionId],
                 availablePM: state.availablePM
             };
         },
@@ -500,10 +562,18 @@
         resetPoints(state) {
             if (!state || typeof state !== 'object') throw new Error("Estado inválido.");
             let refunded = 0;
-            Object.keys(state.skills).forEach(k => {
-                refunded += state.skills[k] || 0;
-                state.skills[k] = 0;
-            });
+            if (state.skills) {
+                Object.keys(state.skills).forEach(k => {
+                    refunded += state.skills[k] || 0;
+                    state.skills[k] = 0;
+                });
+            }
+            if (state.fusionSkills) {
+                Object.keys(state.fusionSkills).forEach(k => {
+                    refunded += state.fusionSkills[k] || 0;
+                    state.fusionSkills[k] = 0;
+                });
+            }
             state.availablePM = (state.availablePM || 0) + refunded;
             return {
                 success: true,

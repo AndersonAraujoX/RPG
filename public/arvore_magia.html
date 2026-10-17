@@ -1093,7 +1093,7 @@
             <div class="glass-panel">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 8px;">
                     <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--rpg-cyan); font-family: 'Cinzel', serif;">
-                        <i class="fa-solid fa-circle-nodes"></i> 12 Caminhos
+                        <i class="fa-solid fa-circle-nodes"></i> Caminhos & Fusões
                     </div>
                     <div style="font-size: 10px; color:#fbbf24;">
                         PM Disp: <strong id="sidebar-pm-disp">4</strong>
@@ -1101,10 +1101,11 @@
                 </div>
                 
                 <div class="category-tab">
-                    <button class="cat-btn active" onclick="filterCategory('all')">Todos</button>
-                    <button class="cat-btn" onclick="filterCategory('elemental')">Elementais</button>
-                    <button class="cat-btn" onclick="filterCategory('vital')">Vitais</button>
-                    <button class="cat-btn" onclick="filterCategory('arcano')">Arcanos</button>
+                    <button class="cat-btn active" onclick="filterCategory('all', event)">Todos</button>
+                    <button class="cat-btn" onclick="filterCategory('elemental', event)">Elementais</button>
+                    <button class="cat-btn" onclick="filterCategory('vital', event)">Vitais</button>
+                    <button class="cat-btn" onclick="filterCategory('arcano', event)">Arcanos</button>
+                    <button class="cat-btn" onclick="filterCategory('fusao', event)" style="color:#fbbf24;"><i class="fa-solid fa-sparkles"></i> Fusões</button>
                 </div>
 
                 <div class="paths-list" id="paths-list-container">
@@ -1765,10 +1766,19 @@
         const engine = (typeof MagicTreeEngine !== 'undefined') ? MagicTreeEngine : null;
 
         function loadInitialState() {
+            const defaultFusionSkills = {
+                "fusion_magma": 1,
+                "fusion_necromancia": 1,
+                "fusion_cataclismo": 1,
+                "fusion_avatar": 1,
+                "fusion_golem": 1
+            };
+
             try {
                 const saved = localStorage.getItem(STORAGE_KEY);
                 if (saved) {
                     const parsed = JSON.parse(saved);
+                    if (!parsed.fusionSkills) parsed.fusionSkills = { ...defaultFusionSkills };
                     if (engine) return engine.createCharacterState(parsed);
                     return parsed;
                 }
@@ -1779,19 +1789,32 @@
                 return engine.createCharacterState({
                     availablePM: 4,
                     skills: { "fogo": 2, "luz": 1, "metamagia": 1 },
+                    fusionSkills: { ...defaultFusionSkills },
                     learnedAbilities: []
                 });
             }
             return {
                 availablePM: 4,
                 skills: { "fogo": 2, "luz": 1, "metamagia": 1 },
+                fusionSkills: { ...defaultFusionSkills },
                 learnedAbilities: []
             };
         }
 
         const characterState = loadInitialState();
+        if (!characterState.fusionSkills) {
+            characterState.fusionSkills = {
+                "fusion_magma": 1,
+                "fusion_necromancia": 1,
+                "fusion_cataclismo": 1,
+                "fusion_avatar": 1,
+                "fusion_golem": 1
+            };
+        }
+
         // Aliases globais para sincronia com scripts legados
         let characterSkills = characterState.skills;
+        let characterFusionSkills = characterState.fusionSkills;
         let userPM = characterState.availablePM;
         let selectedPath1 = null;
         let selectedPath2 = null;
@@ -1802,6 +1825,7 @@
             try {
                 characterState.availablePM = userPM;
                 characterState.skills = characterSkills;
+                characterState.fusionSkills = characterFusionSkills;
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(characterState));
             } catch (e) {
                 console.warn('Erro ao salvar estado no localStorage', e);
@@ -1941,7 +1965,7 @@
         function drawCosmicTreeSVG(svgOffset) {
             const O = svgOffset;
             const isUnlocked = (k) => (characterSkills[k] || 0) > 0;
-            const isFusUnlocked = (f) => f.paths && f.paths.some(p => (characterSkills[p] || 0) > 0);
+            const isFusUnlocked = (f) => (characterFusionSkills && (characterFusionSkills[f.id] || 0) > 0) || (f.paths && f.paths.some(p => (characterSkills[p] || 0) > 0));
 
             const defs = `
                 <defs>
@@ -2162,14 +2186,20 @@
             const halfW = isTerceirus ? 52 : 44;
             const halfH = isTerceirus ? 59 : 50;
 
-            el.className = `hex-node ${isTerceirus ? 'tier-terceirus' : 'tier-secundus'} unlocked`;
+            const level = (characterFusionSkills && characterFusionSkills[fusion.id] !== undefined)
+                ? characterFusionSkills[fusion.id]
+                : (fusion.level || 0);
+
+            el.className = `hex-node ${isTerceirus ? 'tier-terceirus' : 'tier-secundus'} ${level > 0 ? 'unlocked' : 'locked'}`;
             el.style.left = `${fusion.x - halfW}px`;
             el.style.top = `${fusion.y - halfH}px`;
 
             const shape = document.createElement('div');
             shape.className = 'hex-shape';
             const strokeColor = isTerceirus ? '#fbbf24' : fusion.color;
-            const fillColor = isTerceirus ? 'rgba(180,83,9,0.35)' : 'rgba(15,23,42,0.95)';
+            const fillColor = level > 0 
+                ? (isTerceirus ? 'rgba(180,83,9,0.35)' : 'rgba(15,23,42,0.95)')
+                : 'rgba(10,15,28,0.9)';
 
             shape.innerHTML = `
                 <svg viewBox="0 0 100 115" preserveAspectRatio="none" style="width:100%; height:100%;">
@@ -2191,14 +2221,19 @@
 
             el.innerHTML = `
                 ${crownHtml}
-                <i class="${fusion.icon} icon" style="color: ${fusion.color}; text-shadow: 0 0 12px ${fusion.color};"></i>
-                <div class="spell-title font-cinzel font-bold" style="color: #ffffff; font-size: ${isTerceirus ? '10px' : '9px'};">${fusion.name}</div>
+                <i class="${fusion.icon} icon" style="${level > 0 ? 'color: ' + fusion.color + '; text-shadow: 0 0 12px ' + fusion.color : 'color: #64748b;'}"></i>
+                <div class="spell-title font-cinzel font-bold" style="color: ${level > 0 ? '#ffffff' : '#94a3b8'}; font-size: ${isTerceirus ? '10px' : '9px'};">${fusion.name}</div>
                 <div class="tier-tag font-mono">(${fusion.tier})</div>
-                <div class="spell-level-badge" style="background: rgba(30,41,59,0.95); color: #fbbf24; border-color: ${strokeColor};">Nv. ${fusion.level}</div>
+                <div class="spell-level-badge" style="background: rgba(30,41,59,0.95); color: ${level > 0 ? '#fbbf24' : '#94a3b8'}; border-color: ${strokeColor};">Nv. ${level}</div>
             `;
             el.appendChild(shape);
 
-            el.onclick = () => {
+            el.onclick = (e) => {
+                if (e.shiftKey) {
+                    e.preventDefault();
+                    addPointToFusion(fusion.id, e);
+                    return;
+                }
                 if (fusion.paths && fusion.paths.length >= 2) {
                     selectedPath1 = fusion.paths[0];
                     selectedPath2 = fusion.paths[1];
@@ -2209,7 +2244,48 @@
                 }
             };
 
+            // Botão direito retira ponto diretamente da fusão (reembolsa 1 PM)
+            el.oncontextmenu = (e) => {
+                e.preventDefault();
+                removePointFromFusion(fusion.id, e);
+            };
+
+            el.addEventListener('mouseenter', (e) => showFusionTooltip(e, fusion));
+            el.addEventListener('mouseleave', hideTooltip);
+
             centerPoint.appendChild(el);
+        }
+
+        function showFusionTooltip(e, fusion) {
+            const level = (characterFusionSkills && characterFusionSkills[fusion.id] !== undefined)
+                ? characterFusionSkills[fusion.id]
+                : (fusion.level || 0);
+
+            const pathsNames = (fusion.paths || []).map(p => magicPaths[p] ? magicPaths[p].name.replace('Magia ', '') : p).join(' + ');
+
+            let html = `
+                <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(148,163,184,0.2); padding-bottom:6px; margin-bottom:8px;">
+                    <span class="font-cinzel font-bold" style="color:${fusion.color}; font-size:15px;"><i class="${fusion.icon}"></i> ${fusion.name} (${fusion.tier})</span>
+                    <span style="font-size:10px; font-weight:700; color:#fbbf24; background:rgba(30,41,59,0.8); padding:2px 6px; border-radius:4px;">Nível ${level}</span>
+                </div>
+                <p style="font-size:12px; color:#cbd5e1; line-height:1.4; margin-bottom:6px;">Fusão Mística Ancestral combinando <strong>${pathsNames}</strong>.</p>
+                <div style="background:rgba(15,23,42,0.8); padding:8px; border-radius:8px; border:1px solid rgba(148,163,184,0.15); font-size:11px;">
+                    <div style="color:#94a3b8;"><i class="fa-solid fa-dice"></i> Bônus de Fusão (+2d6): <strong style="color:#ffffff;">+${level}</strong></div>
+                    <div style="color:#94a3b8; margin-top:4px;"><i class="fa-solid fa-mouse-pointer"></i> Clique: Selecionar / Carregar no Altar.</div>
+                    <div style="color:#38bdf8; margin-top:2px;"><i class="fa-solid fa-plus-circle"></i> Shift+Clique ou Painel [Fusões]: +1 Ponto (Custa 1 PM).</div>
+                    <div style="color:#fbbf24; margin-top:2px;"><i class="fa-solid fa-minus-circle"></i> Botão direito: Retirar 1 ponto (Reembolsa 1 PM).</div>
+                </div>
+            `;
+
+            tooltip.innerHTML = html;
+            tooltip.classList.add('show');
+
+            const rect = e.currentTarget.getBoundingClientRect();
+            let tx = rect.right + 15;
+            let ty = rect.top - 10;
+            if (tx + 330 > window.innerWidth) tx = rect.left - 335;
+            tooltip.style.left = `${tx}px`;
+            tooltip.style.top = `${ty}px`;
         }
 
         function createPathNode(id, path) {
@@ -2239,7 +2315,14 @@
             `;
             el.appendChild(shape);
 
-            el.onclick = () => handlePathClick(id);
+            el.onclick = (e) => {
+                if (e.shiftKey) {
+                    e.preventDefault();
+                    addPointToPath(id, e);
+                    return;
+                }
+                handlePathClick(id);
+            };
             // Botão direito retira ponto diretamente do nó
             el.oncontextmenu = (e) => {
                 e.preventDefault();
@@ -2280,7 +2363,8 @@
                 <p style="font-size:12px; color:#cbd5e1; line-height:1.4; margin-bottom:10px;">${p.desc}</p>
                 <div style="background:rgba(15,23,42,0.8); padding:8px; border-radius:8px; border:1px solid rgba(148,163,184,0.15); font-size:11px;">
                     <div style="color:#94a3b8;"><i class="fa-solid fa-dice"></i> Bônus no Teste (+2d6): <strong style="color:#ffffff;">+${lvl}</strong></div>
-                    <div style="color:#94a3b8; margin-top:4px;"><i class="fa-solid fa-mouse-pointer"></i> Clique esquerdo: Selecionar para Fusão.</div>
+                    <div style="color:#94a3b8; margin-top:4px;"><i class="fa-solid fa-mouse-pointer"></i> Clique: Selecionar para Fusão.</div>
+                    <div style="color:#38bdf8; margin-top:2px;"><i class="fa-solid fa-plus-circle"></i> Shift+Clique ou Lateral: +1 Ponto (Custa 1 PM).</div>
                     <div style="color:#fbbf24; margin-top:2px;"><i class="fa-solid fa-minus-circle"></i> Botão direito: Retirar 1 ponto (Reembolsa PM).</div>
                 </div>
             `;
@@ -2365,6 +2449,86 @@
             }
         }
 
+        function addPointToFusion(fusionId, event) {
+            if (event) event.stopPropagation();
+
+            const fus = fusionNodes.find(f => f.id === fusionId);
+            const fusName = fus ? fus.name : fusionId;
+
+            let res;
+            if (engine) {
+                characterState.availablePM = userPM;
+                characterState.skills = characterSkills;
+                characterState.fusionSkills = characterFusionSkills;
+                res = engine.addFusionPoint(characterState, fusionId);
+                if (res.success) {
+                    userPM = characterState.availablePM;
+                    characterFusionSkills = characterState.fusionSkills;
+                }
+            } else {
+                if (userPM <= 0) {
+                    res = { success: false, reason: 'no_pm_available' };
+                } else {
+                    if (!characterFusionSkills) characterFusionSkills = {};
+                    characterFusionSkills[fusionId] = (characterFusionSkills[fusionId] || 0) + 1;
+                    userPM -= 1;
+                    if (!characterState.fusionSkills) characterState.fusionSkills = {};
+                    characterState.fusionSkills[fusionId] = characterFusionSkills[fusionId];
+                    characterState.availablePM = userPM;
+                    res = { success: true, newLevel: characterFusionSkills[fusionId] };
+                }
+            }
+
+            if (res.success) {
+                saveState();
+                renderTree();
+                updateFusionResult();
+                showToast(`+1 ponto investido na fusão ${fusName} (Nível ${characterFusionSkills[fusionId]})`);
+            } else if (res.reason === 'no_pm_available') {
+                showToast(`Você não possui Poderes Mágicos (PM) disponíveis para investir nesta fusão.`, 'warning');
+            }
+        }
+
+        function removePointFromFusion(fusionId, event) {
+            if (event) event.stopPropagation();
+
+            const fus = fusionNodes.find(f => f.id === fusionId);
+            const fusName = fus ? fus.name : fusionId;
+
+            let res;
+            if (engine) {
+                characterState.availablePM = userPM;
+                characterState.skills = characterSkills;
+                characterState.fusionSkills = characterFusionSkills;
+                res = engine.removeFusionPoint(characterState, fusionId);
+                if (res.success) {
+                    userPM = characterState.availablePM;
+                    characterFusionSkills = characterState.fusionSkills;
+                }
+            } else {
+                const currentLvl = (characterFusionSkills && characterFusionSkills[fusionId]) || 0;
+                if (currentLvl <= 0) {
+                    res = { success: false, reason: 'level_zero' };
+                } else {
+                    characterFusionSkills[fusionId] -= 1;
+                    userPM += 1;
+                    if (!characterState.fusionSkills) characterState.fusionSkills = {};
+                    characterState.fusionSkills[fusionId] = characterFusionSkills[fusionId];
+                    characterState.availablePM = userPM;
+                    res = { success: true, newLevel: characterFusionSkills[fusionId] };
+                }
+            }
+
+            if (res.success) {
+                saveState();
+                renderTree();
+                updateFusionResult();
+                showToast(`Ponto retirado de ${fusName}! 1 PM reembolsado para a reserva.`);
+            } else if (res.reason === 'level_zero') {
+                showToast(`Esta fusão já está no nível 0. Nenhum ponto para retirar.`, 'warning');
+            }
+        }
+
         function adjustPMTotal(delta) {
             const nextPM = Math.max(0, userPM + delta);
             userPM = nextPM;
@@ -2376,21 +2540,33 @@
         }
 
         function resetAllPoints() {
-            if (!confirm('Deseja resetar todos os caminhos e reembolsar todos os pontos para Poderes Mágicos?')) return;
+            if (!confirm('Deseja resetar todos os caminhos e fusões, reembolsando todos os pontos para Poderes Mágicos?')) return;
 
             let refunded = 0;
             if (engine) {
+                characterState.availablePM = userPM;
+                characterState.skills = characterSkills;
+                characterState.fusionSkills = characterFusionSkills;
                 const res = engine.resetPoints(characterState);
                 refunded = res.refundedPoints;
                 userPM = characterState.availablePM;
                 characterSkills = characterState.skills;
+                characterFusionSkills = characterState.fusionSkills;
             } else {
                 Object.keys(characterSkills).forEach(k => {
                     refunded += characterSkills[k] || 0;
                     characterSkills[k] = 0;
                 });
+                if (characterFusionSkills) {
+                    Object.keys(characterFusionSkills).forEach(k => {
+                        refunded += characterFusionSkills[k] || 0;
+                        characterFusionSkills[k] = 0;
+                    });
+                }
                 userPM += refunded;
                 characterState.availablePM = userPM;
+                characterState.skills = characterSkills;
+                characterState.fusionSkills = characterFusionSkills;
             }
 
             saveState();
@@ -2855,33 +3031,85 @@
             if (!container) return;
             container.innerHTML = '';
 
-            Object.keys(magicPaths).forEach(key => {
-                const p = magicPaths[key];
-                if (category !== 'all' && p.category !== category) return;
-                const lvl = characterSkills[key] || 0;
+            // Se a categoria não for exclusiva de fusão, renderiza os 12 caminhos
+            if (category !== 'fusao') {
+                Object.keys(magicPaths).forEach(key => {
+                    const p = magicPaths[key];
+                    if (category !== 'all' && p.category !== category) return;
+                    const lvl = characterSkills[key] || 0;
 
-                const row = document.createElement('div');
-                row.className = 'path-row-box';
-                row.style.borderLeft = `3px solid ${p.color}`;
-                row.innerHTML = `
-                    <div class="path-row-info" title="Clique para selecionar este caminho no Altar de Fusão">
-                        <i class="${p.icon}" style="color:${p.color}; width:16px;"></i>
-                        <span>${p.name.replace('Magia ', '')}</span>
-                    </div>
-                    <div class="point-controls">
-                        <button class="btn-point dec" onclick="removePointFromPath('${key}', event)" title="Retirar 1 ponto deste caminho (reembolsa 1 PM)" ${lvl <= 0 ? 'disabled' : ''}>-</button>
-                        <span style="color:#fbbf24; font-weight:700; font-size:11px; min-width:32px; text-align:center;">Nv. ${lvl}</span>
-                        <button class="btn-point inc" onclick="addPointToPath('${key}', event)" title="Adicionar 1 ponto a este caminho (custa 1 PM)" ${userPM <= 0 ? 'disabled' : ''}>+</button>
-                    </div>
-                `;
+                    const row = document.createElement('div');
+                    row.className = 'path-row-box';
+                    row.style.borderLeft = `3px solid ${p.color}`;
+                    row.innerHTML = `
+                        <div class="path-row-info" title="Clique para selecionar este caminho no Altar de Fusão">
+                            <i class="${p.icon}" style="color:${p.color}; width:16px;"></i>
+                            <span>${p.name.replace('Magia ', '')}</span>
+                        </div>
+                        <div class="point-controls">
+                            <button class="btn-point dec" onclick="removePointFromPath('${key}', event)" title="Retirar 1 ponto deste caminho (reembolsa 1 PM)" ${lvl <= 0 ? 'disabled' : ''}>-</button>
+                            <span style="color:#fbbf24; font-weight:700; font-size:11px; min-width:32px; text-align:center;">Nv. ${lvl}</span>
+                            <button class="btn-point inc" onclick="addPointToPath('${key}', event)" title="Adicionar 1 ponto a este caminho (custa 1 PM)" ${userPM <= 0 ? 'disabled' : ''}>+</button>
+                        </div>
+                    `;
 
-                row.querySelector('.path-row-info').onclick = () => {
-                    handlePathClick(key);
-                    focusPath(key);
-                };
+                    row.querySelector('.path-row-info').onclick = () => {
+                        handlePathClick(key);
+                        focusPath(key);
+                    };
 
-                container.appendChild(row);
-            });
+                    container.appendChild(row);
+                });
+            }
+
+            // Se a categoria for 'all' ou 'fusao', renderiza as Fusões Ancestrais (Secundus e Terceirus)
+            if (category === 'all' || category === 'fusao') {
+                if (category === 'all') {
+                    const sep = document.createElement('div');
+                    sep.style.cssText = 'font-family:Cinzel,serif; font-size:10px; color:#c084fc; text-transform:uppercase; letter-spacing:1px; margin:12px 4px 6px; padding-top:6px; border-top:1px dashed rgba(192,132,252,0.3); font-weight:700; display:flex; align-items:center; gap:6px;';
+                    sep.innerHTML = '<i class="fa-solid fa-sparkles text-purple-400"></i> Fusões (Secundus / Terceirus)';
+                    container.appendChild(sep);
+                }
+
+                fusionNodes.forEach(f => {
+                    const lvl = (characterFusionSkills && characterFusionSkills[f.id] !== undefined)
+                        ? characterFusionSkills[f.id]
+                        : (f.level || 0);
+                    const isTerceirus = (f.tier === 'TERCEIRUS');
+                    const tierBadgeColor = isTerceirus ? '#f59e0b' : '#c084fc';
+
+                    const row = document.createElement('div');
+                    row.className = 'path-row-box';
+                    row.style.borderLeft = `3px solid ${f.color || '#a855f7'}`;
+                    row.innerHTML = `
+                        <div class="path-row-info" title="Clique para focar nesta fusão na árvore e carregar no Altar">
+                            <i class="${f.icon}" style="color:${f.color || '#a855f7'}; width:16px;"></i>
+                            <div style="display:flex; flex-direction:column; line-height:1.2;">
+                                <span style="font-weight:700; font-size:12px; color:${lvl > 0 ? '#ffffff' : '#cbd5e1'};">${f.name}</span>
+                                <span style="font-size:9px; color:${tierBadgeColor}; letter-spacing:0.5px; font-family:'JetBrains Mono', monospace;">${f.tier}</span>
+                            </div>
+                        </div>
+                        <div class="point-controls">
+                            <button class="btn-point dec" onclick="removePointFromFusion('${f.id}', event)" title="Retirar 1 ponto da fusão ${f.name} (reembolsa 1 PM)" ${lvl <= 0 ? 'disabled' : ''}>-</button>
+                            <span style="color:#fbbf24; font-weight:700; font-size:11px; min-width:32px; text-align:center;">Nv. ${lvl}</span>
+                            <button class="btn-point inc" onclick="addPointToFusion('${f.id}', event)" title="Adicionar 1 ponto à fusão ${f.name} (custa 1 PM)" ${userPM <= 0 ? 'disabled' : ''}>+</button>
+                        </div>
+                    `;
+
+                    row.querySelector('.path-row-info').onclick = () => {
+                        if (f.paths && f.paths.length >= 2) {
+                            selectedPath1 = f.paths[0];
+                            selectedPath2 = f.paths[1];
+                            updateFusionSlots();
+                            updateFusionResult();
+                            toggleFusionAltar(false);
+                        }
+                        focusFusion(f.id);
+                    };
+
+                    container.appendChild(row);
+                });
+            }
         }
 
         function filterCategory(cat, ev) {
@@ -2911,6 +3139,15 @@
             if (!p) return;
             pointX = -p.x;
             pointY = -p.y;
+            scale = 1.3;
+            setTransform();
+        }
+
+        function focusFusion(id) {
+            const f = fusionNodes.find(fn => fn.id === id);
+            if (!f) return;
+            pointX = -f.x;
+            pointY = -f.y;
             scale = 1.3;
             setTransform();
         }
