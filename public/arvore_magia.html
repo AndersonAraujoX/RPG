@@ -269,6 +269,35 @@
             animation: mana-flow 20s infinite linear;
         }
 
+        /* ===== A GRANDE ÁRVORE ANCESTRAL BIOLUMINESCENTE ===== */
+        .tree-root-path {
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            transition: stroke 0.4s ease, filter 0.4s ease;
+        }
+
+        .tree-branch-path {
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            transition: all 0.4s ease;
+        }
+
+        .tree-leaf {
+            transition: all 0.3s ease;
+            filter: drop-shadow(0 0 6px currentColor);
+        }
+
+        .tree-mana-orb {
+            animation: pulse-orb 2.5s infinite alternate ease-in-out;
+        }
+
+        @keyframes pulse-orb {
+            0% { transform: scale(0.85); opacity: 0.7; }
+            100% { transform: scale(1.25); opacity: 1; }
+        }
+
         /* Nós Hexagonais dos Caminhos */
         .hex-node {
             position: absolute;
@@ -308,17 +337,17 @@
             stroke-width: 2.5;
         }
 
-        /* Nó Central Místico */
+        /* Nó Central Duplo Hexágono NEXO • 2D6 */
         .hex-node.nexus-core {
-            width: 110px;
-            height: 124px;
-            z-index: 25;
+            width: 120px;
+            height: 135px;
+            z-index: 28;
         }
         .hex-node.nexus-core .hex-shape polygon {
-            stroke: var(--rpg-cyan);
+            stroke: #22d3ee;
             stroke-width: 3.5;
-            fill: rgba(102, 252, 241, 0.15);
-            filter: drop-shadow(0 0 25px rgba(102, 252, 241, 0.7));
+            fill: rgba(6, 182, 212, 0.22);
+            filter: drop-shadow(0 0 30px rgba(6, 182, 212, 0.8));
         }
         .hex-node.nexus-core .icon {
             font-size: 32px;
@@ -329,6 +358,66 @@
             color: #ffffff;
             font-size: 11px;
             font-weight: 800;
+        }
+
+        /* Nós Secundus (Fusão de 2 Caminhos) */
+        .hex-node.tier-secundus {
+            width: 88px;
+            height: 100px;
+            z-index: 24;
+        }
+        .hex-node.tier-secundus .hex-shape polygon {
+            stroke-width: 3;
+            stroke-dasharray: none;
+        }
+        .hex-node.tier-secundus .tier-tag {
+            font-size: 7.5px;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            color: #f59e0b;
+            text-transform: uppercase;
+            background: rgba(120, 53, 15, 0.6);
+            border: 1px solid rgba(245, 158, 11, 0.4);
+            border-radius: 4px;
+            padding: 0 3px;
+            margin-top: 1px;
+            z-index: 2;
+        }
+
+        /* Nós Terceirus (Cúpula da Árvore / 3 Caminhos) */
+        .hex-node.tier-terceirus {
+            width: 104px;
+            height: 118px;
+            z-index: 26;
+        }
+        .hex-node.tier-terceirus .hex-shape polygon {
+            stroke-width: 3.5;
+            filter: drop-shadow(0 0 18px currentColor);
+        }
+        .hex-node.tier-terceirus .tier-tag {
+            font-size: 8px;
+            font-weight: 900;
+            letter-spacing: 0.8px;
+            color: #fef08a;
+            text-transform: uppercase;
+            background: rgba(180, 83, 9, 0.75);
+            border: 1.5px solid #fbbf24;
+            border-radius: 4px;
+            padding: 1px 5px;
+            margin-top: 1px;
+            box-shadow: 0 0 10px rgba(245, 158, 11, 0.6);
+            z-index: 2;
+        }
+        .hex-node.tier-terceirus .crown-leaves {
+            position: absolute;
+            top: -22px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 28px;
+            pointer-events: none;
+            z-index: 3;
+            filter: drop-shadow(0 0 8px #fbbf24);
         }
 
         /* Níveis / Status */
@@ -1671,29 +1760,111 @@
         }
 
         // =========================================================================
-        // Coordenadas dos Nós (12 Caminhos Orbitais)
+        // Coordenadas dos Nós (12 Caminhos na Anatomia da Árvore Ancestral)
         // =========================================================================
         const pathNodes = {};
+
+        // Nós de Fusão e Mestria Mágica (Secundus e Terceirus na Copa e Ramos)
+        const fusionNodes = [
+            // Secundus (Fusão de 2 Caminhos)
+            {
+                id: "fusion_magma",
+                name: "MAGMA",
+                tier: "SECUNDUS",
+                x: -165,
+                y: 65,
+                paths: ["fogo", "terra"],
+                forma: "Criar",
+                color: "#f97316",
+                icon: "fa-solid fa-volcano",
+                level: 1
+            },
+            {
+                id: "fusion_necromancia",
+                name: "NECROMANCIA",
+                tier: "SECUNDUS",
+                x: 185,
+                y: -40,
+                paths: ["trevas", "spiritum"],
+                forma: "Criar",
+                color: "#a855f7",
+                icon: "fa-solid fa-skull",
+                level: 1
+            },
+            // Terceirus (Cúpula da Árvore / 3 Caminhos Lendários)
+            {
+                id: "fusion_cataclismo",
+                name: "CATACLISMO",
+                tier: "TERCEIRUS",
+                x: -300,
+                y: -195,
+                paths: ["fogo", "ar"],
+                forma: "Criar",
+                color: "#ea580c",
+                icon: "fa-solid fa-meteor",
+                level: 1
+            },
+            {
+                id: "fusion_avatar",
+                name: "AVATAR",
+                tier: "TERCEIRUS",
+                x: 0,
+                y: -300,
+                paths: ["luz", "spiritum"],
+                forma: "Criar",
+                color: "#38bdf8",
+                icon: "fa-solid fa-sun-plant-wilt",
+                level: 1
+            },
+            {
+                id: "fusion_golem",
+                name: "GOLEM",
+                tier: "TERCEIRUS",
+                x: 310,
+                y: -185,
+                paths: ["terra", "humanos"],
+                forma: "Criar",
+                color: "#eab308",
+                icon: "fa-solid fa-shield-halved",
+                level: 1
+            }
+        ];
+
         function computePathLayout() {
             const centerNode = { id: "nexus_core", name: "Nexo Arcano", x: 0, y: 0, icon: "fa-solid fa-atom" };
             pathNodes["nexus_core"] = centerNode;
 
+            // Posições orgânicas na árvore cósmica correspondentes à anatomia da imagem de referência
+            const treePositions = {
+                "spiritum":  { x: 0,    y: -125 }, // Tronco Central (logo acima do Nexo)
+                "plantas":   { x: -95,  y: -185 }, // Galho Superior Esquerdo (subindo para Cataclismo)
+                "arkanum":   { x: 135,  y: -160 }, // Galho Superior Direito (subindo para Golem)
+                "metamagia": { x: -145, y: -50  }, // Galho Médio Esquerdo
+                "fogo":      { x: -85,  y: 105  }, // Galho Inferior Esquerdo
+                "agua":      { x: -240, y: -30  }, // Galho Lateral Esquerdo
+                "ar":        { x: -170, y: -130 }, // Galho Alto Esquerdo
+                "animais":   { x: -210, y: 40   }, // Galho Lateral Inferior Esquerdo
+                "trevas":    { x: 85,   y: 105  }, // Galho Inferior Direito
+                "terra":     { x: 175,  y: 70   }, // Galho Lateral Direito
+                "luz":       { x: 155,  y: 195  }, // Galho Baixo Direito
+                "humanos":   { x: 265,  y: 175  }  // Galho Baixo Direito Extremo
+            };
+
             Object.keys(magicPaths).forEach(key => {
                 const path = magicPaths[key];
-                const rad = (path.angle * Math.PI) / 180;
-                const radius = 280;
+                const pos = treePositions[key] || { x: 0, y: 0 };
                 pathNodes[key] = {
                     ...path,
                     id: key,
-                    x: Math.round(Math.cos(rad) * radius),
-                    y: Math.round(Math.sin(rad) * radius)
+                    x: pos.x,
+                    y: pos.y
                 };
             });
         }
         computePathLayout();
 
         // =========================================================================
-        // Renderização Visual
+        // Renderização Visual da Árvore Ancestral
         // =========================================================================
         const centerPoint = document.getElementById('center-point');
         const svgContainer = document.getElementById('connections-svg');
@@ -1712,36 +1883,124 @@
             if (altarGCount) altarGCount.innerText = grimoireCount;
         }
 
+        function drawCosmicTreeSVG(svgOffset) {
+            const O = svgOffset;
+            const defs = `
+                <defs>
+                    <filter id="tree-glow" x="-50%" y="-50%" width="200%" height="200%">
+                        <feGaussianBlur in="SourceGraphic" stdDeviation="5" result="blur1" />
+                        <feGaussianBlur in="SourceGraphic" stdDeviation="14" result="blur2" />
+                        <feMerge>
+                            <feMergeNode in="blur2" />
+                            <feMergeNode in="blur1" />
+                            <feMergeNode in="SourceGraphic" />
+                        </feMerge>
+                    </filter>
+                    <filter id="tree-glow-cyan" x="-50%" y="-50%" width="200%" height="200%">
+                        <feDropShadow dx="0" dy="0" stdDeviation="6" flood-color="#06b6d4" flood-opacity="0.9" />
+                        <feDropShadow dx="0" dy="0" stdDeviation="16" flood-color="#0891b2" flood-opacity="0.6" />
+                    </filter>
+                    <linearGradient id="roots-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                        <stop offset="0%" stop-color="#22d3ee" stop-opacity="0.95" />
+                        <stop offset="50%" stop-color="#06b6d4" stop-opacity="0.75" />
+                        <stop offset="100%" stop-color="#0284c7" stop-opacity="0.05" />
+                    </linearGradient>
+                    <linearGradient id="trunk-cyan" x1="0%" y1="100%" x2="0%" y2="0%">
+                        <stop offset="0%" stop-color="#06b6d4" stop-opacity="0.95" />
+                        <stop offset="100%" stop-color="#67e8f9" stop-opacity="0.85" />
+                    </linearGradient>
+                </defs>
+            `;
+
+            // Raízes Bioluminescentes (Descem a partir do Nexo)
+            const roots = `
+                <g id="tree-roots-group" class="tree-roots" filter="url(#tree-glow-cyan)">
+                    <path class="tree-root-path" d="M ${O} ${O+15} C ${O-15} ${O+70}, ${O-35} ${O+150}, ${O-10} ${O+260} C ${O+10} ${O+310}, ${O-5} ${O+350}, ${O} ${O+390}" stroke="url(#roots-gradient)" stroke-width="11" />
+                    <path class="tree-root-path" d="M ${O} ${O+20} C ${O+20} ${O+80}, ${O+45} ${O+160}, ${O+30} ${O+250} C ${O+15} ${O+310}, ${O+25} ${O+360}, ${O+20} ${O+400}" stroke="url(#roots-gradient)" stroke-width="8.5" />
+                    
+                    <path class="tree-root-path" d="M ${O-10} ${O+25} C ${O-60} ${O+90}, ${O-130} ${O+160}, ${O-190} ${O+230} C ${O-230} ${O+280}, ${O-260} ${O+310}, ${O-290} ${O+340}" stroke="url(#roots-gradient)" stroke-width="8" />
+                    <path class="tree-root-path" d="M ${O-110} ${O+140} C ${O-150} ${O+190}, ${O-170} ${O+240}, ${O-185} ${O+300}" stroke="url(#roots-gradient)" stroke-width="4.5" />
+                    <path class="tree-root-path" d="M ${O-60} ${O+90} C ${O-90} ${O+150}, ${O-110} ${O+220}, ${O-120} ${O+290}" stroke="url(#roots-gradient)" stroke-width="5" />
+                    <path class="tree-root-path" d="M ${O-190} ${O+230} C ${O-220} ${O+260}, ${O-240} ${O+280}, ${O-255} ${O+310}" stroke="url(#roots-gradient)" stroke-width="3" />
+
+                    <path class="tree-root-path" d="M ${O+10} ${O+25} C ${O+60} ${O+90}, ${O+130} ${O+160}, ${O+190} ${O+230} C ${O+230} ${O+280}, ${O+260} ${O+310}, ${O+290} ${O+340}" stroke="url(#roots-gradient)" stroke-width="8" />
+                    <path class="tree-root-path" d="M ${O+110} ${O+140} C ${O+150} ${O+190}, ${O+170} ${O+240}, ${O+185} ${O+300}" stroke="url(#roots-gradient)" stroke-width="4.5" />
+                    <path class="tree-root-path" d="M ${O+60} ${O+90} C ${O+90} ${O+150}, ${O+110} ${O+220}, ${O+120} ${O+290}" stroke="url(#roots-gradient)" stroke-width="5" />
+                    <path class="tree-root-path" d="M ${O+190} ${O+230} C ${O+220} ${O+260}, ${O+240} ${O+280}, ${O+255} ${O+310}" stroke="url(#roots-gradient)" stroke-width="3" />
+
+                    <path class="tree-root-path" d="M ${O-20} ${O+180} C ${O-40} ${O+230}, ${O-50} ${O+280}, ${O-60} ${O+320}" stroke="#38bdf8" stroke-width="2.5" opacity="0.75" />
+                    <path class="tree-root-path" d="M ${O+20} ${O+180} C ${O+40} ${O+230}, ${O+50} ${O+280}, ${O+60} ${O+320}" stroke="#38bdf8" stroke-width="2.5" opacity="0.75" />
+                </g>
+            `;
+
+            // Galhos Orgânicos Principais
+            let branches = `<g id="tree-branches-group" class="tree-branches">`;
+            branches += `
+                <path class="tree-branch-path" d="M ${O-12} ${O-20} C ${O-10} ${O-60}, ${O-6} ${O-90}, ${O} ${O-125}" stroke="url(#trunk-cyan)" stroke-width="9" filter="url(#tree-glow)" />
+                <path class="tree-branch-path" d="M ${O+12} ${O-20} C ${O+10} ${O-60}, ${O+6} ${O-90}, ${O} ${O-125}" stroke="url(#trunk-cyan)" stroke-width="9" filter="url(#tree-glow)" />
+                
+                <path class="tree-branch-path" d="M ${O} ${O-125} C ${O-10} ${O-180}, ${O-15} ${O-240}, ${O} ${O-300}" stroke="#38bdf8" stroke-width="7" filter="url(#tree-glow)" />
+                <path class="tree-branch-path" d="M ${O} ${O-125} C ${O-40} ${O-140}, ${O-70} ${O-160}, ${O-95} ${O-185}" stroke="#84cc16" stroke-width="6" />
+                <path class="tree-branch-path" d="M ${O-95} ${O-185} C ${O-160} ${O-190}, ${O-230} ${O-190}, ${O-300} ${O-195}" stroke="#ea580c" stroke-width="6.5" filter="url(#tree-glow)" />
+                
+                <path class="tree-branch-path" d="M ${O} ${O-125} C ${O+50} ${O-135}, ${O+90} ${O-145}, ${O+135} ${O-160}" stroke="#a855f7" stroke-width="6" />
+                <path class="tree-branch-path" d="M ${O+135} ${O-160} C ${O+190} ${O-170}, ${O+250} ${O-175}, ${O+310} ${O-185}" stroke="#eab308" stroke-width="6.5" filter="url(#tree-glow)" />
+
+                <path class="tree-branch-path" d="M ${O-20} ${O-10} C ${O-70} ${O-25}, ${O-110} ${O-35}, ${O-145} ${O-50}" stroke="#14b8a6" stroke-width="7" />
+                <path class="tree-branch-path" d="M ${O-145} ${O-50} C ${O-180} ${O-40}, ${O-210} ${O-35}, ${O-240} ${O-30}" stroke="#06b6d4" stroke-width="5.5" />
+                <path class="tree-branch-path" d="M ${O-145} ${O-50} C ${O-150} ${O-90}, ${O-160} ${O-110}, ${O-170} ${O-130}" stroke="#38bdf8" stroke-width="4.5" />
+                <path class="tree-branch-path" d="M ${O-145} ${O-50} C ${O-220} ${O-120}, ${O-260} ${O-160}, ${O-300} ${O-195}" stroke="#10b981" stroke-width="3.5" opacity="0.65" />
+
+                <path class="tree-branch-path" d="M ${O-15} ${O+10} C ${O-45} ${O+45}, ${O-65} ${O+75}, ${O-85} ${O+105}" stroke="#f97316" stroke-width="6.5" />
+                <path class="tree-branch-path" d="M ${O-85} ${O+105} C ${O-120} ${O+90}, ${O-145} ${O+75}, ${O-165} ${O+65}" stroke="#f97316" stroke-width="6" />
+                <path class="tree-branch-path" d="M ${O-165} ${O+65} C ${O-185} ${O+55}, ${O-200} ${O+45}, ${O-210} ${O+40}" stroke="#eab308" stroke-width="4.5" />
+
+                <path class="tree-branch-path" d="M ${O+15} ${O+10} C ${O+45} ${O+45}, ${O+65} ${O+75}, ${O+85} ${O+105}" stroke="#6366f1" stroke-width="6.5" />
+                <path class="tree-branch-path" d="M ${O+85} ${O+105} C ${O+125} ${O+90}, ${O+150} ${O+80}, ${O+175} ${O+70}" stroke="#10b981" stroke-width="6" />
+                <path class="tree-branch-path" d="M ${O+20} ${O-10} C ${O+70} ${O-25}, ${O+120} ${O-35}, ${O+185} ${O-40}" stroke="#a855f7" stroke-width="6.5" />
+                <path class="tree-branch-path" d="M ${O+185} ${O-40} C ${O+225} ${O-90}, ${O+265} ${O-140}, ${O+310} ${O-185}" stroke="#eab308" stroke-width="4" opacity="0.75" />
+
+                <path class="tree-branch-path" d="M ${O+85} ${O+105} C ${O+115} ${O+145}, ${O+135} ${O+175}, ${O+155} ${O+195}" stroke="#fbbf24" stroke-width="5.5" />
+                <path class="tree-branch-path" d="M ${O+155} ${O+195} C ${O+195} ${O+190}, ${O+230} ${O+180}, ${O+265} ${O+175}" stroke="#ec4899" stroke-width="5" />
+            `;
+
+            // Folhas Místicas
+            branches += `
+                <g class="tree-leaves">
+                    <path class="tree-leaf" d="M ${O-40} ${O-130} C ${O-55} ${O-140}, ${O-50} ${O-155}, ${O-35} ${O-145} Z" fill="#84cc16" />
+                    <path class="tree-leaf" d="M ${O-110} ${O-160} C ${O-125} ${O-175}, ${O-115} ${O-190}, ${O-100} ${O-175} Z" fill="#84cc16" />
+                    <path class="tree-leaf" d="M ${O-15} ${O-210} C ${O-25} ${O-230}, ${O-15} ${O-245}, ${O-5} ${O-230} Z" fill="#38bdf8" />
+                    <path class="tree-leaf" d="M ${O+15} ${O-210} C ${O+25} ${O-230}, ${O+15} ${O-245}, ${O+5} ${O-230} Z" fill="#38bdf8" />
+                    <path class="tree-leaf" d="M ${O+65} ${O-130} C ${O+80} ${O-140}, ${O+75} ${O-155}, ${O+60} ${O-145} Z" fill="#a855f7" />
+                    <path class="tree-leaf" d="M ${O+140} ${O-130} C ${O+160} ${O-140}, ${O+155} ${O-155}, ${O+135} ${O-145} Z" fill="#eab308" />
+                    <path class="tree-leaf" d="M ${O-120} ${O+85} C ${O-135} ${O+100}, ${O-125} ${O+115}, ${O-110} ${O+100} Z" fill="#f97316" />
+                    <path class="tree-leaf" d="M ${O+110} ${O+90} C ${O+125} ${O+105}, ${O+115} ${O+120}, ${O+100} ${O+105} Z" fill="#6366f1" />
+                    <path class="tree-leaf" d="M ${O+180} ${O+150} C ${O+195} ${O+165}, ${O+185} ${O+180}, ${O+170} ${O+165} Z" fill="#fbbf24" />
+                </g>
+            `;
+            branches += `</g>`;
+
+            return defs + roots + branches;
+        }
+
         function renderTree() {
             centerPoint.querySelectorAll('.hex-node').forEach(n => n.remove());
-            svgContainer.innerHTML = '';
-
             const svgOffset = 2500;
 
-            // 1. Linhas de Conexão com o Centro
-            Object.keys(pathNodes).forEach(id => {
-                if (id === 'nexus_core') return;
-                const node = pathNodes[id];
+            // 1. Desenhar a Árvore Ancestral Cósmica Bioluminescente no SVG
+            svgContainer.innerHTML = drawCosmicTreeSVG(svgOffset);
 
-                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-                line.setAttribute('x1', svgOffset);
-                line.setAttribute('y1', svgOffset);
-                line.setAttribute('x2', node.x + svgOffset);
-                line.setAttribute('y2', node.y + svgOffset);
-                line.setAttribute('class', 'conn-line');
-
-                if ((characterSkills[id] || 0) > 0) {
-                    line.classList.add('active');
-                    line.style.stroke = node.color;
-                    line.style.filter = `drop-shadow(0 0 6px ${node.color})`;
-                }
-                svgContainer.appendChild(line);
-            });
-
-            // 2. Criar Nós
+            // 2. Criar Nó Central NEXO • 2D6
             createCoreNode();
+
+            // 3. Criar Nós Primários (12 Caminhos)
             Object.keys(magicPaths).forEach(key => {
                 createPathNode(key, pathNodes[key]);
+            });
+
+            // 4. Criar Nós de Fusão (Secundus e Terceirus)
+            fusionNodes.forEach(f => {
+                createFusionNode(f);
             });
 
             renderSidebarPaths('all');
@@ -1752,19 +2011,82 @@
         function createCoreNode() {
             const el = document.createElement('div');
             el.className = 'hex-node nexus-core';
-            el.style.left = '-55px';
-            el.style.top = '-62px';
+            el.style.left = '-60px';
+            el.style.top = '-67px';
 
             const shape = document.createElement('div');
             shape.className = 'hex-shape';
-            shape.innerHTML = `<svg viewBox="0 0 100 115" preserveAspectRatio="none" style="width:100%; height:100%;"><polygon points="50,0 100,28 100,86 50,115 0,86 0,28" /></svg>`;
+            shape.innerHTML = `
+                <svg viewBox="0 0 100 115" preserveAspectRatio="none" style="width:100%; height:100%;">
+                    <polygon points="50,0 100,28 100,86 50,115 0,86 0,28" stroke="#22d3ee" stroke-width="4" fill="rgba(6,182,212,0.25)" filter="url(#tree-glow)" />
+                    <polygon points="50,12 88,34 88,80 50,102 12,80 12,34" stroke="#67e8f9" stroke-width="2" fill="#071526" />
+                </svg>
+            `;
 
             el.innerHTML = `
-                <i class="fa-solid fa-atom icon"></i>
-                <div class="spell-title font-cinzel">Nexo +2d6</div>
+                <i class="fa-solid fa-atom icon" style="color: #67e8f9; text-shadow: 0 0 16px #06b6d4;"></i>
+                <div class="spell-title font-cinzel font-black" style="color: #ffffff; letter-spacing: 0.8px; font-size: 11px;">NEXO &bull; 2D6</div>
+                <span class="text-[8px] font-mono text-cyan-300 font-bold tracking-widest mt-0.5">TRONCO VITAL</span>
             `;
             el.appendChild(shape);
             el.onclick = () => resetView();
+            centerPoint.appendChild(el);
+        }
+
+        function createFusionNode(fusion) {
+            const el = document.createElement('div');
+            el.id = `node-${fusion.id}`;
+            const isTerceirus = (fusion.tier === 'TERCEIRUS');
+            const halfW = isTerceirus ? 52 : 44;
+            const halfH = isTerceirus ? 59 : 50;
+
+            el.className = `hex-node ${isTerceirus ? 'tier-terceirus' : 'tier-secundus'} unlocked`;
+            el.style.left = `${fusion.x - halfW}px`;
+            el.style.top = `${fusion.y - halfH}px`;
+
+            const shape = document.createElement('div');
+            shape.className = 'hex-shape';
+            const strokeColor = isTerceirus ? '#fbbf24' : fusion.color;
+            const fillColor = isTerceirus ? 'rgba(180,83,9,0.35)' : 'rgba(15,23,42,0.95)';
+
+            shape.innerHTML = `
+                <svg viewBox="0 0 100 115" preserveAspectRatio="none" style="width:100%; height:100%;">
+                    <polygon points="50,0 100,28 100,86 50,115 0,86 0,28" stroke="${strokeColor}" stroke-width="${isTerceirus ? '4' : '3'}" fill="${fillColor}" />
+                    ${isTerceirus ? '<polygon points="50,10 90,32 90,82 50,104 10,82 10,32" stroke="#fef08a" stroke-width="1.5" fill="none" opacity="0.6"/>' : ''}
+                </svg>
+            `;
+
+            let crownHtml = '';
+            if (isTerceirus) {
+                crownHtml = `
+                    <svg class="crown-leaves" viewBox="0 0 80 40">
+                        <path d="M 40 35 C 30 15 15 15 0 25 C 10 5 30 5 40 35 Z" fill="#84cc16" opacity="0.85" />
+                        <path d="M 40 35 C 50 15 65 15 80 25 C 70 5 50 5 40 35 Z" fill="#84cc16" opacity="0.85" />
+                        <circle cx="40" cy="8" r="4" fill="#fbbf24" filter="drop-shadow(0 0 6px #f59e0b)" />
+                    </svg>
+                `;
+            }
+
+            el.innerHTML = `
+                ${crownHtml}
+                <i class="${fusion.icon} icon" style="color: ${fusion.color}; text-shadow: 0 0 12px ${fusion.color};"></i>
+                <div class="spell-title font-cinzel font-bold" style="color: #ffffff; font-size: ${isTerceirus ? '10px' : '9px'};">${fusion.name}</div>
+                <div class="tier-tag font-mono">(${fusion.tier})</div>
+                <div class="spell-level-badge" style="background: rgba(30,41,59,0.95); color: #fbbf24; border-color: ${strokeColor};">Nv. ${fusion.level}</div>
+            `;
+            el.appendChild(shape);
+
+            el.onclick = () => {
+                if (fusion.paths && fusion.paths.length >= 2) {
+                    selectedPath1 = fusion.paths[0];
+                    selectedPath2 = fusion.paths[1];
+                    updateFusionSlots();
+                    updateFusionResult();
+                    toggleFusionAltar(false);
+                    showToast(`✦ Síntese de ${fusion.name} (${fusion.tier}) carregada no Altar!`);
+                }
+            };
+
             centerPoint.appendChild(el);
         }
 
