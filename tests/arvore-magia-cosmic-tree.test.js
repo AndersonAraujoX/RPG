@@ -2,7 +2,7 @@
  * Suíte de Testes Unitários: Árvore Cósmica Ancestral Bioluminescente (arvore_magia.html)
  * Padrão: Arrange-Act-Assert (AAA)
  * Cobertura: Estrutura da Árvore Ancestral, Raízes e Tronco Bioluminescentes, Galhos Orgânicos SVG,
- *            Nó Central NEXO • 2D6, Nós de Fusão Secundus e Terceirus, e Integridade do DOM.
+ *            Espaçamento Sem Sobreposição (Geometria Limpa), Painel Retrátil, Nós de Fusão Secundus e Terceirus, e Integridade do DOM.
  */
 
 const QUnit = require('qunit');
@@ -14,7 +14,7 @@ const ARVORE_HTML_PATH = path.resolve(__dirname, '../public/arvore_magia.html');
 QUnit.module('Biblioteca Arcana: Árvore Cósmica Ancestral Bioluminescente (AAA)', function () {
 
     // -------------------------------------------------------------
-    // 1. Caminho Feliz: Presença dos Elementos da Grande Árvore Ancestral
+    // 1. Caminho Feliz: Estrutura da Árvore Ancestral, Raízes e Galhos Orgânicos
     // -------------------------------------------------------------
     QUnit.test('1. Caminho Feliz: Estrutura SVG da Árvore, Raízes e Galhos Orgânicos (AAA)', function (assert) {
         // Arrange
@@ -25,6 +25,7 @@ QUnit.module('Biblioteca Arcana: Árvore Cósmica Ancestral Bioluminescente (AAA
         assert.ok(html.includes('tree-roots-group') || html.includes('tree-roots'), 'Grupo de raízes bioluminescentes presente');
         assert.ok(html.includes('tree-branches-group') || html.includes('tree-branches'), 'Grupo de galhos orgânicos presente');
         assert.ok(html.includes('tree-glow'), 'Filtro de bioluminescência/glow presente no SVG');
+        assert.ok(html.includes('mana-spore'), 'Esporos mágicos flutuantes presentes no SVG');
     });
 
     // -------------------------------------------------------------
@@ -57,24 +58,62 @@ QUnit.module('Biblioteca Arcana: Árvore Cósmica Ancestral Bioluminescente (AAA
     });
 
     // -------------------------------------------------------------
-    // 4. Casos de Borda: 12 Caminhos Primários e Suporte a Cores
+    // 4. Geometria e Casos de Borda: Espaçamento Seguro Sem Sobreposição de Nós
     // -------------------------------------------------------------
-    QUnit.test('4. Casos de Borda: 12 Caminhos Místicos com Seiva e Conexão Orgânica (AAA)', function (assert) {
+    QUnit.test('4. Casos de Borda: Geometria da Árvore e Espaçamento Seguro (Sem Sobreposições) (AAA)', function (assert) {
         // Arrange
         const html = fs.readFileSync(ARVORE_HTML_PATH, 'utf-8');
-        const requiredPaths = ['fogo', 'agua', 'ar', 'terra', 'luz', 'trevas', 'animais', 'humanos', 'plantas', 'spiritum', 'arkanum', 'metamagia'];
 
-        // Act & Assert
-        requiredPaths.forEach(k => {
-            assert.ok(html.includes(`"${k}"`) || html.includes(`'${k}'`), `Caminho ${k} registrado no catálogo de nós`);
-        });
-        assert.ok(html.includes('tree-leaf') || html.includes('folha'), 'Elementos de folhas bioluminescentes presentes');
+        // Extrair treePositions do HTML
+        const posMatch = html.match(/const treePositions = ({[\s\S]*?});/);
+        assert.ok(posMatch, 'Objeto treePositions deve estar definido no HTML');
+        const treePositions = eval('(' + posMatch[1] + ')');
+
+        // Extrair fusionNodes do HTML
+        const fusMatch = html.match(/const fusionNodes = (\[[\s\S]*?\]);/);
+        assert.ok(fusMatch, 'Array fusionNodes deve estar definido no HTML');
+        const fusionNodes = eval('(' + fusMatch[1] + ')');
+
+        // Compilar todos os pontos: { id, x, y }
+        const allPoints = [];
+        allPoints.push({ id: 'nexus_core', x: 0, y: 0 });
+        Object.keys(treePositions).forEach(k => allPoints.push({ id: k, x: treePositions[k].x, y: treePositions[k].y }));
+        fusionNodes.forEach(f => allPoints.push({ id: f.id, x: f.x, y: f.y }));
+
+        // Act & Assert: Verificar que nenhuma dupla de nós está colidindo (distância mínima >= 105px)
+        const collisions = [];
+        for (let i = 0; i < allPoints.length; i++) {
+            for (let j = i + 1; j < allPoints.length; j++) {
+                const p1 = allPoints[i];
+                const p2 = allPoints[j];
+                const dist = Math.hypot(p1.x - p2.x, p1.y - p2.y);
+                if (dist < 105) {
+                    collisions.push(`${p1.id} e ${p2.id} colidem com distância de apenas ${dist.toFixed(1)}px`);
+                }
+            }
+        }
+
+        assert.equal(collisions.length, 0, `Nenhum nó deve colidir. Encontradas: ${collisions.join('; ')}`);
     });
 
     // -------------------------------------------------------------
-    // 5. Tratamento de Exceções & Integridade: Canvas, Sem CDNs Bloqueados
+    // 5. Casos de Borda: Painel Retrátil e Responsividade do HUD
     // -------------------------------------------------------------
-    QUnit.test('5. Integridade do Sistema: Compatibilidade de Scripts e Sem CDNs Externos Proibidos (AAA)', function (assert) {
+    QUnit.test('5. Casos de Borda: Painel Retrátil dos 12 Caminhos e Conexões Ativas (AAA)', function (assert) {
+        // Arrange
+        const html = fs.readFileSync(ARVORE_HTML_PATH, 'utf-8');
+
+        // Act & Assert
+        assert.ok(html.includes('sidebar-toggle-btn'), 'Botão de recolher/expandir sidebar presente');
+        assert.ok(html.includes('toggleSidebarCollapse'), 'Função de alternância de recolhimento presente');
+        assert.ok(html.includes('floating-sidebar.collapsed') || html.includes('.collapsed'), 'CSS de estado recolhido presente');
+        assert.ok(html.includes('.tree-branch-path.active'), 'Classe CSS de galho ativo com fluxo de mana presente');
+    });
+
+    // -------------------------------------------------------------
+    // 6. Tratamento de Exceções & Integridade: Canvas, Sem CDNs Bloqueados
+    // -------------------------------------------------------------
+    QUnit.test('6. Integridade do Sistema: Compatibilidade de Scripts e Sem CDNs Externos Proibidos (AAA)', function (assert) {
         // Arrange
         const html = fs.readFileSync(ARVORE_HTML_PATH, 'utf-8');
 

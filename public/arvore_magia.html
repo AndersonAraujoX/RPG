@@ -284,6 +284,12 @@
             transition: all 0.4s ease;
         }
 
+        .tree-branch-path.active {
+            stroke-dasharray: 12, 6;
+            animation: mana-flow 14s infinite linear;
+            filter: drop-shadow(0 0 10px currentColor);
+        }
+
         .tree-leaf {
             transition: all 0.3s ease;
             filter: drop-shadow(0 0 6px currentColor);
@@ -291,6 +297,16 @@
 
         .tree-mana-orb {
             animation: pulse-orb 2.5s infinite alternate ease-in-out;
+        }
+
+        .mana-spore {
+            animation: float-spore 4s infinite alternate ease-in-out;
+            pointer-events: none;
+        }
+
+        @keyframes float-spore {
+            0% { transform: translateY(0px) scale(0.85); opacity: 0.5; }
+            100% { transform: translateY(-10px) scale(1.25); opacity: 1; }
         }
 
         @keyframes pulse-orb {
@@ -506,6 +522,36 @@
             gap: 10px;
             max-width: 310px;
             width: 310px;
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .floating-sidebar.collapsed {
+            transform: translateX(-270px);
+        }
+
+        .sidebar-toggle-btn {
+            position: absolute;
+            right: -13px;
+            top: 14px;
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            background: #0f172a;
+            border: 1px solid var(--rpg-cyan);
+            color: var(--rpg-cyan);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 50;
+            box-shadow: 0 0 10px rgba(6, 182, 212, 0.5);
+            font-size: 11px;
+            transition: all 0.2s ease;
+        }
+
+        .sidebar-toggle-btn:hover {
+            background: var(--rpg-cyan);
+            color: #04070d;
         }
 
         .glass-panel {
@@ -1040,7 +1086,10 @@
         <div id="info-tooltip" class="tooltip"></div>
 
         <!-- Barra Lateral Flutuante: Navegação dos 12 Caminhos com Gestão de Pontos -->
-        <div class="floating-sidebar">
+        <div class="floating-sidebar" id="floating-sidebar">
+            <button class="sidebar-toggle-btn" onclick="toggleSidebarCollapse()" title="Recolher / Expandir Painel dos 12 Caminhos">
+                <i class="fa-solid fa-chevron-left" id="sidebar-toggle-icon"></i>
+            </button>
             <div class="glass-panel">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 8px;">
                     <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--rpg-cyan); font-family: 'Cinzel', serif;">
@@ -1763,6 +1812,7 @@
         // Coordenadas dos Nós (12 Caminhos na Anatomia da Árvore Ancestral)
         // =========================================================================
         const pathNodes = {};
+        let currentCategory = 'all';
 
         // Nós de Fusão e Mestria Mágica (Secundus e Terceirus na Copa e Ramos)
         const fusionNodes = [
@@ -1771,8 +1821,8 @@
                 id: "fusion_magma",
                 name: "MAGMA",
                 tier: "SECUNDUS",
-                x: -165,
-                y: 65,
+                x: -240,
+                y: 70,
                 paths: ["fogo", "terra"],
                 forma: "Criar",
                 color: "#f97316",
@@ -1783,8 +1833,8 @@
                 id: "fusion_necromancia",
                 name: "NECROMANCIA",
                 tier: "SECUNDUS",
-                x: 185,
-                y: -40,
+                x: 240,
+                y: -60,
                 paths: ["trevas", "spiritum"],
                 forma: "Criar",
                 color: "#a855f7",
@@ -1796,8 +1846,8 @@
                 id: "fusion_cataclismo",
                 name: "CATACLISMO",
                 tier: "TERCEIRUS",
-                x: -300,
-                y: -195,
+                x: -330,
+                y: -210,
                 paths: ["fogo", "ar"],
                 forma: "Criar",
                 color: "#ea580c",
@@ -1809,7 +1859,7 @@
                 name: "AVATAR",
                 tier: "TERCEIRUS",
                 x: 0,
-                y: -300,
+                y: -320,
                 paths: ["luz", "spiritum"],
                 forma: "Criar",
                 color: "#38bdf8",
@@ -1820,8 +1870,8 @@
                 id: "fusion_golem",
                 name: "GOLEM",
                 tier: "TERCEIRUS",
-                x: 310,
-                y: -185,
+                x: 330,
+                y: -210,
                 paths: ["terra", "humanos"],
                 forma: "Criar",
                 color: "#eab308",
@@ -1834,20 +1884,25 @@
             const centerNode = { id: "nexus_core", name: "Nexo Arcano", x: 0, y: 0, icon: "fa-solid fa-atom" };
             pathNodes["nexus_core"] = centerNode;
 
-            // Posições orgânicas na árvore cósmica correspondentes à anatomia da imagem de referência
+            // Posições orgânicas na árvore cósmica sem sobreposições e com espaçamento seguro (mín. 110px entre centros)
             const treePositions = {
-                "spiritum":  { x: 0,    y: -125 }, // Tronco Central (logo acima do Nexo)
-                "plantas":   { x: -95,  y: -185 }, // Galho Superior Esquerdo (subindo para Cataclismo)
-                "arkanum":   { x: 135,  y: -160 }, // Galho Superior Direito (subindo para Golem)
-                "metamagia": { x: -145, y: -50  }, // Galho Médio Esquerdo
-                "fogo":      { x: -85,  y: 105  }, // Galho Inferior Esquerdo
-                "agua":      { x: -240, y: -30  }, // Galho Lateral Esquerdo
-                "ar":        { x: -170, y: -130 }, // Galho Alto Esquerdo
-                "animais":   { x: -210, y: 40   }, // Galho Lateral Inferior Esquerdo
-                "trevas":    { x: 85,   y: 105  }, // Galho Inferior Direito
-                "terra":     { x: 175,  y: 70   }, // Galho Lateral Direito
-                "luz":       { x: 155,  y: 195  }, // Galho Baixo Direito
-                "humanos":   { x: 265,  y: 175  }  // Galho Baixo Direito Extremo
+                // Eixo Central (Tronco e Copa)
+                "spiritum":  { x: 0,    y: -150 }, // Tronco Central (logo acima do Nexo)
+                // Asa Superior Esquerda (Flora & Metamagia -> Cataclismo)
+                "plantas":   { x: -130, y: -200 }, // Galho Superior Esquerdo
+                "metamagia": { x: -170, y: -70  }, // Galho Médio Esquerdo
+                "ar":        { x: -280, y: -110 }, // Galho Alto Esquerdo
+                // Asa Inferior Esquerda (Fogo & Magma & Água & Feras)
+                "fogo":      { x: -120, y: 140  }, // Galho Inferior Esquerdo
+                "agua":      { x: -350, y: 10   }, // Galho Lateral Esquerdo
+                "animais":   { x: -280, y: 190  }, // Galho Inferior Esquerdo Extremo
+                // Asa Superior Direita (Arkanum -> Golem)
+                "arkanum":   { x: 160,  y: -160 }, // Galho Superior Direito
+                // Asa Inferior Direita (Terra, Trevas, Luz & Humanos)
+                "terra":     { x: 160,  y: 90   }, // Galho Médio Direito
+                "trevas":    { x: 110,  y: 200  }, // Galho Inferior Direito
+                "luz":       { x: 240,  y: 210  }, // Galho Baixo Direito
+                "humanos":   { x: 330,  y: 120  }  // Galho Baixo Direito Extremo
             };
 
             Object.keys(magicPaths).forEach(key => {
@@ -1885,29 +1940,36 @@
 
         function drawCosmicTreeSVG(svgOffset) {
             const O = svgOffset;
+            const isUnlocked = (k) => (characterSkills[k] || 0) > 0;
+            const isFusUnlocked = (f) => f.paths && f.paths.some(p => (characterSkills[p] || 0) > 0);
+
             const defs = `
                 <defs>
-                    <filter id="tree-glow" x="-50%" y="-50%" width="200%" height="200%">
+                    <filter id="tree-glow" x="-30%" y="-30%" width="160%" height="160%">
                         <feGaussianBlur in="SourceGraphic" stdDeviation="5" result="blur1" />
-                        <feGaussianBlur in="SourceGraphic" stdDeviation="14" result="blur2" />
+                        <feGaussianBlur in="SourceGraphic" stdDeviation="15" result="blur2" />
                         <feMerge>
                             <feMergeNode in="blur2" />
                             <feMergeNode in="blur1" />
                             <feMergeNode in="SourceGraphic" />
                         </feMerge>
                     </filter>
-                    <filter id="tree-glow-cyan" x="-50%" y="-50%" width="200%" height="200%">
-                        <feDropShadow dx="0" dy="0" stdDeviation="6" flood-color="#06b6d4" flood-opacity="0.9" />
-                        <feDropShadow dx="0" dy="0" stdDeviation="16" flood-color="#0891b2" flood-opacity="0.6" />
+                    <filter id="tree-glow-cyan" x="-30%" y="-30%" width="160%" height="160%">
+                        <feGaussianBlur in="SourceGraphic" stdDeviation="8" result="blur" />
+                        <feMerge>
+                            <feMergeNode in="blur" />
+                            <feMergeNode in="SourceGraphic" />
+                        </feMerge>
                     </filter>
                     <linearGradient id="roots-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
                         <stop offset="0%" stop-color="#22d3ee" stop-opacity="0.95" />
-                        <stop offset="50%" stop-color="#06b6d4" stop-opacity="0.75" />
+                        <stop offset="45%" stop-color="#06b6d4" stop-opacity="0.8" />
                         <stop offset="100%" stop-color="#0284c7" stop-opacity="0.05" />
                     </linearGradient>
                     <linearGradient id="trunk-cyan" x1="0%" y1="100%" x2="0%" y2="0%">
-                        <stop offset="0%" stop-color="#06b6d4" stop-opacity="0.95" />
-                        <stop offset="100%" stop-color="#67e8f9" stop-opacity="0.85" />
+                        <stop offset="0%" stop-color="#0891b2" stop-opacity="0.95" />
+                        <stop offset="50%" stop-color="#06b6d4" stop-opacity="0.9" />
+                        <stop offset="100%" stop-color="#67e8f9" stop-opacity="0.95" />
                     </linearGradient>
                 </defs>
             `;
@@ -1915,67 +1977,127 @@
             // Raízes Bioluminescentes (Descem a partir do Nexo)
             const roots = `
                 <g id="tree-roots-group" class="tree-roots" filter="url(#tree-glow-cyan)">
-                    <path class="tree-root-path" d="M ${O} ${O+15} C ${O-15} ${O+70}, ${O-35} ${O+150}, ${O-10} ${O+260} C ${O+10} ${O+310}, ${O-5} ${O+350}, ${O} ${O+390}" stroke="url(#roots-gradient)" stroke-width="11" />
-                    <path class="tree-root-path" d="M ${O} ${O+20} C ${O+20} ${O+80}, ${O+45} ${O+160}, ${O+30} ${O+250} C ${O+15} ${O+310}, ${O+25} ${O+360}, ${O+20} ${O+400}" stroke="url(#roots-gradient)" stroke-width="8.5" />
+                    <!-- Tronco das Raízes Centrais -->
+                    <path class="tree-root-path" d="M ${O-8} ${O+35} C ${O-15} ${O+120}, ${O-20} ${O+240}, ${O-5} ${O+420}" stroke="url(#roots-gradient)" stroke-width="12" />
+                    <path class="tree-root-path" d="M ${O+8} ${O+35} C ${O+15} ${O+120}, ${O+20} ${O+240}, ${O+5} ${O+420}" stroke="url(#roots-gradient)" stroke-width="10" />
                     
-                    <path class="tree-root-path" d="M ${O-10} ${O+25} C ${O-60} ${O+90}, ${O-130} ${O+160}, ${O-190} ${O+230} C ${O-230} ${O+280}, ${O-260} ${O+310}, ${O-290} ${O+340}" stroke="url(#roots-gradient)" stroke-width="8" />
-                    <path class="tree-root-path" d="M ${O-110} ${O+140} C ${O-150} ${O+190}, ${O-170} ${O+240}, ${O-185} ${O+300}" stroke="url(#roots-gradient)" stroke-width="4.5" />
-                    <path class="tree-root-path" d="M ${O-60} ${O+90} C ${O-90} ${O+150}, ${O-110} ${O+220}, ${O-120} ${O+290}" stroke="url(#roots-gradient)" stroke-width="5" />
-                    <path class="tree-root-path" d="M ${O-190} ${O+230} C ${O-220} ${O+260}, ${O-240} ${O+280}, ${O-255} ${O+310}" stroke="url(#roots-gradient)" stroke-width="3" />
+                    <!-- Raízes Principais Esquerda -->
+                    <path class="tree-root-path" d="M ${O-20} ${O+35} C ${O-70} ${O+100}, ${O-140} ${O+180}, ${O-180} ${O+360}" stroke="url(#roots-gradient)" stroke-width="11" />
+                    <path class="tree-root-path" d="M ${O-25} ${O+35} C ${O-120} ${O+90}, ${O-220} ${O+160}, ${O-300} ${O+280}" stroke="url(#roots-gradient)" stroke-width="8.5" />
+                    <path class="tree-root-path" d="M ${O-100} ${O+130} C ${O-150} ${O+210}, ${O-170} ${O+280}, ${O-160} ${O+390}" stroke="url(#roots-gradient)" stroke-width="5" />
+                    <path class="tree-root-path" d="M ${O-180} ${O+180} C ${O-240} ${O+230}, ${O-280} ${O+280}, ${O-310} ${O+340}" stroke="url(#roots-gradient)" stroke-width="4" />
 
-                    <path class="tree-root-path" d="M ${O+10} ${O+25} C ${O+60} ${O+90}, ${O+130} ${O+160}, ${O+190} ${O+230} C ${O+230} ${O+280}, ${O+260} ${O+310}, ${O+290} ${O+340}" stroke="url(#roots-gradient)" stroke-width="8" />
-                    <path class="tree-root-path" d="M ${O+110} ${O+140} C ${O+150} ${O+190}, ${O+170} ${O+240}, ${O+185} ${O+300}" stroke="url(#roots-gradient)" stroke-width="4.5" />
-                    <path class="tree-root-path" d="M ${O+60} ${O+90} C ${O+90} ${O+150}, ${O+110} ${O+220}, ${O+120} ${O+290}" stroke="url(#roots-gradient)" stroke-width="5" />
-                    <path class="tree-root-path" d="M ${O+190} ${O+230} C ${O+220} ${O+260}, ${O+240} ${O+280}, ${O+255} ${O+310}" stroke="url(#roots-gradient)" stroke-width="3" />
+                    <!-- Raízes Principais Direita -->
+                    <path class="tree-root-path" d="M ${O+20} ${O+35} C ${O+70} ${O+100}, ${O+140} ${O+180}, ${O+180} ${O+360}" stroke="url(#roots-gradient)" stroke-width="11" />
+                    <path class="tree-root-path" d="M ${O+25} ${O+35} C ${O+120} ${O+90}, ${O+220} ${O+160}, ${O+300} ${O+280}" stroke="url(#roots-gradient)" stroke-width="8.5" />
+                    <path class="tree-root-path" d="M ${O+100} ${O+130} C ${O+150} ${O+210}, ${O+170} ${O+280}, ${O+160} ${O+390}" stroke="url(#roots-gradient)" stroke-width="5" />
+                    <path class="tree-root-path" d="M ${O+180} ${O+180} C ${O+240} ${O+230}, ${O+280} ${O+280}, ${O+310} ${O+340}" stroke="url(#roots-gradient)" stroke-width="4" />
 
-                    <path class="tree-root-path" d="M ${O-20} ${O+180} C ${O-40} ${O+230}, ${O-50} ${O+280}, ${O-60} ${O+320}" stroke="#38bdf8" stroke-width="2.5" opacity="0.75" />
-                    <path class="tree-root-path" d="M ${O+20} ${O+180} C ${O+40} ${O+230}, ${O+50} ${O+280}, ${O+60} ${O+320}" stroke="#38bdf8" stroke-width="2.5" opacity="0.75" />
+                    <!-- Filamentos Finos de Energia nas Raízes -->
+                    <path class="tree-root-path" d="M ${O-5} ${O+160} C ${O-35} ${O+250}, ${O-45} ${O+310}, ${O-50} ${O+380}" stroke="#38bdf8" stroke-width="2.5" opacity="0.8" />
+                    <path class="tree-root-path" d="M ${O+5} ${O+160} C ${O+35} ${O+250}, ${O+45} ${O+310}, ${O+50} ${O+380}" stroke="#38bdf8" stroke-width="2.5" opacity="0.8" />
+
+                    <!-- Orbes de Mana nas Junções das Raízes -->
+                    <circle class="tree-mana-orb" cx="${O-100}" cy="${O+130}" r="4.5" fill="#67e8f9" />
+                    <circle class="tree-mana-orb" cx="${O+100}" cy="${O+130}" r="4.5" fill="#67e8f9" />
+                    <circle class="tree-mana-orb" cx="${O-180}" cy="${O+180}" r="3.5" fill="#38bdf8" />
+                    <circle class="tree-mana-orb" cx="${O+180}" cy="${O+180}" r="3.5" fill="#38bdf8" />
                 </g>
             `;
 
-            // Galhos Orgânicos Principais
+            // Galhos Orgânicos Principais e Tronco de Luz
             let branches = `<g id="tree-branches-group" class="tree-branches">`;
+
+            // 1. Tronco Central (Nexo -> Spiritum -> Avatar)
             branches += `
-                <path class="tree-branch-path" d="M ${O-12} ${O-20} C ${O-10} ${O-60}, ${O-6} ${O-90}, ${O} ${O-125}" stroke="url(#trunk-cyan)" stroke-width="9" filter="url(#tree-glow)" />
-                <path class="tree-branch-path" d="M ${O+12} ${O-20} C ${O+10} ${O-60}, ${O+6} ${O-90}, ${O} ${O-125}" stroke="url(#trunk-cyan)" stroke-width="9" filter="url(#tree-glow)" />
-                
-                <path class="tree-branch-path" d="M ${O} ${O-125} C ${O-10} ${O-180}, ${O-15} ${O-240}, ${O} ${O-300}" stroke="#38bdf8" stroke-width="7" filter="url(#tree-glow)" />
-                <path class="tree-branch-path" d="M ${O} ${O-125} C ${O-40} ${O-140}, ${O-70} ${O-160}, ${O-95} ${O-185}" stroke="#84cc16" stroke-width="6" />
-                <path class="tree-branch-path" d="M ${O-95} ${O-185} C ${O-160} ${O-190}, ${O-230} ${O-190}, ${O-300} ${O-195}" stroke="#ea580c" stroke-width="6.5" filter="url(#tree-glow)" />
-                
-                <path class="tree-branch-path" d="M ${O} ${O-125} C ${O+50} ${O-135}, ${O+90} ${O-145}, ${O+135} ${O-160}" stroke="#a855f7" stroke-width="6" />
-                <path class="tree-branch-path" d="M ${O+135} ${O-160} C ${O+190} ${O-170}, ${O+250} ${O-175}, ${O+310} ${O-185}" stroke="#eab308" stroke-width="6.5" filter="url(#tree-glow)" />
+                <!-- Aura do Tronco -->
+                <path class="tree-branch-path" d="M ${O} ${O+30} C ${O-12} ${O-30}, ${O-10} ${O-90}, ${O} ${O-150}" stroke="rgba(6,182,212,0.35)" stroke-width="32" filter="url(#tree-glow)" />
+                <path class="tree-branch-path" d="M ${O} ${O-150} C ${O-10} ${O-210}, ${O+10} ${O-270}, ${O} ${O-320}" stroke="rgba(56,189,248,0.35)" stroke-width="24" filter="url(#tree-glow)" />
 
-                <path class="tree-branch-path" d="M ${O-20} ${O-10} C ${O-70} ${O-25}, ${O-110} ${O-35}, ${O-145} ${O-50}" stroke="#14b8a6" stroke-width="7" />
-                <path class="tree-branch-path" d="M ${O-145} ${O-50} C ${O-180} ${O-40}, ${O-210} ${O-35}, ${O-240} ${O-30}" stroke="#06b6d4" stroke-width="5.5" />
-                <path class="tree-branch-path" d="M ${O-145} ${O-50} C ${O-150} ${O-90}, ${O-160} ${O-110}, ${O-170} ${O-130}" stroke="#38bdf8" stroke-width="4.5" />
-                <path class="tree-branch-path" d="M ${O-145} ${O-50} C ${O-220} ${O-120}, ${O-260} ${O-160}, ${O-300} ${O-195}" stroke="#10b981" stroke-width="3.5" opacity="0.65" />
+                <!-- Tronco Principal de Mana -->
+                <path class="tree-branch-path ${isUnlocked('spiritum') ? 'active' : ''}" d="M ${O} ${O-35} C ${O} ${O-70}, ${O} ${O-110}, ${O} ${O-150}" stroke="url(#trunk-cyan)" stroke-width="16" />
+                <path class="tree-branch-path ${isFusUnlocked(fusionNodes[3]) ? 'active' : ''}" d="M ${O} ${O-150} C ${O-8} ${O-210}, ${O+8} ${O-270}, ${O} ${O-320}" stroke="#38bdf8" stroke-width="12" />
 
-                <path class="tree-branch-path" d="M ${O-15} ${O+10} C ${O-45} ${O+45}, ${O-65} ${O+75}, ${O-85} ${O+105}" stroke="#f97316" stroke-width="6.5" />
-                <path class="tree-branch-path" d="M ${O-85} ${O+105} C ${O-120} ${O+90}, ${O-145} ${O+75}, ${O-165} ${O+65}" stroke="#f97316" stroke-width="6" />
-                <path class="tree-branch-path" d="M ${O-165} ${O+65} C ${O-185} ${O+55}, ${O-200} ${O+45}, ${O-210} ${O+40}" stroke="#eab308" stroke-width="4.5" />
-
-                <path class="tree-branch-path" d="M ${O+15} ${O+10} C ${O+45} ${O+45}, ${O+65} ${O+75}, ${O+85} ${O+105}" stroke="#6366f1" stroke-width="6.5" />
-                <path class="tree-branch-path" d="M ${O+85} ${O+105} C ${O+125} ${O+90}, ${O+150} ${O+80}, ${O+175} ${O+70}" stroke="#10b981" stroke-width="6" />
-                <path class="tree-branch-path" d="M ${O+20} ${O-10} C ${O+70} ${O-25}, ${O+120} ${O-35}, ${O+185} ${O-40}" stroke="#a855f7" stroke-width="6.5" />
-                <path class="tree-branch-path" d="M ${O+185} ${O-40} C ${O+225} ${O-90}, ${O+265} ${O-140}, ${O+310} ${O-185}" stroke="#eab308" stroke-width="4" opacity="0.75" />
-
-                <path class="tree-branch-path" d="M ${O+85} ${O+105} C ${O+115} ${O+145}, ${O+135} ${O+175}, ${O+155} ${O+195}" stroke="#fbbf24" stroke-width="5.5" />
-                <path class="tree-branch-path" d="M ${O+155} ${O+195} C ${O+195} ${O+190}, ${O+230} ${O+180}, ${O+265} ${O+175}" stroke="#ec4899" stroke-width="5" />
+                <!-- Filamento Luminoso Interno -->
+                <path class="tree-branch-path" d="M ${O} ${O-35} C ${O} ${O-70}, ${O} ${O-110}, ${O} ${O-150}" stroke="#e0f2fe" stroke-width="4.5" opacity="0.9" />
+                <path class="tree-branch-path" d="M ${O} ${O-150} C ${O-8} ${O-210}, ${O+8} ${O-270}, ${O} ${O-320}" stroke="#f0f9ff" stroke-width="3.5" opacity="0.9" />
             `;
 
-            // Folhas Místicas
+            // 2. Asa Superior Esquerda (Flora & Metamagia -> Cataclismo)
+            branches += `
+                <!-- Tronco -> Metamagia -->
+                <path class="tree-branch-path ${isUnlocked('metamagia') ? 'active' : ''}" d="M ${O-12} ${O-40} C ${O-60} ${O-45}, ${O-115} ${O-55}, ${O-170} ${O-70}" stroke="#14b8a6" stroke-width="11" filter="url(#tree-glow)" />
+                <!-- Tronco -> Plantas -->
+                <path class="tree-branch-path ${isUnlocked('plantas') ? 'active' : ''}" d="M ${O-10} ${O-90} C ${O-50} ${O-125}, ${O-90} ${O-160}, ${O-130} ${O-200}" stroke="#84cc16" stroke-width="10" filter="url(#tree-glow)" />
+                <!-- Metamagia -> Ar -->
+                <path class="tree-branch-path ${isUnlocked('ar') ? 'active' : ''}" d="M ${O-170} ${O-70} C ${O-210} ${O-85}, ${O-245} ${O-95}, ${O-280} ${O-110}" stroke="#38bdf8" stroke-width="8.5" />
+                <!-- Plantas -> Cataclismo -->
+                <path class="tree-branch-path ${isFusUnlocked(fusionNodes[2]) ? 'active' : ''}" d="M ${O-130} ${O-200} C ${O-190} ${O-210}, ${O-265} ${O-210}, ${O-330} ${O-210}" stroke="#ea580c" stroke-width="9" filter="url(#tree-glow)" />
+                <!-- Ar -> Cataclismo -->
+                <path class="tree-branch-path ${isFusUnlocked(fusionNodes[2]) ? 'active' : ''}" d="M ${O-280} ${O-110} C ${O-300} ${O-145}, ${O-315} ${O-175}, ${O-330} ${O-210}" stroke="#f97316" stroke-width="6" />
+            `;
+
+            // 3. Asa Inferior Esquerda (Fogo & Magma & Água & Feras)
+            branches += `
+                <!-- Tronco -> Fogo -->
+                <path class="tree-branch-path ${isUnlocked('fogo') ? 'active' : ''}" d="M ${O-15} ${O+20} C ${O-50} ${O+55}, ${O-85} ${O+95}, ${O-120} ${O+140}" stroke="#f97316" stroke-width="11" filter="url(#tree-glow)" />
+                <!-- Fogo -> Magma -->
+                <path class="tree-branch-path ${isFusUnlocked(fusionNodes[0]) ? 'active' : ''}" d="M ${O-120} ${O+140} C ${O-160} ${O+120}, ${O-200} ${O+95}, ${O-240} ${O+70}" stroke="#ea580c" stroke-width="9" filter="url(#tree-glow)" />
+                <!-- Magma -> Água -->
+                <path class="tree-branch-path ${isUnlocked('agua') ? 'active' : ''}" d="M ${O-240} ${O+70} C ${O-275} ${O+50}, ${O-315} ${O+30}, ${O-350} ${O+10}" stroke="#06b6d4" stroke-width="7.5" />
+                <!-- Magma -> Animais -->
+                <path class="tree-branch-path ${isUnlocked('animais') ? 'active' : ''}" d="M ${O-240} ${O+70} C ${O-255} ${O+115}, ${O-265} ${O+155}, ${O-280} ${O+190}" stroke="#eab308" stroke-width="7.5" />
+            `;
+
+            // 4. Asa Superior Direita (Arkanum -> Golem)
+            branches += `
+                <!-- Tronco -> Arkanum -->
+                <path class="tree-branch-path ${isUnlocked('arkanum') ? 'active' : ''}" d="M ${O+12} ${O-80} C ${O+60} ${O-105}, ${O+110} ${O-130}, ${O+160} ${O-160}" stroke="#ef4444" stroke-width="10" filter="url(#tree-glow)" />
+                <!-- Tronco -> Necromancia -->
+                <path class="tree-branch-path ${isFusUnlocked(fusionNodes[1]) ? 'active' : ''}" d="M ${O+15} ${O-30} C ${O+90} ${O-40}, ${O+165} ${O-50}, ${O+240} ${O-60}" stroke="#a855f7" stroke-width="9" filter="url(#tree-glow)" />
+                <!-- Arkanum -> Golem -->
+                <path class="tree-branch-path ${isFusUnlocked(fusionNodes[4]) ? 'active' : ''}" d="M ${O+160} ${O-160} C ${O+215} ${O-180}, ${O+275} ${O-195}, ${O+330} ${O-210}" stroke="#eab308" stroke-width="9" filter="url(#tree-glow)" />
+                <!-- Necromancia -> Golem -->
+                <path class="tree-branch-path ${isFusUnlocked(fusionNodes[4]) ? 'active' : ''}" d="M ${O+240} ${O-60} C ${O+285} ${O-110}, ${O+310} ${O-160}, ${O+330} ${O-210}" stroke="#fbbf24" stroke-width="6" />
+            `;
+
+            // 5. Asa Inferior Direita (Terra, Trevas, Luz & Humanos)
+            branches += `
+                <!-- Tronco -> Terra -->
+                <path class="tree-branch-path ${isUnlocked('terra') ? 'active' : ''}" d="M ${O+15} ${O+20} C ${O+65} ${O+45}, ${O+115} ${O+65}, ${O+160} ${O+90}" stroke="#10b981" stroke-width="11" filter="url(#tree-glow)" />
+                <!-- Tronco -> Trevas -->
+                <path class="tree-branch-path ${isUnlocked('trevas') ? 'active' : ''}" d="M ${O+12} ${O+30} C ${O+40} ${O+85}, ${O+75} ${O+145}, ${O+110} ${O+200}" stroke="#6366f1" stroke-width="10" filter="url(#tree-glow)" />
+                <!-- Terra -> Luz -->
+                <path class="tree-branch-path ${isUnlocked('luz') ? 'active' : ''}" d="M ${O+160} ${O+90} C ${O+190} ${O+130}, ${O+215} ${O+170}, ${O+240} ${O+210}" stroke="#fbbf24" stroke-width="8" />
+                <!-- Terra -> Humanos -->
+                <path class="tree-branch-path ${isUnlocked('humanos') ? 'active' : ''}" d="M ${O+160} ${O+90} C ${O+220} ${O+100}, ${O+275} ${O+110}, ${O+330} ${O+120}" stroke="#ec4899" stroke-width="8" />
+            `;
+
+            // 6. Folhas Místicas Espalhadas nos Ramos
             branches += `
                 <g class="tree-leaves">
-                    <path class="tree-leaf" d="M ${O-40} ${O-130} C ${O-55} ${O-140}, ${O-50} ${O-155}, ${O-35} ${O-145} Z" fill="#84cc16" />
-                    <path class="tree-leaf" d="M ${O-110} ${O-160} C ${O-125} ${O-175}, ${O-115} ${O-190}, ${O-100} ${O-175} Z" fill="#84cc16" />
-                    <path class="tree-leaf" d="M ${O-15} ${O-210} C ${O-25} ${O-230}, ${O-15} ${O-245}, ${O-5} ${O-230} Z" fill="#38bdf8" />
-                    <path class="tree-leaf" d="M ${O+15} ${O-210} C ${O+25} ${O-230}, ${O+15} ${O-245}, ${O+5} ${O-230} Z" fill="#38bdf8" />
-                    <path class="tree-leaf" d="M ${O+65} ${O-130} C ${O+80} ${O-140}, ${O+75} ${O-155}, ${O+60} ${O-145} Z" fill="#a855f7" />
-                    <path class="tree-leaf" d="M ${O+140} ${O-130} C ${O+160} ${O-140}, ${O+155} ${O-155}, ${O+135} ${O-145} Z" fill="#eab308" />
-                    <path class="tree-leaf" d="M ${O-120} ${O+85} C ${O-135} ${O+100}, ${O-125} ${O+115}, ${O-110} ${O+100} Z" fill="#f97316" />
-                    <path class="tree-leaf" d="M ${O+110} ${O+90} C ${O+125} ${O+105}, ${O+115} ${O+120}, ${O+100} ${O+105} Z" fill="#6366f1" />
-                    <path class="tree-leaf" d="M ${O+180} ${O+150} C ${O+195} ${O+165}, ${O+185} ${O+180}, ${O+170} ${O+165} Z" fill="#fbbf24" />
+                    <path class="tree-leaf" d="M ${O-70} ${O-140} C ${O-85} ${O-150}, ${O-80} ${O-165}, ${O-65} ${O-155} Z" fill="#84cc16" />
+                    <path class="tree-leaf" d="M ${O-150} ${O-175} C ${O-165} ${O-190}, ${O-155} ${O-205}, ${O-140} ${O-190} Z" fill="#84cc16" />
+                    <path class="tree-leaf" d="M ${O-220} ${O-100} C ${O-235} ${O-115}, ${O-225} ${O-130}, ${O-210} ${O-115} Z" fill="#38bdf8" />
+                    <path class="tree-leaf" d="M ${O-10} ${O-240} C ${O-20} ${O-260}, ${O-10} ${O-275}, ${O} ${O-260} Z" fill="#38bdf8" />
+                    <path class="tree-leaf" d="M ${O+10} ${O-240} C ${O+20} ${O-260}, ${O+10} ${O-275}, ${O} ${O-260} Z" fill="#38bdf8" />
+                    <path class="tree-leaf" d="M ${O+90} ${O-120} C ${O+105} ${O-130}, ${O+100} ${O-145}, ${O+85} ${O-135} Z" fill="#a855f7" />
+                    <path class="tree-leaf" d="M ${O+190} ${O-170} C ${O+210} ${O-180}, ${O+205} ${O-195}, ${O+185} ${O-185} Z" fill="#eab308" />
+                    <path class="tree-leaf" d="M ${O-150} ${O+110} C ${O-165} ${O+125}, ${O-155} ${O+140}, ${O-140} ${O+125} Z" fill="#f97316" />
+                    <path class="tree-leaf" d="M ${O-260} ${O+60} C ${O-275} ${O+75}, ${O-265} ${O+90}, ${O-250} ${O+75} Z" fill="#06b6d4" />
+                    <path class="tree-leaf" d="M ${O+80} ${O+75} C ${O+95} ${O+90}, ${O+85} ${O+105}, ${O+70} ${O+90} Z" fill="#10b981" />
+                    <path class="tree-leaf" d="M ${O+180} ${O+140} C ${O+195} ${O+155}, ${O+185} ${O+170}, ${O+170} ${O+155} Z" fill="#fbbf24" />
+                    <path class="tree-leaf" d="M ${O+260} ${O+100} C ${O+275} ${O+115}, ${O+265} ${O+130}, ${O+250} ${O+115} Z" fill="#ec4899" />
+                </g>
+
+                <!-- Esporos Mágicos Flutuantes -->
+                <g class="tree-spores">
+                    <circle class="mana-spore" cx="${O-80}" cy="${O-100}" r="2" fill="#84cc16" />
+                    <circle class="mana-spore" cx="${O-200}" cy="${O-140}" r="2.5" fill="#38bdf8" />
+                    <circle class="mana-spore" cx="${O+80}" cy="${O-160}" r="2" fill="#c084fc" />
+                    <circle class="mana-spore" cx="${O+200}" cy="${O-110}" r="2.5" fill="#fef08a" />
+                    <circle class="mana-spore" cx="${O-160}" cy="${O+80}" r="2" fill="#fb923c" />
+                    <circle class="mana-spore" cx="${O+120}" cy="${O+120}" r="2.5" fill="#6ee7b7" />
                 </g>
             `;
             branches += `</g>`;
@@ -2003,7 +2125,7 @@
                 createFusionNode(f);
             });
 
-            renderSidebarPaths('all');
+            renderSidebarPaths(currentCategory || 'all');
             renderGrimoire();
             updateHUD();
         }
@@ -2762,10 +2884,26 @@
             });
         }
 
-        function filterCategory(cat) {
+        function filterCategory(cat, ev) {
+            currentCategory = cat;
             document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
-            event.target.classList.add('active');
+            const targetBtn = (ev && ev.target) || (typeof event !== 'undefined' && event && event.target);
+            if (targetBtn && targetBtn.classList) targetBtn.classList.add('active');
             renderSidebarPaths(cat);
+        }
+
+        function toggleSidebarCollapse() {
+            const sb = document.getElementById('floating-sidebar');
+            const icon = document.getElementById('sidebar-toggle-icon');
+            if (!sb) return;
+            sb.classList.toggle('collapsed');
+            if (icon) {
+                if (sb.classList.contains('collapsed')) {
+                    icon.className = 'fa-solid fa-chevron-right';
+                } else {
+                    icon.className = 'fa-solid fa-chevron-left';
+                }
+            }
         }
 
         function focusPath(key) {
