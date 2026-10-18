@@ -44,6 +44,21 @@
         return match ? match[1].trim() : '';
     }
 
+    /** Extrai detalhes completos da forma: { spell, cd, pe, desc }. */
+    function parseSpellDetail(cell, fallbackCd, fallbackPe) {
+        const raw = String(cell || '');
+        const spell = parseSpellName(raw);
+        const cdMatch = /CD\s*(\d+)/i.exec(raw);
+        const peMatch = /(\d+)\s*PE/i.exec(raw);
+        const descMatch = /\)\*?\s*:\s*(.+)$/.exec(raw) || /:\s*(.+)$/.exec(raw);
+        return {
+            spell,
+            cd: cdMatch ? parseInt(cdMatch[1], 10) : (fallbackCd || 10),
+            pe: peMatch ? parseInt(peMatch[1], 10) : (fallbackPe || 3),
+            desc: descMatch ? stripBold(descMatch[1]) : stripBold(raw)
+        };
+    }
+
     function stripBold(text) {
         return String(text || '').replace(/\*\*/g, '').trim();
     }
@@ -73,8 +88,15 @@
             throw new Error(`#${numberText}: ${tier} deve ter ${expected} caminhos, encontrado ${paths.length}.`);
         }
 
+        const defaultCds = tier === 'TERCEIRUS' ? [15, 13, 10] : [11, 9, 7];
+        const defaultPes = tier === 'TERCEIRUS' ? [8, 5, 3] : [4, 3, 1];
         const spells = {};
-        FORMS.forEach((form, i) => { spells[form] = parseSpellName(cells[3 + i]); });
+        const forms = {};
+        FORMS.forEach((form, i) => {
+            const detail = parseSpellDetail(cells[3 + i], defaultCds[i], defaultPes[i]);
+            spells[form] = detail.spell;
+            forms[form] = detail;
+        });
 
         return {
             id: `${tier === 'TERCEIRUS' ? 't' : 's'}${numberText}`,
@@ -82,7 +104,8 @@
             tier,
             name: stripBold(cells[2]),
             paths,
-            spells
+            spells,
+            forms
         };
     }
 
@@ -98,7 +121,7 @@
         return result;
     }
 
-    const SpellCompendiumParser = { normalizeToken, parsePathsCell, parseSpellName, parseRow, parseCompendium };
+    const SpellCompendiumParser = { normalizeToken, parsePathsCell, parseSpellName, parseSpellDetail, parseRow, parseCompendium };
 
     if (typeof module !== 'undefined' && module.exports) {
         module.exports = SpellCompendiumParser;

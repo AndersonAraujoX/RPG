@@ -124,4 +124,24 @@ QUnit.module('Biblioteca Arcana: Árvore Cósmica Ancestral Bioluminescente (AAA
         assert.ok(html.includes('magicForms'), 'Objeto magicForms intacto para retrocompatibilidade');
         assert.ok(html.includes('spellFusions'), 'Objeto spellFusions intacto para retrocompatibilidade');
     });
+
+    // -------------------------------------------------------------
+    // 7. Caminho Feliz e Borda: Anéis Concêntricos de Círculos de Magia, Altar de 3 Slots e Compêndio 186 (AAA)
+    // -------------------------------------------------------------
+    QUnit.test('7. Caminho Feliz e Borda: Anéis de Círculos de Magia (Primário, 66 Secundus, 120 Terceirus) e Altar de 3 Slots (AAA)', function (assert) {
+        // Arrange
+        const html = fs.readFileSync(ARVORE_HTML_PATH, 'utf-8');
+
+        // Act & Assert: Gerador de Círculos e Catálogo 186 carregados
+        assert.ok(html.includes('magic-circle-generator.js'), 'Carrega gerador determinístico de Círculos de Magia');
+        assert.ok(html.includes('circulos_magia_data.js'), 'Carrega catálogo dos 66 Secundus e 120 Terceirus');
+        assert.ok(html.includes('generatePrimaryCircleSVG'), 'Renderiza Círculos de Magia para os 12 Caminhos Primários');
+        assert.ok(html.includes('generateCircleSVG'), 'Renderiza Círculos de Magia para Secundus e Terceirus');
+
+        // Act & Assert: Altar de Fusão com 3 Slots (Primário, Secundus, Terceirus) e Filtro Orbital
+        assert.ok(html.includes('id="slot-1"') && html.includes('id="slot-2"') && html.includes('id="slot-3"'), 'Altar possui 3 slots de fusão para suportar Secundus e Terceirus');
+        assert.ok(html.includes('id="orbit-filter-bar"'), 'Barra de filtro orbital por caminho presente');
+        assert.ok(html.includes('id="modal-circles-grid"'), 'Galeria modal dos 186 Círculos de Magia presente');
+        assert.ok(html.includes('drawMagicCirclesMandalaSVG'), 'Mandala de Anéis Concêntricos de Magia substitui a árvore orgânica');
+    });
 });

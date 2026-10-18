@@ -24,6 +24,8 @@
     <script src="../src/core/firebase-config.js"></script>
     <script src="../src/modules/firestore-service.js"></script>
     <script src="../src/core/magic-tree-engine.js"></script>
+    <script src="../src/core/magic-circle-generator.js"></script>
+    <script src="circulos_magia_data.js"></script>
     
     <style>
         :root {
@@ -115,14 +117,14 @@
         .header-rune-icon {
             width: 44px;
             height: 44px;
-            border-radius: 12px;
+            border-radius: 50%;
             background: linear-gradient(135deg, rgba(180, 142, 173, 0.3), rgba(102, 252, 241, 0.2));
-            border: 1.5px solid rgba(102, 252, 241, 0.4);
+            border: 1.5px solid rgba(102, 252, 241, 0.5);
             display: flex;
             align-items: center;
             justify-content: center;
             color: var(--rpg-cyan);
-            font-size: 22px;
+            font-size: 20px;
             box-shadow: 0 0 20px rgba(102, 252, 241, 0.35);
         }
 
@@ -201,7 +203,7 @@
             color: var(--rpg-cyan);
         }
 
-        /* Viewport e Espaço de Árvore */
+        /* Viewport e Espaço dos Círculos de Magia */
         #tree-viewport {
             width: 100vw;
             height: calc(100vh - 70px);
@@ -229,7 +231,7 @@
             left: 50vw;
         }
 
-        /* Círculos Rúnicos Místicos */
+        /* Anéis Rúnicos Concêntricos dos Círculos de Magia */
         .rune-circle {
             position: absolute;
             top: 50%;
@@ -240,12 +242,12 @@
             z-index: 1;
         }
 
-        .rune-circle-1 { width: 360px; height: 360px; border: 1.5px dashed rgba(102, 252, 241, 0.15); animation: rotate-cw 140s infinite linear; }
-        .rune-circle-2 { width: 720px; height: 720px; border: 1.5px solid rgba(180, 142, 173, 0.12); animation: rotate-ccw 180s infinite linear; }
-        .rune-circle-3 { width: 1100px; height: 1100px; border: 1px dashed rgba(251, 191, 36, 0.09); animation: rotate-cw 240s infinite linear; }
-        .rune-circle-4 { width: 1480px; height: 1480px; border: 1px solid rgba(102, 252, 241, 0.06); animation: rotate-ccw 320s infinite linear; }
+        .rune-circle-1 { width: 450px; height: 450px; border: 1.5px dashed rgba(102, 252, 241, 0.28); box-shadow: inset 0 0 40px rgba(102, 252, 241, 0.05); animation: rotate-cw 140s infinite linear; }
+        .rune-circle-2 { width: 770px; height: 770px; border: 1.5px dashed rgba(192, 132, 252, 0.24); box-shadow: inset 0 0 50px rgba(168, 85, 247, 0.05); animation: rotate-ccw 180s infinite linear; }
+        .rune-circle-3 { width: 1070px; height: 1070px; border: 1.5px dashed rgba(251, 191, 36, 0.22); box-shadow: inset 0 0 60px rgba(251, 191, 36, 0.04); animation: rotate-cw 240s infinite linear; }
+        .rune-circle-4 { width: 1320px; height: 1320px; border: 1px solid rgba(102, 252, 241, 0.1); animation: rotate-ccw 320s infinite linear; }
 
-        /* Conexões SVG Suaves */
+        /* Conexões SVG de Geometria Sagrada */
         #connections-svg {
             position: absolute;
             top: -2500px;
@@ -269,14 +271,6 @@
             animation: mana-flow 20s infinite linear;
         }
 
-        /* ===== A GRANDE ÁRVORE ANCESTRAL BIOLUMINESCENTE ===== */
-        .tree-root-path {
-            fill: none;
-            stroke-linecap: round;
-            stroke-linejoin: round;
-            transition: stroke 0.4s ease, filter 0.4s ease;
-        }
-
         .tree-branch-path {
             fill: none;
             stroke-linecap: round;
@@ -285,18 +279,9 @@
         }
 
         .tree-branch-path.active {
-            stroke-dasharray: 12, 6;
+            stroke-dasharray: 10, 5;
             animation: mana-flow 14s infinite linear;
-            filter: drop-shadow(0 0 10px currentColor);
-        }
-
-        .tree-leaf {
-            transition: all 0.3s ease;
-            filter: drop-shadow(0 0 6px currentColor);
-        }
-
-        .tree-mana-orb {
-            animation: pulse-orb 2.5s infinite alternate ease-in-out;
+            filter: drop-shadow(0 0 8px currentColor);
         }
 
         .mana-spore {
@@ -309,16 +294,12 @@
             100% { transform: translateY(-10px) scale(1.25); opacity: 1; }
         }
 
-        @keyframes pulse-orb {
-            0% { transform: scale(0.85); opacity: 0.7; }
-            100% { transform: scale(1.25); opacity: 1; }
-        }
-
-        /* Nós Hexagonais dos Caminhos */
+        /* Nós de Círculos de Magia (Primários, Secundus e Terceirus) */
         .hex-node {
             position: absolute;
-            width: 80px;
-            height: 92px;
+            width: 88px;
+            height: 88px;
+            border-radius: 50%;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -331,42 +312,41 @@
 
         .hex-shape {
             position: absolute;
-            inset: 0;
+            inset: -6px;
             z-index: -1;
-            filter: drop-shadow(0 4px 10px rgba(0,0,0,0.6));
+            border-radius: 50%;
+            filter: drop-shadow(0 4px 12px rgba(0,0,0,0.85));
+            pointer-events: none;
         }
 
-        .hex-shape polygon {
-            stroke-width: 2;
-            fill: #0c1524;
-            stroke: #334155;
+        .hex-shape svg {
+            width: 100%;
+            height: 100%;
+            display: block;
+            animation: rotate-cw 90s infinite linear;
+        }
+
+        .hex-shape polygon, .hex-shape circle {
             transition: all 0.3s ease;
         }
 
         .hex-node:hover {
-            transform: scale(1.18);
+            transform: scale(1.22);
             z-index: 60;
         }
 
-        .hex-node:hover .hex-shape polygon {
-            fill: #1e293b;
-            stroke-width: 2.5;
-        }
-
-        /* Nó Central Duplo Hexágono NEXO • 2D6 */
+        /* Nó Central Círculo Primordial NEXO • 2D6 */
         .hex-node.nexus-core {
-            width: 120px;
-            height: 135px;
+            width: 132px;
+            height: 132px;
             z-index: 28;
         }
-        .hex-node.nexus-core .hex-shape polygon {
-            stroke: #22d3ee;
-            stroke-width: 3.5;
-            fill: rgba(6, 182, 212, 0.22);
-            filter: drop-shadow(0 0 30px rgba(6, 182, 212, 0.8));
+        .hex-node.nexus-core .hex-shape {
+            inset: -10px;
+            filter: drop-shadow(0 0 28px rgba(6, 182, 212, 0.85));
         }
         .hex-node.nexus-core .icon {
-            font-size: 32px;
+            font-size: 30px;
             color: var(--rpg-cyan);
             text-shadow: 0 0 15px var(--rpg-cyan);
         }
@@ -376,39 +356,38 @@
             font-weight: 800;
         }
 
-        /* Nós Secundus (Fusão de 2 Caminhos) */
+        /* Círculos de Magia Secundus (2 Caminhos — 66 combinações) */
         .hex-node.tier-secundus {
-            width: 88px;
-            height: 100px;
+            width: 96px;
+            height: 96px;
             z-index: 24;
         }
-        .hex-node.tier-secundus .hex-shape polygon {
-            stroke-width: 3;
-            stroke-dasharray: none;
+        .hex-node.tier-secundus .hex-shape {
+            inset: -8px;
         }
         .hex-node.tier-secundus .tier-tag {
             font-size: 7.5px;
             font-weight: 800;
             letter-spacing: 0.5px;
-            color: #f59e0b;
+            color: #e9d5ff;
             text-transform: uppercase;
-            background: rgba(120, 53, 15, 0.6);
-            border: 1px solid rgba(245, 158, 11, 0.4);
-            border-radius: 4px;
-            padding: 0 3px;
+            background: rgba(88, 28, 135, 0.78);
+            border: 1px solid rgba(192, 132, 252, 0.55);
+            border-radius: 999px;
+            padding: 0 5px;
             margin-top: 1px;
             z-index: 2;
         }
 
-        /* Nós Terceirus (Cúpula da Árvore / 3 Caminhos) */
+        /* Círculos de Magia Terceirus (3 Caminhos — 120 combinações) */
         .hex-node.tier-terceirus {
-            width: 104px;
-            height: 118px;
+            width: 110px;
+            height: 110px;
             z-index: 26;
         }
-        .hex-node.tier-terceirus .hex-shape polygon {
-            stroke-width: 3.5;
-            filter: drop-shadow(0 0 18px currentColor);
+        .hex-node.tier-terceirus .hex-shape {
+            inset: -10px;
+            filter: drop-shadow(0 0 18px rgba(251, 191, 36, 0.55));
         }
         .hex-node.tier-terceirus .tier-tag {
             font-size: 8px;
@@ -416,30 +395,94 @@
             letter-spacing: 0.8px;
             color: #fef08a;
             text-transform: uppercase;
-            background: rgba(180, 83, 9, 0.75);
+            background: rgba(180, 83, 9, 0.82);
             border: 1.5px solid #fbbf24;
-            border-radius: 4px;
-            padding: 1px 5px;
+            border-radius: 999px;
+            padding: 1px 6px;
             margin-top: 1px;
             box-shadow: 0 0 10px rgba(245, 158, 11, 0.6);
             z-index: 2;
         }
-        .hex-node.tier-terceirus .crown-leaves {
+
+        /* Barra Seletora de Órbita de Círculos no Topo do Mapa */
+        .orbit-filter-bar {
             position: absolute;
-            top: -22px;
+            top: 16px;
             left: 50%;
             transform: translateX(-50%);
-            width: 60px;
-            height: 28px;
-            pointer-events: none;
-            z-index: 3;
-            filter: drop-shadow(0 0 8px #fbbf24);
+            z-index: 42;
+            background: rgba(11, 15, 25, 0.9);
+            backdrop-filter: blur(14px);
+            border: 1px solid rgba(102, 252, 241, 0.3);
+            border-radius: 999px;
+            padding: 6px 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.75);
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .orbit-pill {
+            background: rgba(15, 23, 42, 0.85);
+            border: 1px solid rgba(148, 163, 184, 0.25);
+            color: #cbd5e1;
+            font-family: 'Cinzel', serif;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 999px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .orbit-pill:hover, .orbit-pill.active {
+            background: rgba(102, 252, 241, 0.18);
+            border-color: var(--rpg-cyan);
+            color: #ffffff;
+            box-shadow: 0 0 12px rgba(102, 252, 241, 0.35);
+        }
+
+        /* Grid de Cartões de Círculos de Magia no Modal */
+        .circles-compendium-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(255px, 1fr));
+            gap: 14px;
+            margin-top: 14px;
+        }
+        .magic-circle-card {
+            background: rgba(11, 17, 30, 0.92);
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            border-radius: 14px;
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: all 0.22s ease;
+            cursor: pointer;
+        }
+        .magic-circle-card:hover {
+            border-color: var(--rpg-cyan);
+            transform: translateY(-3px);
+            box-shadow: 0 12px 28px rgba(0,0,0,0.75), 0 0 20px rgba(102,252,241,0.18);
+        }
+        .magic-circle-card .circle-svg-wrap {
+            width: 150px;
+            height: 150px;
+            margin-bottom: 8px;
+            filter: drop-shadow(0 0 14px rgba(102, 252, 241, 0.2));
+        }
+        .magic-circle-card .circle-svg-wrap svg {
+            width: 100%;
+            height: 100%;
+            display: block;
         }
 
         /* Níveis / Status */
-        .hex-node.unlocked .hex-shape polygon {
-            fill: rgba(15, 23, 42, 0.95);
-            stroke-width: 2.5;
+        .hex-node.locked {
+            opacity: 0.86;
+        }
+        .hex-node.unlocked {
+            opacity: 1;
         }
 
         .hex-node.selected-fusion {
@@ -447,10 +490,7 @@
             z-index: 80;
             animation: highlight-pulse 1s infinite alternate;
         }
-        .hex-node.selected-fusion .hex-shape polygon {
-            stroke: #ffffff !important;
-            stroke-width: 3.5 !important;
-            fill: rgba(255, 255, 255, 0.3) !important;
+        .hex-node.selected-fusion .hex-shape {
             filter: drop-shadow(0 0 25px #ffffff) !important;
         }
 
@@ -1015,11 +1055,11 @@
     <header>
         <div class="header-title-box">
             <div class="header-rune-icon">
-                <i class="fa-solid fa-wand-magic-sparkles"></i>
+                <i class="fa-solid fa-compass-drafting"></i>
             </div>
             <div>
-                <h1 class="font-cinzel text-xl md:text-2xl font-bold tracking-wider" style="color: var(--rpg-cyan); text-shadow: 0 0 15px rgba(102, 252, 241, 0.5);">Biblioteca Arcana &middot; +2d6</h1>
-                <p id="user-display" class="text-xs text-gray-400 font-inter">12 Caminhos Místicos &middot; 3 Formas (Daemon +2d6)</p>
+                <h1 class="font-cinzel text-xl md:text-2xl font-bold tracking-wider" style="color: var(--rpg-cyan); text-shadow: 0 0 15px rgba(102, 252, 241, 0.5);">Círculos de Magia &middot; +2d6</h1>
+                <p id="user-display" class="text-xs text-gray-400 font-inter">12 Caminhos &middot; 66 Secundus &middot; 120 Terceirus (Daemon +2d6)</p>
             </div>
         </div>
 
@@ -1056,10 +1096,10 @@
                 <span>Altar de Fusão</span>
             </button>
 
-            <!-- Botão da Tabela de Fusões -->
+            <!-- Botão do Compêndio de 186 Círculos de Magia -->
             <button onclick="toggleFusionTable()" class="btn-fusion-toggle" style="background: linear-gradient(135deg, rgba(251,191,36,0.25), rgba(180,142,173,0.2)); border-color: #fbbf24; color: #fbbf24; box-shadow: 0 0 15px rgba(251,191,36,0.2);">
-                <i class="fa-solid fa-table"></i>
-                <span class="hidden md:inline">Tabela de Fusões</span>
+                <i class="fa-solid fa-dharmachakra"></i>
+                <span class="hidden md:inline">186 Círculos (66/120)</span>
             </button>
 
             <a href="../index.html" class="btn-top">
@@ -1069,8 +1109,24 @@
         </div>
     </header>
 
-    <!-- Área de Visualização Cósmica -->
+    <!-- Área de Visualização dos Círculos de Magia Concêntricos -->
     <div id="tree-viewport">
+        <!-- Barra Flutuante de Filtro dos Anéis de Círculos Mágicos -->
+        <div class="orbit-filter-bar" id="orbit-filter-bar">
+            <span class="text-[10px] font-cinzel text-cyan-300 font-bold uppercase tracking-wider"><i class="fa-solid fa-compass-drafting mr-1"></i>Anéis de Círculos:</span>
+            <button class="orbit-pill active" id="orbit-pill-default" onclick="setOrbitPathFilter(null)">Principais / Ativos</button>
+            <button class="orbit-pill" onclick="setOrbitPathFilter('fogo')" title="Ver Círculos de Fogo">🔥 Fogo</button>
+            <button class="orbit-pill" onclick="setOrbitPathFilter('agua')" title="Ver Círculos de Água">💧 Água</button>
+            <button class="orbit-pill" onclick="setOrbitPathFilter('ar')" title="Ver Círculos de Ar">💨 Ar</button>
+            <button class="orbit-pill" onclick="setOrbitPathFilter('terra')" title="Ver Círculos de Terra">⛰️ Terra</button>
+            <button class="orbit-pill" onclick="setOrbitPathFilter('luz')" title="Ver Círculos de Luz">☀️ Luz</button>
+            <button class="orbit-pill" onclick="setOrbitPathFilter('trevas')" title="Ver Círculos de Trevas">🌑 Trevas</button>
+            <button class="orbit-pill" onclick="setOrbitPathFilter('spiritum')" title="Ver Círculos de Spiritum">👻 Spiritum</button>
+            <button class="orbit-pill" onclick="setOrbitPathFilter('arkanum')" title="Ver Círculos de Arkanum">👿 Arkanum</button>
+            <button class="orbit-pill" onclick="setOrbitPathFilter('metamagia')" title="Ver Círculos de Metamagia">♾️ Metamagia</button>
+            <button class="orbit-pill" style="border-color:#fbbf24; color:#fde68a;" onclick="toggleFusionTable()"><i class="fa-solid fa-grip mr-1"></i>Ver Todos (66 + 120)</button>
+        </div>
+
         <div id="tree-canvas">
             <div id="center-point">
                 <div class="rune-circle rune-circle-1"></div>
@@ -1085,7 +1141,7 @@
         <!-- Tooltip Dinâmico -->
         <div id="info-tooltip" class="tooltip"></div>
 
-        <!-- Barra Lateral Flutuante: Navegação dos 12 Caminhos com Gestão de Pontos -->
+        <!-- Barra Lateral Flutuante: Navegação dos 12 Caminhos + 66 Secundus + 120 Terceirus -->
         <div class="floating-sidebar" id="floating-sidebar">
             <button class="sidebar-toggle-btn" onclick="toggleSidebarCollapse()" title="Recolher / Expandir Painel dos 12 Caminhos">
                 <i class="fa-solid fa-chevron-left" id="sidebar-toggle-icon"></i>
@@ -1093,14 +1149,14 @@
             <div class="glass-panel">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 8px;">
                     <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--rpg-cyan); font-family: 'Cinzel', serif;">
-                        <i class="fa-solid fa-circle-nodes"></i> Caminhos & Fusões
+                        <i class="fa-solid fa-circle-nodes"></i> Círculos & Caminhos
                     </div>
                     <div style="font-size: 10px; color:#fbbf24;">
                         PM Disp: <strong id="sidebar-pm-disp">4</strong>
                     </div>
                 </div>
                 
-                <div class="category-tab">
+                <div class="category-tab" style="flex-wrap: wrap;">
                     <button class="cat-btn active" onclick="filterCategory('all', event)">Todos</button>
                     <button class="cat-btn" onclick="filterCategory('elemental', event)">Elementais</button>
                     <button class="cat-btn" onclick="filterCategory('vital', event)">Vitais</button>
@@ -1126,26 +1182,33 @@
     <div id="fusion-altar">
         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(102, 252, 241, 0.2); padding-bottom: 12px;">
             <div style="display: flex; align-items: center; gap: 10px;">
-                <i class="fa-solid fa-flask-vial text-xl text-cyan-400"></i>
-                <h2 class="font-cinzel text-xl font-bold text-white">Altar de Fusão Arcana</h2>
+                <i class="fa-solid fa-compass-drafting text-xl text-cyan-400"></i>
+                <h2 class="font-cinzel text-xl font-bold text-white">Altar de Círculos Mágicos</h2>
             </div>
             <button onclick="toggleFusionAltar()" style="background:none; border:none; color:#94a3b8; font-size:18px; cursor:pointer;"><i class="fa-solid fa-xmark"></i></button>
         </div>
 
-        <p class="text-xs text-gray-300 my-3">Combine 2 Caminhos e escolha uma Forma para sintetizar uma magia híbrida com resolução no sistema +2d6.</p>
+        <p class="text-xs text-gray-300 my-3">Combine <strong>2 Caminhos</strong> para um Círculo <strong class="text-purple-300">Secundus (66)</strong> ou <strong>3 Caminhos</strong> para um Círculo <strong class="text-amber-300">Terceirus (120)</strong>.</p>
 
-        <!-- Slots de Fusão -->
+        <!-- Slots de Fusão (2 para Secundus, 3º opcional para Terceirus) -->
         <div class="fusion-slots">
-            <div id="slot-1" class="fusion-slot" onclick="selectSlot(1)">
+            <div id="slot-1" class="fusion-slot" onclick="selectSlot(1)" title="Clique para limpar o Caminho 1">
                 <i class="fa-solid fa-circle-plus text-gray-500 text-xl mb-1" id="slot-1-icon"></i>
                 <span class="text-[10px] font-cinzel text-gray-400" id="slot-1-name">Caminho 1</span>
             </div>
 
-            <div class="fusion-plus"><i class="fa-solid fa-bolt"></i></div>
+            <div class="fusion-plus"><i class="fa-solid fa-plus text-sm"></i></div>
 
-            <div id="slot-2" class="fusion-slot" onclick="selectSlot(2)">
+            <div id="slot-2" class="fusion-slot" onclick="selectSlot(2)" title="Clique para limpar o Caminho 2">
                 <i class="fa-solid fa-circle-plus text-gray-500 text-xl mb-1" id="slot-2-icon"></i>
                 <span class="text-[10px] font-cinzel text-gray-400" id="slot-2-name">Caminho 2</span>
+            </div>
+
+            <div class="fusion-plus"><i class="fa-solid fa-plus text-sm text-amber-400"></i></div>
+
+            <div id="slot-3" class="fusion-slot" onclick="selectSlot(3)" title="Opcional: 3º Caminho para forjar Terceirus (Clique para limpar)" style="border-color: rgba(251, 191, 36, 0.35);">
+                <i class="fa-solid fa-circle-plus text-amber-500/60 text-xl mb-1" id="slot-3-icon"></i>
+                <span class="text-[10px] font-cinzel text-amber-300/70" id="slot-3-name">3º (Terceirus)</span>
             </div>
         </div>
 
@@ -1171,9 +1234,9 @@
             </div>
         </div>
 
-        <!-- Resultado da Fusão -->
+        <!-- Resultado da Fusão com Círculo de Magia SVG -->
         <div class="fusion-result-box" id="fusion-result-display">
-            <div class="text-center text-gray-500 text-xs italic">Selecione dois caminhos na árvore ou na lista para forjar uma fusão.</div>
+            <div class="text-center text-gray-500 text-xs italic">Selecione 2 caminhos (Secundus) ou 3 caminhos (Terceirus) nos círculos mágicos para invocar o selo rúnico.</div>
         </div>
 
         <!-- Rolagem de Teste +2d6 -->
@@ -1204,22 +1267,36 @@
         </div>
     </div>
 
-    <!-- ===== MODAL: TABELA COMPLETA DE FUSÕES DE CAMINHOS ===== -->
+    <!-- ===== MODAL: COMPÊNDIO VISUAL DOS 186 CÍRCULOS DE MAGIA (66 SECUNDUS & 120 TERCEIRUS) ===== -->
     <div id="fusion-table-overlay" onclick="closeFusionTableOnBackdrop(event)">
         <div class="fusion-table-modal">
             <button class="btn-close-modal" onclick="toggleFusionTable()" title="Fechar"><i class="fa-solid fa-xmark"></i></button>
 
-            <h2><i class="fa-solid fa-table mr-2"></i>Tabela de Fusões de Caminhos</h2>
-            <p style="color:#94a3b8; font-size:13px; margin-bottom:20px;">Combine dois Caminhos Primários para descobrir o Caminho Secundário resultante. Todas as fusões do sistema +2D6 de Kuar-Tor.</p>
+            <h2><i class="fa-solid fa-dharmachakra mr-2"></i>Compêndio de Círculos de Magia — 66 Secundus &amp; 120 Terceirus</h2>
+            <p style="color:#94a3b8; font-size:13px; margin-bottom:16px;">Cada combinação de 2 caminhos (<strong>66 Secundus</strong>) ou 3 caminhos (<strong>120 Terceirus</strong>) gera um Círculo de Magia rúnico exclusivo. Clique em qualquer círculo para carregá-lo no Altar de Fusão!</p>
 
-            <!-- Busca -->
-            <div style="margin-bottom:24px;">
-                <input type="search" id="fusion-search-input" class="fusion-search" placeholder="🔍  Buscar fusão (ex: Fogo, Plasma, Cristal...)" oninput="filterFusionTable(this.value)">
+            <!-- Barra de Busca e Filtros de Tier / Caminho -->
+            <div style="display:flex; flex-wrap:wrap; gap:10px; align-items:center; justify-content:space-between; margin-bottom:16px;">
+                <input type="search" id="fusion-search-input" class="fusion-search" placeholder="🔍  Buscar entre os 186 círculos (ex: Magma, Cataclismo, Fogo, #005...)" oninput="filterFusionTable(this.value)">
+                <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                    <button class="orbit-pill active" id="modal-tier-all" onclick="setModalCircleTier('ALL')">Todos (186)</button>
+                    <button class="orbit-pill" id="modal-tier-sec" onclick="setModalCircleTier('SECUNDUS')" style="border-color:#c084fc; color:#e9d5ff;">Secundus (66)</button>
+                    <button class="orbit-pill" id="modal-tier-ter" onclick="setModalCircleTier('TERCEIRUS')" style="border-color:#fbbf24; color:#fde68a;">Terceirus (120)</button>
+                </div>
+            </div>
+
+            <!-- Galeria Visual de Círculos de Magia (186 SVGs) -->
+            <div id="modal-circles-gallery-section" style="margin-bottom: 28px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                    <span id="modal-circles-count-label" class="text-xs font-mono text-cyan-300">Exibindo 186 Círculos de Magia (66 Secundus + 120 Terceirus)</span>
+                    <a href="circulos_magia.html" class="text-xs text-amber-400 hover:underline font-cinzel"><i class="fa-solid fa-up-right-from-square mr-1"></i>Abrir Galeria em Tela Cheia</a>
+                </div>
+                <div id="modal-circles-grid" class="circles-compendium-grid" style="max-height: 520px; overflow-y: auto; padding-right: 6px;"></div>
             </div>
 
             <!-- FUSÕES ELEMENTAIS -->
             <div class="fusion-section" id="fsec-elemental">
-                <h3 style="color:#38bdf8;"><i class="fa-solid fa-fire-flame-curved mr-2"></i>Fusões Elementais <span class="section-badge" style="background:rgba(56,189,248,0.15); color:#38bdf8; border:1px solid rgba(56,189,248,0.3);">6 Elementais</span></h3>
+                <h3 style="color:#38bdf8;"><i class="fa-solid fa-fire-flame-curved mr-2"></i>Resumo Rápido — Fusões Elementais <span class="section-badge" style="background:rgba(56,189,248,0.15); color:#38bdf8; border:1px solid rgba(56,189,248,0.3);">6 Elementais</span></h3>
                 <div style="overflow-x:auto;">
                 <table class="fusion-tbl">
                     <thead><tr>
@@ -1311,7 +1388,7 @@
 
             <!-- rodapé -->
             <div style="margin-top:28px; padding-top:16px; border-top:1px solid rgba(102,252,241,0.15); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
-                <span style="font-size:12px; color:#475569;">Total: <strong style="color:#94a3b8;">30 fusões</strong> catalogadas · Sistema +2D6 Kuar-Tor</span>
+                <span style="font-size:12px; color:#475569;">Total: <strong style="color:#94a3b8;">66 Secundus + 120 Terceirus (186 Círculos de Magia)</strong> · Sistema +2D6 Kuar-Tor</span>
                 <button onclick="toggleFusionTable()" class="btn-fusion-toggle" style="font-size:12px; padding:8px 16px;"><i class="fa-solid fa-xmark mr-1"></i>Fechar</button>
             </div>
         </div>
@@ -1818,8 +1895,16 @@
         let userPM = characterState.availablePM;
         let selectedPath1 = null;
         let selectedPath2 = null;
+        let selectedPath3 = null;
         let activeForma = "Criar";
         let activeFusionData = null;
+        let orbitPathFilter = null;
+        let modalCircleTier = 'ALL';
+
+        const circleGen = (typeof MagicCircleGenerator !== 'undefined') ? MagicCircleGenerator : null;
+        const circlesCatalog = (typeof window !== 'undefined' && window.CIRCLES_DATA)
+            ? window.CIRCLES_DATA
+            : { secundus: [], terceirus: [] };
 
         function saveState() {
             try {
@@ -1833,20 +1918,21 @@
         }
 
         // =========================================================================
-        // Coordenadas dos Nós (12 Caminhos na Anatomia da Árvore Ancestral)
+        // Coordenadas dos Nós (Anéis Concêntricos de Círculos de Magia)
         // =========================================================================
         const pathNodes = {};
         let currentCategory = 'all';
 
-        // Nós de Fusão e Mestria Mágica (Secundus e Terceirus na Copa e Ramos)
+        // Círculos de Magia em Destaque nos Anéis Orbitais (R2 = 385px Secundus, R3 = 535px Terceirus)
         const fusionNodes = [
-            // Secundus (Fusão de 2 Caminhos)
+            // 2º Anel Orbital — Círculos Secundus (2 Caminhos)
             {
                 id: "fusion_magma",
+                circleId: "s03",
                 name: "MAGMA",
                 tier: "SECUNDUS",
-                x: -240,
-                y: 70,
+                x: 272,
+                y: -272,
                 paths: ["fogo", "terra"],
                 forma: "Criar",
                 color: "#f97316",
@@ -1855,24 +1941,52 @@
             },
             {
                 id: "fusion_necromancia",
+                circleId: "s62",
                 name: "NECROMANCIA",
                 tier: "SECUNDUS",
-                x: 240,
-                y: -60,
+                x: -272,
+                y: 272,
                 paths: ["trevas", "spiritum"],
                 forma: "Criar",
                 color: "#a855f7",
                 icon: "fa-solid fa-skull",
                 level: 1
             },
-            // Terceirus (Cúpula da Árvore / 3 Caminhos Lendários)
+            {
+                id: "s02",
+                circleId: "s02",
+                name: "PLASMA",
+                tier: "SECUNDUS",
+                x: 272,
+                y: 272,
+                paths: ["fogo", "ar"],
+                forma: "Criar",
+                color: "#38bdf8",
+                icon: "fa-solid fa-bolt-lightning",
+                level: 0
+            },
+            {
+                id: "s65",
+                circleId: "s65",
+                name: "TEMPO",
+                tier: "SECUNDUS",
+                x: -272,
+                y: -272,
+                paths: ["spiritum", "metamagia"],
+                forma: "Criar",
+                color: "#14b8a6",
+                icon: "fa-solid fa-hourglass-half",
+                level: 0
+            },
+            // 3º Anel Orbital — Círculos Terceirus (3 Caminhos)
             {
                 id: "fusion_cataclismo",
+                circleId: "t005",
                 name: "CATACLISMO",
                 tier: "TERCEIRUS",
-                x: -330,
-                y: -210,
-                paths: ["fogo", "ar"],
+                x: -463,
+                y: -268,
+                paths: ["fogo", "ar", "terra"],
                 forma: "Criar",
                 color: "#ea580c",
                 icon: "fa-solid fa-meteor",
@@ -1880,53 +1994,134 @@
             },
             {
                 id: "fusion_avatar",
+                circleId: "t100",
                 name: "AVATAR",
                 tier: "TERCEIRUS",
                 x: 0,
-                y: -320,
-                paths: ["luz", "spiritum"],
+                y: -535,
+                paths: ["luz", "spiritum", "metamagia"],
                 forma: "Criar",
                 color: "#38bdf8",
-                icon: "fa-solid fa-sun-plant-wilt",
+                icon: "fa-solid fa-sun",
                 level: 1
             },
             {
                 id: "fusion_golem",
+                circleId: "t088",
                 name: "GOLEM",
                 tier: "TERCEIRUS",
-                x: 330,
-                y: -210,
-                paths: ["terra", "humanos"],
+                x: 463,
+                y: -268,
+                paths: ["terra", "humanos", "metamagia"],
                 forma: "Criar",
                 color: "#eab308",
                 icon: "fa-solid fa-shield-halved",
                 level: 1
+            },
+            {
+                id: "t020",
+                circleId: "t020",
+                name: "ECLIPSE",
+                tier: "TERCEIRUS",
+                x: 0,
+                y: 535,
+                paths: ["fogo", "luz", "trevas"],
+                forma: "Criar",
+                color: "#c084fc",
+                icon: "fa-solid fa-circle-half-stroke",
+                level: 0
             }
         ];
 
+        /** Retorna os nós de fusão ativos para renderizar nos anéis orbitais (padrão ou filtrados por caminho). */
+        function getActiveOrbitalFusions() {
+            if (!orbitPathFilter || !circlesCatalog || !circlesCatalog.secundus || !circlesCatalog.secundus.length) {
+                return fusionNodes;
+            }
+            const secList = circlesCatalog.secundus.filter(e => e.paths.includes(orbitPathFilter));
+            const terList = circlesCatalog.terceirus.filter(e => e.paths.includes(orbitPathFilter)).slice(0, 12);
+            const nodes = [];
+
+            secList.forEach((entry, idx) => {
+                const angleRad = ((idx * (360 / Math.max(secList.length, 1))) - 90) * (Math.PI / 180);
+                const otherKey = entry.paths.find(k => k !== orbitPathFilter) || entry.paths[0];
+                const pOther = magicPaths[otherKey] || magicPaths[orbitPathFilter];
+                nodes.push({
+                    id: entry.id,
+                    circleId: entry.id,
+                    name: entry.name.split('&')[0].trim().toUpperCase(),
+                    fullName: entry.name,
+                    tier: 'SECUNDUS',
+                    x: Math.round(385 * Math.cos(angleRad)),
+                    y: Math.round(385 * Math.sin(angleRad)),
+                    paths: entry.paths,
+                    forma: 'Criar',
+                    color: pOther ? pOther.color : '#c084fc',
+                    icon: pOther ? pOther.icon : 'fa-solid fa-dharmachakra',
+                    level: (characterFusionSkills && characterFusionSkills[entry.id]) || 0
+                });
+            });
+
+            terList.forEach((entry, idx) => {
+                const angleRad = ((idx * (360 / Math.max(terList.length, 1))) - 75) * (Math.PI / 180);
+                nodes.push({
+                    id: entry.id,
+                    circleId: entry.id,
+                    name: entry.name.split('&')[0].trim().toUpperCase(),
+                    fullName: entry.name,
+                    tier: 'TERCEIRUS',
+                    x: Math.round(535 * Math.cos(angleRad)),
+                    y: Math.round(535 * Math.sin(angleRad)),
+                    paths: entry.paths,
+                    forma: 'Criar',
+                    color: '#fbbf24',
+                    icon: 'fa-solid fa-compass-drafting',
+                    level: (characterFusionSkills && characterFusionSkills[entry.id]) || 0
+                });
+            });
+
+            return nodes;
+        }
+
+        function setOrbitPathFilter(pathKey) {
+            orbitPathFilter = pathKey || null;
+            document.querySelectorAll('#orbit-filter-bar .orbit-pill').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            if (!orbitPathFilter) {
+                const defBtn = document.getElementById('orbit-pill-default');
+                if (defBtn) defBtn.classList.add('active');
+            } else {
+                document.querySelectorAll('#orbit-filter-bar .orbit-pill').forEach(btn => {
+                    if (btn.getAttribute('onclick') && btn.getAttribute('onclick').includes(`'${orbitPathFilter}'`)) {
+                        btn.classList.add('active');
+                    }
+                });
+            }
+            renderTree();
+            if (orbitPathFilter && magicPaths[orbitPathFilter]) {
+                showToast(`🔮 Anéis sintonizados nos Círculos de ${magicPaths[orbitPathFilter].name} (11 Secundus + 12 Terceirus)`);
+            }
+        }
+
         function computePathLayout() {
-            const centerNode = { id: "nexus_core", name: "Nexo Arcano", x: 0, y: 0, icon: "fa-solid fa-atom" };
+            const centerNode = { id: "nexus_core", name: "Nexo Arcano", x: 0, y: 0, icon: "fa-solid fa-compass-drafting" };
             pathNodes["nexus_core"] = centerNode;
 
-            // Posições orgânicas na árvore cósmica sem sobreposições e com espaçamento seguro (mín. 110px entre centros)
+            // Posições em Círculo Orbital Perfeito (Raio R1 = 225px, a cada 30 graus, sem sobreposições: dist mín = 116.5px)
             const treePositions = {
-                // Eixo Central (Tronco e Copa)
-                "spiritum":  { x: 0,    y: -150 }, // Tronco Central (logo acima do Nexo)
-                // Asa Superior Esquerda (Flora & Metamagia -> Cataclismo)
-                "plantas":   { x: -130, y: -200 }, // Galho Superior Esquerdo
-                "metamagia": { x: -170, y: -70  }, // Galho Médio Esquerdo
-                "ar":        { x: -280, y: -110 }, // Galho Alto Esquerdo
-                // Asa Inferior Esquerda (Fogo & Magma & Água & Feras)
-                "fogo":      { x: -120, y: 140  }, // Galho Inferior Esquerdo
-                "agua":      { x: -350, y: 10   }, // Galho Lateral Esquerdo
-                "animais":   { x: -280, y: 190  }, // Galho Inferior Esquerdo Extremo
-                // Asa Superior Direita (Arkanum -> Golem)
-                "arkanum":   { x: 160,  y: -160 }, // Galho Superior Direito
-                // Asa Inferior Direita (Terra, Trevas, Luz & Humanos)
-                "terra":     { x: 160,  y: 90   }, // Galho Médio Direito
-                "trevas":    { x: 110,  y: 200  }, // Galho Inferior Direito
-                "luz":       { x: 240,  y: 210  }, // Galho Baixo Direito
-                "humanos":   { x: 330,  y: 120  }  // Galho Baixo Direito Extremo
+                "fogo":      { x: 0,    y: -225 }, // 0°
+                "luz":       { x: 113,  y: -195 }, // 30°
+                "ar":        { x: 195,  y: -113 }, // 60°
+                "agua":      { x: 225,  y: 0    }, // 90°
+                "plantas":   { x: 195,  y: 113  }, // 120°
+                "terra":     { x: 113,  y: 195  }, // 150°
+                "trevas":    { x: 0,    y: 225  }, // 180°
+                "arkanum":   { x: -113, y: 195  }, // 210°
+                "animais":   { x: -195, y: 113  }, // 240°
+                "humanos":   { x: -225, y: 0    }, // 270°
+                "spiritum":  { x: -195, y: -113 }, // 300°
+                "metamagia": { x: -113, y: -195 }  // 330°
             };
 
             Object.keys(magicPaths).forEach(key => {
@@ -1943,7 +2138,7 @@
         computePathLayout();
 
         // =========================================================================
-        // Renderização Visual da Árvore Ancestral
+        // Renderização Visual da Mandala de Círculos de Magia Concêntricos
         // =========================================================================
         const centerPoint = document.getElementById('center-point');
         const svgContainer = document.getElementById('connections-svg');
@@ -1962,190 +2157,110 @@
             if (altarGCount) altarGCount.innerText = grimoireCount;
         }
 
-        function drawCosmicTreeSVG(svgOffset) {
+        function drawMagicCirclesMandalaSVG(svgOffset, activeFusions) {
             const O = svgOffset;
             const isUnlocked = (k) => (characterSkills[k] || 0) > 0;
-            const isFusUnlocked = (f) => (characterFusionSkills && (characterFusionSkills[f.id] || 0) > 0) || (f.paths && f.paths.some(p => (characterSkills[p] || 0) > 0));
+            const isFusUnlocked = (f) => (characterFusionSkills && (characterFusionSkills[f.id] || 0) > 0) || (f.paths && f.paths.every(p => (characterSkills[p] || 0) > 0));
 
             const defs = `
                 <defs>
                     <filter id="tree-glow" x="-30%" y="-30%" width="160%" height="160%">
-                        <feGaussianBlur in="SourceGraphic" stdDeviation="5" result="blur1" />
-                        <feGaussianBlur in="SourceGraphic" stdDeviation="15" result="blur2" />
+                        <feGaussianBlur in="SourceGraphic" stdDeviation="4" result="blur1" />
+                        <feGaussianBlur in="SourceGraphic" stdDeviation="12" result="blur2" />
                         <feMerge>
                             <feMergeNode in="blur2" />
                             <feMergeNode in="blur1" />
                             <feMergeNode in="SourceGraphic" />
                         </feMerge>
                     </filter>
-                    <filter id="tree-glow-cyan" x="-30%" y="-30%" width="160%" height="160%">
-                        <feGaussianBlur in="SourceGraphic" stdDeviation="8" result="blur" />
-                        <feMerge>
-                            <feMergeNode in="blur" />
-                            <feMergeNode in="SourceGraphic" />
-                        </feMerge>
-                    </filter>
-                    <linearGradient id="roots-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                        <stop offset="0%" stop-color="#22d3ee" stop-opacity="0.95" />
-                        <stop offset="45%" stop-color="#06b6d4" stop-opacity="0.8" />
-                        <stop offset="100%" stop-color="#0284c7" stop-opacity="0.05" />
-                    </linearGradient>
-                    <linearGradient id="trunk-cyan" x1="0%" y1="100%" x2="0%" y2="0%">
-                        <stop offset="0%" stop-color="#0891b2" stop-opacity="0.95" />
-                        <stop offset="50%" stop-color="#06b6d4" stop-opacity="0.9" />
-                        <stop offset="100%" stop-color="#67e8f9" stop-opacity="0.95" />
-                    </linearGradient>
+                    <radialGradient id="mandala-core-glow" cx="50%" cy="50%" r="50%">
+                        <stop offset="0%" stop-color="#22d3ee" stop-opacity="0.22" />
+                        <stop offset="55%" stop-color="#a855f7" stop-opacity="0.08" />
+                        <stop offset="100%" stop-color="#030712" stop-opacity="0" />
+                    </radialGradient>
                 </defs>
             `;
 
-            // Raízes Bioluminescentes (Descem a partir do Nexo)
-            const roots = `
-                <g id="tree-roots-group" class="tree-roots" filter="url(#tree-glow-cyan)">
-                    <!-- Tronco das Raízes Centrais -->
-                    <path class="tree-root-path" d="M ${O-8} ${O+35} C ${O-15} ${O+120}, ${O-20} ${O+240}, ${O-5} ${O+420}" stroke="url(#roots-gradient)" stroke-width="12" />
-                    <path class="tree-root-path" d="M ${O+8} ${O+35} C ${O+15} ${O+120}, ${O+20} ${O+240}, ${O+5} ${O+420}" stroke="url(#roots-gradient)" stroke-width="10" />
-                    
-                    <!-- Raízes Principais Esquerda -->
-                    <path class="tree-root-path" d="M ${O-20} ${O+35} C ${O-70} ${O+100}, ${O-140} ${O+180}, ${O-180} ${O+360}" stroke="url(#roots-gradient)" stroke-width="11" />
-                    <path class="tree-root-path" d="M ${O-25} ${O+35} C ${O-120} ${O+90}, ${O-220} ${O+160}, ${O-300} ${O+280}" stroke="url(#roots-gradient)" stroke-width="8.5" />
-                    <path class="tree-root-path" d="M ${O-100} ${O+130} C ${O-150} ${O+210}, ${O-170} ${O+280}, ${O-160} ${O+390}" stroke="url(#roots-gradient)" stroke-width="5" />
-                    <path class="tree-root-path" d="M ${O-180} ${O+180} C ${O-240} ${O+230}, ${O-280} ${O+280}, ${O-310} ${O+340}" stroke="url(#roots-gradient)" stroke-width="4" />
+            // 1. Anéis de Geometria Sagrada e Mandala Rúnica (Substitui a Árvore por Círculos Mágicos)
+            const keys = Object.keys(magicPaths);
+            let dodecagramPts1 = [];
+            let dodecagramPts2 = [];
+            keys.forEach((k, idx) => {
+                if (idx % 2 === 0) dodecagramPts1.push(`${O + pathNodes[k].x},${O + pathNodes[k].y}`);
+                else dodecagramPts2.push(`${O + pathNodes[k].x},${O + pathNodes[k].y}`);
+            });
 
-                    <!-- Raízes Principais Direita -->
-                    <path class="tree-root-path" d="M ${O+20} ${O+35} C ${O+70} ${O+100}, ${O+140} ${O+180}, ${O+180} ${O+360}" stroke="url(#roots-gradient)" stroke-width="11" />
-                    <path class="tree-root-path" d="M ${O+25} ${O+35} C ${O+120} ${O+90}, ${O+220} ${O+160}, ${O+300} ${O+280}" stroke="url(#roots-gradient)" stroke-width="8.5" />
-                    <path class="tree-root-path" d="M ${O+100} ${O+130} C ${O+150} ${O+210}, ${O+170} ${O+280}, ${O+160} ${O+390}" stroke="url(#roots-gradient)" stroke-width="5" />
-                    <path class="tree-root-path" d="M ${O+180} ${O+180} C ${O+240} ${O+230}, ${O+280} ${O+280}, ${O+310} ${O+340}" stroke="url(#roots-gradient)" stroke-width="4" />
-
-                    <!-- Filamentos Finos de Energia nas Raízes -->
-                    <path class="tree-root-path" d="M ${O-5} ${O+160} C ${O-35} ${O+250}, ${O-45} ${O+310}, ${O-50} ${O+380}" stroke="#38bdf8" stroke-width="2.5" opacity="0.8" />
-                    <path class="tree-root-path" d="M ${O+5} ${O+160} C ${O+35} ${O+250}, ${O+45} ${O+310}, ${O+50} ${O+380}" stroke="#38bdf8" stroke-width="2.5" opacity="0.8" />
-
-                    <!-- Orbes de Mana nas Junções das Raízes -->
-                    <circle class="tree-mana-orb" cx="${O-100}" cy="${O+130}" r="4.5" fill="#67e8f9" />
-                    <circle class="tree-mana-orb" cx="${O+100}" cy="${O+130}" r="4.5" fill="#67e8f9" />
-                    <circle class="tree-mana-orb" cx="${O-180}" cy="${O+180}" r="3.5" fill="#38bdf8" />
-                    <circle class="tree-mana-orb" cx="${O+180}" cy="${O+180}" r="3.5" fill="#38bdf8" />
+            const sacredRings = `
+                <g id="tree-roots-group" class="magic-circles-mandala">
+                    <circle cx="${O}" cy="${O}" r="560" fill="url(#mandala-core-glow)" />
+                    <!-- Anel 1: 12 Caminhos Primários (r=225) -->
+                    <circle cx="${O}" cy="${O}" r="225" fill="none" stroke="rgba(102, 252, 241, 0.32)" stroke-width="2" />
+                    <circle cx="${O}" cy="${O}" r="215" fill="none" stroke="rgba(102, 252, 241, 0.14)" stroke-width="1" stroke-dasharray="4,6" />
+                    <!-- Hexagramas Inscritos nos 12 Caminhos -->
+                    <polygon points="${dodecagramPts1.join(' ')}" fill="none" stroke="rgba(102, 252, 241, 0.16)" stroke-width="1.2" />
+                    <polygon points="${dodecagramPts2.join(' ')}" fill="none" stroke="rgba(192, 132, 252, 0.16)" stroke-width="1.2" />
+                    <!-- Anel 2: Órbita dos 66 Círculos Secundus (r=385) -->
+                    <circle cx="${O}" cy="${O}" r="385" fill="none" stroke="rgba(192, 132, 252, 0.28)" stroke-width="2" stroke-dasharray="10,6" />
+                    <circle cx="${O}" cy="${O}" r="375" fill="none" stroke="rgba(192, 132, 252, 0.12)" stroke-width="1" />
+                    <!-- Anel 3: Órbita dos 120 Círculos Terceirus (r=535) -->
+                    <circle cx="${O}" cy="${O}" r="535" fill="none" stroke="rgba(251, 191, 36, 0.28)" stroke-width="2" stroke-dasharray="14,8" />
+                    <circle cx="${O}" cy="${O}" r="545" fill="none" stroke="rgba(251, 191, 36, 0.14)" stroke-width="1" />
                 </g>
             `;
 
-            // Galhos Orgânicos Principais e Tronco de Luz
+            // 2. Linhas Astrais de Conexão entre Nexo -> 12 Caminhos -> Círculos Secundus & Terceirus
             let branches = `<g id="tree-branches-group" class="tree-branches">`;
 
-            // 1. Tronco Central (Nexo -> Spiritum -> Avatar)
+            keys.forEach(k => {
+                const p = pathNodes[k];
+                const unlocked = isUnlocked(k) || selectedPath1 === k || selectedPath2 === k || selectedPath3 === k;
+                branches += `<line class="tree-branch-path ${unlocked ? 'active' : ''}" x1="${O}" y1="${O}" x2="${O + p.x}" y2="${O + p.y}" stroke="${p.color}" stroke-width="${unlocked ? '3' : '1.5'}" opacity="${unlocked ? '0.85' : '0.28'}" />`;
+            });
+
+            (activeFusions || fusionNodes).forEach(f => {
+                const fusActive = isFusUnlocked(f);
+                (f.paths || []).forEach(pk => {
+                    const pNode = pathNodes[pk];
+                    if (!pNode) return;
+                    const isSelectedLink = (selectedPath1 === pk || selectedPath2 === pk || selectedPath3 === pk);
+                    const activeClass = (fusActive || isSelectedLink) ? 'active' : '';
+                    const opacity = (fusActive || isSelectedLink) ? '0.72' : '0.18';
+                    branches += `<line class="tree-branch-path ${activeClass}" x1="${O + pNode.x}" y1="${O + pNode.y}" x2="${O + f.x}" y2="${O + f.y}" stroke="${f.color || '#c084fc'}" stroke-width="${fusActive ? '2.4' : '1.2'}" opacity="${opacity}" />`;
+                });
+            });
+
+            // Partículas Rúnicas Orbitais
             branches += `
-                <!-- Aura do Tronco -->
-                <path class="tree-branch-path" d="M ${O} ${O+30} C ${O-12} ${O-30}, ${O-10} ${O-90}, ${O} ${O-150}" stroke="rgba(6,182,212,0.35)" stroke-width="32" filter="url(#tree-glow)" />
-                <path class="tree-branch-path" d="M ${O} ${O-150} C ${O-10} ${O-210}, ${O+10} ${O-270}, ${O} ${O-320}" stroke="rgba(56,189,248,0.35)" stroke-width="24" filter="url(#tree-glow)" />
-
-                <!-- Tronco Principal de Mana -->
-                <path class="tree-branch-path ${isUnlocked('spiritum') ? 'active' : ''}" d="M ${O} ${O-35} C ${O} ${O-70}, ${O} ${O-110}, ${O} ${O-150}" stroke="url(#trunk-cyan)" stroke-width="16" />
-                <path class="tree-branch-path ${isFusUnlocked(fusionNodes[3]) ? 'active' : ''}" d="M ${O} ${O-150} C ${O-8} ${O-210}, ${O+8} ${O-270}, ${O} ${O-320}" stroke="#38bdf8" stroke-width="12" />
-
-                <!-- Filamento Luminoso Interno -->
-                <path class="tree-branch-path" d="M ${O} ${O-35} C ${O} ${O-70}, ${O} ${O-110}, ${O} ${O-150}" stroke="#e0f2fe" stroke-width="4.5" opacity="0.9" />
-                <path class="tree-branch-path" d="M ${O} ${O-150} C ${O-8} ${O-210}, ${O+8} ${O-270}, ${O} ${O-320}" stroke="#f0f9ff" stroke-width="3.5" opacity="0.9" />
-            `;
-
-            // 2. Asa Superior Esquerda (Flora & Metamagia -> Cataclismo)
-            branches += `
-                <!-- Tronco -> Metamagia -->
-                <path class="tree-branch-path ${isUnlocked('metamagia') ? 'active' : ''}" d="M ${O-12} ${O-40} C ${O-60} ${O-45}, ${O-115} ${O-55}, ${O-170} ${O-70}" stroke="#14b8a6" stroke-width="11" filter="url(#tree-glow)" />
-                <!-- Tronco -> Plantas -->
-                <path class="tree-branch-path ${isUnlocked('plantas') ? 'active' : ''}" d="M ${O-10} ${O-90} C ${O-50} ${O-125}, ${O-90} ${O-160}, ${O-130} ${O-200}" stroke="#84cc16" stroke-width="10" filter="url(#tree-glow)" />
-                <!-- Metamagia -> Ar -->
-                <path class="tree-branch-path ${isUnlocked('ar') ? 'active' : ''}" d="M ${O-170} ${O-70} C ${O-210} ${O-85}, ${O-245} ${O-95}, ${O-280} ${O-110}" stroke="#38bdf8" stroke-width="8.5" />
-                <!-- Plantas -> Cataclismo -->
-                <path class="tree-branch-path ${isFusUnlocked(fusionNodes[2]) ? 'active' : ''}" d="M ${O-130} ${O-200} C ${O-190} ${O-210}, ${O-265} ${O-210}, ${O-330} ${O-210}" stroke="#ea580c" stroke-width="9" filter="url(#tree-glow)" />
-                <!-- Ar -> Cataclismo -->
-                <path class="tree-branch-path ${isFusUnlocked(fusionNodes[2]) ? 'active' : ''}" d="M ${O-280} ${O-110} C ${O-300} ${O-145}, ${O-315} ${O-175}, ${O-330} ${O-210}" stroke="#f97316" stroke-width="6" />
-            `;
-
-            // 3. Asa Inferior Esquerda (Fogo & Magma & Água & Feras)
-            branches += `
-                <!-- Tronco -> Fogo -->
-                <path class="tree-branch-path ${isUnlocked('fogo') ? 'active' : ''}" d="M ${O-15} ${O+20} C ${O-50} ${O+55}, ${O-85} ${O+95}, ${O-120} ${O+140}" stroke="#f97316" stroke-width="11" filter="url(#tree-glow)" />
-                <!-- Fogo -> Magma -->
-                <path class="tree-branch-path ${isFusUnlocked(fusionNodes[0]) ? 'active' : ''}" d="M ${O-120} ${O+140} C ${O-160} ${O+120}, ${O-200} ${O+95}, ${O-240} ${O+70}" stroke="#ea580c" stroke-width="9" filter="url(#tree-glow)" />
-                <!-- Magma -> Água -->
-                <path class="tree-branch-path ${isUnlocked('agua') ? 'active' : ''}" d="M ${O-240} ${O+70} C ${O-275} ${O+50}, ${O-315} ${O+30}, ${O-350} ${O+10}" stroke="#06b6d4" stroke-width="7.5" />
-                <!-- Magma -> Animais -->
-                <path class="tree-branch-path ${isUnlocked('animais') ? 'active' : ''}" d="M ${O-240} ${O+70} C ${O-255} ${O+115}, ${O-265} ${O+155}, ${O-280} ${O+190}" stroke="#eab308" stroke-width="7.5" />
-            `;
-
-            // 4. Asa Superior Direita (Arkanum -> Golem)
-            branches += `
-                <!-- Tronco -> Arkanum -->
-                <path class="tree-branch-path ${isUnlocked('arkanum') ? 'active' : ''}" d="M ${O+12} ${O-80} C ${O+60} ${O-105}, ${O+110} ${O-130}, ${O+160} ${O-160}" stroke="#ef4444" stroke-width="10" filter="url(#tree-glow)" />
-                <!-- Tronco -> Necromancia -->
-                <path class="tree-branch-path ${isFusUnlocked(fusionNodes[1]) ? 'active' : ''}" d="M ${O+15} ${O-30} C ${O+90} ${O-40}, ${O+165} ${O-50}, ${O+240} ${O-60}" stroke="#a855f7" stroke-width="9" filter="url(#tree-glow)" />
-                <!-- Arkanum -> Golem -->
-                <path class="tree-branch-path ${isFusUnlocked(fusionNodes[4]) ? 'active' : ''}" d="M ${O+160} ${O-160} C ${O+215} ${O-180}, ${O+275} ${O-195}, ${O+330} ${O-210}" stroke="#eab308" stroke-width="9" filter="url(#tree-glow)" />
-                <!-- Necromancia -> Golem -->
-                <path class="tree-branch-path ${isFusUnlocked(fusionNodes[4]) ? 'active' : ''}" d="M ${O+240} ${O-60} C ${O+285} ${O-110}, ${O+310} ${O-160}, ${O+330} ${O-210}" stroke="#fbbf24" stroke-width="6" />
-            `;
-
-            // 5. Asa Inferior Direita (Terra, Trevas, Luz & Humanos)
-            branches += `
-                <!-- Tronco -> Terra -->
-                <path class="tree-branch-path ${isUnlocked('terra') ? 'active' : ''}" d="M ${O+15} ${O+20} C ${O+65} ${O+45}, ${O+115} ${O+65}, ${O+160} ${O+90}" stroke="#10b981" stroke-width="11" filter="url(#tree-glow)" />
-                <!-- Tronco -> Trevas -->
-                <path class="tree-branch-path ${isUnlocked('trevas') ? 'active' : ''}" d="M ${O+12} ${O+30} C ${O+40} ${O+85}, ${O+75} ${O+145}, ${O+110} ${O+200}" stroke="#6366f1" stroke-width="10" filter="url(#tree-glow)" />
-                <!-- Terra -> Luz -->
-                <path class="tree-branch-path ${isUnlocked('luz') ? 'active' : ''}" d="M ${O+160} ${O+90} C ${O+190} ${O+130}, ${O+215} ${O+170}, ${O+240} ${O+210}" stroke="#fbbf24" stroke-width="8" />
-                <!-- Terra -> Humanos -->
-                <path class="tree-branch-path ${isUnlocked('humanos') ? 'active' : ''}" d="M ${O+160} ${O+90} C ${O+220} ${O+100}, ${O+275} ${O+110}, ${O+330} ${O+120}" stroke="#ec4899" stroke-width="8" />
-            `;
-
-            // 6. Folhas Místicas Espalhadas nos Ramos
-            branches += `
-                <g class="tree-leaves">
-                    <path class="tree-leaf" d="M ${O-70} ${O-140} C ${O-85} ${O-150}, ${O-80} ${O-165}, ${O-65} ${O-155} Z" fill="#84cc16" />
-                    <path class="tree-leaf" d="M ${O-150} ${O-175} C ${O-165} ${O-190}, ${O-155} ${O-205}, ${O-140} ${O-190} Z" fill="#84cc16" />
-                    <path class="tree-leaf" d="M ${O-220} ${O-100} C ${O-235} ${O-115}, ${O-225} ${O-130}, ${O-210} ${O-115} Z" fill="#38bdf8" />
-                    <path class="tree-leaf" d="M ${O-10} ${O-240} C ${O-20} ${O-260}, ${O-10} ${O-275}, ${O} ${O-260} Z" fill="#38bdf8" />
-                    <path class="tree-leaf" d="M ${O+10} ${O-240} C ${O+20} ${O-260}, ${O+10} ${O-275}, ${O} ${O-260} Z" fill="#38bdf8" />
-                    <path class="tree-leaf" d="M ${O+90} ${O-120} C ${O+105} ${O-130}, ${O+100} ${O-145}, ${O+85} ${O-135} Z" fill="#a855f7" />
-                    <path class="tree-leaf" d="M ${O+190} ${O-170} C ${O+210} ${O-180}, ${O+205} ${O-195}, ${O+185} ${O-185} Z" fill="#eab308" />
-                    <path class="tree-leaf" d="M ${O-150} ${O+110} C ${O-165} ${O+125}, ${O-155} ${O+140}, ${O-140} ${O+125} Z" fill="#f97316" />
-                    <path class="tree-leaf" d="M ${O-260} ${O+60} C ${O-275} ${O+75}, ${O-265} ${O+90}, ${O-250} ${O+75} Z" fill="#06b6d4" />
-                    <path class="tree-leaf" d="M ${O+80} ${O+75} C ${O+95} ${O+90}, ${O+85} ${O+105}, ${O+70} ${O+90} Z" fill="#10b981" />
-                    <path class="tree-leaf" d="M ${O+180} ${O+140} C ${O+195} ${O+155}, ${O+185} ${O+170}, ${O+170} ${O+155} Z" fill="#fbbf24" />
-                    <path class="tree-leaf" d="M ${O+260} ${O+100} C ${O+275} ${O+115}, ${O+265} ${O+130}, ${O+250} ${O+115} Z" fill="#ec4899" />
-                </g>
-
-                <!-- Esporos Mágicos Flutuantes -->
                 <g class="tree-spores">
-                    <circle class="mana-spore" cx="${O-80}" cy="${O-100}" r="2" fill="#84cc16" />
-                    <circle class="mana-spore" cx="${O-200}" cy="${O-140}" r="2.5" fill="#38bdf8" />
-                    <circle class="mana-spore" cx="${O+80}" cy="${O-160}" r="2" fill="#c084fc" />
-                    <circle class="mana-spore" cx="${O+200}" cy="${O-110}" r="2.5" fill="#fef08a" />
-                    <circle class="mana-spore" cx="${O-160}" cy="${O+80}" r="2" fill="#fb923c" />
-                    <circle class="mana-spore" cx="${O+120}" cy="${O+120}" r="2.5" fill="#6ee7b7" />
+                    <circle class="mana-spore" cx="${O-160}" cy="${O-160}" r="2.5" fill="#22d3ee" />
+                    <circle class="mana-spore" cx="${O+160}" cy="${O-160}" r="2.5" fill="#c084fc" />
+                    <circle class="mana-spore" cx="${O-160}" cy="${O+160}" r="2.5" fill="#fbbf24" />
+                    <circle class="mana-spore" cx="${O+160}" cy="${O+160}" r="2.5" fill="#38bdf8" />
                 </g>
             `;
             branches += `</g>`;
 
-            return defs + roots + branches;
+            return defs + sacredRings + branches;
         }
 
         function renderTree() {
             centerPoint.querySelectorAll('.hex-node').forEach(n => n.remove());
             const svgOffset = 2500;
+            const activeFusions = getActiveOrbitalFusions();
 
-            // 1. Desenhar a Árvore Ancestral Cósmica Bioluminescente no SVG
-            svgContainer.innerHTML = drawCosmicTreeSVG(svgOffset);
+            // 1. Desenhar os Anéis Concêntricos de Círculos de Magia no SVG
+            svgContainer.innerHTML = drawMagicCirclesMandalaSVG(svgOffset, activeFusions);
 
-            // 2. Criar Nó Central NEXO • 2D6
+            // 2. Criar Círculo Central NEXO • 2D6
             createCoreNode();
 
-            // 3. Criar Nós Primários (12 Caminhos)
+            // 3. Criar Círculos Primários (12 Caminhos no 1º Anel r=225px)
             Object.keys(magicPaths).forEach(key => {
                 createPathNode(key, pathNodes[key]);
             });
 
-            // 4. Criar Nós de Fusão (Secundus e Terceirus)
-            fusionNodes.forEach(f => {
+            // 4. Criar Círculos de Fusão (Secundus no 2º Anel r=385px e Terceirus no 3º Anel r=535px)
+            activeFusions.forEach(f => {
                 createFusionNode(f);
             });
 
@@ -2157,25 +2272,31 @@
         function createCoreNode() {
             const el = document.createElement('div');
             el.className = 'hex-node nexus-core';
-            el.style.left = '-60px';
-            el.style.top = '-67px';
+            el.style.left = '-66px';
+            el.style.top = '-66px';
 
             const shape = document.createElement('div');
             shape.className = 'hex-shape';
             shape.innerHTML = `
-                <svg viewBox="0 0 100 115" preserveAspectRatio="none" style="width:100%; height:100%;">
-                    <polygon points="50,0 100,28 100,86 50,115 0,86 0,28" stroke="#22d3ee" stroke-width="4" fill="rgba(6,182,212,0.25)" filter="url(#tree-glow)" />
-                    <polygon points="50,12 88,34 88,80 50,102 12,80 12,34" stroke="#67e8f9" stroke-width="2" fill="#071526" />
+                <svg viewBox="0 0 200 200" style="width:100%; height:100%;">
+                    <circle cx="100" cy="100" r="95" stroke="#22d3ee" stroke-width="3" fill="rgba(7, 21, 38, 0.92)" />
+                    <circle cx="100" cy="100" r="86" stroke="#67e8f9" stroke-width="1.2" stroke-dasharray="6,4" fill="none" />
+                    <polygon points="100,12 176,144 24,144" stroke="#22d3ee" stroke-width="1.8" fill="rgba(6,182,212,0.12)" />
+                    <polygon points="100,188 176,56 24,56" stroke="#c084fc" stroke-width="1.8" fill="rgba(168,85,247,0.1)" />
+                    <circle cx="100" cy="100" r="56" stroke="#fbbf24" stroke-width="1.5" fill="#050d1a" />
                 </svg>
             `;
 
             el.innerHTML = `
-                <i class="fa-solid fa-atom icon" style="color: #67e8f9; text-shadow: 0 0 16px #06b6d4;"></i>
+                <i class="fa-solid fa-compass-drafting icon" style="color: #67e8f9; text-shadow: 0 0 16px #06b6d4;"></i>
                 <div class="spell-title font-cinzel font-black" style="color: #ffffff; letter-spacing: 0.8px; font-size: 11px;">NEXO &bull; 2D6</div>
-                <span class="text-[8px] font-mono text-cyan-300 font-bold tracking-widest mt-0.5">TRONCO VITAL</span>
+                <span class="text-[7.5px] font-mono text-cyan-300 font-bold tracking-widest mt-0.5">CÍRCULO CENTRAL</span>
             `;
             el.appendChild(shape);
-            el.onclick = () => resetView();
+            el.onclick = () => {
+                setOrbitPathFilter(null);
+                resetView();
+            };
             centerPoint.appendChild(el);
         }
 
@@ -2183,8 +2304,8 @@
             const el = document.createElement('div');
             el.id = `node-${fusion.id}`;
             const isTerceirus = (fusion.tier === 'TERCEIRUS');
-            const halfW = isTerceirus ? 52 : 44;
-            const halfH = isTerceirus ? 59 : 50;
+            const halfW = isTerceirus ? 55 : 48;
+            const halfH = isTerceirus ? 55 : 48;
 
             const level = (characterFusionSkills && characterFusionSkills[fusion.id] !== undefined)
                 ? characterFusionSkills[fusion.id]
@@ -2197,34 +2318,26 @@
             const shape = document.createElement('div');
             shape.className = 'hex-shape';
             const strokeColor = isTerceirus ? '#fbbf24' : fusion.color;
-            const fillColor = level > 0 
-                ? (isTerceirus ? 'rgba(180,83,9,0.35)' : 'rgba(15,23,42,0.95)')
-                : 'rgba(10,15,28,0.9)';
 
-            shape.innerHTML = `
-                <svg viewBox="0 0 100 115" preserveAspectRatio="none" style="width:100%; height:100%;">
-                    <polygon points="50,0 100,28 100,86 50,115 0,86 0,28" stroke="${strokeColor}" stroke-width="${isTerceirus ? '4' : '3'}" fill="${fillColor}" />
-                    ${isTerceirus ? '<polygon points="50,10 90,32 90,82 50,104 10,82 10,32" stroke="#fef08a" stroke-width="1.5" fill="none" opacity="0.6"/>' : ''}
-                </svg>
-            `;
-
-            let crownHtml = '';
-            if (isTerceirus) {
-                crownHtml = `
-                    <svg class="crown-leaves" viewBox="0 0 80 40">
-                        <path d="M 40 35 C 30 15 15 15 0 25 C 10 5 30 5 40 35 Z" fill="#84cc16" opacity="0.85" />
-                        <path d="M 40 35 C 50 15 65 15 80 25 C 70 5 50 5 40 35 Z" fill="#84cc16" opacity="0.85" />
-                        <circle cx="40" cy="8" r="4" fill="#fbbf24" filter="drop-shadow(0 0 6px #f59e0b)" />
-                    </svg>
-                `;
+            if (circleGen && Array.isArray(fusion.paths) && fusion.paths.length >= 2) {
+                try {
+                    shape.innerHTML = circleGen.generateCircleSVG({
+                        id: fusion.circleId || fusion.id,
+                        name: fusion.fullName || fusion.name,
+                        paths: fusion.paths
+                    }, magicPaths);
+                } catch (err) {
+                    shape.innerHTML = `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" stroke="${strokeColor}" stroke-width="3" fill="#091326"/></svg>`;
+                }
+            } else {
+                shape.innerHTML = `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" stroke="${strokeColor}" stroke-width="3" fill="#091326"/></svg>`;
             }
 
             el.innerHTML = `
-                ${crownHtml}
-                <i class="${fusion.icon} icon" style="${level > 0 ? 'color: ' + fusion.color + '; text-shadow: 0 0 12px ' + fusion.color : 'color: #64748b;'}"></i>
-                <div class="spell-title font-cinzel font-bold" style="color: ${level > 0 ? '#ffffff' : '#94a3b8'}; font-size: ${isTerceirus ? '10px' : '9px'};">${fusion.name}</div>
-                <div class="tier-tag font-mono">(${fusion.tier})</div>
-                <div class="spell-level-badge" style="background: rgba(30,41,59,0.95); color: ${level > 0 ? '#fbbf24' : '#94a3b8'}; border-color: ${strokeColor};">Nv. ${level}</div>
+                <i class="${fusion.icon} icon" style="font-size:16px; ${level > 0 ? 'color: ' + fusion.color + '; text-shadow: 0 0 12px ' + fusion.color : 'color: #cbd5e1;'}"></i>
+                <div class="spell-title font-cinzel font-bold" style="color: ${level > 0 ? '#ffffff' : '#e2e8f0'}; font-size: ${isTerceirus ? '9.5px' : '8.5px'}; text-shadow: 0 2px 6px #000;">${fusion.name}</div>
+                <div class="tier-tag font-mono">${fusion.tier}</div>
+                <div class="spell-level-badge" style="background: rgba(15,23,42,0.95); color: ${level > 0 ? '#fbbf24' : '#94a3b8'}; border-color: ${strokeColor};">Nv. ${level}</div>
             `;
             el.appendChild(shape);
 
@@ -2237,10 +2350,11 @@
                 if (fusion.paths && fusion.paths.length >= 2) {
                     selectedPath1 = fusion.paths[0];
                     selectedPath2 = fusion.paths[1];
+                    selectedPath3 = fusion.paths[2] || null;
                     updateFusionSlots();
                     updateFusionResult();
-                    toggleFusionAltar(false);
-                    showToast(`✦ Síntese de ${fusion.name} (${fusion.tier}) carregada no Altar!`);
+                    if (!altarEl.classList.contains('open')) toggleFusionAltar(false);
+                    showToast(`✦ Círculo de Magia ${fusion.fullName || fusion.name} (${fusion.tier}) carregado no Altar!`);
                 }
             };
 
@@ -2265,13 +2379,13 @@
 
             let html = `
                 <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(148,163,184,0.2); padding-bottom:6px; margin-bottom:8px;">
-                    <span class="font-cinzel font-bold" style="color:${fusion.color}; font-size:15px;"><i class="${fusion.icon}"></i> ${fusion.name} (${fusion.tier})</span>
+                    <span class="font-cinzel font-bold" style="color:${fusion.color}; font-size:15px;"><i class="${fusion.icon}"></i> ${fusion.fullName || fusion.name} (${fusion.tier})</span>
                     <span style="font-size:10px; font-weight:700; color:#fbbf24; background:rgba(30,41,59,0.8); padding:2px 6px; border-radius:4px;">Nível ${level}</span>
                 </div>
-                <p style="font-size:12px; color:#cbd5e1; line-height:1.4; margin-bottom:6px;">Fusão Mística Ancestral combinando <strong>${pathsNames}</strong>.</p>
+                <p style="font-size:12px; color:#cbd5e1; line-height:1.4; margin-bottom:6px;">Círculo de Magia ${fusion.tier} combinando <strong>${pathsNames}</strong>.</p>
                 <div style="background:rgba(15,23,42,0.8); padding:8px; border-radius:8px; border:1px solid rgba(148,163,184,0.15); font-size:11px;">
                     <div style="color:#94a3b8;"><i class="fa-solid fa-dice"></i> Bônus de Fusão (+2d6): <strong style="color:#ffffff;">+${level}</strong></div>
-                    <div style="color:#94a3b8; margin-top:4px;"><i class="fa-solid fa-mouse-pointer"></i> Clique: Selecionar / Carregar no Altar.</div>
+                    <div style="color:#94a3b8; margin-top:4px;"><i class="fa-solid fa-mouse-pointer"></i> Clique: Visualizar Círculo no Altar.</div>
                     <div style="color:#38bdf8; margin-top:2px;"><i class="fa-solid fa-plus-circle"></i> Shift+Clique ou Painel [Fusões]: +1 Ponto (Custa 1 PM).</div>
                     <div style="color:#fbbf24; margin-top:2px;"><i class="fa-solid fa-minus-circle"></i> Botão direito: Retirar 1 ponto (Reembolsa 1 PM).</div>
                 </div>
@@ -2292,26 +2406,28 @@
             const el = document.createElement('div');
             el.id = `node-${id}`;
             const level = characterSkills[id] || 0;
-            const isSelectedForFusion = (selectedPath1 === id || selectedPath2 === id);
+            const isSelectedForFusion = (selectedPath1 === id || selectedPath2 === id || selectedPath3 === id);
 
             el.className = `hex-node ${level > 0 ? 'unlocked' : 'locked'} ${isSelectedForFusion ? 'selected-fusion' : ''}`;
-            el.style.left = `${path.x - 40}px`;
-            el.style.top = `${path.y - 46}px`;
+            el.style.left = `${path.x - 44}px`;
+            el.style.top = `${path.y - 44}px`;
 
             const shape = document.createElement('div');
             shape.className = 'hex-shape';
-            shape.innerHTML = `<svg viewBox="0 0 100 115" preserveAspectRatio="none" style="width:100%; height:100%;"><polygon points="50,0 100,28 100,86 50,115 0,86 0,28" /></svg>`;
+            if (circleGen && typeof circleGen.generatePrimaryCircleSVG === 'function') {
+                shape.innerHTML = circleGen.generatePrimaryCircleSVG(id, magicPaths);
+            } else {
+                shape.innerHTML = `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" stroke="${path.color}" stroke-width="3" fill="#0c1524" /></svg>`;
+            }
 
             if (level > 0) {
-                shape.querySelector('polygon').style.stroke = path.color;
-                shape.querySelector('polygon').style.fill = `${path.color}18`;
-                shape.querySelector('polygon').style.filter = `drop-shadow(0 0 10px ${path.color})`;
+                shape.style.filter = `drop-shadow(0 0 12px ${path.color})`;
             }
 
             el.innerHTML = `
-                <i class="${path.icon} icon" style="${level > 0 ? 'color:' + path.color + '; text-shadow:0 0 8px ' + path.color : ''}"></i>
-                <div class="spell-title">${path.name.replace('Magia ', '')}</div>
-                <div class="spell-level-badge">Nv. ${level}</div>
+                <i class="${path.icon} icon" style="${level > 0 ? 'color:' + path.color + '; text-shadow:0 0 8px ' + path.color : 'color:#cbd5e1;'}"></i>
+                <div class="spell-title" style="text-shadow: 0 2px 5px #000;">${path.name.replace('Magia ', '')}</div>
+                <div class="spell-level-badge" style="border-color:${path.color};">Nv. ${level}</div>
             `;
             el.appendChild(shape);
 
@@ -2335,16 +2451,22 @@
         }
 
         function handlePathClick(id) {
-            if (!selectedPath1) {
-                selectedPath1 = id;
-            } else if (selectedPath1 === id) {
+            if (selectedPath1 === id) {
                 selectedPath1 = null;
-            } else if (!selectedPath2) {
-                selectedPath2 = id;
             } else if (selectedPath2 === id) {
                 selectedPath2 = null;
+            } else if (selectedPath3 === id) {
+                selectedPath3 = null;
+            } else if (!selectedPath1) {
+                selectedPath1 = id;
+            } else if (!selectedPath2) {
+                selectedPath2 = id;
+            } else if (!selectedPath3) {
+                selectedPath3 = id;
             } else {
                 selectedPath1 = id;
+                selectedPath2 = null;
+                selectedPath3 = null;
             }
             updateFusionSlots();
             renderTree();
@@ -2363,7 +2485,7 @@
                 <p style="font-size:12px; color:#cbd5e1; line-height:1.4; margin-bottom:10px;">${p.desc}</p>
                 <div style="background:rgba(15,23,42,0.8); padding:8px; border-radius:8px; border:1px solid rgba(148,163,184,0.15); font-size:11px;">
                     <div style="color:#94a3b8;"><i class="fa-solid fa-dice"></i> Bônus no Teste (+2d6): <strong style="color:#ffffff;">+${lvl}</strong></div>
-                    <div style="color:#94a3b8; margin-top:4px;"><i class="fa-solid fa-mouse-pointer"></i> Clique: Selecionar para Fusão.</div>
+                    <div style="color:#94a3b8; margin-top:4px;"><i class="fa-solid fa-mouse-pointer"></i> Clique: Selecionar para Círculo Secundus (2) ou Terceirus (3).</div>
                     <div style="color:#38bdf8; margin-top:2px;"><i class="fa-solid fa-plus-circle"></i> Shift+Clique ou Lateral: +1 Ponto (Custa 1 PM).</div>
                     <div style="color:#fbbf24; margin-top:2px;"><i class="fa-solid fa-minus-circle"></i> Botão direito: Retirar 1 ponto (Reembolsa PM).</div>
                 </div>
@@ -2381,6 +2503,19 @@
         }
 
         function hideTooltip() { tooltip.classList.remove('show'); }
+
+        /** Localiza uma fusão no catálogo de 186 Círculos (66 Secundus + 120 Terceirus) pelo ID. */
+        function findFusionMetaById(fusionId) {
+            const fromOrbital = fusionNodes.find(f => f.id === fusionId || f.circleId === fusionId);
+            if (fromOrbital) return fromOrbital;
+            if (circlesCatalog) {
+                const sec = (circlesCatalog.secundus || []).find(s => s.id === fusionId);
+                if (sec) return sec;
+                const ter = (circlesCatalog.terceirus || []).find(t => t.id === fusionId);
+                if (ter) return ter;
+            }
+            return null;
+        }
 
         // =========================================================================
         // Gestão de Pontos: Adicionar e Retirar Pontos (Reembolso de PM)
@@ -2452,7 +2587,7 @@
         function addPointToFusion(fusionId, event) {
             if (event) event.stopPropagation();
 
-            const fus = fusionNodes.find(f => f.id === fusionId);
+            const fus = findFusionMetaById(fusionId);
             const fusName = fus ? fus.name : fusionId;
 
             let res;
@@ -2483,7 +2618,7 @@
                 saveState();
                 renderTree();
                 updateFusionResult();
-                showToast(`+1 ponto investido na fusão ${fusName} (Nível ${characterFusionSkills[fusionId]})`);
+                showToast(`+1 ponto investido no Círculo ${fusName} (Nível ${characterFusionSkills[fusionId]})`);
             } else if (res.reason === 'no_pm_available') {
                 showToast(`Você não possui Poderes Mágicos (PM) disponíveis para investir nesta fusão.`, 'warning');
             }
@@ -2492,7 +2627,7 @@
         function removePointFromFusion(fusionId, event) {
             if (event) event.stopPropagation();
 
-            const fus = fusionNodes.find(f => f.id === fusionId);
+            const fus = findFusionMetaById(fusionId);
             const fusName = fus ? fus.name : fusionId;
 
             let res;
@@ -2535,7 +2670,7 @@
             characterState.availablePM = userPM;
             saveState();
             updateHUD();
-            renderSidebarPaths('all');
+            renderSidebarPaths(currentCategory || 'all');
             showToast(`Poderes Mágicos totais ajustados para: ${userPM}`);
         }
 
@@ -2576,7 +2711,7 @@
         }
 
         // =========================================================================
-        // Lógica do Altar de Fusão Arcana & Grimório
+        // Lógica do Altar de Círculos Mágicos (2 Caminhos = Secundus, 3 = Terceirus)
         // =========================================================================
         const altarEl = document.getElementById('fusion-altar');
         function toggleFusionAltar(openGrimoire = false) {
@@ -2592,48 +2727,42 @@
         function selectSlot(slotNum) {
             if (slotNum === 1) selectedPath1 = null;
             if (slotNum === 2) selectedPath2 = null;
+            if (slotNum === 3) selectedPath3 = null;
             updateFusionSlots();
             renderTree();
             updateFusionResult();
         }
 
         function updateFusionSlots() {
-            const s1 = document.getElementById('slot-1');
-            const s2 = document.getElementById('slot-2');
+            const slots = [
+                { num: 1, key: selectedPath1, defaultLabel: 'Caminho 1', borderDefault: 'rgba(102, 252, 241, 0.4)' },
+                { num: 2, key: selectedPath2, defaultLabel: 'Caminho 2', borderDefault: 'rgba(102, 252, 241, 0.4)' },
+                { num: 3, key: selectedPath3, defaultLabel: '3º (Terceirus)', borderDefault: 'rgba(251, 191, 36, 0.35)' }
+            ];
 
-            if (selectedPath1 && magicPaths[selectedPath1]) {
-                const p = magicPaths[selectedPath1];
-                s1.className = 'fusion-slot filled';
-                s1.style.borderColor = p.color;
-                document.getElementById('slot-1-icon').className = `${p.icon} text-xl mb-1`;
-                document.getElementById('slot-1-icon').style.color = p.color;
-                document.getElementById('slot-1-name').innerText = p.name.replace('Magia ', '');
-                document.getElementById('slot-1-name').style.color = p.color;
-            } else {
-                s1.className = 'fusion-slot';
-                s1.style.borderColor = 'rgba(102, 252, 241, 0.4)';
-                document.getElementById('slot-1-icon').className = 'fa-solid fa-circle-plus text-gray-500 text-xl mb-1';
-                document.getElementById('slot-1-icon').style.color = '';
-                document.getElementById('slot-1-name').innerText = 'Caminho 1';
-                document.getElementById('slot-1-name').style.color = '';
-            }
+            slots.forEach(s => {
+                const el = document.getElementById(`slot-${s.num}`);
+                const iconEl = document.getElementById(`slot-${s.num}-icon`);
+                const nameEl = document.getElementById(`slot-${s.num}-name`);
+                if (!el || !iconEl || !nameEl) return;
 
-            if (selectedPath2 && magicPaths[selectedPath2]) {
-                const p = magicPaths[selectedPath2];
-                s2.className = 'fusion-slot filled';
-                s2.style.borderColor = p.color;
-                document.getElementById('slot-2-icon').className = `${p.icon} text-xl mb-1`;
-                document.getElementById('slot-2-icon').style.color = p.color;
-                document.getElementById('slot-2-name').innerText = p.name.replace('Magia ', '');
-                document.getElementById('slot-2-name').style.color = p.color;
-            } else {
-                s2.className = 'fusion-slot';
-                s2.style.borderColor = 'rgba(102, 252, 241, 0.4)';
-                document.getElementById('slot-2-icon').className = 'fa-solid fa-circle-plus text-gray-500 text-xl mb-1';
-                document.getElementById('slot-2-icon').style.color = '';
-                document.getElementById('slot-2-name').innerText = 'Caminho 2';
-                document.getElementById('slot-2-name').style.color = '';
-            }
+                if (s.key && magicPaths[s.key]) {
+                    const p = magicPaths[s.key];
+                    el.className = 'fusion-slot filled';
+                    el.style.borderColor = p.color;
+                    iconEl.className = `${p.icon} text-xl mb-1`;
+                    iconEl.style.color = p.color;
+                    nameEl.innerText = p.name.replace('Magia ', '');
+                    nameEl.style.color = p.color;
+                } else {
+                    el.className = 'fusion-slot';
+                    el.style.borderColor = s.borderDefault;
+                    iconEl.className = 'fa-solid fa-circle-plus text-gray-500 text-xl mb-1';
+                    iconEl.style.color = '';
+                    nameEl.innerText = s.defaultLabel;
+                    nameEl.style.color = '';
+                }
+            });
         }
 
         function setForma(forma) {
@@ -2652,31 +2781,45 @@
             return null;
         }
 
+        /** Busca nos 66 Secundus ou 120 Terceirus do compêndio pela combinação de caminhos. */
+        function findCompendiumCircleByPaths(pathsArray) {
+            if (!circlesCatalog) return null;
+            const sortedTarget = [...pathsArray].sort().join('+');
+            const pool = pathsArray.length === 3 ? (circlesCatalog.terceirus || []) : (circlesCatalog.secundus || []);
+            return pool.find(entry => [...entry.paths].sort().join('+') === sortedTarget) || null;
+        }
+
         function updateFusionResult() {
             const display = document.getElementById('fusion-result-display');
             const formulaDisplay = document.getElementById('test-formula-display');
             activeFusionData = null;
 
-            if (!selectedPath1 && !selectedPath2) {
-                display.innerHTML = `<div class="text-center text-gray-500 text-xs italic">Selecione dois caminhos na árvore cósmica para forjar uma fusão.</div>`;
+            const chosen = [selectedPath1, selectedPath2, selectedPath3].filter(Boolean);
+
+            if (chosen.length === 0) {
+                display.innerHTML = `<div class="text-center text-gray-500 text-xs italic">Selecione 2 caminhos (Secundus) ou 3 caminhos (Terceirus) nos círculos mágicos para invocar o selo rúnico.</div>`;
                 formulaDisplay.innerText = "2d6 + Bônus vs CD";
                 return;
             }
 
-            // Apenas 1 Caminho Selecionado (Magia Pura)
-            if ((selectedPath1 && !selectedPath2) || (!selectedPath1 && selectedPath2)) {
-                const singleKey = selectedPath1 || selectedPath2;
+            // 1 Caminho Selecionado (Círculo Primário)
+            if (chosen.length === 1) {
+                const singleKey = chosen[0];
                 const path = magicPaths[singleKey];
                 const formaInfo = magicForms[activeForma];
                 const lvl = characterSkills[singleKey] || 0;
                 const cd = formaInfo.cdBase;
+                const primarySvg = (circleGen && circleGen.generatePrimaryCircleSVG)
+                    ? circleGen.generatePrimaryCircleSVG(singleKey, magicPaths)
+                    : '';
 
                 activeFusionData = {
                     id: `pure_${singleKey}_${activeForma}`,
                     spell: `${activeForma} ${path.name.replace('Magia (', '').replace(')', '')}`,
-                    categoryName: `Magia Pura (${path.name.replace('Magia ', '')})`,
+                    categoryName: `Círculo Primário (${path.name.replace('Magia ', '')})`,
                     path1: singleKey,
                     path2: null,
+                    path3: null,
                     forma: activeForma,
                     desc: `${formaInfo.desc} Concentrado na essência pura de ${path.name}.`,
                     cd: cd,
@@ -2685,9 +2828,14 @@
                 };
 
                 display.innerHTML = `
-                    <div style="font-size:10px; font-weight:700; color:${path.color}; text-transform:uppercase;">Magia Pura &middot; ${activeForma} ${path.name.replace('Magia ', '')}</div>
-                    <h3 class="font-cinzel text-base font-bold text-white my-1">${activeFusionData.spell}</h3>
-                    <p class="text-xs text-gray-300 mb-2">${activeFusionData.desc}</p>
+                    <div style="display:flex; align-items:center; gap:12px; margin-bottom:10px;">
+                        <div style="width:88px; height:88px; flex-shrink:0;">${primarySvg}</div>
+                        <div>
+                            <div style="font-size:10px; font-weight:700; color:${path.color}; text-transform:uppercase;">Círculo Primário &middot; ${activeForma}</div>
+                            <h3 class="font-cinzel text-base font-bold text-white my-1">${activeFusionData.spell}</h3>
+                            <p class="text-xs text-gray-300">${activeFusionData.desc}</p>
+                        </div>
+                    </div>
                     <div style="display:flex; justify-content:space-between; font-size:11px; color:#fbbf24; border-top:1px solid rgba(148,163,184,0.2); padding-top:6px; margin-bottom:12px;">
                         <span><i class="fa-solid fa-bullseye"></i> Dificuldade: <strong>CD ${cd}</strong></span>
                         <span><i class="fa-solid fa-bolt"></i> Custo: <strong>${formaInfo.peCost} PEs</strong></span>
@@ -2702,56 +2850,102 @@
                 return;
             }
 
-            // Dois Caminhos Selecionados (Fusão Híbrida)
-            const p1 = magicPaths[selectedPath1];
-            const p2 = magicPaths[selectedPath2];
-            const fusionKey = getFusionKey(selectedPath1, selectedPath2);
+            // 2 Caminhos (Círculo Secundus — 66 combinações) ou 3 Caminhos (Círculo Terceirus — 120 combinações)
+            const isTerceirus = (chosen.length === 3);
+            const tierLabel = isTerceirus ? 'TERCEIRUS' : 'SECUNDUS';
+            const compendiumEntry = findCompendiumCircleByPaths(chosen);
             const formaInfo = magicForms[activeForma];
-            const lvl1 = characterSkills[selectedPath1] || 0;
-            const lvl2 = characterSkills[selectedPath2] || 0;
-            const avgLevel = Math.floor((lvl1 + lvl2) / 2);
+
+            const levels = chosen.map(k => characterSkills[k] || 0);
+            const avgPathLevel = Math.floor(levels.reduce((a, b) => a + b, 0) / chosen.length);
+            const manualCircleLevel = (compendiumEntry && characterFusionSkills && characterFusionSkills[compendiumEntry.id]) || 0;
+            const totalBonus = avgPathLevel + manualCircleLevel;
 
             let fusionData = null;
-            if (fusionKey && spellFusions[fusionKey] && spellFusions[fusionKey][activeForma]) {
-                const raw = spellFusions[fusionKey];
+            if (compendiumEntry && compendiumEntry.forms && compendiumEntry.forms[activeForma]) {
+                const fDetail = compendiumEntry.forms[activeForma];
                 fusionData = {
-                    id: `fusion_${selectedPath1}_${selectedPath2}_${activeForma}`,
-                    spell: raw[activeForma].spell,
-                    categoryName: raw.name,
-                    path1: selectedPath1,
-                    path2: selectedPath2,
+                    id: `${compendiumEntry.id}_${activeForma}`,
+                    circleId: compendiumEntry.id,
+                    spell: fDetail.spell,
+                    categoryName: `${compendiumEntry.id.toUpperCase()} — ${compendiumEntry.name}`,
+                    path1: chosen[0],
+                    path2: chosen[1],
+                    path3: chosen[2] || null,
                     forma: activeForma,
-                    desc: raw[activeForma].desc,
-                    cd: raw[activeForma].cd,
-                    pe: raw[activeForma].pe,
-                    bonus: avgLevel
+                    desc: fDetail.desc,
+                    cd: fDetail.cd,
+                    pe: fDetail.pe,
+                    bonus: totalBonus
                 };
-            } else {
-                const name1 = p1.name.replace('Magia (', '').replace(')', '');
-                const name2 = p2.name.replace('Magia (', '').replace(')', '');
+            } else if (!isTerceirus) {
+                const fusionKey = getFusionKey(chosen[0], chosen[1]);
+                if (fusionKey && spellFusions[fusionKey] && spellFusions[fusionKey][activeForma]) {
+                    const raw = spellFusions[fusionKey];
+                    fusionData = {
+                        id: `fusion_${chosen[0]}_${chosen[1]}_${activeForma}`,
+                        circleId: compendiumEntry ? compendiumEntry.id : `sec_${chosen.join('_')}`,
+                        spell: raw[activeForma].spell,
+                        categoryName: raw.name,
+                        path1: chosen[0],
+                        path2: chosen[1],
+                        path3: null,
+                        forma: activeForma,
+                        desc: raw[activeForma].desc,
+                        cd: raw[activeForma].cd,
+                        pe: raw[activeForma].pe,
+                        bonus: totalBonus
+                    };
+                }
+            }
+
+            if (!fusionData) {
+                const names = chosen.map(k => magicPaths[k].name.replace('Magia (', '').replace(')', ''));
                 fusionData = {
-                    id: `fusion_${selectedPath1}_${selectedPath2}_${activeForma}`,
-                    spell: `${activeForma} ${name1}-${name2}`,
-                    categoryName: `Síntese Arcana (${name1} & ${name2})`,
-                    path1: selectedPath1,
-                    path2: selectedPath2,
+                    id: `fusion_${chosen.join('_')}_${activeForma}`,
+                    circleId: compendiumEntry ? compendiumEntry.id : `custom_${chosen.join('_')}`,
+                    spell: compendiumEntry && compendiumEntry.spells ? compendiumEntry.spells[activeForma] : `${activeForma} ${names.join('-')}`,
+                    categoryName: compendiumEntry ? compendiumEntry.name : `Tríade ${names.join(' + ')}`,
+                    path1: chosen[0],
+                    path2: chosen[1],
+                    path3: chosen[2] || null,
                     forma: activeForma,
-                    desc: `Síntese arcana combinando as propriedades de ${p1.name} e ${p2.name}. Causa 2d6+${avgLevel} de efeito híbrido.`,
-                    cd: formaInfo.cdBase + 2,
-                    pe: formaInfo.peCost + 1,
-                    bonus: avgLevel
+                    desc: `Círculo de Magia ${tierLabel} combinando ${names.join(', ')}. Canaliza 2d6+${totalBonus} no sistema Daemon.`,
+                    cd: formaInfo.cdBase + (isTerceirus ? 5 : 2),
+                    pe: formaInfo.peCost + (isTerceirus ? 4 : 1),
+                    bonus: totalBonus
                 };
             }
 
             activeFusionData = fusionData;
 
+            let circleSvg = '';
+            if (circleGen) {
+                try {
+                    circleSvg = circleGen.generateCircleSVG({
+                        id: fusionData.circleId || `c_${chosen.join('_')}`,
+                        name: fusionData.categoryName,
+                        paths: chosen
+                    }, magicPaths);
+                } catch (e) {
+                    circleSvg = '';
+                }
+            }
+
+            const badgeColor = isTerceirus ? '#fbbf24' : '#c084fc';
             display.innerHTML = `
-                <div style="font-size:10px; font-weight:700; color:var(--rpg-cyan); text-transform:uppercase;"><i class="fa-solid fa-sparkles"></i> Fusão Mística Híbrida &middot; Forma ${activeForma}</div>
-                <h3 class="font-cinzel text-base font-bold text-white my-1" style="text-shadow:0 0 10px var(--rpg-cyan);">${fusionData.spell}</h3>
-                <p class="text-xs text-gray-300 mb-2">${fusionData.desc}</p>
+                <div style="display:flex; flex-direction:column; align-items:center; text-align:center; margin-bottom:10px;">
+                    <div style="width:148px; height:148px; margin-bottom:8px; filter:drop-shadow(0 0 18px ${badgeColor}55);">${circleSvg}</div>
+                    <div style="font-size:10px; font-weight:800; color:${badgeColor}; text-transform:uppercase; letter-spacing:1px;">
+                        <i class="fa-solid fa-dharmachakra"></i> Círculo ${tierLabel} &middot; ${fusionData.categoryName}
+                    </div>
+                    <h3 class="font-cinzel text-base font-bold text-white my-1" style="text-shadow:0 0 10px var(--rpg-cyan);">${fusionData.spell} <span class="text-xs text-cyan-300">(${activeForma})</span></h3>
+                    <p class="text-xs text-gray-300 mb-2">${fusionData.desc}</p>
+                </div>
                 <div style="display:flex; justify-content:space-between; font-size:11px; color:#fbbf24; border-top:1px solid rgba(148,163,184,0.2); padding-top:6px; margin-bottom:12px;">
                     <span><i class="fa-solid fa-bullseye"></i> Dificuldade: <strong>CD ${fusionData.cd}</strong></span>
                     <span><i class="fa-solid fa-bolt"></i> Custo: <strong>${fusionData.pe} PEs</strong></span>
+                    <span><i class="fa-solid fa-dice-d6"></i> Bônus: <strong>+${fusionData.bonus}</strong></span>
                 </div>
                 <div style="display:flex; gap:8px;">
                     <button onclick="learnActiveFusionAbility()" class="btn-fusion-toggle flex-1 py-2 justify-center text-xs" style="background:linear-gradient(135deg, rgba(16,185,129,0.3), rgba(102,252,241,0.25)); border-color:#10b981; color:#6ee7b7;">
@@ -2763,7 +2957,7 @@
                 </div>
             `;
 
-            formulaDisplay.innerText = `2d6 + ${avgLevel} (Média ${lvl1}&${lvl2}) vs CD ${fusionData.cd}`;
+            formulaDisplay.innerText = `2d6 + ${totalBonus} (${tierLabel}) vs CD ${fusionData.cd}`;
         }
 
         // =========================================================================
@@ -2831,17 +3025,19 @@
             listEl.innerHTML = abilities.map(a => {
                 const p1 = a.path1 && magicPaths[a.path1] ? magicPaths[a.path1] : null;
                 const p2 = a.path2 && magicPaths[a.path2] ? magicPaths[a.path2] : null;
+                const p3 = a.path3 && magicPaths[a.path3] ? magicPaths[a.path3] : null;
 
                 const pathBadges = [];
                 if (p1) pathBadges.push(`<span style="color:${p1.color}; font-size:10px;"><i class="${p1.icon}"></i> ${p1.name.replace('Magia ', '')}</span>`);
                 if (p2) pathBadges.push(`<span style="color:${p2.color}; font-size:10px;"><i class="${p2.icon}"></i> ${p2.name.replace('Magia ', '')}</span>`);
+                if (p3) pathBadges.push(`<span style="color:${p3.color}; font-size:10px;"><i class="${p3.icon}"></i> ${p3.name.replace('Magia ', '')}</span>`);
 
                 return `
                     <div class="grimoire-card">
                         <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:4px;">
                             <div>
                                 <h4 class="font-cinzel text-sm font-bold text-white">${a.spell}</h4>
-                                <div style="display:flex; gap:6px; align-items:center; margin-top:2px;">
+                                <div style="display:flex; gap:6px; align-items:center; margin-top:2px; flex-wrap:wrap;">
                                     <span class="text-[9px] px-1.5 py-0.5 rounded bg-cyan-950 text-cyan-300 font-bold uppercase">${a.forma}</span>
                                     ${pathBadges.join('<span class="text-gray-500 text-[10px]">+</span>')}
                                 </div>
@@ -2866,9 +3062,10 @@
             const ability = (characterState.learnedAbilities || []).find(a => a.id === abilityId);
             if (!ability) return;
 
-            const lvl1 = ability.path1 ? (characterSkills[ability.path1] || 0) : 0;
-            const lvl2 = ability.path2 ? (characterSkills[ability.path2] || 0) : 0;
-            const bonus = ability.path2 ? Math.floor((lvl1 + lvl2) / 2) : lvl1;
+            const chosen = [ability.path1, ability.path2, ability.path3].filter(Boolean);
+            const bonus = chosen.length
+                ? Math.floor(chosen.reduce((acc, k) => acc + (characterSkills[k] || 0), 0) / chosen.length)
+                : 0;
 
             const d1 = Math.floor(Math.random() * 6) + 1;
             const d2 = Math.floor(Math.random() * 6) + 1;
@@ -2902,7 +3099,6 @@
         const customModalOverlay = document.getElementById('custom-ability-overlay');
 
         function openCustomAbilityModal() {
-            // Preencher selects de caminhos
             const sel1 = document.getElementById('custom-spell-path1');
             const sel2 = document.getElementById('custom-spell-path2');
             sel1.innerHTML = '';
@@ -2922,7 +3118,6 @@
                 sel2.appendChild(opt2);
             });
 
-            // Se havia uma fusão ativa, pré-preencher
             if (activeFusionData) {
                 document.getElementById('custom-spell-name').value = activeFusionData.spell;
                 document.getElementById('custom-spell-forma').value = activeFusionData.forma;
@@ -2984,24 +3179,8 @@
             const d2 = Math.floor(Math.random() * 6) + 1;
             const diceTotal = d1 + d2;
 
-            let bonus = 0;
-            let cd = 10;
-
-            if (selectedPath1 && selectedPath2) {
-                const lvl1 = characterSkills[selectedPath1] || 0;
-                const lvl2 = characterSkills[selectedPath2] || 0;
-                bonus = Math.floor((lvl1 + lvl2) / 2);
-                const fusionKey = getFusionKey(selectedPath1, selectedPath2);
-                if (fusionKey && spellFusions[fusionKey] && spellFusions[fusionKey][activeForma]) {
-                    cd = spellFusions[fusionKey][activeForma].cd;
-                } else {
-                    cd = magicForms[activeForma].cdBase + 2;
-                }
-            } else if (selectedPath1 || selectedPath2) {
-                const single = selectedPath1 || selectedPath2;
-                bonus = characterSkills[single] || 0;
-                cd = magicForms[activeForma].cdBase;
-            }
+            let bonus = activeFusionData ? (activeFusionData.bonus || 0) : 0;
+            let cd = activeFusionData ? (activeFusionData.cd || 10) : 10;
 
             const total = diceTotal + bonus;
             const rollDisplay = document.getElementById('roll-result-display');
@@ -3024,7 +3203,7 @@
         }
 
         // =========================================================================
-        // Sidebar e Filtros com Controles de Ponto
+        // Sidebar e Filtros com Controles de Ponto (12 Caminhos + 66 Secundus + 120 Terceirus)
         // =========================================================================
         function renderSidebarPaths(category) {
             const container = document.getElementById('paths-list-container');
@@ -3042,7 +3221,7 @@
                     row.className = 'path-row-box';
                     row.style.borderLeft = `3px solid ${p.color}`;
                     row.innerHTML = `
-                        <div class="path-row-info" title="Clique para selecionar este caminho no Altar de Fusão">
+                        <div class="path-row-info" title="Clique para selecionar este caminho no Altar de Círculos">
                             <i class="${p.icon}" style="color:${p.color}; width:16px;"></i>
                             <span>${p.name.replace('Magia ', '')}</span>
                         </div>
@@ -3062,16 +3241,41 @@
                 });
             }
 
-            // Se a categoria for 'all' ou 'fusao', renderiza as Fusões Ancestrais (Secundus e Terceirus)
+            // Se a categoria for 'all' ou 'fusao', renderiza as Fusões (Secundus e Terceirus)
             if (category === 'all' || category === 'fusao') {
-                if (category === 'all') {
-                    const sep = document.createElement('div');
-                    sep.style.cssText = 'font-family:Cinzel,serif; font-size:10px; color:#c084fc; text-transform:uppercase; letter-spacing:1px; margin:12px 4px 6px; padding-top:6px; border-top:1px dashed rgba(192,132,252,0.3); font-weight:700; display:flex; align-items:center; gap:6px;';
-                    sep.innerHTML = '<i class="fa-solid fa-sparkles text-purple-400"></i> Fusões (Secundus / Terceirus)';
-                    container.appendChild(sep);
-                }
+                const sep = document.createElement('div');
+                sep.style.cssText = 'font-family:Cinzel,serif; font-size:10px; color:#c084fc; text-transform:uppercase; letter-spacing:1px; margin:12px 4px 6px; padding-top:6px; border-top:1px dashed rgba(192,132,252,0.3); font-weight:700; display:flex; align-items:center; justify-content:space-between; gap:6px;';
+                sep.innerHTML = '<span><i class="fa-solid fa-sparkles text-purple-400"></i> Fusões (Secundus / Terceirus)</span>';
+                container.appendChild(sep);
 
-                fusionNodes.forEach(f => {
+                // Se estiver na aba 'fusao', exibe todos os 66 Secundus e 120 Terceirus; em 'all', exibe os orbitais ativos
+                const listToRender = (category === 'fusao' && circlesCatalog && circlesCatalog.secundus && circlesCatalog.secundus.length)
+                    ? [
+                        ...fusionNodes,
+                        ...circlesCatalog.secundus.map(s => ({
+                            id: s.id,
+                            circleId: s.id,
+                            name: `#${String(s.number).padStart(2, '0')} ${s.name}`,
+                            tier: 'SECUNDUS',
+                            paths: s.paths,
+                            color: magicPaths[s.paths[0]] ? magicPaths[s.paths[0]].color : '#c084fc',
+                            icon: 'fa-solid fa-dharmachakra',
+                            level: 0
+                        })),
+                        ...circlesCatalog.terceirus.map(t => ({
+                            id: t.id,
+                            circleId: t.id,
+                            name: `#${String(t.number).padStart(3, '0')} ${t.name}`,
+                            tier: 'TERCEIRUS',
+                            paths: t.paths,
+                            color: '#fbbf24',
+                            icon: 'fa-solid fa-compass-drafting',
+                            level: 0
+                        }))
+                    ]
+                    : getActiveOrbitalFusions();
+
+                listToRender.forEach(f => {
                     const lvl = (characterFusionSkills && characterFusionSkills[f.id] !== undefined)
                         ? characterFusionSkills[f.id]
                         : (f.level || 0);
@@ -3082,17 +3286,17 @@
                     row.className = 'path-row-box';
                     row.style.borderLeft = `3px solid ${f.color || '#a855f7'}`;
                     row.innerHTML = `
-                        <div class="path-row-info" title="Clique para focar nesta fusão na árvore e carregar no Altar">
+                        <div class="path-row-info" title="Clique para carregar este Círculo de Magia no Altar">
                             <i class="${f.icon}" style="color:${f.color || '#a855f7'}; width:16px;"></i>
-                            <div style="display:flex; flex-direction:column; line-height:1.2;">
-                                <span style="font-weight:700; font-size:12px; color:${lvl > 0 ? '#ffffff' : '#cbd5e1'};">${f.name}</span>
+                            <div style="display:flex; flex-direction:column; line-height:1.2; overflow:hidden;">
+                                <span style="font-weight:700; font-size:11px; color:${lvl > 0 ? '#ffffff' : '#cbd5e1'}; overflow:hidden; text-overflow:ellipsis;">${f.name}</span>
                                 <span style="font-size:9px; color:${tierBadgeColor}; letter-spacing:0.5px; font-family:'JetBrains Mono', monospace;">${f.tier}</span>
                             </div>
                         </div>
                         <div class="point-controls">
-                            <button class="btn-point dec" onclick="removePointFromFusion('${f.id}', event)" title="Retirar 1 ponto da fusão ${f.name} (reembolsa 1 PM)" ${lvl <= 0 ? 'disabled' : ''}>-</button>
+                            <button class="btn-point dec" onclick="removePointFromFusion('${f.id}', event)" title="Retirar 1 ponto de ${f.name} (reembolsa 1 PM)" ${lvl <= 0 ? 'disabled' : ''}>-</button>
                             <span style="color:#fbbf24; font-weight:700; font-size:11px; min-width:32px; text-align:center;">Nv. ${lvl}</span>
-                            <button class="btn-point inc" onclick="addPointToFusion('${f.id}', event)" title="Adicionar 1 ponto à fusão ${f.name} (custa 1 PM)" ${userPM <= 0 ? 'disabled' : ''}>+</button>
+                            <button class="btn-point inc" onclick="addPointToFusion('${f.id}', event)" title="Adicionar 1 ponto a ${f.name} (custa 1 PM)" ${userPM <= 0 ? 'disabled' : ''}>+</button>
                         </div>
                     `;
 
@@ -3100,9 +3304,10 @@
                         if (f.paths && f.paths.length >= 2) {
                             selectedPath1 = f.paths[0];
                             selectedPath2 = f.paths[1];
+                            selectedPath3 = f.paths[2] || null;
                             updateFusionSlots();
                             updateFusionResult();
-                            toggleFusionAltar(false);
+                            if (!altarEl.classList.contains('open')) toggleFusionAltar(false);
                         }
                         focusFusion(f.id);
                     };
@@ -3144,11 +3349,12 @@
         }
 
         function focusFusion(id) {
-            const f = fusionNodes.find(fn => fn.id === id);
+            const activeFusions = getActiveOrbitalFusions();
+            const f = activeFusions.find(fn => fn.id === id) || fusionNodes.find(fn => fn.id === id);
             if (!f) return;
             pointX = -f.x;
             pointY = -f.y;
-            scale = 1.3;
+            scale = 1.25;
             setTransform();
         }
 
@@ -3169,14 +3375,14 @@
         // =========================================================================
         // Câmera Espacial
         // =========================================================================
-        let scale = 1, panning = false, pointX = 0, pointY = 0, start = { x: 0, y: 0 };
+        let scale = 0.85, panning = false, pointX = 0, pointY = 0, start = { x: 0, y: 0 };
         const map = document.getElementById('tree-canvas');
         const viewport = document.getElementById('tree-viewport');
 
         function setTransform() { map.style.transform = `translate(${pointX}px, ${pointY}px) scale(${scale})`; }
 
         viewport.onmousedown = function (e) {
-            if (e.button !== 0 || e.target.closest('.hex-node') || e.target.closest('.glass-panel') || e.target.closest('.zoom-controls') || e.target.closest('#fusion-altar') || e.target.closest('.modal-overlay')) return;
+            if (e.button !== 0 || e.target.closest('.hex-node') || e.target.closest('.glass-panel') || e.target.closest('.orbit-filter-bar') || e.target.closest('.zoom-controls') || e.target.closest('#fusion-altar') || e.target.closest('.modal-overlay')) return;
             e.preventDefault();
             start = { x: e.clientX - pointX, y: e.clientY - pointY };
             panning = true;
@@ -3204,21 +3410,106 @@
 
         function zoomIn() { scale = Math.min(scale * 1.25, 2.5); setTransform(); }
         function zoomOut() { scale = Math.max(scale / 1.25, 0.3); setTransform(); }
-        function resetView() { scale = 1; pointX = 0; pointY = 0; setTransform(); }
+        function resetView() { scale = 0.85; pointX = 0; pointY = 0; setTransform(); }
 
         // Inicialização Visual
+        setTransform();
         renderTree();
 
         // =========================================================================
-        // Tabela de Fusões — Modal Controls
+        // Compêndio de 186 Círculos de Magia & Tabela de Fusões — Modal Controls
         // =========================================================================
         const fusionTableOverlay = document.getElementById('fusion-table-overlay');
+
+        function setModalCircleTier(tier) {
+            modalCircleTier = tier || 'ALL';
+            ['all', 'sec', 'ter'].forEach(k => {
+                const btn = document.getElementById(`modal-tier-${k}`);
+                if (btn) btn.classList.remove('active');
+            });
+            const mapId = { ALL: 'modal-tier-all', SECUNDUS: 'modal-tier-sec', TERCEIRUS: 'modal-tier-ter' }[modalCircleTier];
+            const activeBtn = document.getElementById(mapId);
+            if (activeBtn) activeBtn.classList.add('active');
+            const inp = document.getElementById('fusion-search-input');
+            renderModalCirclesGallery(inp ? inp.value : '');
+        }
+
+        function loadCircleIntoAltar(circleId) {
+            const entry = findFusionMetaById(circleId);
+            if (!entry || !entry.paths) return;
+            selectedPath1 = entry.paths[0] || null;
+            selectedPath2 = entry.paths[1] || null;
+            selectedPath3 = entry.paths[2] || null;
+            updateFusionSlots();
+            renderTree();
+            updateFusionResult();
+            if (fusionTableOverlay && fusionTableOverlay.classList.contains('open')) {
+                fusionTableOverlay.classList.remove('open');
+            }
+            if (!altarEl.classList.contains('open')) {
+                toggleFusionAltar(false);
+            }
+            showToast(`🔮 Círculo ${entry.id.toUpperCase()} — ${entry.name} invocado no Altar!`);
+        }
+
+        function renderModalCirclesGallery(query = '') {
+            const grid = document.getElementById('modal-circles-grid');
+            const countLabel = document.getElementById('modal-circles-count-label');
+            if (!grid || !circlesCatalog) return;
+
+            const q = String(query || '').toLowerCase().trim();
+            const allEntries = [
+                ...(modalCircleTier === 'TERCEIRUS' ? [] : (circlesCatalog.secundus || [])),
+                ...(modalCircleTier === 'SECUNDUS' ? [] : (circlesCatalog.terceirus || []))
+            ];
+
+            const filtered = allEntries.filter(entry => {
+                if (!q) return true;
+                const pathNames = entry.paths.map(k => magicPaths[k] ? magicPaths[k].name : k).join(' ');
+                const spellsText = entry.spells ? Object.values(entry.spells).join(' ') : '';
+                const haystack = `${entry.id} #${entry.number} ${entry.name} ${entry.tier} ${pathNames} ${spellsText}`.toLowerCase();
+                return haystack.includes(q);
+            });
+
+            if (countLabel) {
+                countLabel.innerText = `Exibindo ${filtered.length} de ${allEntries.length} Círculos de Magia`;
+            }
+
+            grid.innerHTML = filtered.map(entry => {
+                const svg = circleGen ? circleGen.generateCircleSVG(entry, magicPaths) : '';
+                const isTer = entry.tier === 'TERCEIRUS';
+                const numCode = isTer ? `#${String(entry.number).padStart(3, '0')}` : `#${String(entry.number).padStart(2, '0')}`;
+                const badgeColor = isTer ? '#fbbf24' : '#c084fc';
+                const pathTags = entry.paths.map(k => {
+                    const p = magicPaths[k];
+                    return p ? `<span style="color:${p.color}; font-size:10px; font-weight:700;">${p.name.replace('Magia (', '').replace(')', '')}</span>` : k;
+                }).join(' <span class="text-gray-500">+</span> ');
+
+                return `
+                    <div class="magic-circle-card" onclick="loadCircleIntoAltar('${entry.id}')" title="Clique para invocar este Círculo de Magia no Altar">
+                        <div style="width:100%; display:flex; justify-content:space-between; align-items:center; font-size:10px; margin-bottom:4px;">
+                            <span class="font-mono font-bold" style="color:${badgeColor};">${entry.tier} ${numCode}</span>
+                            <span class="text-[10px] text-cyan-300 font-cinzel">Invocar &rarr;</span>
+                        </div>
+                        <div class="circle-svg-wrap">${svg}</div>
+                        <div class="font-cinzel font-bold text-xs text-white text-center mb-1">${entry.name}</div>
+                        <div class="text-center mb-2">${pathTags}</div>
+                        <div style="width:100%; font-size:10px; color:#cbd5e1; border-top:1px solid rgba(148,163,184,0.15); padding-top:6px; line-height:1.45;">
+                            <div><strong class="text-amber-300">Criar:</strong> ${entry.spells ? entry.spells.Criar : ''}</div>
+                            <div><strong class="text-cyan-300">Controlar:</strong> ${entry.spells ? entry.spells.Controlar : ''}</div>
+                            <div><strong class="text-purple-300">Entender:</strong> ${entry.spells ? entry.spells.Entender : ''}</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
 
         function toggleFusionTable() {
             fusionTableOverlay.classList.toggle('open');
             if (fusionTableOverlay.classList.contains('open')) {
                 const inp = document.getElementById('fusion-search-input');
                 if (inp) { inp.value = ''; filterFusionTable(''); inp.focus(); }
+                else { renderModalCirclesGallery(''); }
             }
         }
 
@@ -3227,6 +3518,7 @@
         }
 
         function filterFusionTable(query) {
+            renderModalCirclesGallery(query);
             const q = query.toLowerCase().trim();
             const sections = ['fsec-elemental', 'fsec-vital', 'fsec-arcana', 'fsec-hibrida'];
 

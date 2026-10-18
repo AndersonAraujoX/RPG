@@ -197,13 +197,49 @@
         return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${SIZE} ${SIZE}" role="img" aria-label="${title}" data-tier="${cfg.tier}" data-paths="${keys.join(',')}"><title>${title}</title>${parts.join('')}</svg>`;
     }
 
+    /** Gera o SVG de círculo primário (1 caminho) para os 12 Caminhos Primários. */
+    function generatePrimaryCircleSVG(pathKey, paths) {
+        if (!paths || typeof paths !== 'object') {
+            throw new Error('Caminhos inválidos.');
+        }
+        if (!paths[pathKey]) {
+            throw new Error(`Caminho desconhecido: "${pathKey}"`);
+        }
+        const p = paths[pathKey];
+        const color = p.color;
+        const sides = sidesFor(pathKey, paths);
+        const rng = createRng(hashString(`primary-${pathKey}`));
+        const uid = `mc-p-${pathKey}`;
+        const title = escapeXml(p.name || pathKey);
+        const parts = [];
+
+        parts.push(`<defs><radialGradient id="${uid}-glow"><stop offset="0%" stop-color="${color}" stop-opacity="0.38"/>` +
+            `<stop offset="100%" stop-color="${color}" stop-opacity="0"/></radialGradient></defs>`);
+        parts.push(`<circle cx="${CENTER}" cy="${CENTER}" r="192" fill="url(#${uid}-glow)"/>`);
+        parts.push(`<circle cx="${CENTER}" cy="${CENTER}" r="186" fill="rgba(7,15,28,0.88)" stroke="${color}" stroke-width="3.5"/>`);
+        parts.push(`<circle cx="${CENTER}" cy="${CENTER}" r="172" fill="none" stroke="${color}" stroke-width="1.2" stroke-dasharray="6,4" opacity="0.7"/>`);
+        parts.push(`<circle cx="${CENTER}" cy="${CENTER}" r="144" fill="none" stroke="${color}" stroke-width="1.6" opacity="0.85"/>`);
+
+        let runes = '';
+        for (let i = 0; i < 16; i++) {
+            const a = toRad((360 / 16) * i + 11.25);
+            runes += runeGlyph(a, rng, 148, 168);
+        }
+        parts.push(`<path d="${runes}" stroke="${color}" stroke-width="1.8" stroke-linecap="round" fill="none"/>`);
+
+        parts.push(`<polygon points="${polygonPoints(128, sides, -90)}" fill="${color}" fill-opacity="0.1" stroke="${color}" stroke-width="2.2" stroke-linejoin="round"/>`);
+        parts.push(`<polygon points="${polygonPoints(128, sides, 90)}" fill="none" stroke="${color}" stroke-width="1.2" opacity="0.55" stroke-linejoin="round"/>`);
+
+        return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${SIZE} ${SIZE}" role="img" aria-label="${title}" data-tier="PRIMARIUS" data-paths="${pathKey}"><title>${title}</title>${parts.join('')}</svg>`;
+    }
+
     /** Gera o SVG de cada entrada, preservando os dados originais. */
     function buildCatalog(entries, paths) {
         if (!Array.isArray(entries)) throw new Error('Entradas inválidas.');
         return entries.map(entry => Object.assign({}, entry, { svg: generateCircleSVG(entry, paths) }));
     }
 
-    const MagicCircleGenerator = { hashString, createRng, polygonPoints, sidesFor, escapeXml, generateCircleSVG, buildCatalog };
+    const MagicCircleGenerator = { hashString, createRng, polygonPoints, sidesFor, escapeXml, generateCircleSVG, generatePrimaryCircleSVG, buildCatalog };
 
     if (typeof module !== 'undefined' && module.exports) {
         module.exports = MagicCircleGenerator;

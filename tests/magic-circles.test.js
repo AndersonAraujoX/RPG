@@ -69,6 +69,33 @@ QUnit.module('Parser do Compêndio de Fusões', function () {
         assert.equal(Parser.parseSpellName(undefined), '');
     });
 
+    QUnit.test('5b. Caminho Feliz e Borda: parseSpellDetail extrai magia, CD, PE, descrição e fallbacks (AAA)', function (assert) {
+        // Arrange
+        const validCell = '**Geiser Explosivo** *(CD 11 · 4 PE)*: Dispara jato de vapor escaldante (5d8 dano).';
+        const cellWithoutMeta = '**Toque Arcano**: Canaliza energia pura.';
+
+        // Act
+        const detail = Parser.parseSpellDetail(validCell);
+        const partial = Parser.parseSpellDetail(cellWithoutMeta);
+        const customFallback = Parser.parseSpellDetail(cellWithoutMeta, 15, 8);
+        const empty = Parser.parseSpellDetail(null);
+
+        // Assert
+        assert.deepEqual(detail, {
+            spell: 'Geiser Explosivo',
+            cd: 11,
+            pe: 4,
+            desc: 'Dispara jato de vapor escaldante (5d8 dano).'
+        });
+        assert.equal(partial.spell, 'Toque Arcano');
+        assert.strictEqual(partial.cd, 10, 'usa fallback CD 10 quando ausente');
+        assert.strictEqual(partial.pe, 3, 'usa fallback PE 3 quando ausente');
+        assert.equal(partial.desc, 'Canaliza energia pura.');
+        assert.strictEqual(customFallback.cd, 15, 'respeita fallbackCd customizado');
+        assert.strictEqual(customFallback.pe, 8, 'respeita fallbackPe customizado');
+        assert.deepEqual(empty, { spell: '', cd: 10, pe: 3, desc: '' });
+    });
+
     QUnit.test('6. Erros: caminho desconhecido, contagem errada e argumentos inválidos lançam exceção', function (assert) {
         const badPath = SECUNDUS_ROW.replace('Água', 'Plasma');
         const wrongCount = SECUNDUS_ROW.replace('🔥 Fogo + 💧 Água', '🔥 Fogo + 💧 Água + 💨 Ar');
@@ -79,7 +106,7 @@ QUnit.module('Parser do Compêndio de Fusões', function () {
         assert.throws(() => Parser.parseCompendium(null, magicPaths), /Markdown inválido/);
     });
 
-    QUnit.test('7. Catálogo real: o compêndio possui exatamente 66 Secundus e 120 Terceirus únicos', function (assert) {
+    QUnit.test('7. Catálogo real: o compêndio possui exatamente 66 Secundus e 120 Terceirus únicos com forms detalhados', function (assert) {
         // Arrange
         const md = fs.readFileSync(MD_PATH, 'utf-8');
 
@@ -97,6 +124,7 @@ QUnit.module('Parser do Compêndio de Fusões', function () {
         assert.equal(ids.size, 186, 'ids únicos');
         [...secundus, ...terceirus].forEach(e => {
             assert.ok(e.name && e.spells.Criar && e.spells.Controlar && e.spells.Entender, `${e.id} completo`);
+            assert.ok(e.forms && e.forms.Criar.cd > 0 && e.forms.Criar.pe > 0 && e.forms.Criar.desc.length > 5, `${e.id} possui forms detalhados`);
         });
     });
 });
@@ -208,6 +236,30 @@ QUnit.module('Gerador de Círculos de Magia (SVG)', function (hooks) {
         // Assert
         assert.equal(catalog.length, 186);
         assert.equal(new Set(catalog.map(c => c.svg)).size, 186, 'cada círculo é visualmente distinto');
+    });
+
+    QUnit.test('11. Caminho Feliz e Erros: generatePrimaryCircleSVG gera círculos primários para os 12 caminhos e valida erros (AAA)', function (assert) {
+        // Arrange
+        const keys = Object.keys(magicPaths);
+
+        // Act
+        const svgs = keys.map(k => Generator.generatePrimaryCircleSVG(k, magicPaths));
+
+        // Assert: Caminho Feliz
+        assert.equal(svgs.length, 12, '12 círculos primários gerados');
+        assert.equal(new Set(svgs).size, 12, 'todos os 12 círculos primários são distintos');
+        svgs.forEach((svg, idx) => {
+            const k = keys[idx];
+            assert.ok(svg.startsWith('<svg') && svg.endsWith('</svg>'), `${k} gera documento SVG`);
+            assert.ok(svg.includes('data-tier="PRIMARIUS"'), `${k} marcado como PRIMARIUS`);
+            assert.ok(svg.includes(`data-paths="${k}"`), `${k} referencia o caminho`);
+            assert.ok(svg.includes(magicPaths[k].color), `${k} utiliza a cor do caminho`);
+        });
+
+        // Assert: Tratamento de Exceções
+        assert.throws(() => Generator.generatePrimaryCircleSVG('plasma', magicPaths), /desconhecido/, 'rejeita caminho inexistente');
+        assert.throws(() => Generator.generatePrimaryCircleSVG('', magicPaths), /desconhecido/, 'rejeita string vazia');
+        assert.throws(() => Generator.generatePrimaryCircleSVG('fogo', null), /Caminhos inválidos/, 'rejeita paths nulo');
     });
 });
 
