@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Círculos de Magia · Secundus & Terceirus — Kuar-Tor</title>
+    <link rel="stylesheet" href="tailwind.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root { --bg: #04070d; --gold: #fbbf24; --cyan: #66fcf1; }
+        * { box-sizing: border-box; }
+        body { margin: 0; background: radial-gradient(ellipse at top, #0b1426 0%, var(--bg) 60%); color: #e2e8f0; font-family: 'Inter', sans-serif; min-height: 100vh; }
+        .font-cinzel { font-family: 'Cinzel', serif; }
+        header.page-head { text-align: center; padding: 32px 16px 12px; }
+        header.page-head h1 { font-family: 'Cinzel', serif; font-size: clamp(24px, 4vw, 40px); font-weight: 900; color: var(--gold); letter-spacing: 3px; text-shadow: 0 0 24px rgba(251,191,36,.35); margin: 0; }
+        header.page-head p { color: #94a3b8; margin: 8px 0 0; font-size: 14px; }
+        .back-link { position: absolute; top: 16px; left: 16px; color: #94a3b8; font-size: 13px; text-decoration: none; }
+        .back-link:hover { color: var(--cyan); }
+        .toolbar { max-width: 1200px; margin: 16px auto; padding: 0 16px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: center; }
+        .tab-btn, .chip { cursor: pointer; border: 1px solid rgba(148,163,184,.3); background: rgba(15,23,42,.8); color: #cbd5e1; border-radius: 999px; padding: 6px 14px; font-size: 12px; font-weight: 600; transition: all .2s; }
+        .tab-btn.active { background: rgba(251,191,36,.18); border-color: var(--gold); color: var(--gold); }
+        .chip.active { background: rgba(102,252,241,.15); border-color: var(--cyan); color: #fff; }
+        .search { background: rgba(15,23,42,.9); border: 1px solid rgba(102,252,241,.3); border-radius: 10px; padding: 8px 14px; color: #e2e8f0; width: 100%; max-width: 360px; outline: none; }
+        .search:focus { border-color: var(--cyan); box-shadow: 0 0 12px rgba(102,252,241,.2); }
+        .chips { max-width: 1200px; margin: 0 auto 8px; padding: 0 16px; display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
+        .counter { text-align: center; font-size: 12px; color: #64748b; margin-bottom: 12px; }
+        .grid { max-width: 1200px; margin: 0 auto; padding: 0 16px 48px; display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
+        .card { background: linear-gradient(160deg, rgba(15,23,42,.92), rgba(2,6,23,.95)); border: 1px solid rgba(148,163,184,.2); border-radius: 14px; padding: 12px; cursor: pointer; transition: transform .2s, border-color .2s, box-shadow .2s; text-align: center; }
+        .card:hover { transform: translateY(-3px); border-color: rgba(251,191,36,.6); box-shadow: 0 10px 30px rgba(0,0,0,.6), 0 0 20px rgba(251,191,36,.12); }
+        .card svg { width: 100%; height: auto; display: block; }
+        .card .num { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #64748b; margin-top: 6px; }
+        .card .name { font-family: 'Cinzel', serif; font-weight: 700; font-size: 13px; color: #fff; margin: 2px 0 6px; min-height: 2.6em; }
+        .dots { display: flex; gap: 6px; justify-content: center; align-items: center; font-size: 11px; color: #94a3b8; }
+        .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+        .tier-badge { display: inline-block; font-size: 9px; letter-spacing: 1px; padding: 2px 8px; border-radius: 999px; font-weight: 700; }
+        .tier-SECUNDUS { background: rgba(168,85,247,.18); color: #d8b4fe; border: 1px solid rgba(168,85,247,.4); }
+        .tier-TERCEIRUS { background: rgba(245,158,11,.18); color: #fcd34d; border: 1px solid rgba(245,158,11,.4); }
+        .modal { position: fixed; inset: 0; background: rgba(3,7,18,.92); backdrop-filter: blur(10px); display: none; align-items: center; justify-content: center; padding: 16px; z-index: 50; }
+        .modal.open { display: flex; }
+        .modal-box { background: rgba(15,23,42,.98); border: 1px solid rgba(251,191,36,.35); border-radius: 18px; max-width: 880px; width: 100%; max-height: 92vh; overflow-y: auto; padding: 24px; display: grid; gap: 20px; grid-template-columns: minmax(0, 1fr); }
+        @media (min-width: 760px) { .modal-box { grid-template-columns: 1fr 1fr; } }
+        .modal-box h2 { font-family: 'Cinzel', serif; color: var(--gold); margin: 6px 0; font-size: 22px; }
+        .spell { background: rgba(2,6,23,.7); border: 1px solid rgba(148,163,184,.18); border-radius: 10px; padding: 8px 12px; margin-top: 8px; font-size: 13px; }
+        .spell b { color: var(--cyan); font-family: 'Cinzel', serif; font-size: 11px; letter-spacing: 1px; text-transform: uppercase; display: block; }
+        .btn { cursor: pointer; border-radius: 8px; padding: 8px 14px; border: 1px solid var(--gold); background: rgba(251,191,36,.15); color: var(--gold); font-weight: 600; font-size: 12px; text-decoration: none; display: inline-block; }
+        .btn.secondary { border-color: rgba(148,163,184,.4); background: transparent; color: #cbd5e1; }
+    </style>
+</head>
+<body>
+    <a class="back-link" href="arvore_magia.html">&larr; Biblioteca Arcana</a>
+
+    <header class="page-head">
+        <h1>Círculos de Magia</h1>
+        <p>66 Secundus &middot; 120 Terceirus &middot; um círculo único para cada combinação de caminhos (+2d6)</p>
+    </header>
+
+    <div class="toolbar">
+        <button class="tab-btn active" data-tier="ALL">Todos</button>
+        <button class="tab-btn" data-tier="SECUNDUS">Secundus (66)</button>
+        <button class="tab-btn" data-tier="TERCEIRUS">Terceirus (120)</button>
+        <input id="search" class="search" type="search" placeholder="Buscar por nome, número ou magia...">
+    </div>
+    <div id="chips" class="chips"></div>
+    <div id="counter" class="counter"></div>
+    <main id="grid" class="grid"></main>
+
+    <div id="modal" class="modal" role="dialog" aria-modal="true">
+        <div class="modal-box">
+            <div id="modal-circle"></div>
+            <div>
+                <span id="modal-tier" class="tier-badge"></span>
+                <h2 id="modal-name"></h2>
+                <div id="modal-paths" class="dots" style="justify-content:flex-start; flex-wrap:wrap; gap:10px;"></div>
+                <div id="modal-spells"></div>
+                <div style="margin-top:16px; display:flex; gap:8px; flex-wrap:wrap;">
+                    <a id="modal-download" class="btn" download>Baixar SVG</a>
+                    <button id="modal-close" class="btn secondary" type="button">Fechar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="../src/core/magic-tree-engine.js"></script>
+    <script src="../src/core/magic-circle-generator.js"></script>
+    <script src="circulos_magia_data.js"></script>
+    <script>
+        (function () {
+            'use strict';
+            const entries = [...window.CIRCLES_DATA.secundus, ...window.CIRCLES_DATA.terceirus];
+            const state = { tier: 'ALL', path: null, query: '' };
+            const grid = document.getElementById('grid');
+            const counter = document.getElementById('counter');
+            const modal = document.getElementById('modal');
+
+            const label = key => magicPaths[key].name.replace('Magia (', '').replace(')', '');
+            const displayNumber = e => '#' + String(e.number).padStart(e.tier === 'TERCEIRUS' ? 3 : 2, '0');
+            const svgCache = new Map();
+            const svgFor = e => {
+                if (!svgCache.has(e.id)) svgCache.set(e.id, MagicCircleGenerator.generateCircleSVG(e, magicPaths));
+                return svgCache.get(e.id);
+            };
+
+            function el(tag, className, text) {
+                const node = document.createElement(tag);
+                if (className) node.className = className;
+                if (text !== undefined) node.textContent = text;
+                return node;
+            }
+
+            function pathDots(e) {
+                const wrap = el('div', 'dots');
+                e.paths.forEach(k => {
+                    const dot = el('span', 'dot');
+                    dot.style.background = magicPaths[k].color;
+                    dot.title = label(k);
+                    wrap.appendChild(dot);
+                });
+                wrap.appendChild(el('span', null, e.paths.map(label).join(' + ')));
+                return wrap;
+            }
+
+            function matches(e) {
+                if (state.tier !== 'ALL' && e.tier !== state.tier) return false;
+                if (state.path && !e.paths.includes(state.path)) return false;
+                if (!state.query) return true;
+                const hay = [e.name, displayNumber(e), ...Object.values(e.spells), ...e.paths.map(label)].join(' ').toLowerCase();
+                return hay.includes(state.query);
+            }
+
+            function render() {
+                const visible = entries.filter(matches);
+                grid.replaceChildren();
+                visible.forEach(e => {
+                    const card = el('article', 'card');
+                    card.tabIndex = 0;
+                    const circle = el('div');
+                    circle.innerHTML = svgFor(e);
+                    card.appendChild(circle);
+                    card.appendChild(el('div', 'num', displayNumber(e)));
+                    card.appendChild(el('div', 'name', e.name));
+                    card.appendChild(pathDots(e));
+                    card.addEventListener('click', () => openModal(e));
+                    card.addEventListener('keydown', ev => { if (ev.key === 'Enter') openModal(e); });
+                    grid.appendChild(card);
+                });
+                counter.textContent = `${visible.length} de ${entries.length} círculos`;
+            }
+
+            function openModal(e) {
+                document.getElementById('modal-circle').innerHTML = svgFor(e);
+                const tier = document.getElementById('modal-tier');
+                tier.textContent = `${e.tier} ${displayNumber(e)}`;
+                tier.className = `tier-badge tier-${e.tier}`;
+                document.getElementById('modal-name').textContent = e.name;
+                const paths = document.getElementById('modal-paths');
+                paths.replaceChildren();
+                e.paths.forEach(k => {
+                    const item = el('span');
+                    const dot = el('span', 'dot');
+                    dot.style.background = magicPaths[k].color;
+                    item.appendChild(dot);
+                    item.appendChild(document.createTextNode(' ' + label(k)));
+                    paths.appendChild(item);
+                });
+                const spells = document.getElementById('modal-spells');
+                spells.replaceChildren();
+                Object.entries(e.spells).forEach(([form, spell]) => {
+                    const box = el('div', 'spell');
+                    box.appendChild(el('b', null, form));
+                    box.appendChild(document.createTextNode(spell));
+                    spells.appendChild(box);
+                });
+                const dl = document.getElementById('modal-download');
+                dl.href = `circulos/${e.id}.svg`;
+                dl.download = `${e.id}.svg`;
+                modal.classList.add('open');
+            }
+
+            function closeModal() { modal.classList.remove('open'); }
+
+            // Tabs
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.addEventListener('click', () => {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                state.tier = btn.dataset.tier;
+                render();
+            }));
+
+            // Chips por caminho
+            const chips = document.getElementById('chips');
+            Object.keys(magicPaths).forEach(key => {
+                const chip = el('button', 'chip', label(key));
+                chip.type = 'button';
+                chip.style.borderColor = magicPaths[key].color + '88';
+                chip.addEventListener('click', () => {
+                    state.path = state.path === key ? null : key;
+                    chips.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+                    if (state.path) chip.classList.add('active');
+                    render();
+                });
+                chips.appendChild(chip);
+            });
+
+            document.getElementById('search').addEventListener('input', ev => {
+                state.query = ev.target.value.trim().toLowerCase();
+                render();
+            });
+            document.getElementById('modal-close').addEventListener('click', closeModal);
+            modal.addEventListener('click', ev => { if (ev.target === modal) closeModal(); });
+            document.addEventListener('keydown', ev => { if (ev.key === 'Escape') closeModal(); });
+
+            render();
+        })();
+    </script>
+</body>
+</html>
