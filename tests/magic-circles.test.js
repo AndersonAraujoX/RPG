@@ -261,6 +261,36 @@ QUnit.module('Gerador de Círculos de Magia (SVG)', function (hooks) {
         assert.throws(() => Generator.generatePrimaryCircleSVG('', magicPaths), /desconhecido/, 'rejeita string vazia');
         assert.throws(() => Generator.generatePrimaryCircleSVG('fogo', null), /Caminhos inválidos/, 'rejeita paths nulo');
     });
+
+    QUnit.test('12. Caminho Feliz, Bordas e Erros: generateConvergenceAnimationHTML gera estágio animado de convergência (AAA)', function (assert) {
+        // Arrange
+        const secEntry = { id: 's03', name: 'Magma & Vulcanismo', paths: ['fogo', 'terra'] };
+        const terEntry = { id: 't005', name: 'CATACLISMO', paths: ['fogo', 'ar', 'terra'] };
+
+        // Act: Caminho Feliz (Secundus 2 fragmentos & Terceirus 3 fragmentos)
+        const secHtml = Generator.generateConvergenceAnimationHTML(secEntry, magicPaths);
+        const terHtml = Generator.generateConvergenceAnimationHTML(terEntry, magicPaths, { size: 180 });
+        const countClass = (str, cls) => (str.match(new RegExp(cls, 'g')) || []).length;
+
+        // Assert: Caminho Feliz
+        assert.ok(secHtml.includes('class="mc-convergence-stage"'), 'Estágio de convergência criado');
+        assert.ok(secHtml.includes('data-convergence-tier="SECUNDUS"'), 'Tier SECUNDUS identificado');
+        assert.equal(countClass(secHtml, 'data-fragment-path='), 2, 'Secundus possui exatamente 2 fragmentos orbitais');
+        assert.ok(secHtml.includes('data-fragment-path="fogo"') && secHtml.includes('data-fragment-path="terra"'), 'Fragmentos correspondem aos caminhos');
+        assert.ok(secHtml.includes('mc-shockwave-ring'), 'Ondas de choque de colisão presentes');
+        assert.ok(secHtml.includes('mc-fused-core'), 'Núcleo fundido final presente');
+        assert.ok(secHtml.includes('data-circle-id="s03"'), 'SVG do círculo fundido embutido no núcleo');
+
+        // Assert: Casos de Borda (Terceirus com 3 fragmentos e tamanho customizado)
+        assert.ok(terHtml.includes('data-convergence-tier="TERCEIRUS"'), 'Tier TERCEIRUS identificado');
+        assert.equal(countClass(terHtml, 'data-fragment-path='), 3, 'Terceirus possui exatamente 3 fragmentos orbitais');
+        assert.ok(terHtml.includes('width:180px;height:180px;'), 'Respeita opção customizada de tamanho (size: 180)');
+
+        // Assert: Tratamento de Exceções
+        assert.throws(() => Generator.generateConvergenceAnimationHTML(null, magicPaths), /Fusão inválida/, 'Rejeita entry nulo');
+        assert.throws(() => Generator.generateConvergenceAnimationHTML(secEntry, null), /Caminhos inválidos/, 'Rejeita paths nulo');
+        assert.throws(() => Generator.generateConvergenceAnimationHTML({ id: 'x', paths: ['fogo'] }, magicPaths), /2 \(Secundus\) ou 3/, 'Rejeita menos de 2 caminhos');
+    });
 });
 
 QUnit.module('Artefatos e Galeria de Círculos', function () {

@@ -144,4 +144,50 @@ QUnit.module('Biblioteca Arcana: Árvore Cósmica Ancestral Bioluminescente (AAA
         assert.ok(html.includes('id="modal-circles-grid"'), 'Galeria modal dos 186 Círculos de Magia presente');
         assert.ok(html.includes('drawMagicCirclesMandalaSVG'), 'Mandala de Anéis Concêntricos de Magia substitui a árvore orgânica');
     });
+
+    // -------------------------------------------------------------
+    // 8. Caminho Feliz e Borda: Foco nos 12 Círculos Básicos e Utilidades (Forja, Rituais e Puzzles) (AAA)
+    // -------------------------------------------------------------
+    QUnit.test('8. Caminho Feliz e Borda: Foco nos Círculos Básicos, Forja Arcana, Rituais Cooperativos e Puzzles (AAA)', function (assert) {
+        // Arrange
+        const html = fs.readFileSync(ARVORE_HTML_PATH, 'utf-8');
+
+        // Act & Assert: Módulo de Forja e Utilidades Carregado
+        assert.ok(html.includes('magic-forge-system.js'), 'Carrega o módulo central MagicForgeSystem');
+
+        // Act & Assert: Botões no Header HUD
+        assert.ok(html.includes('openForgeModal()'), 'Botão de abertura da Forja Arcana presente no HUD');
+        assert.ok(html.includes('openRitualsModal()'), 'Botão de Rituais Cooperativos presente no HUD');
+        assert.ok(html.includes('openPuzzlesModal()'), 'Botão de Puzzles de Masmorra presente no HUD');
+
+        // Act & Assert: Modais Estruturais no DOM
+        assert.ok(html.includes('id="modal-forge-overlay"'), 'Modal de Forja Arcana presente no DOM');
+        assert.ok(html.includes('id="modal-rituals-overlay"'), 'Modal de Rituais Cooperativos presente no DOM');
+        assert.ok(html.includes('id="modal-puzzles-overlay"'), 'Modal de Puzzles & Portas Seladas presente no DOM');
+
+        // Act & Assert: Foco no primeiro círculo básico por padrão
+        assert.ok(html.includes('12 Círculos Básicos (Padrão)'), 'Opção de foco nos 12 círculos básicos ativa no tabuleiro');
+        assert.ok(html.includes('performForgeItem()'), 'Função de execução de forja com +2d6 presente');
+        assert.ok(html.includes('performCooperativeRitualAction()'), 'Função de conjuração de rituais cooperativos presente');
+        assert.ok(html.includes('attemptSolveDoor()'), 'Função de resolução de enigmas de portas seladas presente');
+    });
+
+    // -------------------------------------------------------------
+    // 9. Caminho Feliz e Borda: Animação de Convergência quando Junta os Círculos (AAA)
+    // -------------------------------------------------------------
+    QUnit.test('9. Caminho Feliz e Borda: Animação de Convergência ao Juntar Círculos e Acessibilidade prefers-reduced-motion (AAA)', function (assert) {
+        // Arrange
+        const html = fs.readFileSync(ARVORE_HTML_PATH, 'utf-8');
+
+        // Act & Assert: Keyframes e classes compositor-friendly (transform e opacity)
+        assert.ok(html.includes('generateConvergenceAnimationHTML'), 'Integra gerador de animação de convergência no Nexo, Altar e Forja');
+        assert.ok(html.includes('@keyframes mcFragmentConverge'), 'Keyframe de convergência orbital dos círculos primários presente');
+        assert.ok(html.includes('@keyframes mcShockwaveBurst'), 'Keyframe de onda de choque da síntese rúnica presente');
+        assert.ok(html.includes('@keyframes mcFusedCoreMaterialize'), 'Keyframe de materialização do selo fundido presente');
+        assert.ok(html.includes('convergence-beam'), 'Feixes de convergência de mana dos círculos selecionados até o Nexo');
+        assert.ok(html.includes('replayConvergenceAnimation'), 'Função para reproduzir novamente a animação de junção presente');
+        assert.ok(html.includes('prefers-reduced-motion: reduce'), 'Respeita preferência de acessibilidade @media (prefers-reduced-motion: reduce)');
+    });
 });
+
+

@@ -233,13 +233,65 @@
         return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${SIZE} ${SIZE}" role="img" aria-label="${title}" data-tier="PRIMARIUS" data-paths="${pathKey}"><title>${title}</title>${parts.join('')}</svg>`;
     }
 
+    /**
+     * Gera o HTML da animação de convergência quando 2 (Secundus) ou 3 (Terceirus)
+     * círculos básicos se fundem em um Círculo de Magia composto.
+     *
+     * @param {Object} entry - { id, name, paths: string[] }
+     * @param {Object} paths - Dicionário dos 12 caminhos místicos
+     * @param {Object} [options] - { size: number }
+     * @returns {string} HTML da cena animada de convergência
+     */
+    function generateConvergenceAnimationHTML(entry, paths, options) {
+        if (!paths || typeof paths !== 'object') {
+            throw new Error('Caminhos inválidos.');
+        }
+        if (!entry || typeof entry !== 'object') {
+            throw new Error('Fusão inválida.');
+        }
+        const fusedSvg = generateCircleSVG(entry, paths);
+        const keys = entry.paths;
+        const count = keys.length;
+        const tier = count === 3 ? 'TERCEIRUS' : 'SECUNDUS';
+        const size = (options && Number(options.size) > 0) ? Number(options.size) : 164;
+        const primaryColor = paths[keys[0]].color;
+        const secondaryColor = paths[keys[count - 1]].color;
+
+        const vectors = count === 2
+            ? [
+                { x: '-62px', y: '0px' },
+                { x: '62px', y: '0px' }
+            ]
+            : [
+                { x: '0px', y: '-58px' },
+                { x: '52px', y: '32px' },
+                { x: '-52px', y: '32px' }
+            ];
+
+        const fragmentsHtml = keys.map((k, idx) => {
+            const pSvg = generatePrimaryCircleSVG(k, paths);
+            const vec = vectors[idx];
+            const color = paths[k].color;
+            return `<div class="mc-orbit-fragment" data-fragment-path="${k}" style="--mc-from-x:${vec.x};--mc-from-y:${vec.y};--mc-color:${color};">${pSvg}</div>`;
+        }).join('');
+
+        return (
+            `<div class="mc-convergence-stage" data-circle-id="${escapeXml(entry.id)}" data-convergence-tier="${tier}" data-convergence-paths="${keys.join(',')}" style="width:${size}px;height:${size}px;--mc-primary:${primaryColor};--mc-secondary:${secondaryColor};">` +
+                fragmentsHtml +
+                `<div class="mc-shockwave-ring"></div>` +
+                `<div class="mc-shockwave-ring mc-shockwave-delayed"></div>` +
+                `<div class="mc-fused-core">${fusedSvg}</div>` +
+            `</div>`
+        );
+    }
+
     /** Gera o SVG de cada entrada, preservando os dados originais. */
     function buildCatalog(entries, paths) {
         if (!Array.isArray(entries)) throw new Error('Entradas inválidas.');
         return entries.map(entry => Object.assign({}, entry, { svg: generateCircleSVG(entry, paths) }));
     }
 
-    const MagicCircleGenerator = { hashString, createRng, polygonPoints, sidesFor, escapeXml, generateCircleSVG, generatePrimaryCircleSVG, buildCatalog };
+    const MagicCircleGenerator = { hashString, createRng, polygonPoints, sidesFor, escapeXml, generateCircleSVG, generatePrimaryCircleSVG, generateConvergenceAnimationHTML, buildCatalog };
 
     if (typeof module !== 'undefined' && module.exports) {
         module.exports = MagicCircleGenerator;
