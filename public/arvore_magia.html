@@ -228,16 +228,17 @@
 
         #center-point {
             position: absolute;
-            top: 50vh;
-            left: 50vw;
+            top: 0;
+            left: 0;
         }
 
         /* Anéis Rúnicos Concêntricos dos Círculos de Magia */
         .rune-circle {
             position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
+            top: 0;
+            left: 0;
+            translate: -50% -50%;
+            rotate: 0deg;
             border-radius: 50%;
             pointer-events: none;
             z-index: 1;
@@ -307,7 +308,8 @@
             justify-content: center;
             text-align: center;
             cursor: pointer;
-            transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.3s ease;
+            scale: 1;
+            transition: scale 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.3s ease;
             z-index: 20;
         }
 
@@ -316,15 +318,25 @@
             inset: -6px;
             z-index: -1;
             border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             filter: drop-shadow(0 4px 12px rgba(0,0,0,0.85));
             pointer-events: none;
         }
 
-        .hex-shape svg {
+        .hex-shape > svg {
             width: 100%;
             height: 100%;
             display: block;
+            rotate: 0deg;
+            transform-origin: center center;
             animation: rotate-cw 90s infinite linear;
+        }
+
+        .hex-shape > .mc-convergence-stage {
+            width: 100% !important;
+            height: 100% !important;
         }
 
         .hex-shape polygon, .hex-shape circle {
@@ -332,7 +344,7 @@
         }
 
         .hex-node:hover {
-            transform: scale(1.22);
+            scale: 1.22;
             z-index: 60;
         }
 
@@ -487,7 +499,7 @@
         }
 
         .hex-node.selected-fusion {
-            transform: scale(1.25);
+            scale: 1.25;
             z-index: 80;
             animation: highlight-pulse 1s infinite alternate;
         }
@@ -910,11 +922,25 @@
             pointer-events: all;
         }
 
-        /* Animações */
-        @keyframes rotate-cw { from { transform: translate(-50%, -50%) rotate(0deg); } to { transform: translate(-50%, -50%) rotate(360deg); } }
-        @keyframes rotate-ccw { from { transform: translate(-50%, -50%) rotate(0deg); } to { transform: translate(-50%, -50%) rotate(-360deg); } }
+        /* Animações (Propriedades Individuais de Transform para não deslocar os SVGs dos nós) */
+        @keyframes rotate-cw { from { rotate: 0deg; } to { rotate: 360deg; } }
+        @keyframes rotate-ccw { from { rotate: 0deg; } to { rotate: -360deg; } }
         @keyframes mana-flow { 0% { stroke-dashoffset: 0; } 100% { stroke-dashoffset: 1000; } }
-        @keyframes highlight-pulse { 0% { transform: scale(1.18); } 100% { transform: scale(1.3); } }
+        @keyframes highlight-pulse { 0% { scale: 1.18; } 100% { scale: 1.3; } }
+
+        @supports not (translate: 0px) {
+            .rune-circle { transform: translate(-50%, -50%); }
+            .rune-circle-1 { animation: rune-rotate-cw-legacy 140s infinite linear; }
+            .rune-circle-2 { animation: rune-rotate-ccw-legacy 180s infinite linear; }
+            .rune-circle-3 { animation: rune-rotate-cw-legacy 240s infinite linear; }
+            .rune-circle-4 { animation: rune-rotate-ccw-legacy 320s infinite linear; }
+            .hex-shape > svg { animation: node-rotate-cw-legacy 90s infinite linear; }
+            .hex-node:hover { transform: scale(1.22); }
+            .hex-node.selected-fusion { transform: scale(1.25); }
+            @keyframes rune-rotate-cw-legacy { from { transform: translate(-50%, -50%) rotate(0deg); } to { transform: translate(-50%, -50%) rotate(360deg); } }
+            @keyframes rune-rotate-ccw-legacy { from { transform: translate(-50%, -50%) rotate(0deg); } to { transform: translate(-50%, -50%) rotate(-360deg); } }
+            @keyframes node-rotate-cw-legacy { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        }
 
         /* ===== MODAL: TABELA DE FUSÕES ===== */
         #fusion-table-overlay {
@@ -1121,7 +1147,7 @@
 
         .convergence-beam {
             stroke-dasharray: 10 8;
-            animation: manaFlow 0.85s linear infinite;
+            animation: mana-flow 0.85s linear infinite;
             filter: url(#tree-glow);
             @media (prefers-reduced-motion: reduce) {
                 animation: none;
@@ -2738,7 +2764,7 @@
                     paths: chosen
                 };
                 try {
-                    shape.innerHTML = circleGen.generateConvergenceAnimationHTML(entryObj, magicPaths, { size: 132 });
+                    shape.innerHTML = circleGen.generateConvergenceAnimationHTML(entryObj, magicPaths, { size: 152 });
                 } catch (err) {
                     shape.innerHTML = '';
                 }
@@ -3845,23 +3871,46 @@
             }
         }
 
+        function getViewportDims() {
+            const width = (viewport && viewport.clientWidth) ? viewport.clientWidth : window.innerWidth;
+            const height = (viewport && viewport.clientHeight) ? viewport.clientHeight : Math.max(300, window.innerHeight - 70);
+            return { width, height };
+        }
+
+        function applyCameraState(cam) {
+            pointX = cam.pointX;
+            pointY = cam.pointY;
+            scale = cam.scale;
+            setTransform();
+        }
+
         function focusPath(key) {
             const p = pathNodes[key];
             if (!p) return;
-            pointX = -p.x;
-            pointY = -p.y;
-            scale = 1.3;
-            setTransform();
+            const dims = getViewportDims();
+            if (circleGen && typeof circleGen.computeCenteredCamera === 'function') {
+                applyCameraState(circleGen.computeCenteredCamera(dims, p, 1.3));
+            } else {
+                scale = 1.3;
+                pointX = (dims.width / 2) - (p.x * scale);
+                pointY = (dims.height / 2) - (p.y * scale);
+                setTransform();
+            }
         }
 
         function focusFusion(id) {
             const activeFusions = getActiveOrbitalFusions();
             const f = activeFusions.find(fn => fn.id === id) || fusionNodes.find(fn => fn.id === id);
             if (!f) return;
-            pointX = -f.x;
-            pointY = -f.y;
-            scale = 1.25;
-            setTransform();
+            const dims = getViewportDims();
+            if (circleGen && typeof circleGen.computeCenteredCamera === 'function') {
+                applyCameraState(circleGen.computeCenteredCamera(dims, f, 1.25));
+            } else {
+                scale = 1.25;
+                pointX = (dims.width / 2) - (f.x * scale);
+                pointY = (dims.height / 2) - (f.y * scale);
+                setTransform();
+            }
         }
 
         // Toast de Feedback
@@ -3879,13 +3928,33 @@
         }
 
         // =========================================================================
-        // Câmera Espacial
+        // Câmera Espacial (Origem #center-point centralizada no #tree-viewport)
         // =========================================================================
         let scale = 0.85, panning = false, pointX = 0, pointY = 0, start = { x: 0, y: 0 };
         const map = document.getElementById('tree-canvas');
         const viewport = document.getElementById('tree-viewport');
+        let lastViewportDims = getViewportDims();
 
         function setTransform() { map.style.transform = `translate(${pointX}px, ${pointY}px) scale(${scale})`; }
+
+        function zoomAroundAnchor(nextScale, anchorX, anchorY) {
+            const dims = getViewportDims();
+            const anchor = {
+                x: anchorX !== undefined ? anchorX : dims.width / 2,
+                y: anchorY !== undefined ? anchorY : dims.height / 2
+            };
+            if (circleGen && typeof circleGen.computeZoomAroundAnchor === 'function') {
+                applyCameraState(circleGen.computeZoomAroundAnchor({ pointX, pointY, scale }, nextScale, anchor));
+            } else {
+                const clamped = Math.min(Math.max(nextScale, 0.3), 2.5);
+                const wx = (anchor.x - pointX) / scale;
+                const wy = (anchor.y - pointY) / scale;
+                scale = clamped;
+                pointX = anchor.x - wx * scale;
+                pointY = anchor.y - wy * scale;
+                setTransform();
+            }
+        }
 
         viewport.onmousedown = function (e) {
             if (e.button !== 0 || e.target.closest('.hex-node') || e.target.closest('.glass-panel') || e.target.closest('.orbit-filter-bar') || e.target.closest('.zoom-controls') || e.target.closest('#fusion-altar') || e.target.closest('.modal-overlay')) return;
@@ -3904,22 +3973,39 @@
 
         viewport.onwheel = function (e) {
             e.preventDefault();
-            const xs = (e.clientX - pointX) / scale;
-            const ys = (e.clientY - pointY) / scale;
+            const rect = viewport.getBoundingClientRect();
+            const mx = e.clientX - rect.left;
+            const my = e.clientY - rect.top;
             const delta = (e.wheelDelta ? e.wheelDelta : -e.deltaY);
-            (delta > 0) ? (scale *= 1.12) : (scale /= 1.12);
-            scale = Math.min(Math.max(scale, 0.3), 2.5);
-            pointX = e.clientX - xs * scale;
-            pointY = e.clientY - ys * scale;
-            setTransform();
+            const nextScale = (delta > 0) ? (scale * 1.12) : (scale / 1.12);
+            zoomAroundAnchor(nextScale, mx, my);
         };
 
-        function zoomIn() { scale = Math.min(scale * 1.25, 2.5); setTransform(); }
-        function zoomOut() { scale = Math.max(scale / 1.25, 0.3); setTransform(); }
-        function resetView() { scale = 0.85; pointX = 0; pointY = 0; setTransform(); }
+        function zoomIn() { zoomAroundAnchor(scale * 1.25); }
+        function zoomOut() { zoomAroundAnchor(scale / 1.25); }
+        function resetView() {
+            const dims = getViewportDims();
+            lastViewportDims = dims;
+            if (circleGen && typeof circleGen.computeCenteredCamera === 'function') {
+                applyCameraState(circleGen.computeCenteredCamera(dims, { x: 0, y: 0 }, 0.85));
+            } else {
+                scale = 0.85;
+                pointX = dims.width / 2;
+                pointY = dims.height / 2;
+                setTransform();
+            }
+        }
 
-        // Inicialização Visual
-        setTransform();
+        window.addEventListener('resize', () => {
+            const nextDims = getViewportDims();
+            pointX += (nextDims.width - lastViewportDims.width) / 2;
+            pointY += (nextDims.height - lastViewportDims.height) / 2;
+            lastViewportDims = nextDims;
+            setTransform();
+        });
+
+        // Inicialização Visual Centralizada
+        resetView();
         renderTree();
 
         // =========================================================================

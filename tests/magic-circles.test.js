@@ -291,6 +291,44 @@ QUnit.module('Gerador de Círculos de Magia (SVG)', function (hooks) {
         assert.throws(() => Generator.generateConvergenceAnimationHTML(secEntry, null), /Caminhos inválidos/, 'Rejeita paths nulo');
         assert.throws(() => Generator.generateConvergenceAnimationHTML({ id: 'x', paths: ['fogo'] }, magicPaths), /2 \(Secundus\) ou 3/, 'Rejeita menos de 2 caminhos');
     });
+
+    QUnit.test('13. Caminho Feliz, Bordas e Erros: computeCenteredCamera e computeZoomAroundAnchor centralizam círculos no viewport (AAA)', function (assert) {
+        // Arrange: Mock de dimensões do viewport (stub isolado do DOM)
+        const mockViewport = { width: 1200, height: 800 };
+        const fireNodePos = { x: 0, y: -225 };
+
+        // Act: Caminho Feliz
+        const originCam = Generator.computeCenteredCamera(mockViewport);
+        const focusedCam = Generator.computeCenteredCamera(mockViewport, fireNodePos, 1.3);
+        const zoomedCam = Generator.computeZoomAroundAnchor(originCam, 1.25, { x: 600, y: 400 });
+
+        // Assert: Caminho Feliz — origem (0,0) cai exatamente em (600, 400) independentemente de scale=0.85
+        assert.strictEqual(originCam.pointX, 600, 'Origem X centralizada em width/2');
+        assert.strictEqual(originCam.pointY, 400, 'Origem Y centralizada em height/2');
+        assert.strictEqual(originCam.scale, 0.85, 'Escala padrão 0.85 aplicada');
+
+        // Assert: Caminho Feliz — nó focado cai exatamente no centro (600, 400): pointY + (-225 * 1.3) = 400
+        assert.strictEqual(focusedCam.pointX, 600, 'Nó focado X centralizado');
+        assert.strictEqual(focusedCam.pointY + (fireNodePos.y * focusedCam.scale), 400, 'Nó focado Y renderiza exatamente no centro do viewport');
+        assert.strictEqual(zoomedCam.pointX, 600, 'Zoom no centro preserva pointX sem deslocar o círculo');
+        assert.strictEqual(zoomedCam.pointY, 400, 'Zoom no centro preserva pointY sem deslocar o círculo');
+        assert.strictEqual(zoomedCam.scale, 1.25, 'Nova escala aplicada');
+
+        // Act & Assert: Casos de Borda (limites de escala, dimensões zero/negativas)
+        const zeroViewportCam = Generator.computeCenteredCamera({ width: -50, height: 0 }, { x: 0, y: 0 }, 0.05);
+        const maxScaleCam = Generator.computeZoomAroundAnchor(originCam, 99, { x: 600, y: 400 });
+        assert.deepEqual(zeroViewportCam, { pointX: 0, pointY: 0, scale: 0.3 }, 'Dimensões negativas viram 0 e escala mínima respeita limite 0.3');
+        assert.strictEqual(maxScaleCam.scale, 2.5, 'Escala máxima respeita limite 2.5');
+
+        // Assert: Tratamento de Exceções
+        assert.throws(() => Generator.computeCenteredCamera(null), /Viewport inválido/, 'Rejeita viewport nulo');
+        assert.throws(() => Generator.computeCenteredCamera(mockViewport, null), /Ponto alvo inválido/, 'Rejeita targetPoint explicitamente nulo');
+        assert.throws(() => Generator.computeCenteredCamera(mockViewport, { x: 0, y: 0 }, 0), /Escala inválida/, 'Rejeita escala zero');
+        assert.throws(() => Generator.computeCenteredCamera(mockViewport, { x: 0, y: 0 }, NaN), /Escala inválida/, 'Rejeita escala NaN');
+        assert.throws(() => Generator.computeZoomAroundAnchor(null, 1.0, { x: 0, y: 0 }), /Estado de câmera inválido/, 'Rejeita cameraState nulo');
+        assert.throws(() => Generator.computeZoomAroundAnchor(originCam, 1.0, null), /Ponto de ancoragem inválido/, 'Rejeita anchorPoint nulo');
+        assert.throws(() => Generator.computeZoomAroundAnchor(originCam, -1, { x: 0, y: 0 }), /Escala inválida/, 'Rejeita escala negativa no zoom');
+    });
 });
 
 QUnit.module('Artefatos e Galeria de Círculos', function () {

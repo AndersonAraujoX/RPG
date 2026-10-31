@@ -188,6 +188,29 @@ QUnit.module('Biblioteca Arcana: Árvore Cósmica Ancestral Bioluminescente (AAA
         assert.ok(html.includes('replayConvergenceAnimation'), 'Função para reproduzir novamente a animação de junção presente');
         assert.ok(html.includes('prefers-reduced-motion: reduce'), 'Respeita preferência de acessibilidade @media (prefers-reduced-motion: reduce)');
     });
+
+    // -------------------------------------------------------------
+    // 10. Regressão de Centralização: Círculos Alinhados aos Nós e Câmera Centralizada no Viewport (AAA)
+    // -------------------------------------------------------------
+    QUnit.test('10. Caminho Feliz e Regressão: Círculos Mágicos centralizados nos nós (sem translate(-50%,-50%) em rotate-cw) e no viewport (AAA)', function (assert) {
+        // Arrange
+        const html = fs.readFileSync(ARVORE_HTML_PATH, 'utf-8');
+        const rotateCwMatch = html.match(/@keyframes\s+rotate-cw\s*\{[^\n]+\}/);
+
+        // Act & Assert: Keyframe rotate-cw usa propriedade individual rotate sem deslocar .hex-shape > svg em -50%
+        assert.ok(rotateCwMatch, 'Keyframe @keyframes rotate-cw definido');
+        assert.notOk(rotateCwMatch[0].includes('translate(-50%, -50%)'), 'rotate-cw não aplica translate(-50%, -50%) que deslocava os SVGs dos círculos');
+        assert.ok(rotateCwMatch[0].includes('rotate: 0deg') && rotateCwMatch[0].includes('rotate: 360deg'), 'rotate-cw anima apenas a propriedade individual rotate');
+        assert.ok(html.includes('.hex-shape > svg'), 'Rotação escopada apenas ao SVG direto de .hex-shape');
+        assert.ok(html.includes('translate: -50% -50%;'), '.rune-circle centralizado via propriedade individual translate');
+        assert.ok(html.includes('@supports not (translate: 0px)'), 'Fallback @supports presente para navegadores legados');
+
+        // Act & Assert: #center-point ancorado em (0,0) e câmera centralizada via computeCenteredCamera
+        assert.notOk(/#center-point\s*\{[^}]*50vw/.test(html), '#center-point não usa left: 50vw dentro de container escalado com origem 0 0');
+        assert.ok(html.includes('computeCenteredCamera'), 'resetView e foco de nós utilizam computeCenteredCamera para centralização exata');
+        assert.ok(html.includes('computeZoomAroundAnchor'), 'Zoom mantém o ponto central ancorado sem deslocar o tabuleiro');
+    });
 });
+
 
 

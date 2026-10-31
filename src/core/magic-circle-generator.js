@@ -285,13 +285,82 @@
         );
     }
 
+    /**
+     * Calcula a translação (pointX, pointY) e escala para centralizar exatamente
+     * um ponto do mundo (como a origem {x:0, y:0} do Nexo ou um nó {x, y}) no centro do viewport.
+     */
+    function computeCenteredCamera(viewportDims, targetPoint, targetScale) {
+        if (!viewportDims || typeof viewportDims !== 'object') {
+            throw new Error('Viewport inválido.');
+        }
+        if (targetPoint !== undefined && (targetPoint === null || typeof targetPoint !== 'object')) {
+            throw new Error('Ponto alvo inválido.');
+        }
+        const pt = targetPoint || { x: 0, y: 0 };
+        const width = Math.max(0, Number(viewportDims.width) || 0);
+        const height = Math.max(0, Number(viewportDims.height) || 0);
+        const rawScale = targetScale === undefined ? 0.85 : Number(targetScale);
+        if (!Number.isFinite(rawScale) || rawScale <= 0) {
+            throw new Error('Escala inválida.');
+        }
+        const scale = Math.min(Math.max(rawScale, 0.3), 2.5);
+        const tx = Number(pt.x) || 0;
+        const ty = Number(pt.y) || 0;
+
+        return {
+            pointX: (width / 2) - (tx * scale),
+            pointY: (height / 2) - (ty * scale),
+            scale
+        };
+    }
+
+    /**
+     * Calcula o novo estado de câmera mantendo fixo um ponto de ancoragem (ex: centro do viewport ou cursor).
+     */
+    function computeZoomAroundAnchor(cameraState, nextScale, anchorPoint) {
+        if (!cameraState || typeof cameraState !== 'object') {
+            throw new Error('Estado de câmera inválido.');
+        }
+        if (!anchorPoint || typeof anchorPoint !== 'object') {
+            throw new Error('Ponto de ancoragem inválido.');
+        }
+        const rawNext = Number(nextScale);
+        if (!Number.isFinite(rawNext) || rawNext <= 0) {
+            throw new Error('Escala inválida.');
+        }
+        const currentScale = (Number(cameraState.scale) > 0) ? Number(cameraState.scale) : 0.85;
+        const clampedScale = Math.min(Math.max(rawNext, 0.3), 2.5);
+        const ax = Number(anchorPoint.x) || 0;
+        const ay = Number(anchorPoint.y) || 0;
+        const worldX = (ax - (Number(cameraState.pointX) || 0)) / currentScale;
+        const worldY = (ay - (Number(cameraState.pointY) || 0)) / currentScale;
+
+        return {
+            pointX: ax - (worldX * clampedScale),
+            pointY: ay - (worldY * clampedScale),
+            scale: clampedScale
+        };
+    }
+
     /** Gera o SVG de cada entrada, preservando os dados originais. */
     function buildCatalog(entries, paths) {
         if (!Array.isArray(entries)) throw new Error('Entradas inválidas.');
         return entries.map(entry => Object.assign({}, entry, { svg: generateCircleSVG(entry, paths) }));
     }
 
-    const MagicCircleGenerator = { hashString, createRng, polygonPoints, sidesFor, escapeXml, generateCircleSVG, generatePrimaryCircleSVG, generateConvergenceAnimationHTML, buildCatalog };
+    const MagicCircleGenerator = {
+        hashString,
+        createRng,
+        polygonPoints,
+        sidesFor,
+        escapeXml,
+        generateCircleSVG,
+        generatePrimaryCircleSVG,
+        generateConvergenceAnimationHTML,
+        computeCenteredCamera,
+        computeZoomAroundAnchor,
+        buildCatalog
+    };
 
     if (typeof module !== 'undefined' && module.exports) {
         module.exports = MagicCircleGenerator;
