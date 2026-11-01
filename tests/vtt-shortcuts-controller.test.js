@@ -144,4 +144,77 @@ QUnit.module('VttShortcutsController: Atalhos de Teclado do VTT (AAA)', function
         const action = controller.handleKeyDown({ key: 'Escape', target: {} });
         assert.equal(action, 'ESCAPE', 'Ação é resolvida mesmo sem callback fornecido');
     });
+
+    // -------------------------------------------------------------------------
+    // 6. Atalhos Expandidos e Nomenclatura Flexível de Handlers (AAA)
+    // -------------------------------------------------------------------------
+    QUnit.test('6. Caminho Feliz: Atalhos expandidos (P, V, S, F, D, G, N) e suporte a handlers simplificados (AAA)', function (assert) {
+        // Arrange
+        let selectCalled = false;
+        let fogCalled = false;
+        let drawCalled = false;
+        let gridCalled = false;
+        let nextTurnCalled = false;
+        let pingCalled = false;
+
+        const controller = VttShortcutsController.createController({
+            toolSelect: () => { selectCalled = true; },
+            toolFog: () => { fogCalled = true; },
+            toolDraw: () => { drawCalled = true; },
+            toggleGrid: () => { gridCalled = true; },
+            nextTurn: () => { nextTurnCalled = true; },
+            toolPing: () => { pingCalled = true; }
+        });
+
+        // Act & Assert: P para Ping
+        controller.handleKeyDown({ key: 'p', target: {} });
+        assert.ok(pingCalled, 'Tecla P aciona ping/toolPing');
+
+        // V para Select
+        controller.handleKeyDown({ key: 'v', target: {} });
+        assert.ok(selectCalled, 'Tecla V aciona toolSelect');
+
+        // F para Fog
+        controller.handleKeyDown({ key: 'f', target: {} });
+        assert.ok(fogCalled, 'Tecla F aciona toolFog');
+
+        // D para Draw
+        controller.handleKeyDown({ key: 'd', target: {} });
+        assert.ok(drawCalled, 'Tecla D aciona toolDraw');
+
+        // G para Grid
+        controller.handleKeyDown({ key: 'g', target: {} });
+        assert.ok(gridCalled, 'Tecla G aciona toggleGrid');
+
+        // N para Next Turn
+        controller.handleKeyDown({ key: 'n', target: {} });
+        assert.ok(nextTurnCalled, 'Tecla N aciona nextTurn');
+    });
+
+    QUnit.test('7. Casos de Borda: autoAttach registra listeners no target fornecido (AAA)', function (assert) {
+        // Arrange
+        const listeners = {};
+        const mockTarget = {
+            addEventListener(ev, cb) { listeners[ev] = cb; },
+            removeEventListener(ev, cb) { delete listeners[ev]; }
+        };
+
+        let undoTriggered = false;
+        // Act: Cria controller com mockWindow
+        const controller = VttShortcutsController.createController({
+            undo: () => { undoTriggered = true; }
+        }, { target: mockTarget, autoAttach: true });
+
+        // Assert
+        assert.ok(typeof listeners.keydown === 'function', 'keydown deve estar registrado automaticamente');
+        assert.ok(typeof listeners.keyup === 'function', 'keyup deve estar registrado automaticamente');
+
+        // Simula evento disparado no target
+        listeners.keydown({ key: 'z', ctrlKey: true, target: {}, preventDefault: () => {} });
+        assert.ok(undoTriggered, 'Atalho acionado via listener do mockTarget');
+
+        // Cleanup
+        controller.detach();
+        assert.equal(Object.keys(listeners).length, 0, 'Listeners limpos após detach');
+    });
 });

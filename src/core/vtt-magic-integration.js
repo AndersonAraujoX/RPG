@@ -35,7 +35,7 @@
             }
 
             const spellName = spell.spell || spell.name || 'Feitiço Desconhecido';
-            const basePECost = Number.isFinite(spell.pe) ? spell.pe : 2;
+            const basePECost = Number.isFinite(spell.pe) ? spell.pe : (Number.isFinite(spell.cost) ? spell.cost : 2);
             let targetCD = Number.isFinite(spell.cd) ? spell.cd : 10;
             let diceBonus = Number.isFinite(spell.bonus) ? spell.bonus : 0;
             const spellPaths = Array.isArray(spell.paths) ? spell.paths : (spell.path1 ? [spell.path1, spell.path2, spell.path3].filter(Boolean) : []);
@@ -131,9 +131,15 @@
             let targetEffect = null;
 
             if (targetToken && isSuccess) {
+                const isDamageType = (Number.isFinite(spell.damage) && spell.damage > 0) || spell.type === 'damage';
+                const isHealType = (Number.isFinite(spell.heal) && spell.heal > 0) || spell.type === 'heal';
+
                 // Efeito de Dano
-                if (Number.isFinite(spell.damage) && spell.damage > 0) {
-                    const finalDamage = isCrit ? Math.round(spell.damage * 1.5) : spell.damage;
+                if (isDamageType) {
+                    const baseDamage = Number.isFinite(spell.damage) && spell.damage > 0
+                        ? spell.damage
+                        : (diceTotal + diceBonus);
+                    const finalDamage = isCrit ? Math.round(baseDamage * 1.5) : baseDamage;
                     const prevHp = targetToken.hp;
                     targetToken.hp = Math.max(0, targetToken.hp - finalDamage);
                     targetEffect = { type: 'damage', amount: finalDamage, prevHp, newHp: targetToken.hp };
@@ -147,8 +153,11 @@
                     });
                 }
                 // Efeito de Cura
-                else if (Number.isFinite(spell.heal) && spell.heal > 0) {
-                    const finalHeal = isCrit ? Math.round(spell.heal * 1.5) : spell.heal;
+                else if (isHealType) {
+                    const baseHeal = Number.isFinite(spell.heal) && spell.heal > 0
+                        ? spell.heal
+                        : (diceTotal + diceBonus);
+                    const finalHeal = isCrit ? Math.round(baseHeal * 1.5) : baseHeal;
                     const prevHp = targetToken.hp;
                     targetToken.hp = Math.min(targetToken.maxHp || targetToken.hp, targetToken.hp + finalHeal);
                     targetEffect = { type: 'heal', amount: finalHeal, prevHp, newHp: targetToken.hp };
@@ -166,9 +175,13 @@
             return {
                 success: isSuccess,
                 isCrit,
+                isCritical: isCrit,
                 isFumble,
                 spellName,
                 peCost: effectivePECost,
+                spellCost: effectivePECost,
+                bonus: diceBonus,
+                effectAmount: targetEffect ? targetEffect.amount : 0,
                 d1,
                 d2,
                 diceTotal,
@@ -180,6 +193,24 @@
                 targetEffect,
                 floatingTexts
             };
+        },
+
+        /**
+         * Executa a conjuração de uma magia especificando diretamente o alvo.
+         * @param {Object} caster - Token do conjurador.
+         * @param {Object} target - Token do alvo.
+         * @param {Object} spell - Magia/Círculo.
+         * @param {Object} [options={}] - Opções injetadas.
+         */
+        executeSpellCast(caster, target, spell, options = {}) {
+            const result = this.castSpellFromToken(caster, spell, { targetToken: target, ...options });
+            if (!result.success && result.reason) {
+                if (options.throwOnError === false) {
+                    return result;
+                }
+                throw new Error(result.reason);
+            }
+            return result;
         },
 
         /**

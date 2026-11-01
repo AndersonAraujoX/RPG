@@ -137,4 +137,70 @@ QUnit.module('VttMagicIntegration: Magia & Conjuração no VTT (AAA)', function 
             VttMagicIntegration.castSpellFromToken({}, null);
         }, /Dados da magia são obrigatórios/, 'Magia nula deve lançar erro');
     });
+
+    // -------------------------------------------------------------------------
+    // 7. executeSpellCast (Caminho Feliz, Curas, Dano e Normalização)
+    // -------------------------------------------------------------------------
+    QUnit.test('7. Caminho Feliz: executeSpellCast aplica dano e normaliza campos de retorno (AAA)', function (assert) {
+        // Arrange
+        const caster = { id: 'c1', name: 'Mago', hp: 12, maxHp: 12, pe: 10, maxPe: 10, x: 50, y: 50 };
+        const target = { id: 't1', name: 'Goblin', hp: 15, maxHp: 15, x: 100, y: 100 };
+        const spell = { id: 'c01', name: 'Labareda Ígnea', cost: 2, cd: 8, dice: '2d6', bonus: 2, type: 'damage' };
+
+        // Act
+        const result = VttMagicIntegration.executeSpellCast(caster, target, spell, {
+            predeterminedRoll: [5, 4] // 9 + 2 = 11 vs CD 8 -> Sucesso
+        });
+
+        // Assert
+        assert.ok(result.success, 'Conjuração deve ser bem-sucedida');
+        assert.equal(caster.pe, 8, 'PE do conjurador deve ser reduzido em 2');
+        assert.equal(result.spellCost, 2, 'spellCost normalizado deve ser 2');
+        assert.equal(result.peCost, 2, 'peCost normalizado deve ser 2');
+        assert.ok(result.effectAmount > 0, 'Dano calculado deve ser maior que 0');
+        assert.equal(target.hp, 15 - result.effectAmount, 'PV do goblin deduzido com precisão');
+        assert.equal(result.isCritical, false, 'Não foi crítico natural 12');
+    });
+
+    QUnit.test('8. Caminho Feliz: executeSpellCast aplica cura respeitando PV máximo (AAA)', function (assert) {
+        // Arrange
+        const healer = { id: 'h1', name: 'Sacerdote', hp: 15, maxHp: 15, pe: 6, maxPe: 6 };
+        const ally = { id: 'a1', name: 'Guerreiro', hp: 10, maxHp: 14 };
+        const spell = { id: 'c02', name: 'Centelha Curativa', cost: 3, cd: 8, dice: '2d6', bonus: 1, type: 'heal' };
+
+        // Act
+        const result = VttMagicIntegration.executeSpellCast(healer, ally, spell, {
+            predeterminedRoll: [6, 3] // 9 + 1 = 10 vs CD 8
+        });
+
+        // Assert
+        assert.ok(result.success, 'Cura bem-sucedida');
+        assert.equal(healer.pe, 3, 'PE do sacerdote deduzido em 3');
+        assert.ok(ally.hp > 10 && ally.hp <= ally.maxHp, 'PV do aliado curado sem ultrapassar o maxHp de 14');
+        assert.ok(result.effectAmount > 0, 'Quantidade curada reportada');
+    });
+
+    QUnit.test('9. Casos de Borda: executeSpellCast sem PE suficiente lança erro explicativo (AAA)', function (assert) {
+        // Arrange
+        const exhausted = { id: 'c1', name: 'Mago Exausto', pe: 1, maxPe: 10 };
+        const target = { id: 't1', name: 'Alvo', hp: 10, maxHp: 10 };
+        const expensiveSpell = { id: 'c05', name: 'Cataclismo', cost: 6, cd: 13, bonus: 9, type: 'damage' };
+
+        // Act & Assert
+        assert.throws(() => {
+            VttMagicIntegration.executeSpellCast(exhausted, target, expensiveSpell);
+        }, /PE insuficiente/, 'Deve lançar erro indicando saldo de PE insuficiente');
+        assert.equal(exhausted.pe, 1, 'PE não deve ser debitado em caso de falha por saldo');
+    });
+
+    QUnit.test('10. Tratamento de Exceções: executeSpellCast com parâmetros nulos dispara erro (AAA)', function (assert) {
+        // Arrange, Act & Assert
+        assert.throws(() => {
+            VttMagicIntegration.executeSpellCast(null, {}, {});
+        }, /Token do conjurador é obrigatório/, 'Conjurador nulo dispara erro');
+
+        assert.throws(() => {
+            VttMagicIntegration.executeSpellCast({}, {}, null);
+        }, /Dados da magia são obrigatórios/, 'Magia nula dispara erro');
+    });
 });

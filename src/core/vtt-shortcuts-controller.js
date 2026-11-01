@@ -85,8 +85,8 @@
                 return shift ? 'CYCLE_TOKEN_PREV' : 'CYCLE_TOKEN_NEXT';
             }
 
-            // 7. Ping Tático (Tecla T)
-            if (!ctrlOrMeta && (key === 't' || key === 'T' || code === 'KeyT')) {
+            // 7. Ping Tático (Tecla T ou P)
+            if (!ctrlOrMeta && (key === 't' || key === 'T' || key === 'p' || key === 'P' || code === 'KeyT' || code === 'KeyP')) {
                 return 'PING';
             }
 
@@ -95,9 +95,29 @@
                 return 'TOOL_RULER';
             }
 
-            // 9. Seleção padrão (Tecla S)
-            if (!ctrlOrMeta && (key === 's' || key === 'S' || code === 'KeyS')) {
+            // 9. Seleção padrão (Tecla S ou V)
+            if (!ctrlOrMeta && (key === 's' || key === 'S' || key === 'v' || key === 'V' || code === 'KeyS' || code === 'KeyV')) {
                 return 'TOOL_SELECT';
+            }
+
+            // 10. Névoa (Tecla F)
+            if (!ctrlOrMeta && (key === 'f' || key === 'F' || code === 'KeyF')) {
+                return 'TOOL_FOG';
+            }
+
+            // 11. Desenho Livre (Tecla D)
+            if (!ctrlOrMeta && (key === 'd' || key === 'D' || code === 'KeyD')) {
+                return 'TOOL_DRAW';
+            }
+
+            // 12. Grid (Tecla G)
+            if (!ctrlOrMeta && (key === 'g' || key === 'G' || code === 'KeyG')) {
+                return 'TOGGLE_GRID';
+            }
+
+            // 13. Próximo Turno (Tecla N)
+            if (!ctrlOrMeta && (key === 'n' || key === 'N' || code === 'KeyN')) {
+                return 'NEXT_TURN';
             }
 
             return null;
@@ -106,7 +126,7 @@
         /**
          * Cria uma instância conectada do controlador de atalhos.
          * @param {Object} handlers - Dicionário de callbacks para cada ação.
-         * @param {Object} [options={}] - Opções extras.
+         * @param {Object} [options={}] - Opções extras (autoAttach por padrão true).
          */
         createController(handlers = {}, options = {}) {
             const self = this;
@@ -115,7 +135,7 @@
             let isAttached = false;
             let boundKeyDown = null;
             let boundKeyUp = null;
-            const targetWindow = options.window || (typeof window !== 'undefined' ? window : null);
+            const targetWindow = options.window || options.target || (typeof window !== 'undefined' ? window : null);
 
             const controller = {
                 getSpacePanningActive() {
@@ -131,41 +151,60 @@
                         event.preventDefault();
                     }
 
+                    const call = (fn, ...args) => { if (typeof fn === 'function') fn(...args); };
+
                     switch (action) {
                         case 'UNDO':
-                            if (typeof handlers.onUndo === 'function') handlers.onUndo();
+                            call(handlers.onUndo || handlers.undo);
                             break;
                         case 'REDO':
-                            if (typeof handlers.onRedo === 'function') handlers.onRedo();
+                            call(handlers.onRedo || handlers.redo);
                             break;
                         case 'DELETE_TOKEN':
-                            if (typeof handlers.onDeleteToken === 'function') handlers.onDeleteToken();
+                            call(handlers.onDeleteToken || handlers.deleteToken);
                             break;
                         case 'ESCAPE':
-                            if (typeof handlers.onEscape === 'function') handlers.onEscape();
+                            call(handlers.onEscape || handlers.escape);
                             break;
                         case 'SPACE_PAN':
                             if (!spacePanningActive) {
                                 spacePanningActive = true;
-                                if (typeof handlers.onSpacePanStart === 'function') {
-                                    previousTool = handlers.onSpacePanStart();
+                                const fn = handlers.onSpacePanStart || handlers.spacePanStart;
+                                if (typeof fn === 'function') {
+                                    previousTool = fn();
                                 }
                             }
                             break;
                         case 'CYCLE_TOKEN_NEXT':
-                            if (typeof handlers.onCycleToken === 'function') handlers.onCycleToken(1);
+                            call(handlers.onCycleToken || handlers.cycleToken, 1);
                             break;
                         case 'CYCLE_TOKEN_PREV':
-                            if (typeof handlers.onCycleToken === 'function') handlers.onCycleToken(-1);
+                            call(handlers.onCycleToken || handlers.cycleToken, -1);
                             break;
                         case 'PING':
-                            if (typeof handlers.onPing === 'function') handlers.onPing();
+                            call(handlers.onPing || handlers.ping || handlers.toolPing);
                             break;
                         case 'TOOL_RULER':
-                            if (typeof handlers.onSetTool === 'function') handlers.onSetTool('ruler');
+                            if (handlers.toolRuler) call(handlers.toolRuler);
+                            else call(handlers.onSetTool || handlers.setTool, 'ruler');
                             break;
                         case 'TOOL_SELECT':
-                            if (typeof handlers.onSetTool === 'function') handlers.onSetTool('select');
+                            if (handlers.toolSelect) call(handlers.toolSelect);
+                            else call(handlers.onSetTool || handlers.setTool, 'select');
+                            break;
+                        case 'TOOL_FOG':
+                            if (handlers.toolFog) call(handlers.toolFog);
+                            else call(handlers.onSetTool || handlers.setTool, 'fog');
+                            break;
+                        case 'TOOL_DRAW':
+                            if (handlers.toolDraw) call(handlers.toolDraw);
+                            else call(handlers.onSetTool || handlers.setTool, 'draw');
+                            break;
+                        case 'TOGGLE_GRID':
+                            call(handlers.toggleGrid);
+                            break;
+                        case 'NEXT_TURN':
+                            call(handlers.nextTurn);
                             break;
                         default:
                             break;
@@ -181,8 +220,9 @@
 
                     if ((key === ' ' || code === 'Space') && spacePanningActive) {
                         spacePanningActive = false;
-                        if (typeof handlers.onSpacePanEnd === 'function') {
-                            handlers.onSpacePanEnd(previousTool);
+                        const fn = handlers.onSpacePanEnd || handlers.spacePanEnd;
+                        if (typeof fn === 'function') {
+                            fn(previousTool);
                         }
                         return 'SPACE_PAN_END';
                     }
@@ -205,6 +245,11 @@
                     isAttached = false;
                 }
             };
+
+            // Auto attach se targetWindow estiver disponível e autoAttach não for falso
+            if (options.autoAttach !== false && targetWindow) {
+                controller.attach();
+            }
 
             return controller;
         }

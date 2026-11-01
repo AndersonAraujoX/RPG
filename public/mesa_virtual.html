@@ -1202,6 +1202,60 @@
 
     <!-- VTT ENGINE SCRIPT -->
     <script>
+        function escapeHtml(str) {
+            if (str == null) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function generateTokenId(prefix = 'tok_') {
+            const rand = (typeof crypto !== 'undefined' && crypto.randomUUID)
+                ? crypto.randomUUID().replace(/-/g, '').slice(0, 10)
+                : Math.random().toString(36).substring(2, 10);
+            return `${prefix}${Date.now()}_${rand}`;
+        }
+
+        function syncTokenBackToSavedSheet(token) {
+            if (!token) return;
+            try {
+                const savedRaw = localStorage.getItem('kuar_tor_saved_sheets');
+                if (savedRaw) {
+                    const saved = JSON.parse(savedRaw);
+                    let modified = false;
+                    Object.keys(saved).forEach(key => {
+                        const entry = saved[key];
+                        const sheet = entry.sheetData || entry;
+                        if ((token.characterId && (entry.id === token.characterId || key === token.characterId)) ||
+                            (sheet.charName === token.name || sheet.name === token.name)) {
+                            sheet.pontosVida = token.hp;
+                            sheet.pontosEnergia = token.pe;
+                            if (entry.sheetData) entry.sheetData = sheet;
+                            modified = true;
+                        }
+                    });
+                    if (modified) {
+                        localStorage.setItem('kuar_tor_saved_sheets', JSON.stringify(saved));
+                    }
+                }
+
+                const activeRaw = localStorage.getItem('kuartor_active_vtt_character');
+                if (activeRaw) {
+                    const active = JSON.parse(activeRaw);
+                    if (active && (active.name === token.name || active.id === token.characterId)) {
+                        active.hp = token.hp;
+                        active.pe = token.pe;
+                        localStorage.setItem('kuartor_active_vtt_character', JSON.stringify(active));
+                    }
+                }
+            } catch (e) {
+                console.warn('[VTT] Erro ao sincronizar token com ficha salva:', e);
+            }
+        }
+
         const state = {
             scale: 1,
             originX: 0,
@@ -1392,6 +1446,10 @@
             isPanning = false;
             viewport.classList.remove('panning');
             if (state.currentTool === 'draw' && activeStroke) {
+                if (p2pNet) {
+                    if (p2pNet.isHost) p2pNet.broadcast('DRAW_STROKE', activeStroke);
+                    else p2pNet.sendToHost('DRAW_STROKE', activeStroke);
+                }
                 activeStroke = null;
                 recordSnapshot('Desenho Tático');
             }
@@ -1509,7 +1567,7 @@
                 <div class="ping-ripple" style="border: 2.5px solid ${color};"></div>
                 <div class="ping-ripple" style="border: 1.5px solid ${color}; animation-delay: 0.4s;"></div>
                 <div style="width: 14px; height: 14px; border-radius: 50%; background: ${color}; box-shadow: 0 0 14px ${color}; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);"></div>
-                <div style="position: absolute; top: 12px; left: 50%; transform: translateX(-50%); background: rgba(11,15,25,0.95); border: 1px solid ${color}; color: #ffffff; padding: 1px 7px; border-radius: 4px; font-size: 10px; font-family: Cinzel; font-weight: bold; white-space: nowrap; box-shadow: 0 2px 8px rgba(0,0,0,0.8);">${author}</div>
+                <div style="position: absolute; top: 12px; left: 50%; transform: translateX(-50%); background: rgba(11,15,25,0.95); border: 1px solid ${color}; color: #ffffff; padding: 1px 7px; border-radius: 4px; font-size: 10px; font-family: Cinzel; font-weight: bold; white-space: nowrap; box-shadow: 0 2px 8px rgba(0,0,0,0.8);">${escapeHtml(author)}</div>
             `;
             pingsLayer.appendChild(pingEl);
 
@@ -1566,8 +1624,8 @@
                     <div class="token-bar"><div class="token-bar-fill-hp" style="width: ${hpPercent}%;"></div></div>
                     <div class="token-bar"><div class="token-bar-fill-pe" style="width: ${pePercent}%;"></div></div>
                 </div>
-                <img src="${token.avatar}" class="vtt-token-img" alt="${token.name}">
-                <div class="token-nameplate">${token.name}</div>
+                <img src="${escapeHtml(token.avatar)}" class="vtt-token-img" alt="${escapeHtml(token.name)}">
+                <div class="token-nameplate">${escapeHtml(token.name)}</div>
                 <div class="token-conditions" id="conds-${token.id}"></div>
             `;
             let isDraggingToken = false;
@@ -1628,10 +1686,10 @@
             }
         }
 
-        function spawnPlayerToken(name, hp, pe, avatar) {
-            const id = 'tok_' + Date.now();
+        function spawnPlayerToken(name, hp, pe, avatar, characterId = null) {
+            const id = generateTokenId();
             const center = screenToWorld(viewport.clientWidth / 2, viewport.clientHeight / 2);
-            const token = { id, name, hp, maxHp: hp, pe, maxPe: pe, avatar, color: '#66FCF1', size: 1, x: Math.round(center.x / state.gridSize) * state.gridSize + 2, y: Math.round(center.y / state.gridSize) * state.gridSize + 2, conditions: [] };
+            const token = { id, characterId, name, hp, maxHp: hp, pe, maxPe: pe, avatar, color: '#66FCF1', size: 1, x: Math.round(center.x / state.gridSize) * state.gridSize + 2, y: Math.round(center.y / state.gridSize) * state.gridSize + 2, conditions: [] };
             state.tokens[id] = token;
             createTokenElement(token, true);
             addCombatant(token, true);
@@ -1640,7 +1698,7 @@
         }
 
         function spawnMonster(name, hp, pe, color, avatar) {
-            const id = 'tok_' + Date.now();
+            const id = generateTokenId('mon_');
             const center = screenToWorld(viewport.clientWidth / 2, viewport.clientHeight / 2);
             const token = { id, name, hp, maxHp: hp, pe, maxPe: pe, avatar, color, size: 1, x: Math.round(center.x / state.gridSize) * state.gridSize + 2, y: Math.round(center.y / state.gridSize) * state.gridSize + 2, conditions: [] };
             state.tokens[id] = token;
@@ -1714,6 +1772,7 @@
                 if (typeof AudioSfxEngine !== 'undefined') AudioSfxEngine.playSpellCast();
             }
 
+            syncTokenBackToSavedSheet(token);
             recordSnapshot('Modificar Atributo');
             if (p2pNet) {
                 const payload = { id: token.id, hp: token.hp, pe: token.pe, conditions: token.conditions };
@@ -1763,9 +1822,10 @@
 
         function appendChatMessage(title, text, type = 'normal') {
             const container = document.getElementById('chat-messages');
+            if (!container) return;
             const entry = document.createElement('div');
             entry.className = `chat-entry ${type === 'crit' ? 'roll-crit' : (type === 'fumble' ? 'roll-fumble' : '')}`;
-            entry.innerHTML = `<div class="text-[10px] text-cyan-400 font-cinzel font-bold">${title}</div><div class="text-xs text-gray-200">${text}</div>`;
+            entry.innerHTML = `<div class="text-[10px] text-cyan-400 font-cinzel font-bold">${escapeHtml(title)}</div><div class="text-xs text-gray-200">${text}</div>`;
             container.appendChild(entry);
             container.scrollTop = container.scrollHeight;
         }
@@ -1815,8 +1875,12 @@
                 rollQuickCheck('Comando', bonus, 10);
             } else {
                 const author = p2pNet ? p2pNet.playerName : 'Jogador';
-                appendChatMessage(author, val);
-                if (p2pNet) p2pNet.sendChatMessage(author, val);
+                const safeVal = escapeHtml(val);
+                appendChatMessage(author, safeVal);
+                if (p2pNet) p2pNet.sendChatMessage(author, safeVal);
+                if (typeof VTTFirestore !== 'undefined' && VTTFirestore.currentRoomId) {
+                    VTTFirestore.sendMessage(safeVal, author);
+                }
             }
             input.value = '';
         }
@@ -2161,6 +2225,7 @@
                         if (fill) fill.style.width = `${(token.hp / token.maxHp) * 100}%`;
                         updateTokenConditionsUI(data.id);
                     }
+                    syncTokenBackToSavedSheet(token);
                 }
             });
             p2pNet.on('token_spawned', (token) => {
@@ -2209,6 +2274,24 @@
             p2pNet.on('tactical_ping', (data) => {
                 spawnVisualPing(data.x, data.y, data.author, data.color);
             });
+            p2pNet.on('draw_stroke', (stroke) => {
+                if (drawingCtx && typeof VttPingDrawingEngine !== 'undefined') {
+                    VttPingDrawingEngine.renderStrokeToCanvas(drawingCtx, stroke);
+                }
+            });
+            p2pNet.on('clear_drawings', () => {
+                if (drawingCtx && drawingCanvas) {
+                    drawingCtx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
+                }
+            });
+            p2pNet.on('spell_cast', (data) => {
+                if (data && data.text) {
+                    appendChatMessage(data.author || 'Conjuração Arcana', data.text, data.isCrit ? 'crit' : 'normal');
+                    if (data.targetX && data.targetY && data.effectAmount) {
+                        showFloatingCombatText(data.targetX, data.targetY, `${data.isHeal ? '+' : '-'}${data.effectAmount} PV`, data.isHeal ? 'heal' : 'damage');
+                    }
+                }
+            });
         }
 
         function openMultiplayerModal() { document.getElementById('p2p-modal').classList.remove('hidden'); }
@@ -2255,14 +2338,20 @@
                 }
             });
 
+            VTTFirestore.on('onTokenMove', (data) => {
+                if (!data || !data.id) return;
+                const token = state.tokens[data.id];
+                if (token) {
+                    token.x = data.x;
+                    token.y = data.y;
+                    const el = document.getElementById(`token-${data.id}`);
+                    if (el) { el.style.left = `${data.x}px`; el.style.top = `${data.y}px`; }
+                }
+            });
+
             VTTFirestore.on('onMessage', (msg) => {
-                const chatContainer = document.getElementById('chat-history');
-                if (!chatContainer) return;
-                const msgEl = document.createElement('div');
-                msgEl.className = msg.isRoll ? 'p-2 bg-slate-900 border border-cyan-500/40 rounded text-xs text-cyan-300' : 'p-2 bg-slate-950 rounded text-xs text-gray-200';
-                msgEl.innerHTML = `<strong class="text-white">${msg.author}:</strong> ${msg.text}`;
-                chatContainer.appendChild(msgEl);
-                chatContainer.scrollTop = chatContainer.scrollHeight;
+                if (!msg) return;
+                appendChatMessage(msg.author || 'Mural', msg.text || '', msg.isRoll ? (msg.text && msg.text.includes('CRÍTICO') ? 'crit' : 'normal') : 'normal');
             });
         }
 
@@ -2379,8 +2468,9 @@
                             const pe = data.pontosEnergia || 10;
                             const avatar = data.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80';
                             const safeName = name.replace(/'/g, "\\'");
+                            const safeCharId = String(item.id || item.charId || '').replace(/'/g, "\\'");
                             return `
-                                <button type="button" onclick="spawnPlayerToken('${safeName}', ${pv}, ${pe}, '${avatar}')" class="w-full p-2 bg-slate-950 border border-emerald-500/40 hover:border-emerald-400 rounded-lg flex items-center gap-3 text-left transition mb-1.5 cursor-pointer">
+                                <button type="button" onclick="spawnPlayerToken('${safeName}', ${pv}, ${pe}, '${avatar}', '${safeCharId}')" class="w-full p-2 bg-slate-950 border border-emerald-500/40 hover:border-emerald-400 rounded-lg flex items-center gap-3 text-left transition mb-1.5 cursor-pointer">
                                     <img src="${avatar}" class="w-8 h-8 rounded-full object-cover border border-emerald-400 shrink-0">
                                     <div class="truncate">
                                         <div class="font-cinzel font-bold text-xs text-emerald-300 truncate">${name}</div>
@@ -2481,6 +2571,10 @@
             resetFog(false);
             if (drawingCtx && drawingCanvas) {
                 drawingCtx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
+            }
+            if (p2pNet) {
+                if (p2pNet.isHost) p2pNet.broadcast('CLEAR_DRAWINGS', {});
+                else p2pNet.sendToHost('CLEAR_DRAWINGS', {});
             }
             recordSnapshot('Reset Cena');
             closeSceneModal();
@@ -2595,6 +2689,9 @@
 
                 appendChatMessage('Conjuração Arcana (+2d6)', logText, result.isCritical ? 'crit' : (result.isFumble ? 'fumble' : 'normal'));
 
+                syncTokenBackToSavedSheet(caster);
+                syncTokenBackToSavedSheet(target);
+
                 recordSnapshot('Conjuração Arcana');
                 closeTokenSpellModal();
 
@@ -2603,12 +2700,23 @@
                         caster: { id: caster.id, hp: caster.hp, pe: caster.pe, conditions: caster.conditions },
                         target: { id: target.id, hp: target.hp, pe: target.pe, conditions: target.conditions }
                     };
+                    const spellPacket = {
+                        author: caster.name,
+                        text: logText,
+                        isCrit: result.isCritical,
+                        isHeal: spell.type === 'heal',
+                        effectAmount: result.effectAmount,
+                        targetX: target.x + 25,
+                        targetY: target.y - 15
+                    };
                     if (p2pNet.isHost) {
                         p2pNet.broadcast('TOKEN_UPDATE', payload.caster);
                         p2pNet.broadcast('TOKEN_UPDATE', payload.target);
+                        p2pNet.broadcast('SPELL_CAST', spellPacket);
                     } else {
                         p2pNet.sendToHost('TOKEN_UPDATE', payload.caster);
                         p2pNet.sendToHost('TOKEN_UPDATE', payload.target);
+                        p2pNet.sendToHost('SPELL_CAST', spellPacket);
                     }
                 }
             } catch (err) {

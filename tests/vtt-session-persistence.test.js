@@ -180,4 +180,77 @@ QUnit.module('VttSessionPersistence: Persistência & Histórico VTT (AAA)', func
         assert.equal(parsed.version, 1, 'Versão do schema deve estar no JSON importado');
         assert.equal(parsed.tokens.t1.name, 'Mago', 'Tokens preservados na importação');
     });
+
+    // -------------------------------------------------------------------------
+    // 7. Polimorfismo e Aliases serializeVttState / deserializeVttState
+    // -------------------------------------------------------------------------
+    QUnit.test('7. Caminho Feliz: serializeVttState e deserializeVttState funcionam como aliases diretos (AAA)', function (assert) {
+        // Arrange
+        const state = { scale: 1.5, tokens: { t1: { id: 't1', hp: 10 } } };
+
+        // Act
+        const serialized = VttSessionPersistence.serializeVttState(state, { mapUrl: 'mapa.jpg' });
+        const restored = VttSessionPersistence.deserializeVttState(serialized);
+
+        // Assert
+        assert.equal(restored.scale, 1.5, 'Escala restaurada');
+        assert.equal(restored.tokens.t1.hp, 10, 'Token restaurado');
+        assert.equal(restored.mapUrl, 'mapa.jpg', 'Map URL recuperada');
+    });
+
+    QUnit.test('8. Caminho Feliz: saveToLocalStorage e loadFromLocalStorage suportam assinatura polimórfica (AAA)', function (assert) {
+        // Arrange
+        const mockStorageData = {};
+        const mockStorage = {
+            setItem(key, val) { mockStorageData[key] = String(val); },
+            getItem(key) { return mockStorageData[key] || null; },
+            removeItem(key) { delete mockStorageData[key]; }
+        };
+        const state = { scale: 1.0, tokens: { tok_1: { id: 'tok_1', name: 'Guerreiro', hp: 16 } } };
+
+        // Act: Salva com assinatura polimórfica (state, metadata, storage)
+        const saved = VttSessionPersistence.saveToLocalStorage(state, { mapUrl: 'ruinas.jpg' }, mockStorage);
+        const loaded = VttSessionPersistence.loadFromLocalStorage(mockStorage);
+
+        // Assert
+        assert.ok(saved, 'Salvamento polimórfico deve ter sucesso');
+        assert.ok(loaded, 'Carga polimórfica deve retornar dados');
+        assert.equal(loaded.tokens.tok_1.name, 'Guerreiro', 'Token preservado');
+        assert.equal(loaded.mapUrl, 'ruinas.jpg', 'mapUrl preservada nos metadados');
+    });
+
+    // -------------------------------------------------------------------------
+    // 9. Casos de Borda: Recuperação de QuotaExceededError ao salvar mapa gigante
+    // -------------------------------------------------------------------------
+    QUnit.test('9. Casos de Borda: QuotaExceededError descarta base64 gigante e salva cena com sucesso (AAA)', function (assert) {
+        // Arrange
+        let throwQuota = true;
+        const mockStorageData = {};
+        const mockStorage = {
+            setItem(key, val) {
+                if (throwQuota && String(val).includes('data:image')) {
+                    const err = new Error('Storage quota exceeded');
+                    err.name = 'QuotaExceededError';
+                    throw err;
+                }
+                mockStorageData[key] = String(val);
+            },
+            getItem(key) { return mockStorageData[key] || null; }
+        };
+
+        const stateWithHugeMap = {
+            mapUrl: 'data:image/png;base64,' + 'A'.repeat(5000),
+            tokens: { t1: { id: 't1', name: 'Arqueiro', hp: 14 } }
+        };
+
+        // Act
+        const saved = VttSessionPersistence.saveToLocalStorage('scene_key', stateWithHugeMap, mockStorage);
+        const loaded = VttSessionPersistence.loadFromLocalStorage('scene_key', mockStorage);
+        const restored = VttSessionPersistence.deserializeScene(loaded, {});
+
+        // Assert
+        assert.ok(saved, 'Salvamento deve se recuperar do QuotaExceededError');
+        assert.equal(restored.tokens.t1.name, 'Arqueiro', 'Tokens devem ser salvos com sucesso');
+        assert.equal(restored.mapUrl, '', 'MapUrl gigante deve ter sido limpa para caber no storage');
+    });
 });

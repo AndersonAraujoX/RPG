@@ -20,7 +20,11 @@
         COMBAT_UPDATE: 'COMBAT_UPDATE',
         CHAT_MESSAGE: 'CHAT_MESSAGE',
         SECRET_ROLL: 'SECRET_ROLL',
-        HEARTBEAT: 'HEARTBEAT'
+        HEARTBEAT: 'HEARTBEAT',
+        TACTICAL_PING: 'TACTICAL_PING',
+        DRAW_STROKE: 'DRAW_STROKE',
+        CLEAR_DRAWINGS: 'CLEAR_DRAWINGS',
+        SPELL_CAST: 'SPELL_CAST'
     };
 
     /**
@@ -436,12 +440,50 @@
                     this.emit('player_left', payload);
                     break;
 
+                case P2P_MESSAGE_TYPES.TACTICAL_PING:
+                case 'TACTICAL_PING':
+                    this.emit('tactical_ping', payload);
+                    if (this.isHost) {
+                        this.broadcast('TACTICAL_PING', payload, senderConn.peer);
+                    }
+                    break;
+
+                case P2P_MESSAGE_TYPES.DRAW_STROKE:
+                case 'DRAW_STROKE':
+                    this.emit('draw_stroke', payload);
+                    if (this.isHost) {
+                        this.broadcast('DRAW_STROKE', payload, senderConn.peer);
+                    }
+                    break;
+
+                case P2P_MESSAGE_TYPES.CLEAR_DRAWINGS:
+                case 'CLEAR_DRAWINGS':
+                    this.emit('clear_drawings', payload);
+                    if (this.isHost) {
+                        this.broadcast('CLEAR_DRAWINGS', payload, senderConn.peer);
+                    }
+                    break;
+
+                case P2P_MESSAGE_TYPES.SPELL_CAST:
+                case 'SPELL_CAST':
+                    this.emit('spell_cast', payload);
+                    if (this.isHost) {
+                        this.broadcast('SPELL_CAST', payload, senderConn.peer);
+                    }
+                    break;
+
                 case P2P_MESSAGE_TYPES.HEARTBEAT:
                     // Responde com PONG silencioso
                     break;
 
                 default:
                     this.emit('custom_message', { type, payload, senderId: senderConn.peer });
+                    if (type && typeof type === 'string') {
+                        this.emit(type.toLowerCase(), payload);
+                    }
+                    if (this.isHost) {
+                        this.broadcast(type, payload, senderConn.peer);
+                    }
             }
         }
 

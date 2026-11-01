@@ -71,17 +71,31 @@
         },
 
         /**
-         * Cria um novo traço de desenho tático.
-         * @param {string} [tool='pen'] - Tipo de ferramenta ('pen', 'eraser', 'line').
+         * Cria um novo traço de desenho tático (suporta (tool, color, width) ou ({ tool, color, size/width })).
+         * @param {string|Object} [tool='pen'] - Tipo de ferramenta ('pen', 'eraser', 'line') ou objeto de configuração.
          * @param {string} [color='#fbbf24'] - Cor do traço.
          * @param {number} [width=3] - Espessura do traço em pixels.
          */
         createStroke(tool = 'pen', color = '#fbbf24', width = 3) {
+            let strokeTool = 'pen';
+            let strokeColor = '#fbbf24';
+            let strokeWidth = 3;
+
+            if (tool && typeof tool === 'object') {
+                strokeTool = tool.tool || 'pen';
+                strokeColor = tool.color || '#fbbf24';
+                strokeWidth = tool.width || tool.size || 3;
+            } else {
+                strokeTool = tool || 'pen';
+                strokeColor = color || '#fbbf24';
+                strokeWidth = width || 3;
+            }
+
             return {
                 id: 'stroke_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
-                tool,
-                color,
-                width: Math.max(1, Number(width) || 3),
+                tool: strokeTool,
+                color: strokeColor,
+                width: Math.max(1, Number(strokeWidth) || 3),
                 points: []
             };
         },

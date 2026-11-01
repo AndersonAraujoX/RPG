@@ -88,7 +88,7 @@
                     ...metadata
                 },
                 map: {
-                    url: state.mapUrl || (state.mapImg ? state.mapImg.src : '') || '',
+                    url: state.mapUrl || (metadata && metadata.mapUrl) || (state.mapImg ? state.mapImg.src : '') || '',
                     scale: Number.isFinite(state.scale) ? state.scale : 1,
                     originX: Number.isFinite(state.originX) ? state.originX : 0,
                     originY: Number.isFinite(state.originY) ? state.originY : 0,
@@ -275,40 +275,97 @@
         },
 
         /**
-         * Salva o estado atual no localStorage com segurança.
-         * @param {string} storageKey
-         * @param {Object} state
-         * @param {Storage} [storage=localStorage]
+         * Alias para serializeScene para compatibilidade de nomenclatura.
+         */
+        serializeVttState(state, metadata = {}) {
+            return this.serializeScene(state, metadata);
+        },
+
+        /**
+         * Alias para deserializeScene para compatibilidade de nomenclatura.
+         */
+        deserializeVttState(payload, targetState = {}) {
+            return this.deserializeScene(payload, targetState);
+        },
+
+        /**
+         * Salva o estado atual no localStorage com segurança (suporta tanto (key, state) quanto (state, metadata)).
+         * @param {string|Object} arg1 - Chave do storage OU objeto de estado diretamente.
+         * @param {Object} [arg2={}] - Objeto de estado OU metadados/storage.
+         * @param {Storage} [arg3=null] - Instância de Storage.
          * @returns {boolean} Sucesso do salvamento.
          */
-        saveToLocalStorage(storageKey = this.STORAGE_KEY_DEFAULT, state = {}, storage = null) {
+        saveToLocalStorage(arg1 = this.STORAGE_KEY_DEFAULT, arg2 = {}, arg3 = null) {
+            let storageKey = this.STORAGE_KEY_DEFAULT;
+            let state = {};
+            let metadata = {};
+            let storage = null;
+
+            if (typeof arg1 === 'string') {
+                storageKey = arg1;
+                state = arg2 || {};
+                storage = arg3;
+            } else if (arg1 && typeof arg1 === 'object') {
+                state = { ...arg1 };
+                if (arg2 && typeof arg2 === 'object' && typeof arg2.getItem !== 'function') {
+                    metadata = arg2;
+                    Object.assign(state, arg2);
+                } else if (arg2 && typeof arg2.getItem === 'function') {
+                    storage = arg2;
+                }
+                storage = arg3 || storage;
+            }
+
             const store = storage || (typeof localStorage !== 'undefined' ? localStorage : null);
             if (!store) return false;
 
             try {
-                const serialized = this.serializeScene(state);
+                const serialized = this.serializeScene(state, metadata);
                 store.setItem(storageKey, JSON.stringify(serialized));
                 return true;
             } catch (err) {
+                // Tratamento de QuotaExceededError (ex: mapas base64 gigantes)
+                if (err && (err.name === 'QuotaExceededError' || err.code === 22)) {
+                    try {
+                        const fallback = this.serializeScene({ ...state, mapUrl: '' }, { ...metadata, mapUrl: '' });
+                        store.setItem(storageKey, JSON.stringify(fallback));
+                        console.warn('[VttSessionPersistence] Imagem de mapa muito grande para localStorage. Cena salva com sucesso sem imagem base64 embutida.');
+                        return true;
+                    } catch (e2) {}
+                }
                 console.warn('Falha ao salvar cena no storage local:', err.message);
                 return false;
             }
         },
 
         /**
-         * Carrega o estado previamente salvo do localStorage.
-         * @param {string} storageKey
-         * @param {Storage} [storage=localStorage]
+         * Carrega o estado previamente salvo do localStorage (suporta (key) ou (storage)).
+         * @param {string|Storage} [arg1=this.STORAGE_KEY_DEFAULT]
+         * @param {Storage} [arg2=null]
          * @returns {Object|null} Objeto salvo ou null se não existir/corrompido.
          */
-        loadFromLocalStorage(storageKey = this.STORAGE_KEY_DEFAULT, storage = null) {
+        loadFromLocalStorage(arg1 = this.STORAGE_KEY_DEFAULT, arg2 = null) {
+            let storageKey = this.STORAGE_KEY_DEFAULT;
+            let storage = null;
+
+            if (typeof arg1 === 'string') {
+                storageKey = arg1;
+                storage = arg2;
+            } else if (arg1 && typeof arg1.getItem === 'function') {
+                storage = arg1;
+            }
+
             const store = storage || (typeof localStorage !== 'undefined' ? localStorage : null);
             if (!store) return null;
 
             try {
                 const raw = store.getItem(storageKey);
                 if (!raw) return null;
-                return JSON.parse(raw);
+                const parsed = JSON.parse(raw);
+                if (parsed && parsed.map && parsed.map.url && !parsed.mapUrl) {
+                    parsed.mapUrl = parsed.map.url;
+                }
+                return parsed;
             } catch (err) {
                 console.warn('Falha ao carregar cena do storage local:', err.message);
                 return null;

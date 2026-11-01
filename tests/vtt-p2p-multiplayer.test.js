@@ -137,4 +137,87 @@ QUnit.module('Módulo Multiplayer P2P (PeerJS) — Kuar-Tor VTT', function () {
         assert.equal(net.connections.size, 0, 'Conexões limpas ao desconectar');
         assert.ok(net.intentionalDisconnect, 'Flag de desconexão intencional marcada');
     });
+
+    QUnit.test('Roteamento de Pings Táticos, Desenhos e Magias (AAA)', function (assert) {
+        // Arrange
+        const net = new PeerVTTNetwork();
+        let pingReceived = null;
+        let strokeReceived = null;
+        let clearDrawingsCalled = false;
+        let spellReceived = null;
+
+        net.on('tactical_ping', (d) => { pingReceived = d; });
+        net.on('draw_stroke', (d) => { strokeReceived = d; });
+        net.on('clear_drawings', () => { clearDrawingsCalled = true; });
+        net.on('spell_cast', (d) => { spellReceived = d; });
+
+        // Act & Assert 1: TACTICAL_PING
+        net.handlePacket({
+            type: P2P_MESSAGE_TYPES.TACTICAL_PING,
+            payload: { x: 120, y: 180, author: 'Mago', color: '#66FCF1' },
+            senderId: 'peer_1'
+        }, { peer: 'peer_1' });
+        assert.equal(pingReceived.author, 'Mago', 'TACTICAL_PING author recebido');
+        assert.equal(pingReceived.x, 120, 'Posição X do ping correta');
+
+        // Act & Assert 2: DRAW_STROKE
+        net.handlePacket({
+            type: P2P_MESSAGE_TYPES.DRAW_STROKE,
+            payload: { color: '#ef4444', size: 3, points: [{ x: 10, y: 20 }] },
+            senderId: 'peer_1'
+        }, { peer: 'peer_1' });
+        assert.equal(strokeReceived.color, '#ef4444', 'DRAW_STROKE recebido com cor');
+        assert.equal(strokeReceived.points.length, 1, 'Pontos do stroke recebidos');
+
+        // Act & Assert 3: CLEAR_DRAWINGS
+        net.handlePacket({
+            type: P2P_MESSAGE_TYPES.CLEAR_DRAWINGS,
+            payload: {},
+            senderId: 'peer_1'
+        }, { peer: 'peer_1' });
+        assert.ok(clearDrawingsCalled, 'CLEAR_DRAWINGS disparou evento');
+
+        // Act & Assert 4: SPELL_CAST
+        net.handlePacket({
+            type: P2P_MESSAGE_TYPES.SPELL_CAST,
+            payload: { author: 'Clérigo', text: 'Cura Divina', effectAmount: 8 },
+            senderId: 'peer_1'
+        }, { peer: 'peer_1' });
+        assert.equal(spellReceived.author, 'Clérigo', 'SPELL_CAST author correto');
+        assert.equal(spellReceived.effectAmount, 8, 'SPELL_CAST efeito numérico correto');
+    });
+
+    QUnit.test('Host Rebroadcast de Pings, Desenhos e Magias para Clientes Conectados (AAA)', function (assert) {
+        // Arrange
+        const net = new PeerVTTNetwork();
+        net.isHost = true;
+
+        let peer2Sent = null;
+        let peer3Sent = null;
+
+        net.connections.set('peer_sender', {
+            peerId: 'peer_sender',
+            conn: { open: true, send: () => {} }
+        });
+        net.connections.set('peer_other_1', {
+            peerId: 'peer_other_1',
+            conn: { open: true, send: (data) => { peer2Sent = data; } }
+        });
+        net.connections.set('peer_other_2', {
+            peerId: 'peer_other_2',
+            conn: { open: true, send: (data) => { peer3Sent = data; } }
+        });
+
+        // Act: Envia DRAW_STROKE vindo de peer_sender
+        net.handlePacket({
+            type: P2P_MESSAGE_TYPES.DRAW_STROKE,
+            payload: { color: '#38bdf8', points: [] },
+            senderId: 'peer_sender'
+        }, { peer: 'peer_sender' });
+
+        // Assert
+        assert.ok(peer2Sent, 'Host deve rebroadcastar pacote de desenho para peer_other_1');
+        assert.ok(peer3Sent, 'Host deve rebroadcastar pacote de desenho para peer_other_2');
+        assert.equal(peer2Sent.type, P2P_MESSAGE_TYPES.DRAW_STROKE, 'Tipo de pacote preservado no rebroadcast');
+    });
 });
