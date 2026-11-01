@@ -189,10 +189,12 @@
             inset: 0;
             background-color: rgba(10, 10, 10, 0.85);
             display: flex;
-            align-items: center;
+            align-items: flex-start;
             justify-content: center;
             padding: 1rem;
             z-index: 1000;
+            overflow-y: auto;
+            overscroll-behavior: contain;
         }
 
         .modal-content {
@@ -204,6 +206,29 @@
             max-width: 48rem;
             width: 100%;
             color: #a3a3a3;
+            margin: auto;
+            max-height: calc(100vh - 2rem);
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+
+        /* Lista rolável do catálogo (o tailwind.css pré-compilado não contém max-h-[60vh]) */
+        .modal-scroll-list {
+            flex: 1 1 auto;
+            min-height: 0;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            max-height: 60vh;
+        }
+
+        .modal-content > * {
+            flex-shrink: 0;
+        }
+
+        .modal-content > .modal-scroll-list,
+        .modal-content > .modal-body {
+            flex-shrink: 1;
         }
 
         .modal-title {
@@ -1557,7 +1582,7 @@
                 </select>
             </div>
 
-            <div id="item-catalog-list-container" class="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-[60vh] overflow-y-auto pr-1">
+            <div id="item-catalog-list-container" class="modal-scroll-list grid grid-cols-1 md:grid-cols-2 gap-2 pr-1">
                 <!-- Populado dinamicamente via ItemCatalogEngine -->
             </div>
 

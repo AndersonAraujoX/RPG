@@ -197,4 +197,24 @@ QUnit.module('ItemCatalogEngine & Scroll Layout Resilience (+2d6)', () => {
             'Select deve conter opção Consumível'
         );
     });
+
+    // ==========================================
+    // 7. SCROLL DOS MODAIS INDEPENDENTE DO TAILWIND PRÉ-COMPILADO (AAA)
+    // ==========================================
+    QUnit.test('7. Resiliência de Scroll: .modal rolável e lista do catálogo não depende de classes arbitrárias do Tailwind (AAA)', (assert) => {
+        // Arrange
+        const html = fs.readFileSync(path.resolve(__dirname, '../public/formV6.html'), 'utf8');
+        const tailwindCss = fs.readFileSync(path.resolve(__dirname, '../public/tailwind.css'), 'utf8');
+        const modalRule = (html.match(/\.modal\s*\{[^}]*\}/) || [''])[0];
+        const contentRule = (html.match(/\.modal-content\s*\{[^}]*\}/) || [''])[0];
+        const listTag = (html.match(/<div id="item-catalog-list-container"[^>]*>/) || [''])[0];
+
+        // Act & Assert
+        assert.ok(/overflow-y:\s*auto/.test(modalRule), '.modal deve permitir rolagem vertical (overflow-y:auto)');
+        assert.ok(/max-height:\s*calc\(100vh/.test(contentRule), '.modal-content deve ter altura máxima limitada à viewport');
+        assert.ok(listTag.includes('modal-scroll-list'), 'Lista do catálogo deve usar a classe CSS própria .modal-scroll-list');
+        assert.ok(/\.modal-scroll-list\s*\{[^}]*overflow-y:\s*auto/.test(html), '.modal-scroll-list deve definir overflow-y:auto');
+        assert.notOk(listTag.includes('max-h-[60vh]'), 'Não deve usar max-h-[60vh], ausente no tailwind.css pré-compilado');
+        assert.notOk(tailwindCss.includes('max-h-\\[60vh\\]'), 'Premissa: tailwind.css não contém max-h-[60vh]');
+    });
 });
