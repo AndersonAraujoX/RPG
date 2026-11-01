@@ -121,13 +121,31 @@
             return Math.floor(100000 + Math.random() * 900000).toString();
         }
 
+        sanitizeMapUrlForFirestore(mapUrl) {
+            const fallbackDefault = 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=2000&q=80';
+            if (!mapUrl || typeof mapUrl !== 'string') {
+                return fallbackDefault;
+            }
+            const cleanUrl = mapUrl.trim();
+            if (!cleanUrl) {
+                return fallbackDefault;
+            }
+            // Limite de segurança para 1 campo no Firestore (~750 KB)
+            const MAX_BYTES = 750000;
+            if (cleanUrl.length > MAX_BYTES) {
+                console.warn(`[VTTFirestore] mapUrl excede o limite do Firestore (${cleanUrl.length} caracteres). Usando URL padrão segura para Firestore.`);
+                return fallbackDefault;
+            }
+            return cleanUrl;
+        }
+
         buildInitialRoomData(roomCode, roomName, hostUid, hostName, mapUrl) {
             return {
                 id: String(roomCode),
                 name: String(roomName || 'Campanha Kuar-Tor'),
                 hostUid: String(hostUid || 'anon_host'),
                 hostName: String(hostName || 'Mestre'),
-                mapUrl: String(mapUrl || 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=2000&q=80'),
+                mapUrl: this.sanitizeMapUrlForFirestore(mapUrl),
                 gridSize: 50,
                 tokens: {},
                 combatants: [],
@@ -320,12 +338,14 @@
         async updateMap(mapUrl) {
             if (!this.currentRoomId || !mapUrl) return;
 
+            const safeUrl = this.sanitizeMapUrlForFirestore(mapUrl);
             if (this.db) {
                 await this.db.collection('rooms').doc(this.currentRoomId).update({
-                    mapUrl: String(mapUrl),
+                    mapUrl: safeUrl,
                     updatedAt: new Date().toISOString()
                 });
             }
+            return safeUrl;
         }
 
         async updateFogOfWar(fogData) {

@@ -220,4 +220,54 @@ QUnit.module('Módulo Multiplayer P2P (PeerJS) — Kuar-Tor VTT', function () {
         assert.ok(peer3Sent, 'Host deve rebroadcastar pacote de desenho para peer_other_2');
         assert.equal(peer2Sent.type, P2P_MESSAGE_TYPES.DRAW_STROKE, 'Tipo de pacote preservado no rebroadcast');
     });
+
+    QUnit.test('sendToHost não emite warn nem lança exceção em modo offline/standalone (AAA)', function (assert) {
+        // Arrange
+        const net = new PeerVTTNetwork({ playerName: 'Aventureiro Solo' });
+        let warningEmitted = false;
+        const originalWarn = console.warn;
+        console.warn = (...args) => {
+            warningEmitted = true;
+        };
+
+        // Act
+        net.sendToHost('TOKEN_MOVE', { id: 'tok_1', x: 50, y: 50 });
+        net.sendChatMessage('Aventureiro Solo', 'Olá mundo');
+        net.sendSecretRoll('Aventureiro Solo', '2d6+2', 10, 'Sucesso');
+
+        // Assert
+        console.warn = originalWarn;
+        assert.notOk(warningEmitted, 'Nenhum console.warn deve ser disparado em modo offline/standalone');
+    });
+
+    QUnit.test('sendToHost envia pacote quando conectado e alerta quando desconectado em sala ativa (AAA)', function (assert) {
+        // Arrange
+        const net = new PeerVTTNetwork({ playerName: 'Jogador Ativo' });
+        let sentPacket = null;
+        net.hostConn = {
+            open: true,
+            send: (pkg) => { sentPacket = pkg; }
+        };
+
+        // Act 1: Conexão aberta
+        net.sendToHost('TOKEN_UPDATE', { id: 'tok_2', hp: 12 });
+
+        // Assert 1
+        assert.ok(sentPacket, 'Pacote deve ser enviado pela hostConn');
+        assert.equal(sentPacket.type, 'TOKEN_UPDATE', 'Tipo do pacote correto');
+        assert.equal(sentPacket.payload.hp, 12, 'Payload do pacote correto');
+
+        // Act 2: Em sala, porém hostConn fechada/desconectada
+        net.hostConn = null;
+        net.roomId = 'kuartor-123456';
+        let warnLogged = false;
+        const originalWarn = console.warn;
+        console.warn = () => { warnLogged = true; };
+
+        net.sendToHost('TOKEN_UPDATE', { id: 'tok_2', hp: 10 });
+        console.warn = originalWarn;
+
+        // Assert 2
+        assert.ok(warnLogged, 'Deve emitir warning quando estiver associado a uma sala ativa e sem conexão aberta');
+    });
 });

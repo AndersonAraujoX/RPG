@@ -259,5 +259,17 @@ QUnit.module('Mesa Virtual 2D (Kuar-Tor VTT +2d6)', function () {
         const stateRedo = redo();
         assert.equal(stateRedo.tokens.t1.x, 100, 'Redo deve avançar de volta para x=100');
     });
+
+    QUnit.test('Resiliência P2P & Otimização de Imagens no mesa_virtual.html (AAA)', function (assert) {
+        // Arrange
+        const content = fs.readFileSync(PUBLIC_VTT_PATH, 'utf-8');
+
+        // Assert
+        assert.ok(content.includes('function broadcastP2P'), 'broadcastP2P helper deve estar definido');
+        assert.ok(content.includes('function isP2PConnected'), 'isP2PConnected helper deve estar definido');
+        assert.ok(content.includes('function compressMapImage'), 'compressMapImage deve estar presente para redimensionar mapas grandes');
+        assert.ok(content.includes('navigator.clipboard.writeText'), 'Copia link de sala com clipboard');
+        assert.ok(content.includes('VTTFirestore.sanitizeMapUrlForFirestore') || content.includes('sanitizeMapUrlForFirestore'), 'Proteção de limite do mapa no Firestore integrada');
+    });
 });
 

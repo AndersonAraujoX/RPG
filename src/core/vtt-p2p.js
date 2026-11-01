@@ -499,7 +499,7 @@
                     senderId: this.peerId,
                     timestamp: Date.now()
                 });
-            } else {
+            } else if (this.roomId || this.isConnecting) {
                 console.warn('Tentativa de envio sem conexão aberta com o Mestre.');
             }
         }
@@ -560,7 +560,9 @@
             if (this.isHost) {
                 this.emit('chat_message', payload);
                 this.broadcast(P2P_MESSAGE_TYPES.CHAT_MESSAGE, payload);
-            } else {
+            } else if (this.hostConn && this.hostConn.open) {
+                this.sendToHost(P2P_MESSAGE_TYPES.CHAT_MESSAGE, payload);
+            } else if (this.roomId || this.isConnecting) {
                 this.sendToHost(P2P_MESSAGE_TYPES.CHAT_MESSAGE, payload);
             }
         }
@@ -582,9 +584,11 @@
             if (this.isHost) {
                 this.toasts.show(`🎲 Sua rolagem secreta: ${payload.text}`, 'info');
                 this.emit('secret_roll_received', payload);
-            } else {
+            } else if (this.hostConn && this.hostConn.open) {
                 this.sendToHost(P2P_MESSAGE_TYPES.SECRET_ROLL, payload);
                 this.toasts.show(`Rolagem secreta enviada apenas ao Mestre!`, 'success');
+            } else if (this.roomId || this.isConnecting) {
+                this.sendToHost(P2P_MESSAGE_TYPES.SECRET_ROLL, payload);
             }
         }
 
