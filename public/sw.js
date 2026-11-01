@@ -4,10 +4,13 @@
  * Estratégia: Cache-First com Network Fallback para assets essenciais.
  */
 
-const CACHE_NAME = 'kuartor-vtt-v2';
+const CACHE_NAME = 'kuartor-vtt-v3';
 const STATIC_ASSETS = [
     'tailwind.css',
     'favicon.ico',
+    'icon-192.png',
+    'icon-512.png',
+    'faixa.png',
     'manifest.json',
     '../src/core/character-sheet.js',
     '../src/core/dice-roller.js',
@@ -15,7 +18,11 @@ const STATIC_ASSETS = [
     '../src/core/vtt-bestiary-engine.js',
     '../src/core/audio-sfx-engine.js',
     '../src/core/vtt-fog-aoe-engine.js',
-    '../src/core/item-catalog-engine.js'
+    '../src/core/item-catalog-engine.js',
+    '../src/core/vtt-session-persistence.js',
+    '../src/core/vtt-shortcuts-controller.js',
+    '../src/core/vtt-magic-integration.js',
+    '../src/core/vtt-ping-drawing-engine.js'
 ];
 
 self.addEventListener('install', (event) => {
@@ -45,6 +52,23 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
     // Ignora requisições que não sejam GET ou sejam para o Firebase/Firestore
     if (event.request.method !== 'GET' || event.request.url.includes('firestore.googleapis.com')) {
+        return;
+    }
+
+    const isCodeOrHtml = event.request.url.endsWith('.html') || event.request.url.endsWith('.js') || event.request.destination === 'script' || event.request.destination === 'document';
+
+    if (isCodeOrHtml) {
+        event.respondWith(
+            fetch(event.request).then((networkResponse) => {
+                if (networkResponse && networkResponse.status === 200) {
+                    const responseClone = networkResponse.clone();
+                    caches.open(CACHE_NAME).then((cache) => {
+                        cache.put(event.request, responseClone);
+                    });
+                }
+                return networkResponse;
+            }).catch(() => caches.match(event.request))
+        );
         return;
     }
 

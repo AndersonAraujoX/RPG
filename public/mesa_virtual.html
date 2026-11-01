@@ -1307,7 +1307,13 @@
 
         function recordSnapshot(label = 'action') {
             if (!vttHistory || typeof VttSessionPersistence === 'undefined') return;
-            const serialized = VttSessionPersistence.serializeVttState(state, { mapUrl: mapImg.src });
+            const serializeFn = (typeof VttSessionPersistence.serializeVttState === 'function')
+                ? VttSessionPersistence.serializeVttState.bind(VttSessionPersistence)
+                : (typeof VttSessionPersistence.serializeScene === 'function')
+                    ? VttSessionPersistence.serializeScene.bind(VttSessionPersistence)
+                    : null;
+            if (!serializeFn) return;
+            const serialized = serializeFn(state, { mapUrl: mapImg.src });
             vttHistory.pushSnapshot(serialized);
             updateHistoryButtonsUI();
             scheduleAutoSave();
@@ -1339,7 +1345,7 @@
         function scheduleAutoSave() {
             clearTimeout(autosaveTimeout);
             autosaveTimeout = setTimeout(() => {
-                if (typeof VttSessionPersistence !== 'undefined') {
+                if (typeof VttSessionPersistence !== 'undefined' && typeof VttSessionPersistence.saveToLocalStorage === 'function') {
                     VttSessionPersistence.saveToLocalStorage(state, { mapUrl: mapImg.src });
                     showAutoSaveIndicator();
                 }
@@ -1356,9 +1362,17 @@
 
         function restoreFromSnapshot(snapshot) {
             if (!snapshot) return;
-            const data = (typeof VttSessionPersistence !== 'undefined')
-                ? VttSessionPersistence.deserializeVttState(snapshot)
-                : snapshot;
+            let data = snapshot;
+            if (typeof VttSessionPersistence !== 'undefined') {
+                const deserializeFn = (typeof VttSessionPersistence.deserializeVttState === 'function')
+                    ? VttSessionPersistence.deserializeVttState.bind(VttSessionPersistence)
+                    : (typeof VttSessionPersistence.deserializeScene === 'function')
+                        ? VttSessionPersistence.deserializeScene.bind(VttSessionPersistence)
+                        : null;
+                if (deserializeFn) {
+                    data = deserializeFn(snapshot, {});
+                }
+            }
 
             if (data.mapUrl && mapImg.src !== data.mapUrl) {
                 mapImg.src = data.mapUrl;
@@ -2756,11 +2770,13 @@
 
         function initInitialScene() {
             let loaded = false;
-            if (typeof VttSessionPersistence !== 'undefined') {
+            if (typeof VttSessionPersistence !== 'undefined' && typeof VttSessionPersistence.loadFromLocalStorage === 'function') {
                 const saved = VttSessionPersistence.loadFromLocalStorage();
-                if (saved && saved.tokens && Object.keys(saved.tokens).length > 0) {
+                if (saved) {
                     restoreFromSnapshot(saved);
-                    loaded = true;
+                    if (state.tokens && Object.keys(state.tokens).length > 0) {
+                        loaded = true;
+                    }
                 }
             }
             if (!loaded) {
