@@ -375,7 +375,7 @@
         <!-- Status do Firebase -->
         <div id="firebase-status"
             class="text-center mb-4 p-3 rounded-md border border-rpg-cyan/20 bg-rpg-slate no-print">
-            <p id="auth-status">Conectando aos arquivos arcanos...</p>
+            <p id="firebase-auth-status-banner">Conectando aos arquivos arcanos...</p>
         </div>
 
         <div
@@ -395,6 +395,7 @@
                         Verificando conexão...
                     </div>
                 </div>
+            </div>
             <input type="file" id="fileInput" accept=".json" class="hidden">
 
             <!-- Seletor de Modo: Criação/Edição vs Modo Jogo Ao Vivo (Pilar 3) -->
@@ -1602,32 +1603,58 @@
         // A lógica principal da aplicação é inicializada imediatamente (Offline-First)
         ensureAppInitialized();
 
+        function generateUuid() {
+            if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+                return crypto.randomUUID();
+            }
+            return 'sheet_' + Date.now() + '_' + Math.random().toString(36).substring(2, 9);
+        }
+
         // Observador de Autenticação
         onAuthStateChanged(auth, async (user) => {
             const authStatusEl = document.getElementById('auth-status');
+            const bannerEl = document.getElementById('firebase-auth-status-banner');
+            const setAuthDisplay = (html, bannerText) => {
+                if (authStatusEl) authStatusEl.innerHTML = html;
+                if (bannerEl) bannerEl.innerHTML = bannerText || html;
+            };
+
             if (user) {
                 currentUserId = user.uid;
-                if (authStatusEl) authStatusEl.textContent = "Carregando perfil...";
+                setAuthDisplay("Carregando perfil...", "Conectando ao perfil do aventureiro...");
 
                 // Get nickname from global users collection
                 try {
                     const userDocRef = doc(db, "users", currentUserId);
                     const userDoc = await getDoc(userDocRef);
                     if (userDoc.exists() && userDoc.data().nickname) {
-                        if (authStatusEl) authStatusEl.innerHTML = `<span class="text-green-400 font-bold">${userDoc.data().nickname}</span> | ID: <span class="text-xs text-neutral-400">${currentUserId.substring(0, 8)}...</span>`;
+                        const nick = userDoc.data().nickname;
+                        setAuthDisplay(
+                            `<span class="text-green-400 font-bold">${nick}</span> | ID: <span class="text-xs text-neutral-400">${currentUserId.substring(0, 8)}...</span>`,
+                            `Conectado como <strong class="text-green-400">${nick}</strong> (Nuvem Kuar-Tor Ativa)`
+                        );
                     } else {
-                        if (authStatusEl) authStatusEl.innerHTML = `<span class="text-green-400 font-bold">Conectado!</span> <span class="text-xs text-neutral-400 break-all">ID: ${currentUserId.substring(0, 8)}...</span>`;
+                        setAuthDisplay(
+                            `<span class="text-green-400 font-bold">Conectado!</span> <span class="text-xs text-neutral-400 break-all">ID: ${currentUserId.substring(0, 8)}...</span>`,
+                            `Conectado à Nuvem do Firebase (ID: ${currentUserId.substring(0, 8)}...)`
+                        );
                     }
                 } catch (e) {
                     console.warn("Aviso ao buscar perfil no Firestore:", e.message);
-                    if (authStatusEl) authStatusEl.innerHTML = `<span class="text-green-400 font-bold">Conectado!</span> <span class="text-xs text-neutral-400 break-all">ID: ${currentUserId.substring(0, 8)}...</span>`;
+                    setAuthDisplay(
+                        `<span class="text-green-400 font-bold">Conectado!</span> <span class="text-xs text-neutral-400 break-all">ID: ${currentUserId.substring(0, 8)}...</span>`,
+                        `Conectado à Nuvem do Firebase`
+                    );
                 }
 
                 console.log("Usuário autenticado:", currentUserId);
                 if (typeof onAuthSheetSync === 'function') onAuthSheetSync();
             } else {
                 currentUserId = null;
-                if (authStatusEl) authStatusEl.innerHTML = `<span class="text-amber-400 font-semibold">Modo Local (Navegador)</span> | <a href="login.html" class="underline text-cyan-400 hover:text-white font-semibold">Fazer Login</a> para nuvem`;
+                setAuthDisplay(
+                    `<span class="text-amber-400 font-semibold">Modo Local (Navegador)</span> | <a href="login.html" class="underline text-cyan-400 hover:text-white font-semibold">Fazer Login</a> para nuvem`,
+                    `<span class="text-amber-400 font-semibold">⚡ Operando em Modo Local (Navegador)</span> &middot; Fichas salvas neste dispositivo. Faça login para backup na nuvem.`
+                );
                 if (typeof onAuthSheetSync === 'function') onAuthSheetSync();
 
                 // Tentativa suave de login anônimo (caso habilitado no Firebase Console)
@@ -2166,7 +2193,7 @@
             }
 
             async function saveSheetToFirestore() {
-                const sheetIdToSave = currentSheetId || crypto.randomUUID();
+                const sheetIdToSave = currentSheetId || generateUuid();
                 const sheetData = getFormAsJson();
                 const sheetName = sheetData.charName || 'Sem Nome';
 
@@ -2413,7 +2440,7 @@
                 e.preventDefault();
                 // Gera um novo ID apenas se não houver um ID de ficha atual
                 if (!currentSheetId) {
-                    currentSheetId = crypto.randomUUID();
+                    currentSheetId = generateUuid();
                 }
                 saveSheetToFirestore();
 
@@ -2441,10 +2468,14 @@
             clearFormButton.addEventListener('click', () => {
                 form.reset();
                 currentSheetId = null;
+                window._currentInventory = [];
                 caminhosContainer.innerHTML = '';
                 ['periciasInput', 'vantagensInput', 'desvantagensInput'].forEach(id => document.getElementById(id).value = '[]');
                 updateDisplayPVDs();
                 updateAllStats();
+                if (typeof renderEditModeInventory === 'function') {
+                    renderEditModeInventory();
+                }
                 generatedSheetDiv.classList.add('hidden');
             });
 
@@ -2501,7 +2532,7 @@
                     try {
                         const data = JSON.parse(event.target.result);
                         loadFormFromJson(data);
-                        currentSheetId = crypto.randomUUID();
+                        currentSheetId = generateUuid();
                         await saveSheetToFirestore();
                         showModalMessage('Importação Concluída', 'A ficha foi importada com sucesso.');
                     } catch (error) {
@@ -2550,10 +2581,10 @@
                     ? LiveSheetController.prepareVttTokenPayload(sheetData)
                     : {
                         name: sheetData.charName || 'Herói',
-                        hp: CharacterSheetRules.calcMaxPV(sheetData.con || 2),
-                        maxHp: CharacterSheetRules.calcMaxPV(sheetData.con || 2),
-                        pe: CharacterSheetRules.calcMaxPE(sheetData.tradicaoMagica || 'NENHUMA', sheetData),
-                        maxPe: CharacterSheetRules.calcMaxPE(sheetData.tradicaoMagica || 'NENHUMA', sheetData),
+                        hp: CharacterSheetRules.calcMaxPV(sheetData, parseInt(sheetData.bonusPV) || 0),
+                        maxHp: CharacterSheetRules.calcMaxPV(sheetData, parseInt(sheetData.bonusPV) || 0),
+                        pe: CharacterSheetRules.calcMaxPE(sheetData, sheetData.tradicaoMagica || 'POD', parseInt(sheetData.bonusPE) || 0),
+                        maxPe: CharacterSheetRules.calcMaxPE(sheetData, sheetData.tradicaoMagica || 'POD', parseInt(sheetData.bonusPE) || 0),
                         defense: CharacterSheetRules.calcDefense(sheetData.des || 2),
                         avatar: sheetData.avatarUrl || ''
                     };
@@ -2573,7 +2604,7 @@
                 if (!cloned.charName.includes('(Cópia)')) {
                     cloned.charName = `${cloned.charName || 'Personagem'} (Cópia)`;
                 }
-                const newId = crypto.randomUUID();
+                const newId = generateUuid();
                 saveSheetToLocalStorage(newId, cloned);
 
                 if (currentUserId) {
@@ -2632,8 +2663,14 @@
             function switchMode(mode) {
                 if (mode === 'live') {
                     const sheetData = getFormAsJson();
-                    const maxHP = CharacterSheetRules.calcMaxPV(sheetData.con || 2, sheetData.bonusManualPV || 0);
-                    const maxPE = CharacterSheetRules.calcMaxPE(sheetData.tradicaoMagica || 'NENHUMA', sheetData, sheetData.bonusManualPE || 0);
+                    const bonusPV = parseInt(sheetData.bonusPV) || 0;
+                    const bonusPE = parseInt(sheetData.bonusPE) || 0;
+                    const maxHP = (typeof CharacterSheetRules !== 'undefined')
+                        ? CharacterSheetRules.calcMaxPV(sheetData, bonusPV)
+                        : (parseInt(sheetData.pontosVida) || 14);
+                    const maxPE = (typeof CharacterSheetRules !== 'undefined')
+                        ? CharacterSheetRules.calcMaxPE(sheetData, sheetData.tradicaoMagica || 'POD', bonusPE)
+                        : (parseInt(sheetData.pontosEnergia) || 14);
 
                     if (liveCharacterState.maxHP !== maxHP || liveCharacterState.currentHP === null) {
                         liveCharacterState.maxHP = maxHP;
@@ -3077,6 +3114,9 @@
             }
 
             function renderLiveInventory(sheetData) {
+                if (!sheetData) {
+                    sheetData = (typeof getFormAsJson === 'function') ? getFormAsJson() : {};
+                }
                 const weightBar = document.getElementById('liveWeightBar');
                 const weightDisplay = document.getElementById('liveWeightDisplay');
                 const encumbranceBadge = document.getElementById('liveEncumbranceBadge');
@@ -3700,7 +3740,7 @@
                     if (!cloned.charName.includes('(Cópia)')) {
                         cloned.charName = `${cloned.charName || 'Personagem'} (Cópia)`;
                     }
-                    const newId = crypto.randomUUID();
+                    const newId = generateUuid();
                     saveSheetToLocalStorage(newId, cloned);
                     if (currentUserId) {
                         try {
