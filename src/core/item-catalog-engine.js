@@ -130,6 +130,7 @@
             id: 'armadura_couro',
             name: 'Armadura de Couro Fervido',
             category: 'Armaduras',
+            type: 'Armadura Leve',
             armorReduction: 1,
             defenseBonus: 0,
             penaltyDes: 0,
@@ -141,6 +142,7 @@
             id: 'cota_malha',
             name: 'Cota de Malha de Ferro',
             category: 'Armaduras',
+            type: 'Armadura Média',
             armorReduction: 2,
             defenseBonus: 0,
             penaltyDes: -1,
@@ -152,6 +154,7 @@
             id: 'armadura_placas',
             name: 'Armadura Completa de Placas',
             category: 'Armaduras',
+            type: 'Armadura Pesada',
             armorReduction: 3,
             defenseBonus: 0,
             penaltyDes: -2,
@@ -163,6 +166,7 @@
             id: 'broquel_madeira',
             name: 'Broquel de Bordo',
             category: 'Escudos',
+            type: 'Escudo',
             armorReduction: 0,
             defenseBonus: 1,
             penaltyDes: 0,
@@ -174,6 +178,7 @@
             id: 'escudo_aco',
             name: 'Escudo de Aço Forjado',
             category: 'Escudos',
+            type: 'Escudo',
             armorReduction: 0,
             defenseBonus: 2,
             penaltyDes: 0,
@@ -187,6 +192,7 @@
             id: 'pocao_cura',
             name: 'Poção de Sangue Vital',
             category: 'Consumíveis',
+            type: 'Consumível',
             effect: 'Cura 5 PV imediatamente',
             healPV: 5,
             weight: 0.3,
@@ -197,6 +203,7 @@
             id: 'elixir_vigor',
             name: 'Elixir de Éter Purificado',
             category: 'Consumíveis',
+            type: 'Consumível',
             effect: 'Restaura 5 PE imediatamente',
             restorePE: 5,
             weight: 0.3,
@@ -207,6 +214,7 @@
             id: 'antidoto_nevoa',
             name: 'Antídoto da Névoa Tóxica',
             category: 'Consumíveis',
+            type: 'Consumível',
             effect: 'Remove condições Sangrando e Envenenado',
             curesCondition: ['sangrando', 'envenenado'],
             weight: 0.2,
@@ -217,6 +225,7 @@
             id: 'tocha_runica',
             name: 'Tocha Rúnica Inextinguível',
             category: 'Aventura',
+            type: 'Aventura',
             effect: 'Ilumina raio de 6m por 2 horas',
             lightRadius: 6,
             weight: 0.8,
@@ -225,6 +234,67 @@
         }
     ];
 
+    function normalizeStr(str) {
+        return String(str || '')
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .toLowerCase()
+            .replace(/[-_]/g, ' ')
+            .trim();
+    }
+
+    function enrichItem(item) {
+        if (!item) return null;
+        const clone = JSON.parse(JSON.stringify(item));
+        clone.dano = clone.damage || null;
+        clone.armadura = clone.armorReduction || clone.armorValue || 0;
+        clone.defesa = clone.defenseBonus || 0;
+        clone.custo = clone.price !== undefined ? `${clone.price} Moedas` : 'Grátis';
+        clone.description = clone.desc || clone.description || '';
+        return clone;
+    }
+
+    function matchesCategory(it, cat) {
+        if (!cat) return true;
+        const catNorm = normalizeStr(cat);
+        if (catNorm === 'all' || catNorm === 'todas' || catNorm === 'todas as categorias') return true;
+
+        const itCatNorm = normalizeStr(it.category);
+        const itTypeNorm = normalizeStr(it.type);
+        const isWeaponCat = itCatNorm === 'armas' || itCatNorm === 'arma';
+        const isArmorCat = itCatNorm === 'armaduras' || itCatNorm === 'armadura';
+        const isShieldCat = itCatNorm === 'escudos' || itCatNorm === 'escudo';
+        const isConsumableCat = itCatNorm.startsWith('consumiv');
+        const isAdventureCat = itCatNorm === 'aventura';
+
+        if (catNorm.includes('corpo a corpo')) {
+            return isWeaponCat && (itTypeNorm.includes('corpo a corpo') || !itTypeNorm.includes('distancia'));
+        }
+        if (catNorm.includes('distancia')) {
+            return isWeaponCat && itTypeNorm.includes('distancia');
+        }
+        if (catNorm.includes('armadura') && catNorm.includes('leve')) {
+            return isArmorCat && (itTypeNorm.includes('leve') || (it.armorReduction && it.armorReduction <= 1));
+        }
+        if (catNorm.includes('armadura') && catNorm.includes('pesada')) {
+            return isArmorCat && (itTypeNorm.includes('pesada') || itTypeNorm.includes('media') || (it.armorReduction && it.armorReduction >= 2));
+        }
+        if (catNorm.includes('armadura') && catNorm.includes('media')) {
+            return isArmorCat && (itTypeNorm.includes('media') || (it.armorReduction && it.armorReduction === 2));
+        }
+        if (catNorm.includes('escudo')) {
+            return isShieldCat || itTypeNorm.includes('escudo');
+        }
+        if (catNorm.includes('consumiv') || catNorm.includes('alquimia')) {
+            return isConsumableCat || itTypeNorm.includes('consumiv');
+        }
+        if (catNorm.includes('aventura')) {
+            return isAdventureCat || itTypeNorm.includes('aventura');
+        }
+
+        return itCatNorm === catNorm || itTypeNorm === catNorm || itCatNorm.includes(catNorm) || catNorm.includes(itCatNorm);
+    }
+
     const ItemCatalogEngine = {
         ITEMS_CATALOG,
 
@@ -232,7 +302,7 @@
          * Retorna todos os itens do catálogo.
          */
         getAllItems() {
-            return JSON.parse(JSON.stringify(ITEMS_CATALOG));
+            return ITEMS_CATALOG.map(enrichItem);
         },
 
         /**
@@ -241,11 +311,11 @@
         getItemById(id) {
             if (!id || typeof id !== 'string') return null;
             const item = ITEMS_CATALOG.find(i => i.id.toLowerCase() === id.toLowerCase().trim());
-            return item ? JSON.parse(JSON.stringify(item)) : null;
+            return enrichItem(item);
         },
 
         /**
-         * Filtra itens por categoria ou texto.
+         * Filtra itens por categoria ou texto com normalização inteligente.
          */
         filterItems(options = {}) {
             let search = '';
@@ -258,18 +328,21 @@
                 category = options.category || '';
             }
             if (category === 'ALL' || category === 'all') category = '';
-            const cat = String(category || '').toLowerCase().trim();
-            const term = String(search || '').toLowerCase().trim();
+            const cat = String(category || '').trim();
+            const term = String(search || '').trim();
 
             return ITEMS_CATALOG.filter(it => {
-                if (cat && it.category.toLowerCase() !== cat) return false;
+                if (!matchesCategory(it, cat)) return false;
                 if (term) {
-                    const matchName = it.name.toLowerCase().includes(term);
-                    const matchDesc = it.desc.toLowerCase().includes(term);
-                    if (!matchName && !matchDesc) return false;
+                    const termNorm = normalizeStr(term);
+                    const matchName = normalizeStr(it.name).includes(termNorm);
+                    const matchDesc = normalizeStr(it.desc || it.description).includes(termNorm);
+                    const matchType = normalizeStr(it.type).includes(termNorm);
+                    const matchDamage = normalizeStr(it.damage).includes(termNorm);
+                    if (!matchName && !matchDesc && !matchType && !matchDamage) return false;
                 }
                 return true;
-            });
+            }).map(enrichItem);
         },
 
         /**

@@ -1517,7 +1517,10 @@
                 <button id="alert-modal-close" class="modal-close-button" title="Fechar">&times;</button>
             </div>
             <div class="modal-body">
-                <p id="alert-modal-message"></p>
+                <div id="alert-modal-message" class="text-sm"></div>
+            </div>
+            <div class="mt-4 pt-3 border-t border-neutral-700 text-right">
+                <button type="button" id="alert-modal-ok" class="action-button action-button-primary px-4 py-1.5 text-xs">Entendido</button>
             </div>
         </div>
     </div>
@@ -1546,6 +1549,7 @@
                     <option value="Arma Corpo-a-Corpo">Armas Corpo-a-Corpo</option>
                     <option value="Arma à Distância">Armas à Distância</option>
                     <option value="Armadura Leve">Armaduras Leves</option>
+                    <option value="Armadura Média">Armaduras Médias</option>
                     <option value="Armadura Pesada">Armaduras Pesadas</option>
                     <option value="Escudo">Escudos</option>
                     <option value="Consumível">Consumíveis & Alquimia</option>
@@ -2389,17 +2393,37 @@
                                 <button id="alert-modal-close" class="modal-close-button" title="Fechar">&times;</button>
                             </div>
                             <div class="modal-body">
-                                <p id="alert-modal-message"></p>
+                                <div id="alert-modal-message" class="text-sm"></div>
+                            </div>
+                            <div class="mt-4 pt-3 border-t border-neutral-700 text-right">
+                                <button type="button" id="alert-modal-ok" class="action-button action-button-primary px-4 py-1.5 text-xs">Entendido</button>
                             </div>
                         </div>
                     `;
                     document.body.appendChild(modal);
-                    document.getElementById('alert-modal-close').addEventListener('click', () => modal.classList.add('hidden'));
                 }
 
-                document.getElementById('alert-modal-title').textContent = title;
-                document.getElementById('alert-modal-message').textContent = message;
+                const titleEl = document.getElementById('alert-modal-title');
+                const messageEl = document.getElementById('alert-modal-message');
+                if (titleEl) titleEl.textContent = title;
+                if (messageEl) {
+                    if (typeof message === 'string' && (message.includes('<') || message.includes('&'))) {
+                        messageEl.innerHTML = message;
+                    } else {
+                        messageEl.textContent = message;
+                    }
+                }
+
                 modal.classList.remove('hidden');
+
+                const dismiss = () => modal.classList.add('hidden');
+                const closeBtn = document.getElementById('alert-modal-close');
+                const okBtn = document.getElementById('alert-modal-ok');
+                if (closeBtn) closeBtn.onclick = dismiss;
+                if (okBtn) okBtn.onclick = dismiss;
+                modal.onclick = (e) => {
+                    if (e.target === modal) dismiss();
+                };
             }
 
             // --- EVENT LISTENERS ---
@@ -3830,20 +3854,21 @@
             }
 
             container.innerHTML = items.map(it => `
-                <div class="p-2.5 bg-neutral-900/90 border border-neutral-700/80 hover:border-amber-500/50 rounded-lg flex flex-col justify-between transition">
+                <div class="p-2.5 bg-neutral-900/90 border border-neutral-700/80 hover:border-amber-500/50 rounded-lg flex flex-col justify-between transition shadow-sm">
                     <div>
                         <div class="flex items-center justify-between mb-1">
                             <span class="font-bold text-amber-300 text-xs font-cinzel">${it.name}</span>
-                            <span class="text-[10px] px-1.5 py-0.5 rounded bg-neutral-800 text-neutral-300 border border-neutral-700 font-mono">${it.category}</span>
+                            <span class="text-[10px] px-1.5 py-0.5 rounded bg-neutral-800 text-neutral-300 border border-neutral-700 font-mono">${it.type ? `${it.category} • ${it.type}` : it.category}</span>
                         </div>
-                        <div class="text-[11px] text-gray-400 mb-1">
+                        <div class="text-[11px] text-gray-400 mb-1 flex flex-wrap gap-1.5">
                             ${it.bonusAcerto ? `<span class="text-amber-400 font-semibold mr-1">Acerto: ${it.bonusAcerto}</span>` : ''}
-                            ${it.dano ? `<span class="text-red-400 font-semibold mr-1">Dano: ${it.dano}</span>` : ''}
-                            ${it.armadura ? `<span class="text-purple-400 font-semibold mr-1">Armadura: ${it.armadura}</span>` : ''}
-                            ${it.defesa ? `<span class="text-cyan-400 font-semibold mr-1">Defesa: ${it.defesa >= 0 ? '+' : ''}${it.defesa}</span>` : ''}
-                            <span class="text-neutral-500 font-mono">(${it.custo})</span>
+                            ${(it.damage || it.dano) ? `<span class="text-red-400 font-semibold mr-1">⚔ Dano: ${it.damage || it.dano}</span>` : ''}
+                            ${(it.armorReduction || it.armadura) ? `<span class="text-purple-400 font-semibold mr-1">🦺 Armadura: ${it.armorReduction || it.armadura}</span>` : ''}
+                            ${(it.defenseBonus || it.defesa) ? `<span class="text-cyan-400 font-semibold mr-1">🛡 Defesa: ${(it.defenseBonus || it.defesa) >= 0 ? '+' : ''}${it.defenseBonus || it.defesa}</span>` : ''}
+                            <span class="text-neutral-500 font-mono">⚖ ${it.weight || 0.5} kg</span>
+                            <span class="text-neutral-400 font-mono">(${it.custo || (it.price !== undefined ? `${it.price} Moedas` : 'Grátis')})</span>
                         </div>
-                        <p class="text-[10px] text-gray-400 italic">${it.description || ''}</p>
+                        <p class="text-[10px] text-gray-400 italic">${it.desc || it.description || ''}</p>
                     </div>
                     <button type="button" onclick="addItemFromCatalog('${it.id}')" class="mt-2 w-full py-1 bg-amber-600/20 hover:bg-amber-600/40 border border-amber-500/40 text-amber-300 font-bold rounded text-xs transition flex items-center justify-center gap-1.5 cursor-pointer">
                         <i class="fa-solid fa-plus text-[10px]"></i> Equipar / Adicionar
@@ -3876,9 +3901,23 @@
                 if (typeof window.renderEditModeInventory === 'function') {
                     window.renderEditModeInventory();
                 }
+                window.closeItemCatalogModal();
                 showModalMessage('Equipamento Adicionado', `<div class="text-sm text-amber-300"><strong>${item.name}</strong> foi adicionado ao equipamento do personagem!</div>`);
             }
         };
+
+        // Fechamento de modais ao clicar no backdrop ou pressionar ESC
+        document.querySelectorAll('.modal').forEach(modal => {
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) modal.classList.add('hidden');
+            });
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                document.querySelectorAll('.modal:not(.hidden)').forEach(modal => modal.classList.add('hidden'));
+            }
+        });
     </script>
 </body>
 

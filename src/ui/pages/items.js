@@ -577,12 +577,26 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Fechar Modal de Transferência
+    const closeTransferModal = () => {
+        if (transferModal) transferModal.classList.add('hidden');
+        pendingTransferItemId = null;
+    };
+
     if (cancelTransferBtn) {
-        cancelTransferBtn.addEventListener('click', () => {
-            transferModal.classList.add('hidden');
-            pendingTransferItemId = null;
+        cancelTransferBtn.addEventListener('click', closeTransferModal);
+    }
+
+    if (transferModal) {
+        transferModal.addEventListener('click', (e) => {
+            if (e.target === transferModal) closeTransferModal();
         });
     }
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && transferModal && !transferModal.classList.contains('hidden')) {
+            closeTransferModal();
+        }
+    });
 
     // Confirmar Transferência
     if (confirmTransferBtn) {
@@ -736,6 +750,80 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (addItemButton) {
         addItemButton.addEventListener('click', addItem);
+    }
+
+    const createSampleCharacterBtn = document.getElementById('create-sample-character-btn');
+    if (createSampleCharacterBtn) {
+        createSampleCharacterBtn.addEventListener('click', async () => {
+            const sampleId = 'sample_hero_' + Date.now();
+            const sampleSheet = {
+                id: sampleId,
+                charName: 'Valerius, o Explorador',
+                charRace: 'Humano',
+                charClass: 'Guerreiro',
+                for: 3,
+                des: 3,
+                con: 3,
+                int: 2,
+                sab: 2,
+                pod: 1,
+                car: 1,
+                pontosVida: 16,
+                currentHP: 16,
+                pontosEnergia: 15,
+                currentPE: 15,
+                equipment: 'Espada Longa (dano: 1d6+2) [Equipado: Mão Principal]\nCota de Malha de Ferro (Armadura 2) [Equipado: Armadura]\nPoção de Sangue Vital [x2]',
+                inventory: [
+                    {
+                        id: 'item_1',
+                        name: 'Espada Longa',
+                        category: 'Armas',
+                        type: 'Corpo a Corpo',
+                        slot: 'mainHand',
+                        isEquipped: true,
+                        quantity: 1,
+                        weight: 1.8,
+                        damage: '1d6+2',
+                        defenseBonus: 0,
+                        armorValue: 0,
+                        description: 'Espada de aço temperado forjada para combate corpo a corpo.'
+                    },
+                    {
+                        id: 'item_2',
+                        name: 'Cota de Malha de Ferro',
+                        category: 'Armaduras',
+                        type: 'Armadura Média',
+                        slot: 'armor',
+                        isEquipped: true,
+                        quantity: 1,
+                        weight: 12.0,
+                        damage: null,
+                        defenseBonus: 0,
+                        armorValue: 2,
+                        description: 'Entrelaçado de anéis de ferro. Reduz 2 pontos de dano físico.'
+                    },
+                    {
+                        id: 'item_3',
+                        name: 'Poção de Sangue Vital',
+                        category: 'Consumíveis',
+                        type: 'Consumível',
+                        slot: 'backpack',
+                        isEquipped: false,
+                        quantity: 2,
+                        weight: 0.3,
+                        damage: null,
+                        defenseBonus: 0,
+                        armorValue: 0,
+                        description: 'Líquido rubro que regenera 1d6+3 PV.'
+                    }
+                ]
+            };
+
+            await saveCharacter(sampleId, sampleSheet);
+            selectedCharacterId = sampleId;
+            await loadCharacters();
+            if (typeof AudioSfxEngine !== 'undefined') AudioSfxEngine.playConditionToggle();
+        });
     }
 
     // Popula o catálogo no carregamento inicial
