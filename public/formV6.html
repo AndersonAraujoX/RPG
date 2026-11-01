@@ -1051,19 +1051,145 @@
 
                 <!-- Equipamento e Narrativa -->
                 <fieldset class="border border-neutral-700 p-4 rounded-md">
-                    <legend class="text-lg px-2 section-title !border-none !mb-0 !pb-0 !text-amber-500">Equipamento &
-                        Narrativa</legend>
-                    <div class="space-y-4">
-                        <div>
-                            <div class="flex items-center justify-between mb-1">
-                                <label for="equipment" class="block text-sm font-medium">Equipamento e Relíquias:</label>
-                                <button type="button" id="openItemCatalogBtn" onclick="openItemCatalogModal()" class="px-2.5 py-1 bg-amber-500/20 border border-amber-500/50 hover:bg-amber-500/30 text-amber-300 rounded text-xs font-cinzel flex items-center gap-1.5 transition cursor-pointer">
-                                    <i class="fa-solid fa-toolbox"></i> Catálogo de Equipamentos (+2d6)
-                                </button>
+                    <legend class="text-lg px-2 section-title !border-none !mb-0 !pb-0 !text-amber-500 flex items-center gap-2">
+                        <i class="fa-solid fa-shield-halved"></i> Equipamento, Inventário & Narrativa
+                    </legend>
+                    <div class="space-y-6">
+                        <!-- Painel Interativo de Inventário e Slots Táticos (+2d6) -->
+                        <div id="editModeInventoryContainer" class="bg-neutral-900/90 border border-neutral-700/80 rounded-xl p-4 sm:p-5 shadow-lg space-y-4">
+                            <!-- Header de Ações e Carga -->
+                            <div class="flex flex-wrap justify-between items-center gap-3 border-b border-neutral-800 pb-3">
+                                <div>
+                                    <h4 class="text-base font-cinzel font-bold text-amber-400 flex items-center gap-2">
+                                        <i class="fa-solid fa-toolbox"></i> Inventário Tático do Herói
+                                    </h4>
+                                    <p class="text-xs text-gray-400">Gerencie equipamentos corporais, capacidade de carga e mochila diretamente na ficha</p>
+                                </div>
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <button type="button" id="openItemCatalogBtn" onclick="openItemCatalogModal()"
+                                        class="px-3 py-1.5 bg-amber-500/20 border border-amber-500/50 hover:bg-amber-500/30 text-amber-300 rounded text-xs font-cinzel flex items-center gap-1.5 transition cursor-pointer">
+                                        <i class="fa-solid fa-book-bookmark"></i> Catálogo Oficial (+2d6)
+                                    </button>
+                                    <button type="button" id="openCustomItemFormBtn" onclick="toggleCustomItemForm()"
+                                        class="px-3 py-1.5 bg-cyan-600/20 border border-cyan-500/50 hover:bg-cyan-600/30 text-cyan-300 rounded text-xs font-cinzel flex items-center gap-1.5 transition cursor-pointer">
+                                        <i class="fa-solid fa-plus"></i> Novo Item
+                                    </button>
+                                    <a href="items.html" target="_blank"
+                                        class="px-3 py-1.5 bg-purple-600/20 border border-purple-500/50 hover:bg-purple-600/30 text-purple-300 rounded text-xs font-cinzel flex items-center gap-1.5 transition"
+                                        title="Gerenciador global e baú do grupo">
+                                        <i class="fa-solid fa-boxes-stacked"></i> Baú da Guilda
+                                    </a>
+                                </div>
                             </div>
-                            <textarea id="equipment" name="equipment" rows="4"
-                                class="w-full p-2 bg-neutral-900 border-neutral-600 rounded-md"
-                                placeholder="Adaga ritualística, tomo esquecido, armadura de placas enferrujada..."></textarea>
+
+                            <!-- Barra de Capacidade de Carga (+2d6 Daemon) -->
+                            <div class="bg-neutral-950/80 border border-neutral-800 rounded-lg p-3 space-y-1.5">
+                                <div class="flex justify-between items-center text-xs">
+                                    <span class="text-gray-300 flex items-center gap-1.5">
+                                        <i class="fa-solid fa-weight-hanging text-amber-400"></i>
+                                        <span>Capacidade de Carga (FOR + CON):</span>
+                                        <strong id="editWeightText" class="text-white font-mono">0 / 20 kg</strong>
+                                    </span>
+                                    <span id="editEncumbranceBadge" class="px-2 py-0.5 rounded text-[11px] font-bold bg-neutral-800 text-gray-300">Carga Normal</span>
+                                </div>
+                                <div class="w-full bg-neutral-900 rounded-full h-2 overflow-hidden border border-neutral-700">
+                                    <div id="editWeightBar" class="h-full bg-emerald-500 rounded-full transition-all duration-300" style="width: 0%"></div>
+                                </div>
+                                <div class="flex justify-between text-[10px] text-gray-400">
+                                    <span>Fórmula: (FOR x 5) + (CON x 2) kg</span>
+                                    <span id="editEncumbrancePenalty" class="text-amber-400 font-semibold">Sem penalidades</span>
+                                </div>
+                            </div>
+
+                            <!-- Formulário Embutido de Item Customizado (Toggleável) -->
+                            <div id="customItemDrawer" class="hidden bg-neutral-950/90 border border-cyan-500/40 rounded-lg p-4 space-y-3">
+                                <div class="flex justify-between items-center border-b border-neutral-800 pb-2">
+                                    <h5 class="text-xs font-bold font-cinzel text-cyan-300 uppercase tracking-wider">
+                                        Criar Item Customizado
+                                    </h5>
+                                    <button type="button" onclick="toggleCustomItemForm()" class="text-gray-400 hover:text-white text-xs">&times; Fechar</button>
+                                </div>
+                                <div class="grid grid-cols-1 sm:grid-cols-12 gap-3">
+                                    <div class="sm:col-span-5">
+                                        <label class="block text-[11px] text-gray-400 font-semibold mb-1 uppercase">Nome do Item</label>
+                                        <input type="text" id="customItemName" placeholder="Ex: Machado de Batalha" class="w-full p-2 text-xs bg-neutral-900 border border-neutral-700 rounded text-white">
+                                    </div>
+                                    <div class="sm:col-span-4">
+                                        <label class="block text-[11px] text-gray-400 font-semibold mb-1 uppercase">Slot / Tipo</label>
+                                        <select id="customItemSlot" class="w-full p-2 text-xs bg-neutral-900 border border-neutral-700 rounded text-white">
+                                            <option value="mainHand">Mão Principal (Arma/Foco)</option>
+                                            <option value="offHand">Mão Secundária (Escudo/Secundária)</option>
+                                            <option value="armor">Armadura / Proteção</option>
+                                            <option value="accessory1">Acessório 1 (Anel/Amuleto)</option>
+                                            <option value="accessory2">Acessório 2 (Capa/Relíquia)</option>
+                                            <option value="backpack">Mochila / Consumível</option>
+                                        </select>
+                                    </div>
+                                    <div class="sm:col-span-3">
+                                        <label class="block text-[11px] text-gray-400 font-semibold mb-1 uppercase">Qtd.</label>
+                                        <input type="number" id="customItemQty" value="1" min="1" class="w-full p-2 text-xs bg-neutral-900 border border-neutral-700 rounded text-white">
+                                    </div>
+                                    <div class="sm:col-span-3">
+                                        <label class="block text-[11px] text-gray-400 font-semibold mb-1 uppercase">Peso (kg)</label>
+                                        <input type="number" step="0.1" id="customItemWeight" value="1.0" min="0" class="w-full p-2 text-xs bg-neutral-900 border border-neutral-700 rounded text-white">
+                                    </div>
+                                    <div class="sm:col-span-3">
+                                        <label class="block text-[11px] text-gray-400 font-semibold mb-1 uppercase">Dano (se arma)</label>
+                                        <input type="text" id="customItemDamage" placeholder="Ex: 1d6+2" class="w-full p-2 text-xs bg-neutral-900 border border-neutral-700 rounded text-white">
+                                    </div>
+                                    <div class="sm:col-span-3">
+                                        <label class="block text-[11px] text-gray-400 font-semibold mb-1 uppercase">Bônus Defesa</label>
+                                        <input type="number" id="customItemDefense" value="0" class="w-full p-2 text-xs bg-neutral-900 border border-neutral-700 rounded text-white">
+                                    </div>
+                                    <div class="sm:col-span-3">
+                                        <label class="block text-[11px] text-gray-400 font-semibold mb-1 uppercase">Armadura (Absorção)</label>
+                                        <input type="number" id="customItemArmor" value="0" class="w-full p-2 text-xs bg-neutral-900 border border-neutral-700 rounded text-white">
+                                    </div>
+                                    <div class="sm:col-span-12">
+                                        <label class="block text-[11px] text-gray-400 font-semibold mb-1 uppercase">Descrição / Efeito</label>
+                                        <input type="text" id="customItemDesc" placeholder="Efeitos mágicos, propriedades especiais..." class="w-full p-2 text-xs bg-neutral-900 border border-neutral-700 rounded text-white">
+                                    </div>
+                                    <div class="sm:col-span-12 flex justify-end gap-2">
+                                        <button type="button" onclick="addCustomItemToSheet()" class="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded text-xs font-bold transition">
+                                            Adicionar ao Inventário
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Slots Táticos de Equipamento -->
+                            <div>
+                                <h5 class="text-xs font-bold font-cinzel text-amber-300 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                                    <i class="fa-solid fa-shield-halved text-amber-400"></i> Slots Corporais Equipados
+                                </h5>
+                                <div id="editEquippedGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
+                                    <!-- Renderizado dinamicamente -->
+                                </div>
+                            </div>
+
+                            <!-- Mochila & Itens Guardados -->
+                            <div>
+                                <h5 class="text-xs font-bold font-cinzel text-cyan-300 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                                    <i class="fa-solid fa-sack-dollar text-cyan-400"></i> Mochila & Itens Guardados
+                                </h5>
+                                <div id="editBackpackGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-56 overflow-y-auto pr-1">
+                                    <!-- Renderizado dinamicamente -->
+                                </div>
+                            </div>
+
+                            <!-- Visualizador e Editor de Texto Retrocompatível (Colapsável) -->
+                            <div class="border-t border-neutral-800 pt-3">
+                                <button type="button" onclick="toggleEquipmentTextEditor()" class="text-xs text-gray-400 hover:text-amber-400 flex items-center gap-1.5 transition">
+                                    <i id="toggleEquipmentIcon" class="fa-solid fa-chevron-right text-[10px]"></i>
+                                    <span>Exibir / Editar Descrição Textual de Equipamentos (PDF & Legado)</span>
+                                </button>
+                                <div id="equipmentTextCollapse" class="hidden mt-2 space-y-1">
+                                    <textarea id="equipment" name="equipment" rows="3"
+                                        class="w-full p-2 bg-neutral-950 border border-neutral-700 rounded-md text-xs text-gray-300 font-mono"
+                                        placeholder="Espada Longa (dano: 1d6+2) [Equipado: Mão Principal]..."></textarea>
+                                    <p class="text-[10px] text-gray-500">Alterações no texto são sincronizadas com o inventário estruturado ao salvar ou perder o foco.</p>
+                                </div>
+                            </div>
                         </div>
                         <div>
                             <label for="backstory" class="block text-sm font-medium mb-1">Passado Sombrio:</label>
@@ -1677,6 +1803,10 @@
                 if (disadvantagePointsValueDiv) {
                     disadvantagePointsValueDiv.textContent = `${disadvantagesBonus}/5`;
                     disadvantagePointsValueDiv.classList.toggle('negative', disadvantagesBonus > 5);
+                }
+
+                if (typeof renderEditModeInventory === 'function') {
+                    renderEditModeInventory();
                 }
             }
 
@@ -3144,7 +3274,273 @@
                 updateLiveEffectiveStats(sheetData);
                 renderLiveAttacks(sheetData);
                 renderLiveInventory(sheetData);
+                renderEditModeInventory();
             }
+
+            function renderEditModeInventory() {
+                const weightBar = document.getElementById('editWeightBar');
+                const weightText = document.getElementById('editWeightText');
+                const encumbranceBadge = document.getElementById('editEncumbranceBadge');
+                const encumbrancePenalty = document.getElementById('editEncumbrancePenalty');
+                const equippedGrid = document.getElementById('editEquippedGrid');
+                const backpackGrid = document.getElementById('editBackpackGrid');
+
+                if (!equippedGrid || !backpackGrid) return;
+                if (typeof CharacterInventoryBridge === 'undefined') return;
+
+                const eqEl = document.getElementById('equipment');
+                if (!window._currentInventory || !Array.isArray(window._currentInventory)) {
+                    window._currentInventory = CharacterInventoryBridge.parseEquipmentTextToInventory(eqEl ? eqEl.value : '');
+                }
+
+                const forVal = parseInt(allAtributosInputs?.for?.value) || 2;
+                const conVal = parseInt(allAtributosInputs?.con?.value) || 2;
+                const maxWeight = CharacterInventoryBridge.calculateCarryCapacity(forVal, conVal);
+                const curWeight = CharacterInventoryBridge.calculateTotalWeight(window._currentInventory);
+                const encumbrance = CharacterInventoryBridge.getEncumbranceStatus(curWeight, maxWeight);
+
+                if (weightText) weightText.textContent = `${curWeight} / ${maxWeight} kg`;
+
+                if (weightBar) {
+                    const pct = Math.min(100, encumbrance.ratio);
+                    weightBar.style.width = `${pct}%`;
+                    if (encumbrance.status === 'overburdened') {
+                        weightBar.className = 'h-full bg-red-600 rounded-full transition-all duration-300';
+                    } else if (encumbrance.status === 'heavy') {
+                        weightBar.className = 'h-full bg-amber-500 rounded-full transition-all duration-300';
+                    } else {
+                        weightBar.className = 'h-full bg-emerald-500 rounded-full transition-all duration-300';
+                    }
+                }
+
+                if (encumbranceBadge) {
+                    encumbranceBadge.textContent = encumbrance.label;
+                    if (encumbrance.status === 'overburdened') {
+                        encumbranceBadge.className = 'px-2 py-0.5 rounded text-[11px] font-bold bg-red-950/80 text-red-300 border border-red-700 ring-1 ring-red-500/50';
+                    } else if (encumbrance.status === 'heavy') {
+                        encumbranceBadge.className = 'px-2 py-0.5 rounded text-[11px] font-bold bg-amber-950/80 text-amber-300 border border-amber-700';
+                    } else {
+                        encumbranceBadge.className = 'px-2 py-0.5 rounded text-[11px] font-bold bg-neutral-800 text-gray-300';
+                    }
+                }
+
+                if (encumbrancePenalty) {
+                    encumbrancePenalty.textContent = encumbrance.penalty !== 0 
+                        ? `${encumbrance.penalty} na Defesa e Testes Físicos`
+                        : 'Sem penalidades de carga';
+                    encumbrancePenalty.className = encumbrance.penalty !== 0 ? 'text-red-400 font-bold' : 'text-gray-400';
+                }
+
+                // Slots Corporais Equipados
+                const slotsDef = [
+                    { id: 'mainHand', label: '⚔️ Mão Principal' },
+                    { id: 'offHand', label: '🛡️ Mão Secundária' },
+                    { id: 'armor', label: '🦺 Armadura' },
+                    { id: 'accessory1', label: '💍 Acessório 1' },
+                    { id: 'accessory2', label: '✨ Acessório 2' }
+                ];
+
+                equippedGrid.innerHTML = slotsDef.map(slot => {
+                    const item = window._currentInventory.find(it => it.isEquipped && it.slot === slot.id);
+                    if (item) {
+                        return `
+                            <div class="bg-neutral-800/80 border border-amber-500/50 rounded-lg p-2.5 flex justify-between items-center text-xs shadow">
+                                <div class="overflow-hidden pr-2">
+                                    <div class="text-[10px] text-amber-400 font-bold uppercase tracking-wider">${slot.label}</div>
+                                    <div class="font-bold text-gray-100 truncate">${item.name}</div>
+                                    <div class="text-[10px] text-gray-400 flex flex-wrap gap-1 mt-0.5">
+                                        ${item.damage ? `<span class="text-red-400 font-semibold">⚔ ${item.damage}</span>` : ''}
+                                        ${item.defenseBonus ? `<span class="text-blue-400 font-semibold">🛡 +${item.defenseBonus}</span>` : ''}
+                                        ${item.armorValue ? `<span class="text-cyan-400 font-semibold">🦺 Arm ${item.armorValue}</span>` : ''}
+                                        <span>⚖ ${item.weight || 0.5} kg</span>
+                                    </div>
+                                </div>
+                                <button type="button" class="edit-unequip-btn text-xs px-2.5 py-1.5 bg-neutral-700/80 hover:bg-neutral-600 border border-neutral-600 text-gray-200 rounded transition cursor-pointer font-semibold"
+                                    data-id="${item.id}" title="Desequipar para a mochila">
+                                    Desequipar
+                                </button>
+                            </div>
+                        `;
+                    } else {
+                        return `
+                            <div class="bg-neutral-900/60 border border-dashed border-neutral-700/80 rounded-lg p-2.5 flex justify-between items-center text-xs opacity-70">
+                                <div>
+                                    <div class="text-[10px] text-gray-400 uppercase font-semibold">${slot.label}</div>
+                                    <div class="italic text-gray-400">Espaço Livre</div>
+                                </div>
+                            </div>
+                        `;
+                    }
+                }).join('');
+
+                // Itens na Mochila
+                const backpackItems = window._currentInventory.filter(it => !it.isEquipped);
+                if (backpackItems.length === 0) {
+                    backpackGrid.innerHTML = '<p class="text-xs text-gray-400 italic col-span-2 py-3 text-center">Nenhum item guardado na mochila. Adicione pelo Catálogo ou crie um novo item.</p>';
+                } else {
+                    backpackGrid.innerHTML = backpackItems.map(it => {
+                        const isConsumable = String(it.category || it.type || '').toLowerCase().includes('consum') ||
+                                            String(it.name || '').toLowerCase().includes('poção') ||
+                                            String(it.name || '').toLowerCase().includes('elixir');
+                        const isEquippable = !isConsumable && (
+                            String(it.category || it.type || '').toLowerCase().includes('arma') ||
+                            String(it.category || it.type || '').toLowerCase().includes('armadura') ||
+                            String(it.category || it.type || '').toLowerCase().includes('escudo') ||
+                            String(it.category || it.type || '').toLowerCase().includes('acessório') ||
+                            it.damage || it.defenseBonus || it.armorValue
+                        );
+
+                        return `
+                            <div class="bg-neutral-800/90 border border-neutral-700 rounded-lg p-2.5 flex justify-between items-center text-xs hover:border-neutral-600 transition shadow-sm">
+                                <div class="overflow-hidden pr-2">
+                                    <div class="font-bold text-gray-200 truncate flex items-center gap-1.5">
+                                        <span>${it.name}</span>
+                                        ${it.quantity > 1 ? `<span class="text-[10px] bg-neutral-700 text-amber-300 px-1.5 py-0.2 rounded font-bold">${it.quantity}x</span>` : ''}
+                                    </div>
+                                    <div class="text-[10px] text-gray-400 flex flex-wrap gap-1 mt-0.5">
+                                        ${it.damage ? `<span class="text-red-400">⚔ ${it.damage}</span>` : ''}
+                                        ${it.defenseBonus ? `<span class="text-blue-400">🛡 +${it.defenseBonus}</span>` : ''}
+                                        ${it.armorValue ? `<span class="text-cyan-400">🦺 Arm ${it.armorValue}</span>` : ''}
+                                        <span>⚖ ${(it.weight || 0.5) * (it.quantity || 1)} kg</span>
+                                    </div>
+                                    <p class="text-[10px] text-gray-400 italic truncate mt-0.5">${it.description || ''}</p>
+                                </div>
+                                <div class="flex items-center gap-1 flex-shrink-0">
+                                    ${isEquippable ? `
+                                        <button type="button" class="edit-equip-btn px-2.5 py-1 bg-amber-700/40 hover:bg-amber-600/60 border border-amber-500/50 text-amber-300 font-bold rounded text-xs transition cursor-pointer"
+                                            data-id="${it.id}">
+                                            ⚔️ Equipar
+                                        </button>
+                                    ` : ''}
+                                    <button type="button" class="edit-remove-btn px-2 py-1 bg-red-950/40 hover:bg-red-900/60 border border-red-800/60 text-red-400 rounded text-xs transition cursor-pointer"
+                                        data-id="${it.id}" title="Remover item">
+                                        🗑
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                }
+
+                // Eventos de Desequipar
+                equippedGrid.querySelectorAll('.edit-unequip-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const itemId = btn.dataset.id;
+                        window._currentInventory = CharacterInventoryBridge.unequipItem(window._currentInventory, itemId);
+                        syncInventoryToSheetAndDom();
+                    });
+                });
+
+                // Eventos de Equipar
+                backpackGrid.querySelectorAll('.edit-equip-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const itemId = btn.dataset.id;
+                        window._currentInventory = CharacterInventoryBridge.equipItem(window._currentInventory, itemId);
+                        syncInventoryToSheetAndDom();
+                    });
+                });
+
+                // Eventos de Remover
+                backpackGrid.querySelectorAll('.edit-remove-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const itemId = btn.dataset.id;
+                        window._currentInventory = CharacterInventoryBridge.removeItem(window._currentInventory, itemId, 1);
+                        syncInventoryToSheetAndDom();
+                    });
+                });
+            }
+
+            function syncInventoryToSheetAndDom() {
+                if (typeof CharacterInventoryBridge === 'undefined') return;
+                const eqEl = document.getElementById('equipment');
+                const dummySheet = { equipment: eqEl ? eqEl.value : '' };
+                const synced = CharacterInventoryBridge.syncSheetWithInventory(dummySheet, window._currentInventory);
+                if (eqEl) eqEl.value = synced.equipment;
+
+                if (typeof AudioSfxEngine !== 'undefined') AudioSfxEngine.playConditionToggle();
+
+                renderEditModeInventory();
+                if (typeof renderLiveInventory === 'function') {
+                    renderLiveInventory(getFormAsJson());
+                }
+            }
+
+            window.renderEditModeInventory = renderEditModeInventory;
+            window.syncInventoryToSheetAndDom = syncInventoryToSheetAndDom;
+
+            window.toggleCustomItemForm = function() {
+                const drawer = document.getElementById('customItemDrawer');
+                if (drawer) drawer.classList.toggle('hidden');
+            };
+
+            window.toggleEquipmentTextEditor = function() {
+                const collapse = document.getElementById('equipmentTextCollapse');
+                const icon = document.getElementById('toggleEquipmentIcon');
+                if (collapse) {
+                    collapse.classList.toggle('hidden');
+                    if (icon) {
+                        icon.className = collapse.classList.contains('hidden') 
+                            ? 'fa-solid fa-chevron-right text-[10px]' 
+                            : 'fa-solid fa-chevron-down text-[10px]';
+                    }
+                }
+            };
+
+            window.addCustomItemToSheet = function() {
+                const name = document.getElementById('customItemName')?.value?.trim();
+                if (!name) {
+                    alert('Informe o nome do item customizado.');
+                    return;
+                }
+                const slot = document.getElementById('customItemSlot')?.value || 'backpack';
+                const qty = parseInt(document.getElementById('customItemQty')?.value) || 1;
+                const weight = parseFloat(document.getElementById('customItemWeight')?.value) || 0.5;
+                const damage = document.getElementById('customItemDamage')?.value?.trim() || null;
+                const defense = parseInt(document.getElementById('customItemDefense')?.value) || 0;
+                const armor = parseInt(document.getElementById('customItemArmor')?.value) || 0;
+                const desc = document.getElementById('customItemDesc')?.value?.trim() || '';
+
+                const isEquipped = (slot !== 'backpack');
+                let category = 'Aventura';
+                if (slot === 'mainHand' || damage) category = 'Armas';
+                else if (slot === 'armor' || slot === 'offHand') category = 'Armaduras';
+                else if (slot === 'accessory1' || slot === 'accessory2') category = 'Acessórios';
+
+                const newItem = {
+                    name,
+                    category,
+                    slot,
+                    isEquipped,
+                    quantity: qty,
+                    weight,
+                    damage,
+                    defenseBonus: defense,
+                    armorValue: armor,
+                    description: desc
+                };
+
+                if (typeof CharacterInventoryBridge !== 'undefined') {
+                    const curInv = window._currentInventory || [];
+                    window._currentInventory = CharacterInventoryBridge.addItem(curInv, newItem);
+                    if (isEquipped) {
+                        const addedItem = window._currentInventory[window._currentInventory.length - 1];
+                        if (addedItem) {
+                            window._currentInventory = CharacterInventoryBridge.equipItem(window._currentInventory, addedItem.id, slot);
+                        }
+                    }
+                    syncInventoryToSheetAndDom();
+                }
+
+                // Reset form
+                document.getElementById('customItemName').value = '';
+                document.getElementById('customItemDamage').value = '';
+                document.getElementById('customItemDefense').value = '0';
+                document.getElementById('customItemArmor').value = '0';
+                document.getElementById('customItemDesc').value = '';
+                document.getElementById('customItemDrawer')?.classList.add('hidden');
+
+                if (typeof AudioSfxEngine !== 'undefined') AudioSfxEngine.playConditionToggle();
+            };
 
             // Listeners de Botões de Ajuste de PV e PE
             document.querySelectorAll('.live-hp-delta-btn').forEach(btn => {
@@ -3437,6 +3833,9 @@
                 }
 
                 if (typeof AudioSfxEngine !== 'undefined') AudioSfxEngine.playConditionToggle();
+                if (typeof window.renderEditModeInventory === 'function') {
+                    window.renderEditModeInventory();
+                }
                 showModalMessage('Equipamento Adicionado', `<div class="text-sm text-amber-300"><strong>${item.name}</strong> foi adicionado ao equipamento do personagem!</div>`);
             }
         };

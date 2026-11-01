@@ -86,12 +86,12 @@ QUnit.module('Integração Ficha <-> Inventário de Itens (+2d6 Kuar-Tor)', func
     // -------------------------------------------------------------------------
     // 2. Integração com public/formV6.html
     // -------------------------------------------------------------------------
-    QUnit.test('2. Caminho Feliz: public/formV6.html integra HUD de Inventário no Modo Live Play (AAA)', function (assert) {
+    QUnit.test('2. Caminho Feliz: public/formV6.html integra HUD de Inventário no Modo Live Play e Modo Edição (AAA)', function (assert) {
         // Arrange
         assert.ok(fs.existsSync(FORM_HTML_PATH), 'public/formV6.html deve existir');
         const content = fs.readFileSync(FORM_HTML_PATH, 'utf-8');
 
-        // Act & Assert
+        // Act & Assert - Modo Live Play
         assert.ok(content.includes('character-inventory-bridge.js'), 'formV6.html deve importar character-inventory-bridge.js');
         assert.ok(content.includes('id="liveInventorySection"'), 'formV6.html deve ter #liveInventorySection');
         assert.ok(content.includes('id="liveWeightDisplay"'), 'formV6.html deve ter #liveWeightDisplay');
@@ -100,6 +100,22 @@ QUnit.module('Integração Ficha <-> Inventário de Itens (+2d6 Kuar-Tor)', func
         assert.ok(content.includes('id="liveEquippedGrid"'), 'formV6.html deve ter #liveEquippedGrid');
         assert.ok(content.includes('id="liveBackpackGrid"'), 'formV6.html deve ter #liveBackpackGrid');
         assert.ok(content.includes('renderLiveInventory'), 'formV6.html deve implementar renderLiveInventory');
+
+        // Act & Assert - Modo Edição (Inventário Tático Integrado)
+        assert.ok(content.includes('id="editModeInventoryContainer"'), 'formV6.html deve ter #editModeInventoryContainer no Modo Edição');
+        assert.ok(content.includes('id="editWeightText"'), 'formV6.html deve ter #editWeightText');
+        assert.ok(content.includes('id="editWeightBar"'), 'formV6.html deve ter #editWeightBar');
+        assert.ok(content.includes('id="editEncumbranceBadge"'), 'formV6.html deve ter #editEncumbranceBadge');
+        assert.ok(content.includes('id="editEncumbrancePenalty"'), 'formV6.html deve ter #editEncumbrancePenalty');
+        assert.ok(content.includes('id="editEquippedGrid"'), 'formV6.html deve ter #editEquippedGrid');
+        assert.ok(content.includes('id="editBackpackGrid"'), 'formV6.html deve ter #editBackpackGrid');
+        assert.ok(content.includes('id="customItemDrawer"'), 'formV6.html deve ter #customItemDrawer');
+        assert.ok(content.includes('id="equipmentTextCollapse"'), 'formV6.html deve ter #equipmentTextCollapse para retrocompatibilidade');
+        assert.ok(content.includes('renderEditModeInventory'), 'formV6.html deve implementar renderEditModeInventory');
+        assert.ok(content.includes('syncInventoryToSheetAndDom'), 'formV6.html deve implementar syncInventoryToSheetAndDom');
+        assert.ok(content.includes('toggleCustomItemForm'), 'formV6.html deve implementar toggleCustomItemForm');
+        assert.ok(content.includes('toggleEquipmentTextEditor'), 'formV6.html deve implementar toggleEquipmentTextEditor');
+        assert.ok(content.includes('addCustomItemToSheet'), 'formV6.html deve implementar addCustomItemToSheet');
     });
 
     // -------------------------------------------------------------------------
