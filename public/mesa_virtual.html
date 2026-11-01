@@ -40,6 +40,10 @@
     <script src="../src/core/vtt-bestiary-engine.js"></script>
     <script src="../src/core/vtt-fog-aoe-engine.js"></script>
     <script src="../src/core/item-catalog-engine.js"></script>
+    <script src="../src/core/vtt-session-persistence.js"></script>
+    <script src="../src/core/vtt-shortcuts-controller.js"></script>
+    <script src="../src/core/vtt-magic-integration.js"></script>
+    <script src="../src/core/vtt-ping-drawing-engine.js"></script>
 
     <style>
         :root {
@@ -401,6 +405,69 @@
             0% { box-shadow: 0 0 10px #fbbf24; }
             100% { box-shadow: 0 0 25px #fbbf24; }
         }
+
+        /* Floating Combat Text (+2d6) */
+        .floating-combat-text {
+            position: absolute;
+            pointer-events: none;
+            font-family: 'Cinzel', serif;
+            font-weight: 700;
+            font-size: 14px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.95), 0 0 10px currentColor;
+            z-index: 50;
+            animation: floatUpFade 1.25s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+            white-space: nowrap;
+        }
+
+        @keyframes floatUpFade {
+            0% { opacity: 0; transform: translate(-50%, 0) scale(0.7); }
+            15% { opacity: 1; transform: translate(-50%, -10px) scale(1.15); }
+            70% { opacity: 1; transform: translate(-50%, -35px) scale(1); }
+            100% { opacity: 0; transform: translate(-50%, -55px) scale(0.85); }
+        }
+
+        /* Visual Tactical Pings */
+        .vtt-tactical-ping {
+            position: absolute;
+            pointer-events: none;
+            z-index: 45;
+            transform: translate(-50%, -50%);
+        }
+
+        .ping-ripple {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            border-radius: 50%;
+            pointer-events: none;
+            animation: pingWave 1.4s ease-out infinite;
+        }
+
+        @keyframes pingWave {
+            0% { width: 10px; height: 10px; opacity: 1; }
+            100% { width: 80px; height: 80px; opacity: 0; }
+        }
+
+        /* Drawing & Modes */
+        #drawing-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 18;
+            pointer-events: none;
+        }
+
+        #vtt-viewport.draw-mode { cursor: crosshair !important; }
+        #vtt-viewport.ping-mode { cursor: cell !important; }
+
+        .tool-btn:disabled {
+            opacity: 0.35;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
     </style>
 </head>
 
@@ -420,6 +487,18 @@
 
         <!-- Quick Top Controls -->
         <div class="flex items-center gap-2">
+            <!-- Autosave Indicator -->
+            <div id="vtt-autosave-indicator" class="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-900/80 border border-slate-700 text-[10px] text-gray-300 font-mono transition">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span id="vtt-autosave-label">Salvo Localmente</span>
+            </div>
+
+            <!-- Scene Management (Export / Import / Save) -->
+            <button id="scene-mgmt-btn" onclick="openSceneModal()" class="px-3 py-1.5 rounded-lg bg-slate-800/80 border border-slate-600 hover:border-cyan-400 text-xs text-cyan-300 font-cinzel flex items-center gap-1.5 transition" title="Gerenciar Cena (Salvar/Exportar/Importar)">
+                <i class="fa-solid fa-floppy-disk"></i>
+                <span class="hidden md:inline">Cena</span>
+            </button>
+
             <!-- Multiplayer P2P Modal Button -->
             <button id="p2p-modal-btn" onclick="openMultiplayerModal()" class="px-3 py-1.5 rounded-lg bg-cyan-950/80 border border-cyan-400 text-cyan-300 hover:bg-cyan-900 text-xs font-cinzel font-bold flex items-center gap-1.5 transition shadow-[0_0_12px_rgba(102,252,241,0.25)]">
                 <i class="fa-solid fa-tower-broadcast"></i>
@@ -454,6 +533,13 @@
 
     <!-- Toolbar Esquerda Flutuante -->
     <div id="vtt-toolbar">
+        <button id="tool-undo" class="tool-btn" onclick="triggerUndo()" title="Desfazer (Ctrl+Z)" disabled>
+            <i class="fa-solid fa-rotate-left"></i>
+        </button>
+        <button id="tool-redo" class="tool-btn" onclick="triggerRedo()" title="Refazer (Ctrl+Y)" disabled>
+            <i class="fa-solid fa-rotate-right"></i>
+        </button>
+        <hr class="border-slate-700 my-1">
         <button id="tool-select" class="tool-btn active" onclick="setTool('select')" title="Selecionar / Mover (V)">
             <i class="fa-solid fa-arrow-pointer"></i>
         </button>
@@ -462,6 +548,12 @@
         </button>
         <button id="tool-fog" class="tool-btn" onclick="setTool('fog')" title="Névoa de Guerra / Revelar (F)">
             <i class="fa-solid fa-cloud-moon"></i>
+        </button>
+        <button id="tool-draw" class="tool-btn" onclick="setTool('draw')" title="Desenho Tático Livre (D)">
+            <i class="fa-solid fa-pencil"></i>
+        </button>
+        <button id="tool-ping" class="tool-btn" onclick="setTool('ping')" title="Ping Tático no Mapa (P)">
+            <i class="fa-solid fa-location-dot"></i>
         </button>
         <button id="tool-grid" class="tool-btn" onclick="toggleGrid()" title="Mostrar/Ocultar Grid (G)">
             <i class="fa-solid fa-border-all"></i>
@@ -497,9 +589,12 @@
             <img id="map-image" src="https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=2000&q=80" alt="VTT Map">
             <div id="grid-overlay"></div>
             <canvas id="fog-canvas"></canvas>
+            <canvas id="drawing-canvas"></canvas>
             <svg id="ruler-svg"></svg>
             <svg id="aoe-svg" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 15;"></svg>
             <div id="tokens-layer"></div>
+            <div id="pings-layer" style="position: absolute; inset: 0; pointer-events: none; z-index: 30;"></div>
+            <div id="fct-layer" style="position: absolute; inset: 0; pointer-events: none; z-index: 40;"></div>
         </div>
     </div>
 
@@ -519,6 +614,19 @@
             <button onclick="modifyTokenStat('hp', 1)" class="px-2 py-1 bg-emerald-950 border border-emerald-500 rounded text-xs text-emerald-300 font-bold">+1</button>
             <button onclick="modifyTokenStat('hp', 5)" class="px-2 py-1 bg-emerald-950 border border-emerald-500 rounded text-xs text-emerald-300 font-bold">+5</button>
         </div>
+
+        <!-- PE Modifier -->
+        <div class="text-[10px] text-gray-400 uppercase tracking-wider mb-1">Pontos de Energia (PE)</div>
+        <div class="flex items-center gap-1 mb-2">
+            <button onclick="modifyTokenStat('pe', -2)" class="px-2 py-1 bg-cyan-950 border border-cyan-500 rounded text-xs text-cyan-300 font-bold">-2</button>
+            <span id="ctx-token-pe" class="flex-1 text-center font-cinzel text-xs font-bold text-cyan-400">8/8</span>
+            <button onclick="modifyTokenStat('pe', 2)" class="px-2 py-1 bg-cyan-950 border border-cyan-500 rounded text-xs text-cyan-300 font-bold">+2</button>
+        </div>
+
+        <!-- Conjuração de Círculo / Magia (+2d6) -->
+        <button onclick="openTokenSpellModal()" class="w-full py-1.5 mb-2 bg-purple-950/80 hover:bg-purple-900 border border-purple-500/50 hover:border-purple-400 text-purple-200 font-cinzel font-bold text-xs rounded transition flex items-center justify-center gap-1.5">
+            <i class="fa-solid fa-wand-magic-sparkles"></i> Conjurar Círculo / Magia
+        </button>
 
         <!-- Condições -->
         <div class="text-[10px] text-gray-400 uppercase tracking-wider mb-1">Condições & Status</div>
@@ -952,6 +1060,146 @@
         </div>
     </div>
 
+    <!-- Scene Management Modal (Persistência, Exportação e Importação JSON) -->
+    <div id="scene-modal" class="fixed inset-0 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 hidden z-[135]">
+        <div class="bg-slate-900 border border-cyan-500/50 p-6 rounded-2xl max-w-lg w-full shadow-[0_0_50px_rgba(102,252,241,0.2)]">
+            <div class="flex justify-between items-center border-b border-slate-700 pb-3 mb-4">
+                <div class="flex items-center gap-2">
+                    <div class="w-9 h-9 rounded-lg bg-cyan-950/80 border border-cyan-400/60 flex items-center justify-center text-cyan-300">
+                        <i class="fa-solid fa-floppy-disk"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-cinzel text-lg font-bold text-cyan-300">Gerenciamento de Cena</h3>
+                        <p class="text-[11px] text-gray-400">Salvar, Exportar e Importar Cenários Completos</p>
+                    </div>
+                </div>
+                <button onclick="closeSceneModal()" class="text-gray-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <div class="space-y-4">
+                <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs font-cinzel font-bold text-gray-200">Snapshot Local</span>
+                        <span id="scene-status-badge" class="text-[10px] text-emerald-400 font-mono">Pronto</span>
+                    </div>
+                    <p class="text-xs text-gray-400 mb-3">Grave o estado atual de tokens, mapa, combate e névoa no navegador.</p>
+                    <div class="flex gap-2">
+                        <button onclick="saveSceneToLocalNow()" class="flex-1 py-2 bg-cyan-600 hover:bg-cyan-500 text-slate-950 font-cinzel font-bold text-xs rounded-lg transition flex items-center justify-center gap-1.5 shadow">
+                            <i class="fa-solid fa-bookmark"></i> Salvar Snapshot
+                        </button>
+                        <button onclick="loadSceneFromLocalNow()" class="flex-1 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-600 text-xs text-cyan-300 font-cinzel font-bold rounded-lg transition flex items-center justify-center gap-1.5">
+                            <i class="fa-solid fa-rotate"></i> Restaurar Snapshot
+                        </button>
+                    </div>
+                </div>
+
+                <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
+                    <span class="text-xs font-cinzel font-bold text-gray-200 block mb-1">Exportação e Importação de Arquivo JSON</span>
+                    <p class="text-xs text-gray-400 mb-3">Baixe o cenário em arquivo para compartilhar com outros mestres ou carregar depois.</p>
+                    <div class="grid grid-cols-2 gap-2 mb-3">
+                        <button onclick="exportSceneJsonDownload()" class="py-2 bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-500/50 text-emerald-300 font-cinzel font-bold text-xs rounded-lg transition flex items-center justify-center gap-1.5">
+                            <i class="fa-solid fa-file-arrow-down"></i> Exportar JSON
+                        </button>
+                        <label class="py-2 bg-purple-950/80 hover:bg-purple-900 border border-purple-500/50 text-purple-300 font-cinzel font-bold text-xs rounded-lg transition flex items-center justify-center gap-1.5 cursor-pointer text-center">
+                            <i class="fa-solid fa-file-arrow-up"></i> Importar JSON
+                            <input type="file" id="scene-file-input" accept=".json" class="hidden" onchange="importSceneJsonFile(event)">
+                        </label>
+                    </div>
+                    <button onclick="resetSceneToDefaults()" class="w-full py-1.5 bg-red-950/60 hover:bg-red-900/80 border border-red-500/40 text-red-300 text-xs rounded font-cinzel transition flex items-center justify-center gap-1">
+                        <i class="fa-solid fa-trash-can"></i> Limpar Tabuleiro e Reiniciar Cena
+                    </button>
+                </div>
+            </div>
+
+            <div class="mt-4 pt-3 border-t border-slate-800 flex justify-end">
+                <button onclick="closeSceneModal()" class="px-5 py-2 bg-slate-800 hover:bg-slate-700 text-gray-300 font-cinzel text-xs rounded-lg">
+                    Fechar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Token Spellcasting Modal (+2d6) -->
+    <div id="token-spell-modal" class="fixed inset-0 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 hidden z-[140]">
+        <div class="bg-slate-900 border border-purple-500/50 p-6 rounded-2xl max-w-lg w-full shadow-[0_0_50px_rgba(168,85,247,0.25)] flex flex-col max-h-[85vh]">
+            <div class="flex justify-between items-center border-b border-slate-700 pb-3 mb-4">
+                <div class="flex items-center gap-2">
+                    <div class="w-9 h-9 rounded-lg bg-purple-950/80 border border-purple-400/60 flex items-center justify-center text-purple-300">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-cinzel text-lg font-bold text-purple-300">Conjuração Arcana (+2d6)</h3>
+                        <p class="text-[11px] text-gray-400">Canalização Rúnica e Disparo Mágico em Combate</p>
+                    </div>
+                </div>
+                <button onclick="closeTokenSpellModal()" class="text-gray-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <!-- Token Status Bar -->
+            <div id="spell-caster-info" class="flex items-center justify-between bg-slate-950 p-3 rounded-xl border border-slate-800 mb-3">
+                <div class="flex items-center gap-2">
+                    <img id="spell-caster-avatar" src="" class="w-10 h-10 rounded-full border border-purple-400 object-cover">
+                    <div>
+                        <div id="spell-caster-name" class="font-cinzel text-xs font-bold text-white">--</div>
+                        <div class="text-[10px] text-gray-400">Conjurador Selecionado</div>
+                    </div>
+                </div>
+                <div class="flex gap-3 font-mono text-xs">
+                    <div class="text-right">
+                        <span class="text-[9px] text-gray-400 block font-cinzel">PV</span>
+                        <strong id="spell-caster-pv" class="text-red-400">--</strong>
+                    </div>
+                    <div class="text-right">
+                        <span class="text-[9px] text-gray-400 block font-cinzel">PE</span>
+                        <strong id="spell-caster-pe" class="text-cyan-400">--</strong>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Spell Choice and Target Selection -->
+            <div class="space-y-3 overflow-y-auto flex-1 pr-1">
+                <div>
+                    <label class="block text-[10px] uppercase font-cinzel font-bold text-slate-400 mb-1">Selecione o Círculo / Feitiço</label>
+                    <select id="spell-select" onchange="updateSelectedSpellPreview()" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-purple-400 font-cinzel">
+                        <option value="c01">Círculo #01 — Labareda Ígnea (Fogo &middot; Custo 2 PE &middot; CD 8 &middot; Dano 2d6+2)</option>
+                        <option value="c02">Círculo #02 — Centelha Curativa (Luz &middot; Custo 3 PE &middot; CD 8 &middot; Cura 2d6+1)</option>
+                        <option value="c03">Círculo #03 — Magma Devastador (Fogo+Terra &middot; Custo 4 PE &middot; CD 10 &middot; Dano 2d6+5)</option>
+                        <option value="c05">Círculo #05 — Cataclismo Elemental (Fogo+Ar+Terra &middot; Custo 6 PE &middot; CD 13 &middot; Dano 2d6+9)</option>
+                        <option value="s62">Círculo #62 — Flora Abissal (Trevas+Água &middot; Custo 4 PE &middot; CD 10 &middot; Dano 2d6+4)</option>
+                        <option value="s120">Círculo #120 — Cidades Vivas (Vida+Ordem+Matéria &middot; Custo 5 PE &middot; CD 12 &middot; Cura 2d6+6)</option>
+                    </select>
+                </div>
+
+                <div id="spell-preview-card" class="bg-black/60 p-3 rounded-xl border border-purple-500/30 text-xs">
+                    <div class="flex justify-between items-center mb-1">
+                        <span id="spell-preview-name" class="font-cinzel font-bold text-purple-300">Círculo #01 — Labareda Ígnea</span>
+                        <span id="spell-preview-cost" class="text-cyan-400 font-mono text-[11px]">2 PE &middot; CD 8</span>
+                    </div>
+                    <p id="spell-preview-desc" class="text-gray-300 text-[11px] mb-2">Dispara rajada de fogo elemental causando 2d6+2 de dano no alvo.</p>
+                    <div class="text-[10px] text-amber-300/80 bg-amber-950/20 px-2 py-1 rounded border border-amber-900/30">
+                        ⚡ Acerto Crítico (12 natural) causa dano x1.5! Falha Crítica (2 natural) consome PE sem efeito.
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-[10px] uppercase font-cinzel font-bold text-slate-400 mb-1">Alvo do Feitiço</label>
+                    <select id="spell-target-select" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-purple-400">
+                        <!-- Preenchido dinamicamente com tokens do tabuleiro -->
+                    </select>
+                </div>
+            </div>
+
+            <div class="mt-4 pt-3 border-t border-slate-800 flex gap-2">
+                <button onclick="executeSelectedSpellCast()" class="flex-1 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-cinzel font-bold text-xs rounded-lg transition flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(168,85,247,0.3)]">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i> Canalizar & Conjurar (+2d6)
+                </button>
+                <button onclick="closeTokenSpellModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-gray-300 font-cinzel text-xs rounded-lg">
+                    Cancelar
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- VTT ENGINE SCRIPT -->
     <script>
         const state = {
@@ -987,10 +1235,100 @@
         const rulerSvg = document.getElementById('ruler-svg');
         const fogCanvas = document.getElementById('fog-canvas');
         const fogCtx = fogCanvas.getContext('2d');
+        const drawingCanvas = document.getElementById('drawing-canvas');
+        const drawingCtx = drawingCanvas ? drawingCanvas.getContext('2d') : null;
+        const pingsLayer = document.getElementById('pings-layer');
+        const fctLayer = document.getElementById('fct-layer');
         const ctxMenu = document.getElementById('token-context-menu');
 
         let isPanning = false;
         let startX, startY;
+        let activeStroke = null;
+
+        // Histórico & Persistência Local-First
+        let vttHistory = (typeof VttSessionPersistence !== 'undefined')
+            ? VttSessionPersistence.createHistoryManager(25)
+            : null;
+        let autosaveTimeout = null;
+
+        function recordSnapshot(label = 'action') {
+            if (!vttHistory || typeof VttSessionPersistence === 'undefined') return;
+            const serialized = VttSessionPersistence.serializeVttState(state, { mapUrl: mapImg.src });
+            vttHistory.pushSnapshot(serialized);
+            updateHistoryButtonsUI();
+            scheduleAutoSave();
+        }
+
+        function updateHistoryButtonsUI() {
+            const undoBtn = document.getElementById('tool-undo');
+            const redoBtn = document.getElementById('tool-redo');
+            if (undoBtn && vttHistory) undoBtn.disabled = !vttHistory.canUndo();
+            if (redoBtn && vttHistory) redoBtn.disabled = !vttHistory.canRedo();
+        }
+
+        function triggerUndo() {
+            if (!vttHistory || !vttHistory.canUndo()) return;
+            const snapshot = vttHistory.undo();
+            if (snapshot) restoreFromSnapshot(snapshot);
+            updateHistoryButtonsUI();
+            if (typeof AudioSfxEngine !== 'undefined') AudioSfxEngine.playDiceRoll();
+        }
+
+        function triggerRedo() {
+            if (!vttHistory || !vttHistory.canRedo()) return;
+            const snapshot = vttHistory.redo();
+            if (snapshot) restoreFromSnapshot(snapshot);
+            updateHistoryButtonsUI();
+            if (typeof AudioSfxEngine !== 'undefined') AudioSfxEngine.playDiceRoll();
+        }
+
+        function scheduleAutoSave() {
+            clearTimeout(autosaveTimeout);
+            autosaveTimeout = setTimeout(() => {
+                if (typeof VttSessionPersistence !== 'undefined') {
+                    VttSessionPersistence.saveToLocalStorage(state, { mapUrl: mapImg.src });
+                    showAutoSaveIndicator();
+                }
+            }, 800);
+        }
+
+        function showAutoSaveIndicator() {
+            const ind = document.getElementById('vtt-autosave-indicator');
+            if (ind) {
+                ind.classList.remove('hidden');
+                setTimeout(() => ind.classList.add('hidden'), 2200);
+            }
+        }
+
+        function restoreFromSnapshot(snapshot) {
+            if (!snapshot) return;
+            const data = (typeof VttSessionPersistence !== 'undefined')
+                ? VttSessionPersistence.deserializeVttState(snapshot)
+                : snapshot;
+
+            if (data.mapUrl && mapImg.src !== data.mapUrl) {
+                mapImg.src = data.mapUrl;
+            }
+            if (typeof data.scale === 'number') state.scale = data.scale;
+            if (typeof data.originX === 'number') state.originX = data.originX;
+            if (typeof data.originY === 'number') state.originY = data.originY;
+            updateWorldTransform();
+
+            // Limpa e recria tokens
+            tokensLayer.innerHTML = '';
+            state.tokens = {};
+            if (data.tokens) {
+                Object.values(data.tokens).forEach(t => {
+                    state.tokens[t.id] = t;
+                    createTokenElement(t, false);
+                });
+            }
+
+            state.combatants = data.combatants || [];
+            state.currentRound = data.currentRound || 1;
+            state.currentTurnIndex = data.currentTurnIndex || 0;
+            renderInitiativeUI();
+        }
 
         function updateWorldTransform() {
             world.style.transform = `translate(${state.originX}px, ${state.originY}px) scale(${state.scale})`;
@@ -998,6 +1336,18 @@
 
         viewport.addEventListener('mousedown', (e) => {
             if (e.target.closest('.vtt-token') || e.target.closest('#vtt-toolbar') || e.target.closest('#token-context-menu') || e.target.closest('#vtt-drawer')) {
+                return;
+            }
+            if (state.currentTool === 'ping') {
+                handleTacticalPing(e.clientX, e.clientY);
+                return;
+            }
+            if (state.currentTool === 'draw') {
+                const worldPos = screenToWorld(e.clientX, e.clientY);
+                if (typeof VttPingDrawingEngine !== 'undefined') {
+                    activeStroke = VttPingDrawingEngine.createStroke({ color: '#66FCF1', size: 3 });
+                    VttPingDrawingEngine.addPointToStroke(activeStroke, worldPos.x, worldPos.y);
+                }
                 return;
             }
             if (state.currentTool === 'ruler') {
@@ -1022,6 +1372,13 @@
                 state.originY = e.clientY - startY;
                 updateWorldTransform();
             }
+            if (state.currentTool === 'draw' && activeStroke && e.buttons === 1) {
+                const worldPos = screenToWorld(e.clientX, e.clientY);
+                if (typeof VttPingDrawingEngine !== 'undefined') {
+                    VttPingDrawingEngine.addPointToStroke(activeStroke, worldPos.x, worldPos.y);
+                    if (drawingCtx) VttPingDrawingEngine.renderStrokeToCanvas(drawingCtx, activeStroke);
+                }
+            }
             if (state.currentTool === 'ruler' && state.rulerStart) {
                 const worldPos = screenToWorld(e.clientX, e.clientY);
                 drawRuler(state.rulerStart, worldPos);
@@ -1034,6 +1391,10 @@
         window.addEventListener('mouseup', () => {
             isPanning = false;
             viewport.classList.remove('panning');
+            if (state.currentTool === 'draw' && activeStroke) {
+                activeStroke = null;
+                recordSnapshot('Desenho Tático');
+            }
             if (state.currentTool === 'ruler' && state.rulerStart) {
                 state.rulerStart = null;
                 rulerSvg.innerHTML = '';
@@ -1075,9 +1436,11 @@
             document.querySelectorAll('#vtt-toolbar .tool-btn').forEach(btn => btn.classList.remove('active'));
             const btn = document.getElementById(`tool-${tool}`);
             if (btn) btn.classList.add('active');
-            viewport.classList.remove('ruler-mode', 'fog-mode');
+            viewport.classList.remove('ruler-mode', 'fog-mode', 'draw-mode', 'ping-mode');
             if (tool === 'ruler') viewport.classList.add('ruler-mode');
             if (tool === 'fog') viewport.classList.add('fog-mode');
+            if (tool === 'draw') viewport.classList.add('draw-mode');
+            if (tool === 'ping') viewport.classList.add('ping-mode');
         }
 
         function drawRuler(p1, p2) {
@@ -1101,6 +1464,12 @@
             resetFog(false);
         }
 
+        function initDrawingCanvas() {
+            if (!drawingCanvas) return;
+            drawingCanvas.width = mapImg.naturalWidth || 2000;
+            drawingCanvas.height = mapImg.naturalHeight || 1500;
+        }
+
         function resetFog(hideAll) {
             fogCtx.fillStyle = hideAll ? 'rgba(7, 9, 14, 0.95)' : 'rgba(0, 0, 0, 0)';
             fogCtx.clearRect(0, 0, fogCanvas.width, fogCanvas.height);
@@ -1116,8 +1485,64 @@
             fogCtx.globalCompositeOperation = 'source-over';
         }
 
+        // Pings Visuais Táticos
+        function handleTacticalPing(screenX, screenY) {
+            const worldPos = screenToWorld(screenX, screenY);
+            const author = p2pNet ? p2pNet.playerName : 'Mestre';
+            const pingColor = (p2pNet && !p2pNet.isHost) ? '#a855f7' : '#66FCF1';
+
+            spawnVisualPing(worldPos.x, worldPos.y, author, pingColor);
+
+            if (p2pNet) {
+                if (p2pNet.isHost) p2pNet.broadcast('TACTICAL_PING', { x: worldPos.x, y: worldPos.y, author, color: pingColor });
+                else p2pNet.sendToHost('TACTICAL_PING', { x: worldPos.x, y: worldPos.y, author, color: pingColor });
+            }
+        }
+
+        function spawnVisualPing(x, y, author, color = '#66FCF1') {
+            if (!pingsLayer) return;
+            const pingEl = document.createElement('div');
+            pingEl.className = 'vtt-tactical-ping';
+            pingEl.style.left = `${x}px`;
+            pingEl.style.top = `${y}px`;
+            pingEl.innerHTML = `
+                <div class="ping-ripple" style="border: 2.5px solid ${color};"></div>
+                <div class="ping-ripple" style="border: 1.5px solid ${color}; animation-delay: 0.4s;"></div>
+                <div style="width: 14px; height: 14px; border-radius: 50%; background: ${color}; box-shadow: 0 0 14px ${color}; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);"></div>
+                <div style="position: absolute; top: 12px; left: 50%; transform: translateX(-50%); background: rgba(11,15,25,0.95); border: 1px solid ${color}; color: #ffffff; padding: 1px 7px; border-radius: 4px; font-size: 10px; font-family: Cinzel; font-weight: bold; white-space: nowrap; box-shadow: 0 2px 8px rgba(0,0,0,0.8);">${author}</div>
+            `;
+            pingsLayer.appendChild(pingEl);
+
+            if (typeof AudioSfxEngine !== 'undefined') AudioSfxEngine.playDiceRoll();
+
+            setTimeout(() => { pingEl.remove(); }, 3500);
+        }
+
+        // Floating Combat Text (+2d6)
+        function showFloatingCombatText(worldX, worldY, text, type = 'damage') {
+            if (!fctLayer) return;
+            const fct = document.createElement('div');
+            fct.className = 'floating-combat-text';
+            fct.style.left = `${worldX}px`;
+            fct.style.top = `${worldY}px`;
+
+            let color = '#ef4444';
+            let icon = '💥';
+            if (type === 'heal') { color = '#34d399'; icon = '💚'; }
+            else if (type === 'mana') { color = '#38bdf8'; icon = '✨'; }
+            else if (type === 'crit') { color = '#fbbf24'; icon = '⚡'; }
+            else if (type === 'fumble') { color = '#c084fc'; icon = '💀'; }
+
+            fct.style.color = color;
+            fct.innerHTML = `${icon} ${text}`;
+            fctLayer.appendChild(fct);
+
+            setTimeout(() => { fct.remove(); }, 1250);
+        }
+
         mapImg.onload = () => {
             initFog();
+            initDrawingCanvas();
             resetViewport();
         };
 
@@ -1175,6 +1600,7 @@
                     el.style.left = `${token.x}px`;
                     el.style.top = `${token.y}px`;
                 }
+                recordSnapshot('Mover Token');
                 if (p2pNet) {
                     if (p2pNet.isHost) p2pNet.broadcast('TOKEN_MOVE', { id: token.id, x: token.x, y: token.y });
                     else p2pNet.sendToHost('TOKEN_MOVE', { id: token.id, x: token.x, y: token.y });
@@ -1196,8 +1622,10 @@
         function selectToken(id) {
             state.selectedTokenId = id;
             document.querySelectorAll('.vtt-token').forEach(t => t.classList.remove('selected'));
-            const el = document.getElementById(`token-${id}`);
-            if (el) el.classList.add('selected');
+            if (id) {
+                const el = document.getElementById(`token-${id}`);
+                if (el) el.classList.add('selected');
+            }
         }
 
         function spawnPlayerToken(name, hp, pe, avatar) {
@@ -1207,6 +1635,7 @@
             state.tokens[id] = token;
             createTokenElement(token, true);
             addCombatant(token, true);
+            recordSnapshot('Adicionar Ficha');
             closeCharModal();
         }
 
@@ -1217,6 +1646,7 @@
             state.tokens[id] = token;
             createTokenElement(token, true);
             addCombatant(token, true);
+            recordSnapshot('Adicionar Monstro');
         }
 
         function createCustomToken() {
@@ -1234,6 +1664,7 @@
             if (el) el.remove();
             removeCombatant(id);
             closeContextMenu();
+            recordSnapshot('Excluir Token');
             if (p2pNet) {
                 if (p2pNet.isHost) p2pNet.broadcast('TOKEN_DELETE', { id });
                 else p2pNet.sendToHost('TOKEN_DELETE', { id });
@@ -1245,6 +1676,8 @@
             if (!token) return;
             document.getElementById('ctx-token-name').innerText = token.name;
             document.getElementById('ctx-token-hp').innerText = `${token.hp}/${token.maxHp}`;
+            const peCtx = document.getElementById('ctx-token-pe');
+            if (peCtx) peCtx.innerText = `${token.pe}/${token.maxPe}`;
             ctxMenu.style.left = `${Math.min(x, window.innerWidth - 240)}px`;
             ctxMenu.style.top = `${Math.min(y, window.innerHeight - 200)}px`;
             ctxMenu.style.display = 'block';
@@ -1263,15 +1696,29 @@
                     const fill = el.querySelector('.token-bar-fill-hp');
                     if (fill) fill.style.width = `${(token.hp / token.maxHp) * 100}%`;
                 }
+                showFloatingCombatText(token.x + 25, token.y - 10, `${delta > 0 ? '+' : ''}${delta} PV`, delta > 0 ? 'heal' : 'damage');
                 if (typeof AudioSfxEngine !== 'undefined') {
                     if (delta < 0) AudioSfxEngine.playDamageTaken();
                     else AudioSfxEngine.playHeal();
                 }
-                if (p2pNet) {
-                    const payload = { id: token.id, hp: token.hp, pe: token.pe, conditions: token.conditions };
-                    if (p2pNet.isHost) p2pNet.broadcast('TOKEN_UPDATE', payload);
-                    else p2pNet.sendToHost('TOKEN_UPDATE', payload);
+            } else if (stat === 'pe') {
+                token.pe = Math.max(0, Math.min(token.maxPe, token.pe + delta));
+                const peCtx = document.getElementById('ctx-token-pe');
+                if (peCtx) peCtx.innerText = `${token.pe}/${token.maxPe}`;
+                const el = document.getElementById(`token-${token.id}`);
+                if (el) {
+                    const fill = el.querySelector('.token-bar-fill-pe');
+                    if (fill) fill.style.width = `${(token.pe / token.maxPe) * 100}%`;
                 }
+                showFloatingCombatText(token.x + 25, token.y - 10, `${delta > 0 ? '+' : ''}${delta} PE`, 'mana');
+                if (typeof AudioSfxEngine !== 'undefined') AudioSfxEngine.playSpellCast();
+            }
+
+            recordSnapshot('Modificar Atributo');
+            if (p2pNet) {
+                const payload = { id: token.id, hp: token.hp, pe: token.pe, conditions: token.conditions };
+                if (p2pNet.isHost) p2pNet.broadcast('TOKEN_UPDATE', payload);
+                else p2pNet.sendToHost('TOKEN_UPDATE', payload);
             }
         }
 
@@ -1282,6 +1729,7 @@
             if (idx >= 0) token.conditions.splice(idx, 1);
             else token.conditions.push(icon);
             updateTokenConditionsUI(token.id);
+            recordSnapshot('Alternar Condição');
             if (typeof AudioSfxEngine !== 'undefined') {
                 AudioSfxEngine.playConditionToggle();
             }
@@ -1758,6 +2206,9 @@
                 }
                 container.innerHTML = list.map(p => `<div class="flex items-center justify-between bg-slate-950 p-2 rounded border border-slate-800"><span class="text-white font-cinzel font-bold">${p.playerName} <small class="text-gray-400">(${p.characterName})</small></span><span class="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399]"></span></div>`).join('');
             });
+            p2pNet.on('tactical_ping', (data) => {
+                spawnVisualPing(data.x, data.y, data.author, data.color);
+            });
         }
 
         function openMultiplayerModal() { document.getElementById('p2p-modal').classList.remove('hidden'); }
@@ -1945,18 +2396,284 @@
             }
         }
 
-        spawnPlayerToken('Guardião Kuar-Tor', 16, 8, 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80');
-        spawnMonster('Lobo Sombrio', 10, 4, '#ef4444', 'https://images.unsplash.com/photo-1563089145-599997674d42?auto=format&fit=crop&w=200&q=80');
+        // ==========================================
+        // Gerenciamento de Cena & Persistência Local-First
+        // ==========================================
+        function openSceneModal() {
+            const modal = document.getElementById('scene-modal');
+            if (modal) modal.classList.remove('hidden');
+        }
+
+        function closeSceneModal() {
+            const modal = document.getElementById('scene-modal');
+            if (modal) modal.classList.add('hidden');
+        }
+
+        function saveSceneToLocalNow() {
+            if (typeof VttSessionPersistence === 'undefined') return;
+            VttSessionPersistence.saveToLocalStorage(state, { mapUrl: mapImg.src });
+            const badge = document.getElementById('scene-status-badge');
+            if (badge) {
+                badge.innerText = 'Snapshot Salvo!';
+                setTimeout(() => { badge.innerText = 'Pronto'; }, 2000);
+            }
+            showAutoSaveIndicator();
+            if (typeof AudioSfxEngine !== 'undefined') AudioSfxEngine.playSpellCast();
+            appendChatMessage('Cena VTT', 'Snapshot salvo localmente com sucesso.');
+        }
+
+        function loadSceneFromLocalNow() {
+            if (typeof VttSessionPersistence === 'undefined') return;
+            const saved = VttSessionPersistence.loadFromLocalStorage();
+            if (saved) {
+                restoreFromSnapshot(saved);
+                closeSceneModal();
+                recordSnapshot('Restaurar Snapshot');
+                appendChatMessage('Cena VTT', 'Snapshot da cena restaurado com sucesso!');
+            } else {
+                alert('Nenhum snapshot salvo localmente encontrado.');
+            }
+        }
+
+        function exportSceneJsonDownload() {
+            if (typeof VttSessionPersistence === 'undefined') return;
+            const jsonStr = VttSessionPersistence.generateExportJson(state, { mapUrl: mapImg.src });
+            const blob = new Blob([jsonStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `kuar_tor_cena_${Date.now()}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            closeSceneModal();
+            appendChatMessage('Exportação', 'Cenário VTT exportado em arquivo JSON com sucesso.');
+        }
+
+        function importSceneJsonFile(event) {
+            const file = event.target.files?.[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const parsed = VttSessionPersistence.parseImportJson(e.target.result);
+                    restoreFromSnapshot(parsed);
+                    recordSnapshot('Importar Cena');
+                    closeSceneModal();
+                    appendChatMessage('Importação', `Cenário carregado com sucesso (${parsed.name || 'Cena Importada'}).`);
+                } catch (err) {
+                    alert('Erro ao importar arquivo de cena: ' + err.message);
+                }
+            };
+            reader.readAsText(file);
+            event.target.value = '';
+        }
+
+        function resetSceneToDefaults() {
+            if (!confirm('Deseja realmente limpar todos os tokens e resetar o tabuleiro?')) return;
+            state.tokens = {};
+            tokensLayer.innerHTML = '';
+            state.combatants = [];
+            state.currentRound = 1;
+            state.currentTurnIndex = 0;
+            renderInitiativeUI();
+            resetFog(false);
+            if (drawingCtx && drawingCanvas) {
+                drawingCtx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
+            }
+            recordSnapshot('Reset Cena');
+            closeSceneModal();
+            appendChatMessage('Mesa Virtual', 'O tabuleiro foi limpo e reiniciado.');
+        }
+
+        // ==========================================
+        // Conjuração de Círculo / Magia (+2d6)
+        // ==========================================
+        const VTT_SPELLS_CATALOG = {
+            c01: { id: 'c01', name: 'Círculo #01 — Labareda Ígnea', cost: 2, cd: 8, dice: '2d6', bonus: 2, type: 'damage', element: 'Fogo', desc: 'Dispara rajada de fogo elemental causando 2d6+2 de dano no alvo.' },
+            c02: { id: 'c02', name: 'Círculo #02 — Centelha Curativa', cost: 3, cd: 8, dice: '2d6', bonus: 1, type: 'heal', element: 'Luz', desc: 'Canaliza luz revitalizante recuperando 2d6+1 Pontos de Vida do alvo.' },
+            c03: { id: 'c03', name: 'Círculo #03 — Magma Devastador', cost: 4, cd: 10, dice: '2d6', bonus: 5, type: 'damage', element: 'Fogo', desc: 'Funde fogo e terra liberando uma torrente de lava que causa 2d6+5 de dano.' },
+            c05: { id: 'c05', name: 'Círculo #05 — Cataclismo Elemental', cost: 6, cd: 13, dice: '2d6', bonus: 9, type: 'damage', element: 'Fogo', desc: 'Ressonância tríplice que desencadeia catástrofe elemental causando 2d6+9 de dano!' },
+            s62: { id: 's62', name: 'Círculo #62 — Flora Abissal', cost: 4, cd: 10, dice: '2d6', bonus: 4, type: 'damage', element: 'Trevas', desc: 'Brota raízes corrompidas do abismo drenando a essência do alvo por 2d6+4 de dano.' },
+            s120: { id: 's120', name: 'Círculo #120 — Cidades Vivas', cost: 5, cd: 12, dice: '2d6', bonus: 6, type: 'heal', element: 'Vida', desc: 'Aura milagrosa de restauração que regenera 2d6+6 Pontos de Vida do alvo.' }
+        };
+
+        function openTokenSpellModal() {
+            closeContextMenu();
+            const caster = state.tokens[state.selectedTokenId];
+            if (!caster) { alert('Selecione um token para conjurar.'); return; }
+
+            document.getElementById('spell-caster-name').innerText = caster.name;
+            document.getElementById('spell-caster-avatar').src = caster.avatar;
+            document.getElementById('spell-caster-pv').innerText = `${caster.hp}/${caster.maxHp}`;
+            document.getElementById('spell-caster-pe').innerText = `${caster.pe}/${caster.maxPe}`;
+
+            const targetSelect = document.getElementById('spell-target-select');
+            targetSelect.innerHTML = '';
+            Object.values(state.tokens).forEach(tok => {
+                const opt = document.createElement('option');
+                opt.value = tok.id;
+                opt.innerText = `${tok.name} (PV: ${tok.hp}/${tok.maxHp})`;
+                if (tok.id === caster.id) opt.innerText += ' [Próprio Conjurador]';
+                targetSelect.appendChild(opt);
+            });
+
+            updateSelectedSpellPreview();
+            document.getElementById('token-spell-modal').classList.remove('hidden');
+        }
+
+        function closeTokenSpellModal() {
+            const modal = document.getElementById('token-spell-modal');
+            if (modal) modal.classList.add('hidden');
+        }
+
+        function updateSelectedSpellPreview() {
+            const spellId = document.getElementById('spell-select')?.value || 'c01';
+            const spell = VTT_SPELLS_CATALOG[spellId];
+            if (!spell) return;
+            document.getElementById('spell-preview-name').innerText = spell.name;
+            document.getElementById('spell-preview-cost').innerText = `${spell.cost} PE · CD ${spell.cd}`;
+            document.getElementById('spell-preview-desc').innerText = spell.desc;
+        }
+
+        function executeSelectedSpellCast() {
+            const caster = state.tokens[state.selectedTokenId];
+            if (!caster) return;
+
+            const spellId = document.getElementById('spell-select').value;
+            const spell = VTT_SPELLS_CATALOG[spellId];
+            if (!spell) return;
+
+            const targetId = document.getElementById('spell-target-select').value;
+            const target = state.tokens[targetId] || caster;
+
+            if (typeof VttMagicIntegration === 'undefined') {
+                alert('Módulo de magia não carregado.');
+                return;
+            }
+
+            try {
+                const result = VttMagicIntegration.executeSpellCast(caster, target, spell);
+
+                [caster, target].forEach(tok => {
+                    const el = document.getElementById(`token-${tok.id}`);
+                    if (el) {
+                        const hpFill = el.querySelector('.token-bar-fill-hp');
+                        const peFill = el.querySelector('.token-bar-fill-pe');
+                        if (hpFill) hpFill.style.width = `${(tok.hp / tok.maxHp) * 100}%`;
+                        if (peFill) peFill.style.width = `${(tok.pe / tok.maxPe) * 100}%`;
+                    }
+                });
+
+                showFloatingCombatText(caster.x + 25, caster.y - 10, `-${result.spellCost} PE`, 'mana');
+                if (result.success && result.effectAmount > 0) {
+                    if (spell.type === 'heal') {
+                        showFloatingCombatText(target.x + 25, target.y - 15, `+${result.effectAmount} PV`, result.isCritical ? 'crit' : 'heal');
+                    } else {
+                        showFloatingCombatText(target.x + 25, target.y - 15, `-${result.effectAmount} PV`, result.isCritical ? 'crit' : 'damage');
+                    }
+                } else if (result.isFumble) {
+                    showFloatingCombatText(caster.x + 25, caster.y - 15, 'FALHA CRÍTICA!', 'fumble');
+                }
+
+                if (typeof AudioSfxEngine !== 'undefined') {
+                    AudioSfxEngine.playSpellCast();
+                    if (result.isCritical) AudioSfxEngine.playCriticalSuccess();
+                    else if (result.isFumble) AudioSfxEngine.playCriticalFailure();
+                    else if (spell.type === 'heal') AudioSfxEngine.playHeal();
+                    else if (result.success) AudioSfxEngine.playDamageTaken();
+                }
+
+                let outcomeLabel = result.success ? `✓ SUCESSO (vs CD ${spell.cd})` : `✗ FALHA (vs CD ${spell.cd})`;
+                if (result.isCritical) outcomeLabel = '✨ ACERTO CRÍTICO (Dano x1.5)!';
+                if (result.isFumble) outcomeLabel = '💥 FALHA CRÍTICA (Perda de PE sem efeito)!';
+
+                const logText = `🔮 <strong>${caster.name}</strong> conjurou <em>${spell.name}</em> em <strong>${target.name}</strong>!<br>` +
+                    `🎲 [${result.d1} + ${result.d2}] + ${result.bonus} = <strong>${result.totalRoll}</strong> &middot; ${outcomeLabel}<br>` +
+                    (result.success ? `Impacto: <strong>${result.effectAmount} ${spell.type === 'heal' ? 'PV Curados' : 'Dano'}</strong> (Alvo: ${target.hp}/${target.maxHp} PV)` : `O feitiço falhou em surtir efeito.`);
+
+                appendChatMessage('Conjuração Arcana (+2d6)', logText, result.isCritical ? 'crit' : (result.isFumble ? 'fumble' : 'normal'));
+
+                recordSnapshot('Conjuração Arcana');
+                closeTokenSpellModal();
+
+                if (p2pNet) {
+                    const payload = {
+                        caster: { id: caster.id, hp: caster.hp, pe: caster.pe, conditions: caster.conditions },
+                        target: { id: target.id, hp: target.hp, pe: target.pe, conditions: target.conditions }
+                    };
+                    if (p2pNet.isHost) {
+                        p2pNet.broadcast('TOKEN_UPDATE', payload.caster);
+                        p2pNet.broadcast('TOKEN_UPDATE', payload.target);
+                    } else {
+                        p2pNet.sendToHost('TOKEN_UPDATE', payload.caster);
+                        p2pNet.sendToHost('TOKEN_UPDATE', payload.target);
+                    }
+                }
+            } catch (err) {
+                alert('Erro na conjuração: ' + err.message);
+            }
+        }
+
+        // ==========================================
+        // Atalhos de Teclado & Inicialização de Cena
+        // ==========================================
+        function setupShortcuts() {
+            if (typeof VttShortcutsController === 'undefined') return;
+            VttShortcutsController.createController({
+                undo: () => triggerUndo(),
+                redo: () => triggerRedo(),
+                deleteToken: () => deleteSelectedToken(),
+                escape: () => {
+                    closeContextMenu();
+                    closeSceneModal();
+                    closeTokenSpellModal();
+                    closeBestiaryModal();
+                    closeMultiplayerModal();
+                    closeMapModal();
+                    closeCharModal();
+                    selectToken(null);
+                },
+                toolSelect: () => setTool('select'),
+                toolRuler: () => setTool('ruler'),
+                toolFog: () => setTool('fog'),
+                toolDraw: () => setTool('draw'),
+                toolPing: () => setTool('ping'),
+                toggleGrid: () => toggleGrid(),
+                toggleTracker: () => toggleTurnTracker(),
+                nextTurn: () => advanceCombatTurn()
+            });
+        }
+
+        function initInitialScene() {
+            let loaded = false;
+            if (typeof VttSessionPersistence !== 'undefined') {
+                const saved = VttSessionPersistence.loadFromLocalStorage();
+                if (saved && saved.tokens && Object.keys(saved.tokens).length > 0) {
+                    restoreFromSnapshot(saved);
+                    loaded = true;
+                }
+            }
+            if (!loaded) {
+                spawnPlayerToken('Guardião Kuar-Tor', 16, 8, 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80');
+                spawnMonster('Lobo Sombrio', 10, 4, '#ef4444', 'https://images.unsplash.com/photo-1563089145-599997674d42?auto=format&fit=crop&w=200&q=80');
+            }
+            recordSnapshot('Cena Inicial');
+        }
 
         window.addEventListener('DOMContentLoaded', () => {
             setupFirestoreListeners();
+            setupShortcuts();
+            initDrawingCanvas();
+            initInitialScene();
 
             // Sincronização automática com herói vindo da Ficha de Personagem (Pilar 4)
             try {
                 const activeHeroRaw = localStorage.getItem('kuartor_active_vtt_character');
                 if (activeHeroRaw) {
                     const hero = JSON.parse(activeHeroRaw);
-                    if (hero && hero.name) {
+                    if (hero && hero.name && !state.tokens[hero.id]) {
                         spawnPlayerToken(hero.name, hero.hp || 16, hero.pe || 8, hero.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80');
                         console.log(`[VTT] Herói "${hero.name}" carregado automaticamente da Ficha.`);
                     }

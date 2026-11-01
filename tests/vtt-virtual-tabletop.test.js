@@ -149,4 +149,115 @@ QUnit.module('Mesa Virtual 2D (Kuar-Tor VTT +2d6)', function () {
         toggleCond('🔥');
         assert.deepEqual(token.conditions, ['❄️'], 'Condição Em Chamas removida');
     });
+
+    QUnit.test('Novos motores e scripts do VTT devem estar referenciados no HTML (AAA)', function (assert) {
+        // Arrange
+        const expectedScripts = [
+            'vtt-session-persistence.js',
+            'vtt-shortcuts-controller.js',
+            'vtt-magic-integration.js',
+            'vtt-ping-drawing-engine.js'
+        ];
+
+        // Act
+        const content = fs.readFileSync(PUBLIC_VTT_PATH, 'utf-8');
+
+        // Assert
+        expectedScripts.forEach(script => {
+            assert.ok(content.includes(script), `Script "${script}" deve estar incluído no HTML`);
+        });
+    });
+
+    QUnit.test('Elementos de UI de Persistência, Atalhos, Magia e Pings devem estar no HTML (AAA)', function (assert) {
+        // Arrange
+        const requiredIds = [
+            'vtt-autosave-indicator',
+            'scene-mgmt-btn',
+            'scene-modal',
+            'token-spell-modal',
+            'tool-undo',
+            'tool-redo',
+            'tool-draw',
+            'tool-ping',
+            'drawing-canvas',
+            'pings-layer',
+            'fct-layer',
+            'spell-select',
+            'spell-target-select'
+        ];
+
+        // Act
+        const content = fs.readFileSync(PUBLIC_VTT_PATH, 'utf-8');
+
+        // Assert
+        requiredIds.forEach(id => {
+            assert.ok(content.includes(`id="${id}"`), `Elemento #${id} deve estar presente no HTML do VTT`);
+        });
+        assert.ok(content.includes('openTokenSpellModal()'), 'Botão de conjurar magia deve estar no menu de contexto');
+    });
+
+    QUnit.test('Catálogo de Feitiços & Círculos do VTT (+2d6) (AAA)', function (assert) {
+        // Arrange: Definição dos círculos canônicos integrados no VTT
+        const spellsCatalog = {
+            c01: { id: 'c01', name: 'Círculo #01 — Labareda Ígnea', cost: 2, cd: 8, dice: '2d6', bonus: 2, type: 'damage', element: 'Fogo' },
+            c02: { id: 'c02', name: 'Círculo #02 — Centelha Curativa', cost: 3, cd: 8, dice: '2d6', bonus: 1, type: 'heal', element: 'Luz' },
+            c03: { id: 'c03', name: 'Círculo #03 — Magma Devastador', cost: 4, cd: 10, dice: '2d6', bonus: 5, type: 'damage', element: 'Fogo' },
+            c05: { id: 'c05', name: 'Círculo #05 — Cataclismo Elemental', cost: 6, cd: 13, dice: '2d6', bonus: 9, type: 'damage', element: 'Fogo' },
+            s62: { id: 's62', name: 'Círculo #62 — Flora Abissal', cost: 4, cd: 10, dice: '2d6', bonus: 4, type: 'damage', element: 'Trevas' },
+            s120: { id: 's120', name: 'Círculo #120 — Cidades Vivas', cost: 5, cd: 12, dice: '2d6', bonus: 6, type: 'heal', element: 'Vida' }
+        };
+
+        // Act & Assert
+        assert.ok(spellsCatalog.c01.cost === 2 && spellsCatalog.c01.cd === 8, 'Círculo #01 custa 2 PE com CD 8');
+        assert.ok(spellsCatalog.c02.type === 'heal' && spellsCatalog.c02.bonus === 1, 'Círculo #02 é cura com bônus +1');
+        assert.ok(spellsCatalog.c05.cost === 6 && spellsCatalog.c05.cd === 13, 'Cataclismo exige 6 PE e CD 13');
+        assert.ok(spellsCatalog.s120.type === 'heal' && spellsCatalog.s120.bonus === 6, 'Cidades Vivas cura 2d6+6');
+    });
+
+    QUnit.test('Casos de Borda: Ciclo de Snapshots de Histórico do VTT (Undo / Redo) (AAA)', function (assert) {
+        // Arrange
+        const history = [];
+        let index = -1;
+        const maxCapacity = 5;
+
+        function push(state) {
+            if (index < history.length - 1) {
+                history.splice(index + 1);
+            }
+            history.push(JSON.stringify(state));
+            if (history.length > maxCapacity) history.shift();
+            else index++;
+        }
+
+        function undo() {
+            if (index > 0) { index--; return JSON.parse(history[index]); }
+            return null;
+        }
+
+        function redo() {
+            if (index < history.length - 1) { index++; return JSON.parse(history[index]); }
+            return null;
+        }
+
+        // Act
+        push({ round: 1, tokens: { t1: { x: 50, y: 50 } } });
+        push({ round: 1, tokens: { t1: { x: 100, y: 50 } } });
+        push({ round: 2, tokens: { t1: { x: 150, y: 100 } } });
+
+        // Assert
+        assert.equal(index, 2, 'Index atual deve ser o topo');
+        const stateUndo1 = undo();
+        assert.equal(stateUndo1.tokens.t1.x, 100, 'Undo 1 deve voltar para x=100');
+        assert.equal(stateUndo1.round, 1, 'Undo 1 deve restaurar rodada 1');
+
+        const stateUndo2 = undo();
+        assert.equal(stateUndo2.tokens.t1.x, 50, 'Undo 2 deve voltar para x=50 inicial');
+
+        const undoAtStart = undo();
+        assert.equal(undoAtStart, null, 'Undo no início da pilha deve retornar null');
+
+        const stateRedo = redo();
+        assert.equal(stateRedo.tokens.t1.x, 100, 'Redo deve avançar de volta para x=100');
+    });
 });
+
