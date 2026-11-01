@@ -27,6 +27,10 @@
     <script src="../src/core/magic-circle-generator.js"></script>
     <script src="circulos_magia_data.js"></script>
     <script src="../src/core/magic-forge-system.js"></script>
+    <script src="../src/core/magic-progression-system.js"></script>
+    <script src="../src/core/magic-cooperation-system.js"></script>
+    <script src="../src/core/magic-exploration-system.js"></script>
+    <script src="../src/core/magic-immersion-system.js"></script>
     
     <style>
         :root {
@@ -942,6 +946,88 @@
             @keyframes node-rotate-cw-legacy { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         }
 
+        /* ===== 3D DICE ROLLER & IMMERSION STYLES ===== */
+        .dice-3d-stage {
+            perspective: 600px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 14px;
+            margin: 8px 0;
+        }
+        .die-3d {
+            width: 42px;
+            height: 42px;
+            background: radial-gradient(circle at 30% 30%, #334155, #0f172a 80%);
+            border: 2px solid #38bdf8;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Cinzel', serif;
+            font-weight: 900;
+            font-size: 20px;
+            color: #ffffff;
+            box-shadow: 0 4px 15px rgba(56, 189, 248, 0.4), inset 0 0 8px rgba(102, 252, 241, 0.3);
+            transform-style: preserve-3d;
+            transition: transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .die-3d.crit-success {
+            border-color: #fbbf24;
+            color: #fbbf24;
+            box-shadow: 0 0 20px rgba(251, 191, 36, 0.8);
+        }
+        .die-3d.crit-fumble {
+            border-color: #ef4444;
+            color: #ef4444;
+            box-shadow: 0 0 20px rgba(239, 68, 68, 0.8);
+        }
+        .die-3d.rolling {
+            animation: dieTumble 0.55s ease-out;
+        }
+        @keyframes dieTumble {
+            0% { transform: rotateX(0deg) rotateY(0deg) rotateZ(0deg) scale(0.8); }
+            40% { transform: rotateX(360deg) rotateY(180deg) rotateZ(240deg) scale(1.2); }
+            70% { transform: rotateX(540deg) rotateY(300deg) rotateZ(420deg) scale(1.05); }
+            100% { transform: rotateX(720deg) rotateY(360deg) rotateZ(720deg) scale(1); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .die-3d.rolling { animation: none; }
+        }
+
+        /* Tabs de Navegação em Modais */
+        .modal-subtab-bar {
+            display: flex;
+            gap: 6px;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+            padding-bottom: 8px;
+            margin-bottom: 14px;
+            overflow-x: auto;
+        }
+        .modal-subtab-btn {
+            background: rgba(15, 23, 42, 0.7);
+            border: 1px solid rgba(148, 163, 184, 0.25);
+            border-radius: 6px;
+            padding: 6px 12px;
+            font-size: 11px;
+            font-family: 'Cinzel', serif;
+            font-weight: 700;
+            color: #94a3b8;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+        .modal-subtab-btn:hover {
+            color: #ffffff;
+            border-color: var(--rpg-cyan);
+        }
+        .modal-subtab-btn.active {
+            background: rgba(102, 252, 241, 0.15);
+            border-color: var(--rpg-cyan);
+            color: var(--rpg-cyan);
+            box-shadow: 0 0 10px rgba(102, 252, 241, 0.25);
+        }
+
         /* ===== MODAL: TABELA DE FUSÕES ===== */
         #fusion-table-overlay {
             position: fixed;
@@ -1271,6 +1357,30 @@
             <button onclick="openPuzzlesModal()" class="btn-fusion-toggle" style="background: linear-gradient(135deg, rgba(16,185,129,0.25), rgba(6,182,212,0.2)); border-color: #10b981; color: #6ee7b7;" title="Puzzles & Portas de Masmorras Arcanas">
                 <i class="fa-solid fa-dungeon"></i>
                 <span class="hidden md:inline">Puzzles</span>
+            </button>
+
+            <!-- Botão de Mana da Party (Reservatório Compartilhado) -->
+            <button onclick="openManaPoolModal()" class="btn-fusion-toggle" style="background: linear-gradient(135deg, rgba(168,85,247,0.25), rgba(99,102,241,0.2)); border-color: #a855f7; color: #d8b4fe;" title="Reservatório de Mana da Party (Compartilhamento e Doação de PE)">
+                <i class="fa-solid fa-gem"></i>
+                <span class="hidden md:inline">Party PE: <strong id="hud-pool-pe">12</strong></span>
+            </button>
+
+            <!-- Botão de Exportação do Grimório (PDF / Ficha) -->
+            <button onclick="exportGrimoireDoc()" class="btn-fusion-toggle" style="background: linear-gradient(135deg, rgba(234,179,8,0.25), rgba(202,138,4,0.2)); border-color: #eab308; color: #fde047;" title="Exportar Grimório Imprimível para colar na Ficha">
+                <i class="fa-solid fa-file-pdf"></i>
+                <span class="hidden md:inline">Exportar Grimório</span>
+            </button>
+
+            <!-- Botão de Modo Mestre (Eventos Arcanos Globais) -->
+            <button onclick="openMasterModeModal()" class="btn-fusion-toggle" style="background: linear-gradient(135deg, rgba(239,68,68,0.25), rgba(185,28,28,0.2)); border-color: #ef4444; color: #fca5a5;" title="Modo Mestre (Eventos Globais e Monitor de Mesa)">
+                <i class="fa-solid fa-crown"></i>
+                <span class="hidden md:inline">Modo Mestre</span>
+            </button>
+
+            <!-- Botão de Conquistas Mágicas -->
+            <button onclick="openAchievementsModal()" class="btn-fusion-toggle" style="background: linear-gradient(135deg, rgba(16,185,129,0.25), rgba(13,148,136,0.2)); border-color: #10b981; color: #6ee7b7;" title="Conquistas Mágicas Desbloqueadas">
+                <i class="fa-solid fa-trophy"></i>
+                <span class="hidden md:inline">Conquistas (<span id="hud-achievements-count">0</span>)</span>
             </button>
 
             <!-- Botão do Compêndio de 186 Círculos de Magia -->
@@ -1789,6 +1899,16 @@
                 <button onclick="closeRitualsModal()" class="text-gray-400 hover:text-white bg-transparent border-0 text-xl cursor-pointer"><i class="fa-solid fa-xmark"></i></button>
             </div>
 
+            <!-- Subtab Bar: Clássico vs Tríade com Papéis -->
+            <div class="modal-subtab-bar">
+                <button type="button" class="modal-subtab-btn active" id="btn-subtab-ritual-classic" onclick="switchRitualSubtab('classic')">
+                    <i class="fa-solid fa-users mr-1"></i> Modo Dupla (2 Magos)
+                </button>
+                <button type="button" class="modal-subtab-btn" id="btn-subtab-ritual-triad" onclick="switchRitualSubtab('triad')">
+                    <i class="fa-solid fa-crown mr-1 text-amber-400"></i> Tríade com Papéis (Condutor, Estabilizador, Canalizador)
+                </button>
+            </div>
+
             <!-- Seleção do Círculo Alvo -->
             <div class="mb-4">
                 <label class="block text-xs font-cinzel text-sky-300 font-bold mb-1.5"><i class="fa-solid fa-bullseye mr-1"></i> Círculo Alvo do Ritual (Secundus ou Terceirus):</label>
@@ -1801,80 +1921,164 @@
                 </select>
             </div>
 
-            <!-- Grade dos Magos Participantes -->
-            <div class="mb-4">
-                <span class="text-xs font-cinzel font-bold text-gray-300 block mb-2"><i class="fa-solid fa-hands-holding-circle mr-1 text-sky-400"></i> Magos Conjuradores Participantes:</span>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-3" id="ritual-mages-grid">
-                    <!-- Mago 1 -->
-                    <div class="bg-slate-950/80 border border-slate-800 rounded-lg p-3">
-                        <div class="flex justify-between items-center mb-2">
-                            <span class="text-xs font-bold text-amber-300 font-cinzel"><i class="fa-solid fa-user-astronaut mr-1"></i> Mago A (Você)</span>
-                            <span class="text-[10px] text-gray-400">PE: <input type="number" id="ritual-mago1-pe" value="8" class="w-12 bg-slate-900 border border-slate-700 rounded text-center text-cyan-300 font-bold" oninput="updateRitualPreview()"></span>
+            <!-- MODO 1: RITUAL CLÁSSICO DUPLA (2 MAGOS) -->
+            <div id="ritual-mode-classic-container">
+                <!-- Grade dos Magos Participantes -->
+                <div class="mb-4">
+                    <span class="text-xs font-cinzel font-bold text-gray-300 block mb-2"><i class="fa-solid fa-hands-holding-circle mr-1 text-sky-400"></i> Magos Conjuradores Participantes:</span>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3" id="ritual-mages-grid">
+                        <!-- Mago 1 -->
+                        <div class="bg-slate-950/80 border border-slate-800 rounded-lg p-3">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-xs font-bold text-amber-300 font-cinzel"><i class="fa-solid fa-user-astronaut mr-1"></i> Mago A (Você)</span>
+                                <span class="text-[10px] text-gray-400">PE: <input type="number" id="ritual-mago1-pe" value="8" class="w-12 bg-slate-900 border border-slate-700 rounded text-center text-cyan-300 font-bold" oninput="updateRitualPreview()"></span>
+                            </div>
+                            <label class="text-[11px] text-gray-400 block mb-1">Caminhos Dominados:</label>
+                            <select id="ritual-mago1-path" onchange="updateRitualPreview()" class="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-xs text-white">
+                                <option value="fogo">🔥 Fogo (Elemental)</option>
+                                <option value="agua">💧 Água (Elemental)</option>
+                                <option value="ar">💨 Ar (Elemental)</option>
+                                <option value="terra">⛰️ Terra (Elemental)</option>
+                                <option value="luz">☀️ Luz (Elemental)</option>
+                                <option value="trevas">🌑 Trevas (Elemental)</option>
+                                <option value="plantas">🌿 Plantas (Vital)</option>
+                                <option value="spiritum">👻 Spiritum (Arcano)</option>
+                                <option value="arkanum">👿 Arkanum (Arcano)</option>
+                                <option value="metamagia">♾️ Metamagia (Arcano)</option>
+                            </select>
                         </div>
-                        <label class="text-[11px] text-gray-400 block mb-1">Caminhos Dominados:</label>
-                        <select id="ritual-mago1-path" onchange="updateRitualPreview()" class="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-xs text-white">
-                            <option value="fogo">🔥 Fogo (Elemental)</option>
-                            <option value="agua">💧 Água (Elemental)</option>
-                            <option value="ar">💨 Ar (Elemental)</option>
-                            <option value="terra">⛰️ Terra (Elemental)</option>
-                            <option value="luz">☀️ Luz (Elemental)</option>
-                            <option value="trevas">🌑 Trevas (Elemental)</option>
-                            <option value="plantas">🌿 Plantas (Vital)</option>
-                            <option value="spiritum">👻 Spiritum (Arcano)</option>
-                            <option value="arkanum">👿 Arkanum (Arcano)</option>
-                            <option value="metamagia">♾️ Metamagia (Arcano)</option>
-                        </select>
+                        <!-- Mago 2 -->
+                        <div class="bg-slate-950/80 border border-slate-800 rounded-lg p-3">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-xs font-bold text-sky-300 font-cinzel"><i class="fa-solid fa-user-group mr-1"></i> Mago B (Aliado)</span>
+                                <span class="text-[10px] text-gray-400">PE: <input type="number" id="ritual-mago2-pe" value="8" class="w-12 bg-slate-900 border border-slate-700 rounded text-center text-cyan-300 font-bold" oninput="updateRitualPreview()"></span>
+                            </div>
+                            <label class="text-[11px] text-gray-400 block mb-1">Caminhos Dominados (pode ser duplo):</label>
+                            <select id="ritual-mago2-path" onchange="updateRitualPreview()" class="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-xs text-white">
+                                <option value="ar+terra">💨 Ar + ⛰️ Terra (Duplo)</option>
+                                <option value="spiritum+metamagia">👻 Spiritum + ♾️ Metamagia (Duplo)</option>
+                                <option value="humanos+metamagia">👤 Humanos + ♾️ Metamagia (Duplo)</option>
+                                <option value="terra">⛰️ Terra</option>
+                                <option value="ar">💨 Ar</option>
+                                <option value="agua">💧 Água</option>
+                                <option value="plantas">🌿 Plantas</option>
+                            </select>
+                        </div>
                     </div>
-                    <!-- Mago 2 -->
-                    <div class="bg-slate-950/80 border border-slate-800 rounded-lg p-3">
-                        <div class="flex justify-between items-center mb-2">
-                            <span class="text-xs font-bold text-sky-300 font-cinzel"><i class="fa-solid fa-user-group mr-1"></i> Mago B (Aliado)</span>
-                            <span class="text-[10px] text-gray-400">PE: <input type="number" id="ritual-mago2-pe" value="8" class="w-12 bg-slate-900 border border-slate-700 rounded text-center text-cyan-300 font-bold" oninput="updateRitualPreview()"></span>
+                </div>
+
+                <!-- Painel de Divisão de PE & Sinergia -->
+                <div id="ritual-plan-box" class="bg-slate-950/90 border border-sky-500/30 rounded-xl p-4 mb-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-center mb-3">
+                        <div class="p-2 bg-slate-900/60 rounded">
+                            <span class="text-[10px] text-gray-400 uppercase tracking-wider block">Custo Total de PE</span>
+                            <strong class="text-sm text-cyan-300" id="ritual-disp-pe">8 PEs</strong>
                         </div>
-                        <label class="text-[11px] text-gray-400 block mb-1">Caminhos Dominados (pode ser duplo):</label>
-                        <select id="ritual-mago2-path" onchange="updateRitualPreview()" class="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-xs text-white">
-                            <option value="ar+terra">💨 Ar + ⛰️ Terra (Duplo)</option>
-                            <option value="spiritum+metamagia">👻 Spiritum + ♾️ Metamagia (Duplo)</option>
-                            <option value="humanos+metamagia">👤 Humanos + ♾️ Metamagia (Duplo)</option>
-                            <option value="terra">⛰️ Terra</option>
+                        <div class="p-2 bg-slate-900/60 rounded">
+                            <span class="text-[10px] text-gray-400 uppercase tracking-wider block">Divisão por Mago</span>
+                            <strong class="text-sm text-white" id="ritual-disp-share">4 PEs / cada</strong>
+                        </div>
+                        <div class="p-2 bg-slate-900/60 rounded">
+                            <span class="text-[10px] text-gray-400 uppercase tracking-wider block">Bônus de Sinergia (+2d6)</span>
+                            <strong class="text-sm text-amber-400" id="ritual-disp-synergy">+1 Bônus de Equipe</strong>
+                        </div>
+                    </div>
+                    <div id="ritual-diagnostic-msg" class="text-xs text-center font-cinzel font-bold text-emerald-400">
+                        ✓ A união dos conjuradores cobre perfeitamente todos os caminhos do Círculo!
+                    </div>
+                </div>
+
+                <!-- Botão de Conjuração Cooperativa -->
+                <div class="flex flex-col sm:flex-row items-center justify-between gap-3">
+                    <div class="text-xs text-gray-400">
+                        <i class="fa-solid fa-dice mr-1 text-sky-400"></i> Rolagem: <strong>2d6 + Média Mágica + Sinergia Cooperativa</strong>
+                    </div>
+                    <button onclick="performCooperativeRitualAction()" class="w-full sm:w-auto px-6 py-2.5 rounded-lg bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white font-cinzel font-bold text-xs flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-sky-500/20">
+                        <i class="fa-solid fa-sparkles"></i>
+                        <span>Canalizar Ritual Cooperativo</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- MODO 2: TRÍADE DE RITUAIS COM PAPÉIS (CONDUTOR, ESTABILIZADOR, CANALIZADOR) -->
+            <div id="ritual-mode-triad-container" class="hidden">
+                <div class="p-3 bg-amber-950/30 border border-amber-500/30 rounded-xl mb-3 text-xs text-amber-200 leading-relaxed">
+                    <i class="fa-solid fa-triangle-exclamation mr-1 text-amber-400"></i>
+                    <strong>Regra da Tríade Arcana (+2d6):</strong> Cada mago assume um papel místico na conjuração de rituais épicos. Cada membro rola 2d6 individualmente: o <strong>Condutor</strong> lidera e concede bônus, o <strong>Estabilizador</strong> previne instabilidade arcana (se falhar com 2 natural colapsa!), e o <strong>Canalizador</strong> injeta mana bruta (reduz CD e custo de PE).
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+                    <!-- Papel 1: Condutor -->
+                    <div class="bg-slate-950/80 border border-amber-500/50 rounded-lg p-3">
+                        <div class="flex items-center justify-between mb-1.5">
+                            <span class="text-xs font-cinzel font-bold text-amber-300"><i class="fa-solid fa-wand-magic-sparkles mr-1"></i> CONDUTOR</span>
+                            <span class="text-[9px] bg-amber-950 px-1.5 py-0.5 rounded text-amber-300 font-mono">Foco</span>
+                        </div>
+                        <input type="text" id="triad-p1-name" value="Mago Líder (Você)" class="w-full bg-slate-900 border border-slate-700 rounded p-1 text-xs text-white mb-2" placeholder="Nome">
+                        <label class="text-[10px] text-gray-400 block mb-1">Caminhos Dominados:</label>
+                        <select id="triad-p1-paths" class="w-full bg-slate-900 border border-slate-700 rounded p-1 text-xs text-white mb-2">
+                            <option value="fogo">🔥 Fogo</option>
                             <option value="ar">💨 Ar</option>
-                            <option value="agua">💧 Água</option>
-                            <option value="plantas">🌿 Plantas</option>
+                            <option value="terra">⛰️ Terra</option>
+                            <option value="fogo,ar">🔥 Fogo + 💨 Ar</option>
                         </select>
+                        <div class="flex justify-between items-center text-[10px] text-gray-300">
+                            <span>Bônus: <input type="number" id="triad-p1-bonus" value="3" class="w-10 bg-slate-900 border border-slate-700 rounded text-center text-amber-300 font-bold"></span>
+                            <span>PE: <input type="number" id="triad-p1-pe" value="8" class="w-10 bg-slate-900 border border-slate-700 rounded text-center text-cyan-300 font-bold"></span>
+                        </div>
                     </div>
-                </div>
-            </div>
 
-            <!-- Painel de Divisão de PE & Sinergia -->
-            <div id="ritual-plan-box" class="bg-slate-950/90 border border-sky-500/30 rounded-xl p-4 mb-4">
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-center mb-3">
-                    <div class="p-2 bg-slate-900/60 rounded">
-                        <span class="text-[10px] text-gray-400 uppercase tracking-wider block">Custo Total de PE</span>
-                        <strong class="text-sm text-cyan-300" id="ritual-disp-pe">8 PEs</strong>
+                    <!-- Papel 2: Estabilizador -->
+                    <div class="bg-slate-950/80 border border-sky-500/50 rounded-lg p-3">
+                        <div class="flex items-center justify-between mb-1.5">
+                            <span class="text-xs font-cinzel font-bold text-sky-300"><i class="fa-solid fa-shield-halved mr-1"></i> ESTABILIZADOR</span>
+                            <span class="text-[9px] bg-sky-950 px-1.5 py-0.5 rounded text-sky-300 font-mono">Segurança</span>
+                        </div>
+                        <input type="text" id="triad-p2-name" value="Guardião Rúnico" class="w-full bg-slate-900 border border-slate-700 rounded p-1 text-xs text-white mb-2" placeholder="Nome">
+                        <label class="text-[10px] text-gray-400 block mb-1">Caminhos Dominados:</label>
+                        <select id="triad-p2-paths" class="w-full bg-slate-900 border border-slate-700 rounded p-1 text-xs text-white mb-2">
+                            <option value="ar">💨 Ar</option>
+                            <option value="terra">⛰️ Terra</option>
+                            <option value="spiritum">👻 Spiritum</option>
+                            <option value="ar,terra">💨 Ar + ⛰️ Terra</option>
+                        </select>
+                        <div class="flex justify-between items-center text-[10px] text-gray-300">
+                            <span>Bônus: <input type="number" id="triad-p2-bonus" value="2" class="w-10 bg-slate-900 border border-slate-700 rounded text-center text-sky-300 font-bold"></span>
+                            <span>PE: <input type="number" id="triad-p2-pe" value="8" class="w-10 bg-slate-900 border border-slate-700 rounded text-center text-cyan-300 font-bold"></span>
+                        </div>
                     </div>
-                    <div class="p-2 bg-slate-900/60 rounded">
-                        <span class="text-[10px] text-gray-400 uppercase tracking-wider block">Divisão por Mago</span>
-                        <strong class="text-sm text-white" id="ritual-disp-share">4 PEs / cada</strong>
-                    </div>
-                    <div class="p-2 bg-slate-900/60 rounded">
-                        <span class="text-[10px] text-gray-400 uppercase tracking-wider block">Bônus de Sinergia (+2d6)</span>
-                        <strong class="text-sm text-amber-400" id="ritual-disp-synergy">+1 Bônus de Equipe</strong>
-                    </div>
-                </div>
-                <div id="ritual-diagnostic-msg" class="text-xs text-center font-cinzel font-bold text-emerald-400">
-                    ✓ A união dos conjuradores cobre perfeitamente todos os caminhos do Círculo!
-                </div>
-            </div>
 
-            <!-- Botão de Conjuração Cooperativa -->
-            <div class="flex flex-col sm:flex-row items-center justify-between gap-3">
-                <div class="text-xs text-gray-400">
-                    <i class="fa-solid fa-dice mr-1 text-sky-400"></i> Rolagem: <strong>2d6 + Média Mágica + Sinergia Cooperativa</strong>
+                    <!-- Papel 3: Canalizador -->
+                    <div class="bg-slate-950/80 border border-purple-500/50 rounded-lg p-3">
+                        <div class="flex items-center justify-between mb-1.5">
+                            <span class="text-xs font-cinzel font-bold text-purple-300"><i class="fa-solid fa-bolt-lightning mr-1"></i> CANALIZADOR</span>
+                            <span class="text-[9px] bg-purple-950 px-1.5 py-0.5 rounded text-purple-300 font-mono">Potência</span>
+                        </div>
+                        <input type="text" id="triad-p3-name" value="Fonte de Mana" class="w-full bg-slate-900 border border-slate-700 rounded p-1 text-xs text-white mb-2" placeholder="Nome">
+                        <label class="text-[10px] text-gray-400 block mb-1">Caminhos Dominados:</label>
+                        <select id="triad-p3-paths" class="w-full bg-slate-900 border border-slate-700 rounded p-1 text-xs text-white mb-2">
+                            <option value="terra">⛰️ Terra</option>
+                            <option value="metamagia">♾️ Metamagia</option>
+                            <option value="fogo">🔥 Fogo</option>
+                            <option value="terra,metamagia">⛰️ Terra + ♾️ Metamagia</option>
+                        </select>
+                        <div class="flex justify-between items-center text-[10px] text-gray-300">
+                            <span>Bônus: <input type="number" id="triad-p3-bonus" value="2" class="w-10 bg-slate-900 border border-slate-700 rounded text-center text-purple-300 font-bold"></span>
+                            <span>PE: <input type="number" id="triad-p3-pe" value="8" class="w-10 bg-slate-900 border border-slate-700 rounded text-center text-cyan-300 font-bold"></span>
+                        </div>
+                    </div>
                 </div>
-                <button onclick="performCooperativeRitualAction()" class="w-full sm:w-auto px-6 py-2.5 rounded-lg bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white font-cinzel font-bold text-xs flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-sky-500/20">
-                    <i class="fa-solid fa-sparkles"></i>
-                    <span>Canalizar Ritual Cooperativo</span>
-                </button>
+
+                <!-- Botão de Ativação da Tríade -->
+                <div class="flex flex-col sm:flex-row items-center justify-between gap-3">
+                    <div class="text-xs text-gray-400">
+                        <i class="fa-solid fa-dice-d6 mr-1 text-amber-400"></i> Rolagem: <strong>2d6 individual por papel com mitigação de surto</strong>
+                    </div>
+                    <button onclick="performTriadRoleRitualAction()" class="w-full sm:w-auto px-6 py-2.5 rounded-lg bg-gradient-to-r from-amber-500 to-purple-600 hover:from-amber-400 hover:to-purple-500 text-black font-cinzel font-bold text-xs flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-amber-500/20">
+                        <i class="fa-solid fa-hands-sparkles"></i>
+                        <span>Conjurar Tríade com Papéis (+2d6)</span>
+                    </button>
+                </div>
             </div>
 
             <!-- Resultado do Ritual -->
@@ -1890,90 +2094,391 @@
 
     <!-- ===== MODAL 3: PUZZLES & MASMORRAS ARCANAS ===== -->
     <div id="modal-puzzles-overlay" class="modal-overlay" onclick="closePuzzlesOnBackdrop(event)">
-        <div class="glass-panel" style="max-width: 760px; width: 95%; max-height: 90vh; overflow-y: auto; background: rgba(15, 23, 42, 0.98); border: 2px solid #10b981; box-shadow: 0 0 35px rgba(16,185,129,0.25);">
+        <div class="glass-panel" style="max-width: 800px; width: 95%; max-height: 90vh; overflow-y: auto; background: rgba(15, 23, 42, 0.98); border: 2px solid #10b981; box-shadow: 0 0 35px rgba(16,185,129,0.25);">
             <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(16,185,129,0.3); padding-bottom:10px; margin-bottom:14px;">
                 <div style="display:flex; align-items:center; gap:10px;">
                     <i class="fa-solid fa-dungeon text-emerald-400 text-xl"></i>
                     <div>
                         <h2 class="font-cinzel text-lg font-bold text-emerald-300">Puzzles de Masmorra & Portas Seladas</h2>
-                        <p class="text-xs text-gray-400">Decifre o Círculo Mágico incompleto gravado na porta e canalize a mana certa para quebrar o selo!</p>
+                        <p class="text-xs text-gray-400">Decifre selos rúnicos, portas sequenciais, enigmas por dedução e salas de masmorra</p>
                     </div>
                 </div>
                 <button onclick="closePuzzlesModal()" class="text-gray-400 hover:text-white bg-transparent border-0 text-xl cursor-pointer"><i class="fa-solid fa-xmark"></i></button>
             </div>
 
-            <!-- Seleção de Desafio / Porta -->
-            <div class="mb-4">
-                <label class="block text-xs font-cinzel text-emerald-300 font-bold mb-1.5"><i class="fa-solid fa-door-closed mr-1"></i> Escolha a Porta Ancestral Selada:</label>
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-2" id="puzzle-doors-selector">
-                    <button onclick="selectDungeonPuzzle(0)" id="pdoor-btn-0" class="p-2.5 rounded-lg border border-emerald-500/50 bg-slate-900 hover:bg-slate-800 text-left cursor-pointer transition-all">
-                        <span class="text-[10px] text-emerald-400 font-mono block">SECUNDUS</span>
-                        <strong class="text-xs text-white block">Câmara Vulcânica</strong>
-                    </button>
-                    <button onclick="selectDungeonPuzzle(1)" id="pdoor-btn-1" class="p-2.5 rounded-lg border border-slate-700 bg-slate-900 hover:bg-slate-800 text-left cursor-pointer transition-all">
-                        <span class="text-[10px] text-amber-400 font-mono block">TERCEIRUS</span>
-                        <strong class="text-xs text-white block">Três Flagelos (Cataclismo)</strong>
-                    </button>
-                    <button onclick="selectDungeonPuzzle(2)" id="pdoor-btn-2" class="p-2.5 rounded-lg border border-slate-700 bg-slate-900 hover:bg-slate-800 text-left cursor-pointer transition-all">
-                        <span class="text-[10px] text-cyan-400 font-mono block">TERCEIRUS</span>
-                        <strong class="text-xs text-white block">Cidade Viva</strong>
-                    </button>
-                </div>
-            </div>
-
-            <!-- Card de Enigma da Porta com Círculo Incompleto -->
-            <div class="bg-slate-950/90 border border-emerald-500/30 rounded-xl p-4 mb-4">
-                <h3 class="font-cinzel text-base font-bold text-white mb-1" id="puzzle-door-title">A Porta da Câmara Vulcânica</h3>
-                <p class="text-xs text-gray-300 leading-relaxed mb-3" id="puzzle-door-desc">Porta de basalto incandescente gravada com chamas. O conduto inferior está esculpido como uma montanha oca que aguarda contato telúrico.</p>
-
-                <!-- Estado dos Condutos da Porta -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 bg-slate-900/80 rounded-lg mb-3">
-                    <div>
-                        <span class="text-[10px] font-mono text-emerald-400 uppercase tracking-widest block mb-1">Canais Já Acesos na Porta:</span>
-                        <div id="puzzle-active-channels" class="flex flex-wrap gap-1.5"></div>
-                    </div>
-                    <div>
-                        <span class="text-[10px] font-mono text-amber-400 uppercase tracking-widest block mb-1">Canais Apagados (Deduzir):</span>
-                        <div id="puzzle-missing-channels" class="flex flex-wrap gap-1.5">
-                            <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-gray-400 italic">? Conduto Obscurecido</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Pista do Enigma -->
-                <div class="text-xs text-amber-300/90 italic bg-amber-950/20 border-l-2 border-amber-400 p-2.5 rounded">
-                    <i class="fa-solid fa-scroll mr-1"></i> <span id="puzzle-hint-text">"O fogo precisa de corpo sólido para se tornar rocha viva derretida."</span>
-                </div>
-            </div>
-
-            <!-- Seleção dos Círculos Básicos para Injetar no Selo -->
-            <div class="mb-4">
-                <div class="flex justify-between items-center mb-2">
-                    <span class="text-xs font-cinzel font-bold text-gray-300"><i class="fa-solid fa-hand-holding-magic mr-1 text-emerald-400"></i> Selecione os Círculos Básicos para Injetar:</span>
-                    <button onclick="clearPuzzleChannel()" class="text-[10px] text-gray-400 hover:text-white underline bg-transparent border-0 cursor-pointer">Limpar Seleção</button>
-                </div>
-                <div class="grid grid-cols-4 sm:grid-cols-6 gap-2" id="puzzle-basic-paths-grid">
-                    <!-- Os 12 botões dos círculos básicos gerados dinamicamente -->
-                </div>
-            </div>
-
-            <!-- Canais Injetados Atuais & Botão de Destrancar -->
-            <div class="flex flex-col sm:flex-row items-center justify-between gap-3 bg-slate-900/90 p-3 rounded-xl border border-slate-800">
-                <div class="text-xs text-gray-300">
-                    <span>Mana Canalizada:</span>
-                    <strong id="puzzle-channeled-display" class="text-emerald-300 ml-1">Nenhum círculo selecionado</strong>
-                </div>
-                <button onclick="attemptSolveDoor()" class="w-full sm:w-auto px-6 py-2.5 rounded-lg bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-black font-cinzel font-bold text-xs flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-emerald-500/20">
-                    <i class="fa-solid fa-key"></i>
-                    <span>Canalizar Mana & Abrir Portal</span>
+            <!-- Subtab Bar dos Puzzles -->
+            <div class="modal-subtab-bar">
+                <button type="button" class="modal-subtab-btn active" id="ptab-btn-incomplete" onclick="switchPuzzleSubtab('incomplete')">
+                    <i class="fa-solid fa-circle-question mr-1"></i> Portas Incompletas
+                </button>
+                <button type="button" class="modal-subtab-btn" id="ptab-btn-multiseal" onclick="switchPuzzleSubtab('multiseal')">
+                    <i class="fa-solid fa-layer-group mr-1 text-amber-400"></i> Portas Multi-Selos
+                </button>
+                <button type="button" class="modal-subtab-btn" id="ptab-btn-deduction" onclick="switchPuzzleSubtab('deduction')">
+                    <i class="fa-solid fa-brain mr-1 text-sky-400"></i> Enigmas por Dedução
+                </button>
+                <button type="button" class="modal-subtab-btn" id="ptab-btn-dungeon" onclick="switchPuzzleSubtab('dungeon')">
+                    <i class="fa-solid fa-map-location-dot mr-1 text-purple-400"></i> Mapa de Masmorra
                 </button>
             </div>
 
-            <!-- Feedback da Tentativa (Porta Aberta ou Choque) -->
-            <div id="puzzle-feedback-box" class="hidden p-4 rounded-xl mt-3 transition-all"></div>
+            <!-- SUBTAB 1: PORTAS INCOMPLETAS (PADRÃO) -->
+            <div id="puzzle-subtab-incomplete">
+                <!-- Seleção de Desafio / Porta -->
+                <div class="mb-4">
+                    <label class="block text-xs font-cinzel text-emerald-300 font-bold mb-1.5"><i class="fa-solid fa-door-closed mr-1"></i> Escolha a Porta Ancestral Selada:</label>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2" id="puzzle-doors-selector">
+                        <button onclick="selectDungeonPuzzle(0)" id="pdoor-btn-0" class="p-2.5 rounded-lg border border-emerald-500/50 bg-slate-900 hover:bg-slate-800 text-left cursor-pointer transition-all">
+                            <span class="text-[10px] text-emerald-400 font-mono block">SECUNDUS</span>
+                            <strong class="text-xs text-white block">Câmara Vulcânica</strong>
+                        </button>
+                        <button onclick="selectDungeonPuzzle(1)" id="pdoor-btn-1" class="p-2.5 rounded-lg border border-slate-700 bg-slate-900 hover:bg-slate-800 text-left cursor-pointer transition-all">
+                            <span class="text-[10px] text-amber-400 font-mono block">TERCEIRUS</span>
+                            <strong class="text-xs text-white block">Três Flagelos (Cataclismo)</strong>
+                        </button>
+                        <button onclick="selectDungeonPuzzle(2)" id="pdoor-btn-2" class="p-2.5 rounded-lg border border-slate-700 bg-slate-900 hover:bg-slate-800 text-left cursor-pointer transition-all">
+                            <span class="text-[10px] text-cyan-400 font-mono block">TERCEIRUS</span>
+                            <strong class="text-xs text-white block">Cidade Viva</strong>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Card de Enigma da Porta com Círculo Incompleto -->
+                <div class="bg-slate-950/90 border border-emerald-500/30 rounded-xl p-4 mb-4">
+                    <h3 class="font-cinzel text-base font-bold text-white mb-1" id="puzzle-door-title">A Porta da Câmara Vulcânica</h3>
+                    <p class="text-xs text-gray-300 leading-relaxed mb-3" id="puzzle-door-desc">Porta de basalto incandescente gravada com chamas. O conduto inferior está esculpido como uma montanha oca que aguarda contato telúrico.</p>
+
+                    <!-- Estado dos Condutos da Porta -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 bg-slate-900/80 rounded-lg mb-3">
+                        <div>
+                            <span class="text-[10px] font-mono text-emerald-400 uppercase tracking-widest block mb-1">Canais Já Acesos na Porta:</span>
+                            <div id="puzzle-active-channels" class="flex flex-wrap gap-1.5"></div>
+                        </div>
+                        <div>
+                            <span class="text-[10px] font-mono text-amber-400 uppercase tracking-widest block mb-1">Canais Apagados (Deduzir):</span>
+                            <div id="puzzle-missing-channels" class="flex flex-wrap gap-1.5">
+                                <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-gray-400 italic">? Conduto Obscurecido</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Pista do Enigma -->
+                    <div class="text-xs text-amber-300/90 italic bg-amber-950/20 border-l-2 border-amber-400 p-2.5 rounded">
+                        <i class="fa-solid fa-scroll mr-1"></i> <span id="puzzle-hint-text">"O fogo precisa de corpo sólido para se tornar rocha viva derretida."</span>
+                    </div>
+                </div>
+
+                <!-- Seleção dos Círculos Básicos para Injetar no Selo -->
+                <div class="mb-4">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-xs font-cinzel font-bold text-gray-300"><i class="fa-solid fa-hand-holding-magic mr-1 text-emerald-400"></i> Selecione os Círculos Básicos para Injetar:</span>
+                        <button onclick="clearPuzzleChannel()" class="text-[10px] text-gray-400 hover:text-white underline bg-transparent border-0 cursor-pointer">Limpar Seleção</button>
+                    </div>
+                    <div class="grid grid-cols-4 sm:grid-cols-6 gap-2" id="puzzle-basic-paths-grid">
+                        <!-- Os 12 botões dos círculos básicos gerados dinamicamente -->
+                    </div>
+                </div>
+
+                <!-- Canais Injetados Atuais & Botão de Destrancar -->
+                <div class="flex flex-col sm:flex-row items-center justify-between gap-3 bg-slate-900/90 p-3 rounded-xl border border-slate-800">
+                    <div class="text-xs text-gray-300">
+                        <span>Mana Canalizada:</span>
+                        <strong id="puzzle-channeled-display" class="text-emerald-300 ml-1">Nenhum círculo selecionado</strong>
+                    </div>
+                    <button onclick="attemptSolveDoor()" class="w-full sm:w-auto px-6 py-2.5 rounded-lg bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-black font-cinzel font-bold text-xs flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-emerald-500/20">
+                        <i class="fa-solid fa-key"></i>
+                        <span>Canalizar Mana & Abrir Portal</span>
+                    </button>
+                </div>
+
+                <!-- Feedback da Tentativa (Porta Aberta ou Choque) -->
+                <div id="puzzle-feedback-box" class="hidden p-4 rounded-xl mt-3 transition-all"></div>
+            </div>
+
+            <!-- SUBTAB 2: PORTAS COM MÚLTIPLOS SELOS SEQUENCIAIS -->
+            <div id="puzzle-subtab-multiseal" class="hidden">
+                <div class="p-3 bg-amber-950/25 border border-amber-500/30 rounded-xl mb-3 text-xs text-amber-200">
+                    <i class="fa-solid fa-shield-halved mr-1 text-amber-400"></i>
+                    <strong>Mecânica de Múltiplos Selos:</strong> O portal ancestral é trancado por 2 ou 3 círculos que devem ser acesos na ordem geométrica exata. Um selo fora de ordem aciona uma armadilha rúnica e reseta os passos!
+                </div>
+
+                <!-- Seletor de Porta Multi-Selos -->
+                <div class="mb-3">
+                    <label class="block text-xs font-cinzel text-amber-300 font-bold mb-1">Selecione o Portal de Múltiplos Selos:</label>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2" id="multiseal-doors-selector">
+                        <!-- Gerado via JS -->
+                    </div>
+                </div>
+
+                <!-- Visor da Sequência de Selos -->
+                <div class="bg-slate-950/90 border border-amber-500/30 rounded-xl p-4 mb-4">
+                    <h3 class="font-cinzel text-sm font-bold text-white mb-1" id="multiseal-title">Portal dos Três Juízos</h3>
+                    <p class="text-xs text-gray-300 mb-3" id="multiseal-desc">Portão titânico com 3 engastes rúnicos concêntricos.</p>
+
+                    <div class="text-xs font-cinzel font-bold text-gray-300 mb-2">Sequência de Passos:</div>
+                    <div class="flex items-center gap-2 mb-3" id="multiseal-steps-container">
+                        <!-- Indicadores de passos 1, 2, 3 -->
+                    </div>
+
+                    <!-- Botões de Selos Disponíveis para Tentar -->
+                    <div class="text-xs font-cinzel font-bold text-gray-300 mb-2">Acender Círculo Mágico no Próximo Engaste:</div>
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2" id="multiseal-triggers-grid">
+                        <!-- Botões de ação para acender os selos -->
+                    </div>
+                </div>
+
+                <div id="multiseal-feedback-box" class="hidden p-3 rounded-xl mb-2"></div>
+            </div>
+
+            <!-- SUBTAB 3: ENIGMAS POR DEDUÇÃO & GERADOR ALEATÓRIO -->
+            <div id="puzzle-subtab-deduction" class="hidden">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-3">
+                    <div class="text-xs text-gray-300">
+                        <i class="fa-solid fa-scroll text-sky-400 mr-1"></i> Decifre a pista mística e descubra qual dos 12 caminhos básicos fecha o Círculo.
+                    </div>
+                    <button type="button" onclick="generateRandomDeductionPuzzleAction()" class="px-3 py-1.5 rounded bg-sky-600 hover:bg-sky-500 text-white font-cinzel font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow-md shadow-sky-500/20">
+                        <i class="fa-solid fa-dice"></i>
+                        <span>Gerar Enigma Aleatório</span>
+                    </button>
+                </div>
+
+                <!-- Card do Enigma Atual -->
+                <div class="bg-slate-950/90 border border-sky-500/30 rounded-xl p-4 mb-4">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-xs font-cinzel font-bold text-sky-300" id="deduction-puzzle-title">Enigma da Câmara Secreta</span>
+                        <span class="text-[10px] font-mono bg-sky-950 px-2 py-0.5 rounded text-sky-300" id="deduction-puzzle-tier">SECUNDUS</span>
+                    </div>
+
+                    <p class="text-xs text-gray-300 mb-3" id="deduction-puzzle-lore">Um pergaminho antigo repousa diante de um pedestal mágico com condutos gravados.</p>
+
+                    <!-- Pistas -->
+                    <div class="bg-sky-950/30 border-l-2 border-sky-400 p-3 rounded mb-3 text-xs text-sky-200 italic" id="deduction-clues-box">
+                        <!-- Pistas geradas -->
+                    </div>
+
+                    <!-- Caminhos Conhecidos -->
+                    <div class="text-[11px] text-gray-400 mb-3">
+                        Caminho já gravado no selo: <strong class="text-white" id="deduction-known-paths">Fogo</strong> &middot; <span class="text-amber-300">Falta 1 caminho elemental/arcano oculto</span>
+                    </div>
+
+                    <!-- Grade de Opções de Dedução (12 Caminhos) -->
+                    <span class="text-xs font-cinzel font-bold text-gray-300 block mb-2">Qual caminho místico completa o Círculo?</span>
+                    <div class="grid grid-cols-3 sm:grid-cols-4 gap-2" id="deduction-options-grid">
+                        <!-- 12 botões gerados dinamicamente -->
+                    </div>
+                </div>
+
+                <div id="deduction-feedback-box" class="hidden p-3 rounded-xl mb-2"></div>
+            </div>
+
+            <!-- SUBTAB 4: MAPA DE MASMORRA COM SALAS MÁGICAS -->
+            <div id="puzzle-subtab-dungeon" class="hidden">
+                <div class="p-3 bg-purple-950/25 border border-purple-500/30 rounded-xl mb-3 text-xs text-purple-200">
+                    <i class="fa-solid fa-dungeon mr-1 text-purple-400"></i>
+                    <strong>Exploração de Masmorra Arcana:</strong> As salas são protegidas por barreiras elementais intransponíveis a menos que seu personagem domine os caminhos arcanos exigidos.
+                </div>
+
+                <!-- Visor da Masmorra -->
+                <div class="bg-slate-950/90 border border-purple-500/30 rounded-xl p-4 mb-4">
+                    <div class="flex justify-between items-center mb-3 border-b border-purple-500/20 pb-2">
+                        <div>
+                            <h3 class="font-cinzel text-base font-bold text-white" id="dungeon-name">Catacumbas dos Primordiais</h3>
+                            <span class="text-xs text-purple-300">Sala Atual: <strong id="dungeon-current-room-name">Vestíbulo das Chamas</strong></span>
+                        </div>
+                        <button type="button" onclick="resetDungeonProgressAction()" class="text-[10px] text-gray-400 hover:text-white underline bg-transparent border-0 cursor-pointer">Reiniciar Masmorra</button>
+                    </div>
+
+                    <p class="text-xs text-gray-300 mb-4" id="dungeon-current-room-desc">Um salão com piso de pedra escura e archotes incrustados.</p>
+
+                    <!-- Salas Conectadas para Travessia -->
+                    <div class="text-xs font-cinzel font-bold text-gray-300 mb-2">Portais e Passagens Adjacentes:</div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3" id="dungeon-connections-grid">
+                        <!-- Conexões geradas dinamicamente -->
+                    </div>
+                </div>
+
+                <div id="dungeon-feedback-box" class="hidden p-3 rounded-xl mb-2"></div>
+            </div>
 
             <div class="flex justify-end gap-2 mt-4 pt-3 border-t border-slate-800">
                 <button type="button" onclick="closePuzzlesModal()" class="px-4 py-1.5 text-xs rounded border border-slate-700 text-gray-300 hover:bg-slate-800">Fechar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== MODAL 4: MANA COMPARTILHADA DA PARTY (RESERVATÓRIO DE PE) ===== -->
+    <div id="modal-mana-pool-overlay" class="modal-overlay" onclick="closeManaPoolOnBackdrop(event)">
+        <div class="glass-panel" style="max-width: 650px; width: 95%; max-height: 90vh; overflow-y: auto; background: rgba(15, 23, 42, 0.98); border: 2px solid #a855f7; box-shadow: 0 0 35px rgba(168,85,247,0.25);">
+            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(168,85,247,0.3); padding-bottom:10px; margin-bottom:14px;">
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <i class="fa-solid fa-gem text-purple-400 text-xl"></i>
+                    <div>
+                        <h2 class="font-cinzel text-lg font-bold text-purple-300">Reservatório de Mana Compartilhada (Party Pool)</h2>
+                        <p class="text-xs text-gray-400">Armazene, doe e saque Pontos de Energia (PE) em conjunto com o grupo</p>
+                    </div>
+                </div>
+                <button onclick="closeManaPoolModal()" class="text-gray-400 hover:text-white bg-transparent border-0 text-xl cursor-pointer"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <!-- Display do Reservatório -->
+            <div class="bg-gradient-to-r from-purple-950/60 to-indigo-950/60 border border-purple-500/40 rounded-xl p-4 mb-4 text-center">
+                <span class="text-xs font-mono uppercase tracking-widest text-purple-300 block mb-1">Reserva Comum de Energia Arcana</span>
+                <div class="font-cinzel text-3xl font-extrabold text-white mb-1">
+                    <strong id="modal-pool-current-pe" class="text-purple-300">12</strong> <span class="text-gray-400 text-lg">/ <span id="modal-pool-max-pe">30</span> PE</span>
+                </div>
+                <p class="text-[11px] text-gray-300">Seus Pontos de Energia Pessoais Disponíveis: <strong id="modal-user-pe-disp" class="text-cyan-300">4 PE</strong></p>
+            </div>
+
+            <!-- Ações: Doar e Sacar -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+                <!-- Doar ao Pool -->
+                <div class="bg-slate-950/80 border border-slate-800 rounded-lg p-3">
+                    <span class="text-xs font-cinzel font-bold text-purple-300 block mb-2"><i class="fa-solid fa-circle-arrow-up mr-1 text-emerald-400"></i> Doar PE ao Reservatório:</span>
+                    <div class="flex gap-2">
+                        <input type="number" id="pool-donate-amount" value="2" min="1" max="10" class="w-20 bg-slate-900 border border-slate-700 rounded p-1.5 text-center text-white text-xs font-bold">
+                        <button onclick="donateManaToPoolAction()" class="flex-1 py-1.5 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-cinzel font-bold text-xs cursor-pointer">
+                            Doar PE
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Sacar do Pool -->
+                <div class="bg-slate-950/80 border border-slate-800 rounded-lg p-3">
+                    <span class="text-xs font-cinzel font-bold text-purple-300 block mb-2"><i class="fa-solid fa-circle-arrow-down mr-1 text-cyan-400"></i> Sacar PE do Reservatório:</span>
+                    <div class="flex gap-2">
+                        <input type="number" id="pool-withdraw-amount" value="2" min="1" max="10" class="w-20 bg-slate-900 border border-slate-700 rounded p-1.5 text-center text-white text-xs font-bold">
+                        <button onclick="withdrawManaFromPoolAction()" class="flex-1 py-1.5 rounded bg-cyan-600 hover:bg-cyan-500 text-white font-cinzel font-bold text-xs cursor-pointer">
+                            Sacar PE
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Transferência Direta entre Jogadores -->
+            <div class="bg-slate-950/80 border border-slate-800 rounded-lg p-3 mb-4">
+                <span class="text-xs font-cinzel font-bold text-amber-300 block mb-2"><i class="fa-solid fa-arrow-right-arrow-left mr-1"></i> Transferir PE Direto para Aliado:</span>
+                <div class="flex flex-col sm:flex-row gap-2">
+                    <input type="text" id="pool-transfer-target" value="Aliado" placeholder="Nome do Jogador" class="flex-1 bg-slate-900 border border-slate-700 rounded p-1.5 text-xs text-white">
+                    <input type="number" id="pool-transfer-amount" value="1" min="1" max="5" class="w-20 bg-slate-900 border border-slate-700 rounded p-1.5 text-center text-white text-xs font-bold">
+                    <button onclick="transferManaDirectAction()" class="py-1.5 px-4 rounded bg-amber-600 hover:bg-amber-500 text-white font-cinzel font-bold text-xs cursor-pointer">
+                        Enviar PE
+                    </button>
+                </div>
+            </div>
+
+            <!-- Histórico de Transações -->
+            <div>
+                <span class="text-xs font-cinzel font-bold text-gray-300 block mb-2"><i class="fa-solid fa-clock-rotate-left mr-1 text-gray-400"></i> Histórico de Transações de Mana:</span>
+                <div id="pool-history-list" class="bg-slate-950/60 border border-slate-800 rounded-lg p-2.5 max-h-36 overflow-y-auto space-y-1.5 text-[11px] text-gray-300">
+                    <!-- Gerado dinamicamente -->
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-2 mt-4 pt-3 border-t border-slate-800">
+                <button type="button" onclick="closeManaPoolModal()" class="px-4 py-1.5 text-xs rounded border border-slate-700 text-gray-300 hover:bg-slate-800">Fechar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== MODAL 5: MODO MESTRE & EVENTOS ARCANOS GLOBAIS ===== -->
+    <div id="modal-master-mode-overlay" class="modal-overlay" onclick="closeMasterModeOnBackdrop(event)">
+        <div class="glass-panel" style="max-width: 720px; width: 95%; max-height: 90vh; overflow-y: auto; background: rgba(15, 23, 42, 0.98); border: 2px solid #ef4444; box-shadow: 0 0 35px rgba(239,68,68,0.25);">
+            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(239,68,68,0.3); padding-bottom:10px; margin-bottom:14px;">
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <i class="fa-solid fa-crown text-red-400 text-xl"></i>
+                    <div>
+                        <h2 class="font-cinzel text-lg font-bold text-red-300">Modo Mestre & Eventos Arcanos Globais</h2>
+                        <p class="text-xs text-gray-400">Altere o clima arcano do mundo com tempestades de mana, eclipses e ressonâncias</p>
+                    </div>
+                </div>
+                <button onclick="closeMasterModeModal()" class="text-gray-400 hover:text-white bg-transparent border-0 text-xl cursor-pointer"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <!-- Seletor de Eventos Globais -->
+            <div class="mb-4">
+                <label class="block text-xs font-cinzel text-red-300 font-bold mb-1.5">Escolha o Evento Arcano Ativo no Mundo:</label>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2" id="master-events-selector">
+                    <button type="button" onclick="selectMasterEvent('none')" id="mevent-btn-none" class="p-2.5 rounded-lg border border-red-500 bg-slate-900 text-left cursor-pointer transition-all">
+                        <strong class="text-xs text-white block">Trama Mágica Normal</strong>
+                        <span class="text-[10px] text-gray-400 block">Nenhum evento ativo. Custos e CDs padrão.</span>
+                    </button>
+                    <button type="button" onclick="selectMasterEvent('tempestade_mana')" id="mevent-btn-tempestade_mana" class="p-2.5 rounded-lg border border-slate-700 bg-slate-900 hover:bg-slate-800 text-left cursor-pointer transition-all">
+                        <strong class="text-xs text-orange-400 block">⚡ Tempestade de Mana</strong>
+                        <span class="text-[10px] text-gray-400 block">+1 no 2d6 e CD -1 para Fogo e Ar</span>
+                    </button>
+                    <button type="button" onclick="selectMasterEvent('mare_gravitacional')" id="mevent-btn-mare_gravitacional" class="p-2.5 rounded-lg border border-slate-700 bg-slate-900 hover:bg-slate-800 text-left cursor-pointer transition-all">
+                        <strong class="text-xs text-emerald-400 block">🌊 Maré Gravitacional</strong>
+                        <span class="text-[10px] text-gray-400 block">+1 no 2d6 e +2 de impacto para Terra e Água</span>
+                    </button>
+                    <button type="button" onclick="selectMasterEvent('eclipse_sol_negro')" id="mevent-btn-eclipse_sol_negro" class="p-2.5 rounded-lg border border-slate-700 bg-slate-900 hover:bg-slate-800 text-left cursor-pointer transition-all">
+                        <strong class="text-xs text-indigo-400 block">🌑 Eclipse do Sol Negro</strong>
+                        <span class="text-[10px] text-gray-400 block">+2 no 2d6 para Trevas / -1 de penalidade para Luz</span>
+                    </button>
+                    <button type="button" onclick="selectMasterEvent('ressonancia_eterea')" id="mevent-btn-ressonancia_eterea" class="p-2.5 rounded-lg border border-slate-700 bg-slate-900 hover:bg-slate-800 text-left cursor-pointer transition-all">
+                        <strong class="text-xs text-purple-400 block">✨ Ressonância Etérea</strong>
+                        <span class="text-[10px] text-gray-400 block">+1 no 2d6 e custo -1 PE para Spiritum e Metamagia</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Card de Detalhes do Evento Ativo -->
+            <div class="bg-slate-950/90 border border-red-500/30 rounded-xl p-4 mb-4">
+                <div class="flex justify-between items-center mb-1">
+                    <span class="text-xs font-mono uppercase text-red-400 font-bold" id="master-active-badge">EVENTO ATIVO</span>
+                    <span class="text-[10px] text-gray-400">Afeta todas as rolagens da mesa</span>
+                </div>
+                <h3 class="font-cinzel text-base font-bold text-white mb-1" id="master-active-name">Trama Mágica Normal</h3>
+                <p class="text-xs text-gray-300 leading-relaxed" id="master-active-desc">A trama mágica encontra-se em repouso natural sem interferências meteorológicas arcanas.</p>
+            </div>
+
+            <!-- Broadcast em Tempo Real para os Jogadores -->
+            <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-3 mb-4">
+                <div class="flex flex-col sm:flex-row items-center justify-between gap-2">
+                    <span class="text-xs text-gray-300"><i class="fa-solid fa-satellite-dish mr-1 text-red-400"></i> Transmitir aviso de evento para toda a mesa (Broadcast)</span>
+                    <button onclick="broadcastCurrentMasterEventAction()" class="px-4 py-2 rounded bg-red-600 hover:bg-red-500 text-white font-cinzel font-bold text-xs cursor-pointer shadow-md shadow-red-500/20">
+                        <i class="fa-solid fa-bullhorn mr-1"></i> Transmitir à Mesa
+                    </button>
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-2 mt-4 pt-3 border-t border-slate-800">
+                <button type="button" onclick="closeMasterModeModal()" class="px-4 py-1.5 text-xs rounded border border-slate-700 text-gray-300 hover:bg-slate-800">Fechar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== MODAL 6: CONQUISTAS MÁGICAS (ACHIEVEMENTS) ===== -->
+    <div id="modal-achievements-overlay" class="modal-overlay" onclick="closeAchievementsOnBackdrop(event)">
+        <div class="glass-panel" style="max-width: 760px; width: 95%; max-height: 90vh; overflow-y: auto; background: rgba(15, 23, 42, 0.98); border: 2px solid #10b981; box-shadow: 0 0 35px rgba(16,185,129,0.25);">
+            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(16,185,129,0.3); padding-bottom:10px; margin-bottom:14px;">
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <i class="fa-solid fa-trophy text-amber-400 text-xl"></i>
+                    <div>
+                        <h2 class="font-cinzel text-lg font-bold text-emerald-300">Conquistas Mágicas & Glória Arcana</h2>
+                        <p class="text-xs text-gray-400">Progresso épico nas artes arcanas, forja, cooperação e masmorras</p>
+                    </div>
+                </div>
+                <button onclick="closeAchievementsModal()" class="text-gray-400 hover:text-white bg-transparent border-0 text-xl cursor-pointer"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <!-- Progresso Geral -->
+            <div class="flex items-center justify-between p-3 bg-slate-900/80 border border-emerald-500/30 rounded-xl mb-4">
+                <div>
+                    <span class="text-xs text-gray-300 font-cinzel">Total de Conquistas Obtidas:</span>
+                    <div class="text-xl font-cinzel font-bold text-white"><span id="achievements-modal-count" class="text-amber-400">0</span> / <span id="achievements-modal-total">8</span></div>
+                </div>
+                <div class="text-right text-xs text-gray-400">
+                    <i class="fa-solid fa-sparkles text-amber-300"></i> Desbloqueie conjurando, forjando e decifrando enigmas!
+                </div>
+            </div>
+
+            <!-- Grade de Conquistas -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3" id="achievements-cards-grid">
+                <!-- Gerado dinamicamente -->
+            </div>
+
+            <div class="flex justify-end gap-2 mt-4 pt-3 border-t border-slate-800">
+                <button type="button" onclick="closeAchievementsModal()" class="px-4 py-1.5 text-xs rounded border border-slate-700 text-gray-300 hover:bg-slate-800">Fechar</button>
             </div>
         </div>
     </div>
@@ -2380,6 +2885,23 @@
             ? window.CIRCLES_DATA
             : { secundus: [], terceirus: [] };
 
+        const progSys = (typeof MagicProgressionSystem !== 'undefined') ? MagicProgressionSystem : null;
+        const PROGRESSION_KEY = `${STORAGE_KEY}_progression`;
+
+        function loadProgression() {
+            if (!progSys) return null;
+            let raw = null;
+            try { raw = JSON.parse(localStorage.getItem(PROGRESSION_KEY)); } catch (e) { raw = null; }
+            // Círculos iniciais (já em destaque no tabuleiro) começam revelados
+            return progSys.createProgressionState(raw, fusionNodes.map(f => f.circleId));
+        }
+
+        function saveProgression() {
+            try { localStorage.setItem(PROGRESSION_KEY, JSON.stringify(progression)); } catch (e) { console.warn('Erro ao salvar progressão', e); }
+        }
+
+        let progression = null;
+
         function saveState() {
             try {
                 characterState.availablePM = userPM;
@@ -2630,6 +3152,12 @@
             if (hudGCount) hudGCount.innerText = grimoireCount;
             const altarGCount = document.getElementById('altar-grimoire-count');
             if (altarGCount) altarGCount.innerText = grimoireCount;
+
+            const poolCount = document.getElementById('hud-pool-pe');
+            if (poolCount) poolCount.innerText = (partyManaPool ? partyManaPool.currentPE : 12);
+
+            const achCount = document.getElementById('hud-achievements-count');
+            if (achCount) achCount.innerText = (characterAchievements ? characterAchievements.unlockedIds.length : 0);
         }
 
         function drawMagicCirclesMandalaSVG(svgOffset, activeFusions) {
@@ -3419,6 +3947,25 @@
 
             activeFusionData = fusionData;
 
+            // Mecânicas de progressão: Ressonância, Especialização e Maestria
+            let progBadges = '';
+            if (progSys && progression) {
+                const progEntry = { id: fusionData.circleId || `c_${chosen.join('_')}`, paths: chosen };
+                const resonance = progSys.computeResonance(progEntry, characterSkills);
+                const specBonus = progSys.getSpecializationBonus(progression, progEntry, characterSkills, activeForma);
+                const mastery = progSys.applyMastery(fusionData.cd, fusionData.pe, progression.usage[progEntry.id] || 0);
+                fusionData.bonus += resonance + specBonus;
+                fusionData.cd = mastery.cd;
+                fusionData.pe = mastery.pe;
+                fusionData.masteryKey = mastery.tier.key;
+                fusionData.circleUses = progression.usage[progEntry.id] || 0;
+                const badge = (txt, color) => `<span style="font-size:9px; font-weight:700; padding:1px 6px; border-radius:999px; border:1px solid ${color}; color:${color}; margin:0 2px;">${txt}</span>`;
+                progBadges = badge(`Maestria: ${mastery.tier.label} (${fusionData.circleUses} usos)`, '#fbbf24')
+                    + (resonance ? badge('Ressonância +1', '#22d3ee') : '')
+                    + (specBonus ? badge(`Especialização +${specBonus}`, '#a78bfa') : '');
+            }
+            const totalBonusFinal = fusionData.bonus;
+
             let circleSvg = '';
             if (circleGen) {
                 const entryPayload = {
@@ -3446,6 +3993,7 @@
                     </div>
                     <h3 class="font-cinzel text-base font-bold text-white my-1" style="text-shadow:0 0 10px var(--rpg-cyan);">${fusionData.spell} <span class="text-xs text-cyan-300">(${activeForma})</span></h3>
                     <p class="text-xs text-gray-300 mb-2">${fusionData.desc}</p>
+                    <div style="margin-bottom:6px;">${progBadges}</div>
                 </div>
                 <div style="display:flex; justify-content:space-between; font-size:11px; color:#fbbf24; border-top:1px solid rgba(148,163,184,0.2); padding-top:6px; margin-bottom:12px;">
                     <span><i class="fa-solid fa-bullseye"></i> Dificuldade: <strong>CD ${fusionData.cd}</strong></span>
@@ -3473,7 +4021,7 @@
                 </div>
             `;
 
-            formulaDisplay.innerText = `2d6 + ${totalBonus} (${tierLabel}) vs CD ${fusionData.cd}`;
+            formulaDisplay.innerText = `2d6 + ${totalBonusFinal} (${tierLabel}) vs CD ${fusionData.cd}`;
         }
 
         function replayConvergenceAnimation() {
@@ -3711,27 +4259,103 @@
             const d2 = Math.floor(Math.random() * 6) + 1;
             const diceTotal = d1 + d2;
 
+            // Síntese de Som Rúnico e Rolagem de Dados
+            if (immersionSys && immersionSys.RuneSoundSynthesizer) {
+                try {
+                    immersionSys.RuneSoundSynthesizer.playDiceRollSound();
+                    immersionSys.RuneSoundSynthesizer.playRuneHum();
+                } catch (e) {}
+            }
+
             let bonus = activeFusionData ? (activeFusionData.bonus || 0) : 0;
             let cd = activeFusionData ? (activeFusionData.cd || 10) : 10;
+
+            // Modificadores do Evento Ativo do Modo Mestre
+            let masterNote = '';
+            if (activeMasterEvent && activeMasterEvent !== 'none' && immersionSys && immersionSys.MasterModeEngine && activeFusionData) {
+                const activePaths = [activeFusionData.path1, activeFusionData.path2, activeFusionData.path3].filter(Boolean);
+                const evMod = immersionSys.MasterModeEngine.calculateEventModifiers(activeMasterEvent, activePaths);
+                if (evMod.diceBonus !== 0) {
+                    bonus += evMod.diceBonus;
+                    masterNote += `<div style="font-size:11px; color:#f87171; margin-top:2px;">👑 <strong>Modo Mestre:</strong> Bônus de Evento (${evMod.diceBonus > 0 ? '+' : ''}${evMod.diceBonus}) aplicado!</div>`;
+                }
+                if (evMod.cdModifier !== 0) {
+                    cd += evMod.cdModifier;
+                }
+            }
 
             const total = diceTotal + bonus;
             const rollDisplay = document.getElementById('roll-result-display');
 
             let outcome = '';
+            let critClass = '';
             if (diceTotal === 12) {
-                outcome = `<span class="text-amber-400 font-bold">✨ ACERTO CRÍTICO (12 nos dados)! Efeito Maximo Ampliado!</span>`;
+                outcome = `<span class="text-amber-400 font-bold">✨ ACERTO CRÍTICO (12 nos dados)! Efeito Máximo Ampliado!</span>`;
+                critClass = 'crit-success';
             } else if (diceTotal === 2) {
                 outcome = `<span class="text-red-500 font-bold">💥 FALHA CRÍTICA (2 nos dados)! Retorno de Mana Incontrolável!</span>`;
+                critClass = 'crit-fumble';
             } else if (total >= cd) {
                 outcome = `<span class="text-emerald-400 font-bold">✓ SUCESSO! (${total} vs CD ${cd}) Feitiço Conjurado com Maestria!</span>`;
             } else {
                 outcome = `<span class="text-red-400">✗ FALHA (${total} vs CD ${cd}). A magia se dissipou sem efeito.</span>`;
             }
 
+            let progressNote = '';
+            if (progSys && progression && activeFusionData && activeFusionData.circleId) {
+                const entry = {
+                    id: activeFusionData.circleId,
+                    paths: [activeFusionData.path1, activeFusionData.path2, activeFusionData.path3].filter(Boolean)
+                };
+                const wasNew = !progSys.isDiscovered(progression, entry.id);
+                const prevTier = progSys.getMasteryTier(progression.usage[entry.id] || 0);
+
+                // Instabilidade Arcana (2 natural em Terceirus)
+                const surge = progSys.rollSurge(entry, diceTotal, Math.random);
+                if (surge) {
+                    const pName = magicPaths[surge.path] ? magicPaths[surge.path].name.replace('Magia ', '') : surge.path;
+                    progressNote += `<div style="margin-top:4px; color:#f472b6;">🌀 <strong>Instabilidade Arcana (${pName}):</strong> ${surge.effect}</div>`;
+                }
+
+                progression = progSys.recordUsage(progression, entry.id);
+                saveProgression();
+                const newTier = progSys.getMasteryTier(progression.usage[entry.id]);
+                if (wasNew) progressNote += `<div style="margin-top:4px; color:#67e8f9;">🔓 Círculo revelado no compêndio!</div>`;
+                if (newTier.key !== prevTier.key) progressNote += `<div style="margin-top:4px; color:#fbbf24;">⭐ Maestria ${newTier.label}! CD e custo reduzidos.</div>`;
+            }
+
+            // Avaliação de Conquistas
+            if (immersionSys && immersionSys.AchievementsEngine && characterAchievements) {
+                const activePaths = Object.keys(characterSkills).filter(k => (characterSkills[k] || 0) > 0);
+                const circleId = activeFusionData ? (activeFusionData.circleId || activeFusionData.id) : null;
+                const achRes = immersionSys.AchievementsEngine.evaluateAchievements(characterAchievements, {
+                    characterPaths: activePaths,
+                    conjuredCircleId: circleId,
+                    totalSpellsCast: 1
+                });
+                if (achRes.newlyUnlocked && achRes.newlyUnlocked.length > 0) {
+                    characterAchievements = achRes.state;
+                    saveAchievements();
+                    achRes.newlyUnlocked.forEach(a => {
+                        showToast(`🏆 Conquista Desbloqueada: "${a.title}"! ${a.description}`);
+                    });
+                }
+            }
+
+            // Exibição dos Dados 3D Animados com Efeito Tumble
             rollDisplay.innerHTML = `
-                <div style="font-size:13px; font-family:'Cinzel',serif;">🎲 Dados: [${d1}] + [${d2}] = <strong>${diceTotal}</strong> + ${bonus} bônus = <strong class="text-white">${total}</strong></div>
-                <div style="margin-top:2px;">${outcome}</div>
+                <div class="dice-3d-stage">
+                    <div class="die-3d rolling ${critClass}">${d1}</div>
+                    <div class="die-3d rolling ${critClass}">${d2}</div>
+                </div>
+                <div style="font-size:13px; font-family:'Cinzel',serif; text-align:center;">
+                    🎲 [${d1}] + [${d2}] = <strong>${diceTotal}</strong> + ${bonus} bônus = <strong class="text-white">${total}</strong>
+                </div>
+                <div style="margin-top:4px; text-align:center;">${outcome}</div>
+                ${masterNote}
+                ${progressNote}
             `;
+            if (progSys && progression) updateFusionResult();
         }
 
         // =========================================================================
@@ -3749,13 +4373,20 @@
                     if (category !== 'all' && p.category !== category) return;
                     const lvl = characterSkills[key] || 0;
 
+                    const chosenAspectId = progression ? progression.specializations[key] : null;
+                    const chosenAspect = chosenAspectId ? progSys.getSpecializationOptions(key).find(o => o.id === chosenAspectId) : null;
+                    const canSpecialize = progSys && progression && !chosenAspect && lvl >= progSys.SPECIALIZATION_LEVEL;
+                    const specTag = chosenAspect
+                        ? `<span title="${chosenAspect.desc}" style="font-size:9px; color:#a78bfa; font-weight:700;">★ ${chosenAspect.name}</span>`
+                        : (canSpecialize ? `<button class="btn-point" onclick="event.stopPropagation(); openSpecializationPicker('${key}')" title="Escolher especialização (nível 5)" style="color:#fbbf24;">★</button>` : '');
+
                     const row = document.createElement('div');
                     row.className = 'path-row-box';
                     row.style.borderLeft = `3px solid ${p.color}`;
                     row.innerHTML = `
                         <div class="path-row-info" title="Clique para selecionar este caminho no Altar de Círculos">
                             <i class="${p.icon}" style="color:${p.color}; width:16px;"></i>
-                            <span>${p.name.replace('Magia ', '')}</span>
+                            <span>${p.name.replace('Magia ', '')}</span> ${specTag}
                         </div>
                         <div class="point-controls">
                             <button class="btn-point dec" onclick="removePointFromPath('${key}', event)" title="Retirar 1 ponto deste caminho (reembolsa 1 PM)" ${lvl <= 0 ? 'disabled' : ''}>-</button>
@@ -4005,6 +4636,7 @@
         });
 
         // Inicialização Visual Centralizada
+        progression = loadProgression();
         resetView();
         renderTree();
 
@@ -4055,11 +4687,13 @@
                 ...(modalCircleTier === 'SECUNDUS' ? [] : (circlesCatalog.terceirus || []))
             ];
 
+            const isKnown = (entry) => !progSys || !progression || progSys.isDiscovered(progression, entry.id);
+
             const filtered = allEntries.filter(entry => {
                 if (!q) return true;
                 const pathNames = entry.paths.map(k => magicPaths[k] ? magicPaths[k].name : k).join(' ');
-                const spellsText = entry.spells ? Object.values(entry.spells).join(' ') : '';
-                const haystack = `${entry.id} #${entry.number} ${entry.name} ${entry.tier} ${pathNames} ${spellsText}`.toLowerCase();
+                const spoilers = isKnown(entry) ? `${entry.name} ${entry.spells ? Object.values(entry.spells).join(' ') : ''}` : '';
+                const haystack = `${entry.id} #${entry.number} ${entry.tier} ${pathNames} ${spoilers}`.toLowerCase();
                 return haystack.includes(q);
             });
 
@@ -4077,23 +4711,81 @@
                     return p ? `<span style="color:${p.color}; font-size:10px; font-weight:700;">${p.name.replace('Magia (', '').replace(')', '')}</span>` : k;
                 }).join(' <span class="text-gray-500">+</span> ');
 
+                const known = isKnown(entry);
+                const usesCount = (progression && progression.usage[entry.id]) || 0;
+                const tierLabel = progSys ? progSys.getMasteryTier(usesCount).label : '';
+                const clickAction = known ? `loadCircleIntoAltar('${entry.id}')` : `revealCircle('${entry.id}')`;
+                const hint = known ? 'Clique para invocar este Círculo de Magia no Altar' : 'Círculo apagado — clique para decifrar o tomo e revelá-lo';
+
                 return `
-                    <div class="magic-circle-card" onclick="loadCircleIntoAltar('${entry.id}')" title="Clique para invocar este Círculo de Magia no Altar">
+                    <div class="magic-circle-card" onclick="${clickAction}" title="${hint}">
                         <div style="width:100%; display:flex; justify-content:space-between; align-items:center; font-size:10px; margin-bottom:4px;">
                             <span class="font-mono font-bold" style="color:${badgeColor};">${entry.tier} ${numCode}</span>
-                            <span class="text-[10px] text-cyan-300 font-cinzel">Invocar &rarr;</span>
+                            <span class="text-[10px] text-cyan-300 font-cinzel">${known ? `${tierLabel} &middot; Invocar &rarr;` : '🔒 Decifrar tomo'}</span>
                         </div>
-                        <div class="circle-svg-wrap">${svg}</div>
-                        <div class="font-cinzel font-bold text-xs text-white text-center mb-1">${entry.name}</div>
+                        <div class="circle-svg-wrap" style="${known ? '' : 'filter: grayscale(1) brightness(0.45) blur(1px); opacity:0.7;'}">${svg}</div>
+                        <div class="font-cinzel font-bold text-xs text-white text-center mb-1">${known ? entry.name : '???'}</div>
                         <div class="text-center mb-2">${pathTags}</div>
                         <div style="width:100%; font-size:10px; color:#cbd5e1; border-top:1px solid rgba(148,163,184,0.15); padding-top:6px; line-height:1.45;">
+                            ${known ? `
                             <div><strong class="text-amber-300">Criar:</strong> ${entry.spells ? entry.spells.Criar : ''}</div>
                             <div><strong class="text-cyan-300">Controlar:</strong> ${entry.spells ? entry.spells.Controlar : ''}</div>
-                            <div><strong class="text-purple-300">Entender:</strong> ${entry.spells ? entry.spells.Entender : ''}</div>
+                            <div><strong class="text-purple-300">Entender:</strong> ${entry.spells ? entry.spells.Entender : ''}</div>` : `<div class="text-gray-500 italic">Magias desconhecidas. Use o círculo ou encontre um tomo.</div>`}
                         </div>
                     </div>
                 `;
             }).join('');
+        }
+
+        /** Revela um círculo apagado (tomo encontrado). */
+        function revealCircle(circleId) {
+            if (!progSys || !progression) return;
+            progression = progSys.discoverCircle(progression, circleId);
+            saveProgression();
+            const inp = document.getElementById('fusion-search-input');
+            renderModalCirclesGallery(inp ? inp.value : '');
+            showToast(`🔓 Círculo ${circleId.toUpperCase()} revelado no compêndio!`);
+        }
+
+        /** Seletor de aspecto (Pontos de Especialização, nível 5 do caminho). */
+        function openSpecializationPicker(pathKey) {
+            if (!progSys || !progression) return;
+            const existing = document.getElementById('spec-picker-overlay');
+            if (existing) existing.remove();
+            const options = progSys.getSpecializationOptions(pathKey);
+            const pathName = magicPaths[pathKey].name.replace('Magia ', '');
+            const overlay = document.createElement('div');
+            overlay.id = 'spec-picker-overlay';
+            overlay.className = 'modal-overlay open';
+            overlay.innerHTML = `
+                <div class="glass-panel" style="max-width:420px; width:100%;">
+                    <h3 class="font-cinzel text-base font-bold text-white mb-1">★ Especialização em ${pathName}</h3>
+                    <p class="text-xs text-gray-400 mb-3">Escolha um aspecto permanente: ele dá +1 no 2d6 quando a forma combinar.</p>
+                    ${options.map(o => `
+                        <button data-aspect="${o.id}" class="btn-top w-full mb-2" style="display:block; text-align:left; width:100%;">
+                            <strong>${o.name}</strong> <span class="text-[10px] text-amber-300">(+1 em ${o.forma})</span><br>
+                            <span class="text-[11px] text-gray-300">${o.desc}</span>
+                        </button>`).join('')}
+                    <button data-aspect="" class="btn-top" style="width:100%; justify-content:center;">Cancelar</button>
+                </div>`;
+            overlay.addEventListener('click', (e) => {
+                const btn = e.target.closest('button[data-aspect]');
+                if (!btn && e.target !== overlay) return;
+                const aspect = btn ? btn.dataset.aspect : '';
+                if (aspect) {
+                    try {
+                        progression = progSys.chooseSpecialization(progression, characterSkills, pathKey, aspect);
+                        saveProgression();
+                        showToast(`★ ${pathName}: aspecto "${options.find(o => o.id === aspect).name}" escolhido!`);
+                        renderSidebarPaths(currentCategory || 'all');
+                        updateFusionResult();
+                    } catch (err) {
+                        showToast(err.message, 'warning');
+                    }
+                }
+                overlay.remove();
+            });
+            document.body.appendChild(overlay);
         }
 
         function toggleFusionTable() {
@@ -4755,6 +5447,14 @@
                     <p class="text-xs leading-relaxed">${res.message}</p>
                 `;
                 showToast('🔮 O Selo da porta foi aberto com sucesso!');
+                if (immersionSys && immersionSys.AchievementsEngine && characterAchievements) {
+                    const achRes = immersionSys.AchievementsEngine.evaluateAchievements(characterAchievements, { doorsUnlocked: 1 });
+                    if (achRes.newlyUnlocked && achRes.newlyUnlocked.length > 0) {
+                        characterAchievements = achRes.state;
+                        saveAchievements();
+                        achRes.newlyUnlocked.forEach(a => showToast(`🏆 Conquista: "${a.title}"!`));
+                    }
+                }
             } else {
                 fbBox.className = 'p-4 rounded-xl mt-3 bg-red-950/80 border border-red-500 text-red-200';
                 fbBox.innerHTML = `
@@ -4767,6 +5467,659 @@
                 showToast(res.triggeredTrap ? '⚡ Choque elemental! A porta disparou uma armadilha!' : 'Canalização incompleta.', 'warning');
             }
         }
+
+        // =========================================================================
+        // SUBSISTEMA 4: COOPERAÇÃO — TRÍADE DE RITUAIS & MANA COMPARTILHADA
+        // =========================================================================
+        const coopSys = (typeof MagicCooperationSystem !== 'undefined') ? MagicCooperationSystem : null;
+        const STORAGE_KEY_POOL = 'kuar_tor_party_mana_pool';
+        let partyManaPool = null;
+
+        function initPartyManaPool() {
+            try {
+                const raw = localStorage.getItem(STORAGE_KEY_POOL);
+                if (raw) partyManaPool = JSON.parse(raw);
+            } catch (e) {}
+            if (!partyManaPool && coopSys && coopSys.SharedManaPool) {
+                partyManaPool = coopSys.SharedManaPool.createPool(30, 12);
+            }
+            updateHUD();
+        }
+
+        function saveManaPool() {
+            if (!partyManaPool) return;
+            try {
+                localStorage.setItem(STORAGE_KEY_POOL, JSON.stringify(partyManaPool));
+            } catch (e) {}
+            updateHUD();
+        }
+
+        function switchRitualSubtab(tabName) {
+            const btnClassic = document.getElementById('btn-subtab-ritual-classic');
+            const btnTriad = document.getElementById('btn-subtab-ritual-triad');
+            const cClassic = document.getElementById('ritual-mode-classic-container');
+            const cTriad = document.getElementById('ritual-mode-triad-container');
+
+            if (tabName === 'triad') {
+                if (btnClassic) btnClassic.classList.remove('active');
+                if (btnTriad) btnTriad.classList.add('active');
+                if (cClassic) cClassic.classList.add('hidden');
+                if (cTriad) cTriad.classList.remove('hidden');
+            } else {
+                if (btnClassic) btnClassic.classList.add('active');
+                if (btnTriad) btnTriad.classList.remove('active');
+                if (cClassic) cClassic.classList.remove('hidden');
+                if (cTriad) cTriad.classList.add('hidden');
+            }
+        }
+
+        function performTriadRoleRitualAction() {
+            if (!coopSys || !coopSys.CooperativeRolesEngine) {
+                showToast('Módulo de Cooperação não carregado.', 'warning');
+                return;
+            }
+
+            const sel = document.getElementById('ritual-circle-select');
+            const circleId = sel ? sel.value : 't005';
+            let circleEntry = findFusionMetaById(circleId);
+            if (!circleEntry && circlesCatalog) {
+                circleEntry = (circlesCatalog.terceirus || []).find(t => t.id === circleId) ||
+                              (circlesCatalog.secundus || []).find(s => s.id === circleId);
+            }
+            if (!circleEntry) {
+                circleEntry = { id: 't005', name: 'CATACLISMO', paths: ['fogo', 'ar', 'terra'], tier: 'TERCEIRUS' };
+            }
+
+            const p1Name = (document.getElementById('triad-p1-name') || {}).value || 'Condutor';
+            const p1Paths = ((document.getElementById('triad-p1-paths') || {}).value || 'fogo').split(',');
+            const p1Bonus = parseInt((document.getElementById('triad-p1-bonus') || {}).value) || 2;
+            const p1PE = parseInt((document.getElementById('triad-p1-pe') || {}).value) || 8;
+
+            const p2Name = (document.getElementById('triad-p2-name') || {}).value || 'Estabilizador';
+            const p2Paths = ((document.getElementById('triad-p2-paths') || {}).value || 'ar').split(',');
+            const p2Bonus = parseInt((document.getElementById('triad-p2-bonus') || {}).value) || 2;
+            const p2PE = parseInt((document.getElementById('triad-p2-pe') || {}).value) || 8;
+
+            const p3Name = (document.getElementById('triad-p3-name') || {}).value || 'Canalizador';
+            const p3Paths = ((document.getElementById('triad-p3-paths') || {}).value || 'terra').split(',');
+            const p3Bonus = parseInt((document.getElementById('triad-p3-bonus') || {}).value) || 2;
+            const p3PE = parseInt((document.getElementById('triad-p3-pe') || {}).value) || 8;
+
+            const participants = [
+                { name: p1Name, role: 'condutor', paths: p1Paths, bonus: p1Bonus, peAvailable: p1PE },
+                { name: p2Name, role: 'estabilizador', paths: p2Paths, bonus: p2Bonus, peAvailable: p2PE },
+                { name: p3Name, role: 'canalizador', paths: p3Paths, bonus: p3Bonus, peAvailable: p3PE }
+            ];
+
+            // Áudio
+            if (immersionSys && immersionSys.RuneSoundSynthesizer) {
+                try { immersionSys.RuneSoundSynthesizer.playDiceRollSound(); } catch (e) {}
+            }
+
+            const res = coopSys.CooperativeRolesEngine.executeRoleRitual(participants, circleEntry);
+            const resBox = document.getElementById('ritual-result-box');
+            if (!resBox) return;
+
+            resBox.classList.remove('hidden');
+
+            if (res.success) {
+                resBox.innerHTML = `
+                    <div style="border-left:3px solid #fbbf24; padding-left:12px;">
+                        <span class="text-xs font-cinzel font-bold text-amber-300 block mb-1">
+                            <i class="fa-solid fa-crown mr-1"></i> RITUAL DA TRÍADE ARCANA CONCLUÍDO COM SUCESSO!
+                        </span>
+                        <p class="text-xs text-gray-200 mb-2">${res.message}</p>
+                        <div class="text-[11px] text-gray-300 space-y-1 bg-slate-900/80 p-2.5 rounded border border-slate-800">
+                            <div><strong>${res.roleResults[0].name} (Condutor):</strong> Dados [${res.roleResults[0].d1}+${res.roleResults[0].d2}] &middot; +${res.roleResults[0].bonus} foco</div>
+                            <div><strong>${res.roleResults[1].name} (Estabilizador):</strong> Dados [${res.roleResults[1].d1}+${res.roleResults[1].d2}] &middot; ${res.roleResults[1].isSurgePrevented ? '✓ Preveniu Surtos' : 'Estabilizou'}</div>
+                            <div><strong>${res.roleResults[2].name} (Canalizador):</strong> Dados [${res.roleResults[2].d1}+${res.roleResults[2].d2}] &middot; Redução de CD e PE</div>
+                        </div>
+                        <div class="mt-2 text-[11px] text-cyan-300">
+                            Divisão de PE: ${res.peDeductionPlan.map(p => `${p.name}: -${p.peDeducted} PE`).join(' | ')}
+                        </div>
+                    </div>
+                `;
+                showToast(`👑 A Tríade conjurou ${circleEntry.name} com maestria!`);
+
+                if (immersionSys && immersionSys.AchievementsEngine && characterAchievements) {
+                    const achRes = immersionSys.AchievementsEngine.evaluateAchievements(characterAchievements, {
+                        roleRitualCompleted: true,
+                        conjuredCircleId: circleEntry.id
+                    });
+                    if (achRes.newlyUnlocked && achRes.newlyUnlocked.length > 0) {
+                        characterAchievements = achRes.state;
+                        saveAchievements();
+                        achRes.newlyUnlocked.forEach(a => showToast(`🏆 Conquista: "${a.title}"!`));
+                    }
+                }
+            } else {
+                resBox.innerHTML = `
+                    <div style="border-left:3px solid #ef4444; padding-left:12px;">
+                        <span class="text-xs font-cinzel font-bold text-red-400 block mb-1">
+                            <i class="fa-solid fa-triangle-exclamation mr-1"></i> FALHA NA TRÍADE ARCANA
+                        </span>
+                        <p class="text-xs text-gray-300">${res.reason || res.message}</p>
+                    </div>
+                `;
+                showToast(res.reason || 'A formação do ritual não pôde sustentar a magia.', 'warning');
+            }
+        }
+
+        // Mana Pool Modal Handlers
+        function openManaPoolModal() {
+            initPartyManaPool();
+            const overlay = document.getElementById('modal-mana-pool-overlay');
+            if (overlay) overlay.classList.add('open');
+            renderManaPoolUI();
+        }
+
+        function closeManaPoolModal() {
+            const overlay = document.getElementById('modal-mana-pool-overlay');
+            if (overlay) overlay.classList.remove('open');
+        }
+
+        function closeManaPoolOnBackdrop(e) {
+            if (e.target && e.target.id === 'modal-mana-pool-overlay') closeManaPoolModal();
+        }
+
+        function renderManaPoolUI() {
+            if (!partyManaPool) return;
+            const curEl = document.getElementById('modal-pool-current-pe');
+            if (curEl) curEl.innerText = partyManaPool.currentPE;
+            const maxEl = document.getElementById('modal-pool-max-pe');
+            if (maxEl) maxEl.innerText = partyManaPool.capacity;
+            const userPeEl = document.getElementById('modal-user-pe-disp');
+            if (userPeEl) userPeEl.innerText = `${userPM} PE`;
+
+            const listEl = document.getElementById('pool-history-list');
+            if (listEl) {
+                const logs = partyManaPool.transactionLog || [];
+                if (logs.length === 0) {
+                    listEl.innerHTML = '<div class="text-gray-500 italic">Nenhuma transação de PE registrada.</div>';
+                } else {
+                    listEl.innerHTML = logs.slice(-6).reverse().map(l => `
+                        <div class="flex justify-between border-b border-slate-800 pb-1">
+                            <span class="${l.action === 'DONATION' ? 'text-emerald-400' : 'text-cyan-400'}"><i class="fa-solid ${l.action === 'DONATION' ? 'fa-arrow-up' : 'fa-arrow-down'} mr-1"></i>${l.actor}: ${l.amount > 0 ? '+' : ''}${l.amount} PE</span>
+                            <span class="text-gray-400 font-mono">${l.poolAfter} PE total</span>
+                        </div>
+                    `).join('');
+                }
+            }
+            updateHUD();
+        }
+
+        function donateManaToPoolAction() {
+            if (!coopSys || !partyManaPool) return;
+            const inp = document.getElementById('pool-donate-amount');
+            const amount = parseInt(inp ? inp.value : '2') || 2;
+            if (userPM < amount) {
+                showToast(`Você não possui ${amount} PE suficientes para doar (disponível: ${userPM} PE).`, 'warning');
+                return;
+            }
+
+            const donorName = characterState.characterName || 'Mago Jogador';
+            const res = coopSys.SharedManaPool.donateToPool(partyManaPool, amount, donorName);
+            if (res.success) {
+                userPM -= amount;
+                characterState.availablePM = userPM;
+                saveState();
+                saveManaPool();
+                renderManaPoolUI();
+                showToast(`💎 Você doou ${amount} PE ao reservatório da Party!`);
+            } else {
+                showToast(res.reason || 'Erro ao doar PE.', 'warning');
+            }
+        }
+
+        function withdrawManaFromPoolAction() {
+            if (!coopSys || !partyManaPool) return;
+            const inp = document.getElementById('pool-withdraw-amount');
+            const amount = parseInt(inp ? inp.value : '2') || 2;
+
+            const recName = characterState.characterName || 'Mago Jogador';
+            const res = coopSys.SharedManaPool.withdrawFromPool(partyManaPool, amount, recName);
+            if (res.success) {
+                userPM += amount;
+                characterState.availablePM = userPM;
+                saveState();
+                saveManaPool();
+                renderManaPoolUI();
+                showToast(`✨ Você sacou ${amount} PE do reservatório da Party!`);
+            } else {
+                showToast(res.reason || 'Erro ao sacar PE.', 'warning');
+            }
+        }
+
+        function transferManaDirectAction() {
+            if (!coopSys) return;
+            const targetInp = document.getElementById('pool-transfer-target');
+            const amountInp = document.getElementById('pool-transfer-amount');
+            const targetName = (targetInp ? targetInp.value.trim() : '') || 'Aliado';
+            const amount = parseInt(amountInp ? amountInp.value : '1') || 1;
+
+            if (userPM < amount) {
+                showToast(`Você não possui ${amount} PE suficientes para transferir.`, 'warning');
+                return;
+            }
+
+            const sender = { name: characterState.characterName || 'Você', pe: userPM };
+            const receiver = { name: targetName, pe: 8 };
+
+            const res = coopSys.SharedManaPool.transferBetweenPlayers(sender, receiver, amount);
+            if (res.success) {
+                userPM = sender.pe;
+                characterState.availablePM = userPM;
+                saveState();
+                renderManaPoolUI();
+                showToast(`✨ ${res.message}`);
+            } else {
+                showToast(res.reason || 'Erro na transferência de PE.', 'warning');
+            }
+        }
+
+        // =========================================================================
+        // SUBSISTEMA 5: EXPLORAÇÃO — MULTI-SELOS, DEDUÇÃO E MASMORRA
+        // =========================================================================
+        const explorSys = (typeof MagicExplorationSystem !== 'undefined') ? MagicExplorationSystem : null;
+        let multiSealDoors = explorSys ? explorSys.MultiSealDoorEngine.getPrebuiltMultiSealDoors() : [];
+        let currentMultiSealIndex = 0;
+        let currentDeductionPuzzle = null;
+        let activeDungeon = explorSys ? explorSys.ArcaneDungeonMapEngine.getPrebuiltDungeon() : null;
+
+        function switchPuzzleSubtab(tabName) {
+            const tabs = ['incomplete', 'multiseal', 'deduction', 'dungeon'];
+            tabs.forEach(t => {
+                const btn = document.getElementById(`ptab-btn-${t}`);
+                const panel = document.getElementById(`puzzle-subtab-${t}`);
+                if (t === tabName) {
+                    if (btn) btn.classList.add('active');
+                    if (panel) panel.classList.remove('hidden');
+                } else {
+                    if (btn) btn.classList.remove('active');
+                    if (panel) panel.classList.add('hidden');
+                }
+            });
+
+            if (tabName === 'multiseal') renderMultiSealUI();
+            if (tabName === 'deduction' && !currentDeductionPuzzle) generateRandomDeductionPuzzleAction();
+            if (tabName === 'dungeon') renderDungeonMap();
+        }
+
+        function renderMultiSealUI() {
+            if (!multiSealDoors || multiSealDoors.length === 0) return;
+            const door = multiSealDoors[currentMultiSealIndex] || multiSealDoors[0];
+
+            // Render doors list
+            const selEl = document.getElementById('multiseal-doors-selector');
+            if (selEl) {
+                selEl.innerHTML = multiSealDoors.map((d, idx) => `
+                    <button type="button" onclick="selectMultiSealDoor(${idx})" class="p-2 rounded border ${idx === currentMultiSealIndex ? 'border-amber-400 bg-amber-950/40 text-amber-300' : 'border-slate-700 bg-slate-900 text-gray-300'} text-xs font-bold text-left cursor-pointer transition-all">
+                        <i class="fa-solid fa-door-closed mr-1"></i> ${d.title}
+                    </button>
+                `).join('');
+            }
+
+            document.getElementById('multiseal-title').innerText = door.title;
+            document.getElementById('multiseal-desc').innerText = door.description;
+
+            // Render sequence steps
+            const stepsEl = document.getElementById('multiseal-steps-container');
+            if (stepsEl) {
+                stepsEl.innerHTML = door.requiredSealSequence.map((seal, idx) => {
+                    const isDone = idx < door.currentStep;
+                    const isCurrent = idx === door.currentStep && !door.unlocked;
+                    return `
+                        <div class="flex items-center gap-1.5 p-2 rounded-lg border ${isDone ? 'border-emerald-500 bg-emerald-950/60 text-emerald-300' : (isCurrent ? 'border-amber-400 bg-amber-950/60 text-amber-300 animate-pulse' : 'border-slate-800 bg-slate-900 text-gray-500')} font-mono text-xs">
+                            <i class="fa-solid ${isDone ? 'fa-check' : (isCurrent ? 'fa-circle-dot' : 'fa-lock')}"></i>
+                            <span>Passo ${idx + 1}: ${seal.toUpperCase()}</span>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            // Render interactive seal triggers
+            const trigEl = document.getElementById('multiseal-triggers-grid');
+            if (trigEl) {
+                const availableSeals = ['s03', 's05', 't005', 't120'];
+                trigEl.innerHTML = availableSeals.map(sk => `
+                    <button type="button" onclick="activateMultiSealStep('${sk}')" class="p-2.5 rounded-lg bg-slate-900 border border-slate-700 hover:border-amber-400 hover:bg-slate-800 text-xs font-cinzel font-bold text-white cursor-pointer transition-all">
+                        <i class="fa-solid fa-bolt mr-1 text-amber-400"></i> ${sk.toUpperCase()}
+                    </button>
+                `).join('');
+            }
+        }
+
+        function selectMultiSealDoor(index) {
+            currentMultiSealIndex = index;
+            renderMultiSealUI();
+        }
+
+        function activateMultiSealStep(sealKey) {
+            if (!explorSys) return;
+            const door = multiSealDoors[currentMultiSealIndex];
+            if (!door) return;
+
+            const res = explorSys.MultiSealDoorEngine.activateSealStep(door, sealKey);
+            const fbBox = document.getElementById('multiseal-feedback-box');
+            if (fbBox) {
+                fbBox.classList.remove('hidden');
+                if (res.unlocked) {
+                    fbBox.className = 'p-3 rounded-xl mb-2 bg-emerald-950/80 border border-emerald-500 text-emerald-200 text-xs';
+                    fbBox.innerHTML = `<strong>✨ PORTAL DESTRANCADO!</strong> ${res.message}`;
+                    showToast('🔮 Todos os selos da porta sequencial foram completados!');
+                    if (immersionSys && immersionSys.AchievementsEngine && characterAchievements) {
+                        const achRes = immersionSys.AchievementsEngine.evaluateAchievements(characterAchievements, { multiSealDoorUnlocked: true });
+                        if (achRes.newlyUnlocked && achRes.newlyUnlocked.length > 0) {
+                            characterAchievements = achRes.state;
+                            saveAchievements();
+                            achRes.newlyUnlocked.forEach(a => showToast(`🏆 Conquista: "${a.title}"!`));
+                        }
+                    }
+                } else if (res.triggeredTrap) {
+                    fbBox.className = 'p-3 rounded-xl mb-2 bg-red-950/80 border border-red-500 text-red-200 text-xs';
+                    fbBox.innerHTML = `<strong>💥 ARMADILHA ACIONADA!</strong> ${res.message}`;
+                    showToast('⚡ Selo fora de ordem! Armadilha disparada!', 'warning');
+                } else {
+                    fbBox.className = 'p-3 rounded-xl mb-2 bg-amber-950/80 border border-amber-500 text-amber-200 text-xs';
+                    fbBox.innerHTML = `<strong>Passo Aceito:</strong> ${res.message}`;
+                }
+            }
+            renderMultiSealUI();
+        }
+
+        // Deduction Puzzle Handlers
+        function generateRandomDeductionPuzzleAction() {
+            if (!explorSys) return;
+            currentDeductionPuzzle = explorSys.DeductionPuzzleEngine.generateRandomDeductionPuzzle(circlesCatalog);
+            if (!currentDeductionPuzzle) return;
+
+            document.getElementById('deduction-puzzle-title').innerText = currentDeductionPuzzle.title;
+            document.getElementById('deduction-puzzle-tier').innerText = currentDeductionPuzzle.tier;
+            document.getElementById('deduction-puzzle-lore').innerText = currentDeductionPuzzle.lore;
+            document.getElementById('deduction-known-paths').innerText = currentDeductionPuzzle.knownPaths.join(', ').toUpperCase();
+
+            const cluesEl = document.getElementById('deduction-clues-box');
+            if (cluesEl) {
+                cluesEl.innerHTML = currentDeductionPuzzle.clues.map(c => `<div><i class="fa-solid fa-scroll mr-1"></i> "${c}"</div>`).join('');
+            }
+
+            const optsEl = document.getElementById('deduction-options-grid');
+            if (optsEl) {
+                optsEl.innerHTML = Object.keys(magicPaths).map(pk => {
+                    const p = magicPaths[pk];
+                    return `
+                        <button type="button" onclick="guessDeductionPathAction('${pk}')" class="p-2 rounded bg-slate-900 border border-slate-700 hover:border-sky-400 text-center cursor-pointer transition-all">
+                            <i class="${p.icon}" style="color:${p.color}; font-size:14px;"></i>
+                            <span class="text-[10px] text-gray-300 block font-bold mt-1">${p.name.replace('Magia ', '')}</span>
+                        </button>
+                    `;
+                }).join('');
+            }
+
+            const fbBox = document.getElementById('deduction-feedback-box');
+            if (fbBox) fbBox.classList.add('hidden');
+        }
+
+        function guessDeductionPathAction(pathKey) {
+            if (!explorSys || !currentDeductionPuzzle) return;
+            const res = explorSys.DeductionPuzzleEngine.evaluateDeduction(currentDeductionPuzzle, pathKey);
+            const fbBox = document.getElementById('deduction-feedback-box');
+            if (!fbBox) return;
+
+            fbBox.classList.remove('hidden');
+            if (res.solved) {
+                fbBox.className = 'p-3 rounded-xl mb-2 bg-emerald-950/80 border border-emerald-500 text-emerald-200 text-xs';
+                fbBox.innerHTML = `<strong>✓ ENIGMA DECIFRADO COM SUCESSO!</strong> ${res.message}`;
+                showToast('✨ Enigma dedutivo resolvido!');
+                if (immersionSys && immersionSys.AchievementsEngine && characterAchievements) {
+                    const achRes = immersionSys.AchievementsEngine.evaluateAchievements(characterAchievements, { deductionPuzzleSolved: true });
+                    if (achRes.newlyUnlocked && achRes.newlyUnlocked.length > 0) {
+                        characterAchievements = achRes.state;
+                        saveAchievements();
+                        achRes.newlyUnlocked.forEach(a => showToast(`🏆 Conquista: "${a.title}"!`));
+                    }
+                }
+            } else {
+                fbBox.className = 'p-3 rounded-xl mb-2 bg-amber-950/80 border border-amber-500 text-amber-200 text-xs';
+                fbBox.innerHTML = `<strong>✗ Dedução Incorreta:</strong> ${res.message}`;
+            }
+        }
+
+        // Dungeon Map Handlers
+        function renderDungeonMap() {
+            if (!activeDungeon) return;
+            const room = activeDungeon.rooms[activeDungeon.currentRoomId];
+            if (!room) return;
+
+            document.getElementById('dungeon-name').innerText = activeDungeon.name;
+            document.getElementById('dungeon-current-room-name').innerText = room.name;
+            document.getElementById('dungeon-current-room-desc').innerText = room.description;
+
+            const connEl = document.getElementById('dungeon-connections-grid');
+            if (connEl) {
+                connEl.innerHTML = room.connections.map(targetId => {
+                    const tRoom = activeDungeon.rooms[targetId];
+                    if (!tRoom) return '';
+                    const reqBadges = tRoom.requiredPaths.map(pk => {
+                        const mp = magicPaths[pk];
+                        const hasPath = (characterSkills[pk] || 0) > 0;
+                        return `<span class="text-[9px] px-1.5 py-0.5 rounded font-mono ${hasPath ? 'bg-emerald-950 text-emerald-300' : 'bg-red-950 text-red-300'}"><i class="${mp ? mp.icon : 'fa-solid fa-sparkles'}"></i> ${pk}</span>`;
+                    }).join(' ');
+
+                    return `
+                        <div class="p-3 bg-slate-900/90 border border-slate-700 hover:border-purple-400 rounded-lg flex flex-col justify-between gap-2">
+                            <div>
+                                <div class="text-xs font-cinzel font-bold text-white">${tRoom.name}</div>
+                                <div class="text-[10px] text-gray-400 my-1">${tRoom.description}</div>
+                                <div class="flex gap-1 items-center mt-1">Exige: ${reqBadges || '<span class="text-emerald-400 text-[10px]">Livre</span>'}</div>
+                            </div>
+                            <button type="button" onclick="traverseDungeonRoomAction('${targetId}')" class="w-full py-1.5 rounded bg-purple-600 hover:bg-purple-500 text-white font-cinzel font-bold text-xs cursor-pointer">
+                                Avançar para esta Sala
+                            </button>
+                        </div>
+                    `;
+                }).join('');
+            }
+        }
+
+        function traverseDungeonRoomAction(targetRoomId) {
+            if (!explorSys || !activeDungeon) return;
+            const charPaths = Object.keys(characterSkills).filter(k => (characterSkills[k] || 0) > 0);
+            const res = explorSys.ArcaneDungeonMapEngine.attemptTraverseRoom(activeDungeon, targetRoomId, charPaths);
+
+            const fbBox = document.getElementById('dungeon-feedback-box');
+            if (fbBox) {
+                fbBox.classList.remove('hidden');
+                if (res.success) {
+                    fbBox.className = 'p-3 rounded-xl mb-2 bg-emerald-950/80 border border-emerald-500 text-emerald-200 text-xs';
+                    fbBox.innerHTML = `<strong>Passagem Conquistada!</strong> ${res.message}`;
+                    showToast(`🚪 Você avançou para "${res.targetRoom.name}"!`);
+                    if (immersionSys && immersionSys.AchievementsEngine && characterAchievements) {
+                        const achRes = immersionSys.AchievementsEngine.evaluateAchievements(characterAchievements, { dungeonRoomReached: true });
+                        if (achRes.newlyUnlocked && achRes.newlyUnlocked.length > 0) {
+                            characterAchievements = achRes.state;
+                            saveAchievements();
+                            achRes.newlyUnlocked.forEach(a => showToast(`🏆 Conquista: "${a.title}"!`));
+                        }
+                    }
+                } else {
+                    fbBox.className = 'p-3 rounded-xl mb-2 bg-red-950/80 border border-red-500 text-red-200 text-xs';
+                    fbBox.innerHTML = `<strong>Barreira Arcana:</strong> ${res.message}`;
+                    showToast(res.message, 'warning');
+                }
+            }
+            renderDungeonMap();
+        }
+
+        function resetDungeonProgressAction() {
+            if (!explorSys) return;
+            activeDungeon = explorSys.ArcaneDungeonMapEngine.getPrebuiltDungeon();
+            renderDungeonMap();
+            showToast('Masmorra reiniciada ao vestíbulo.');
+        }
+
+        // =========================================================================
+        // SUBSISTEMA 6: MODO MESTRE, EVENTOS ARCANOS GLOBAIS E SINCRONIA DE MESA
+        // =========================================================================
+        const immersionSys = (typeof MagicImmersionSystem !== 'undefined') ? MagicImmersionSystem : null;
+        const STORAGE_KEY_MASTER_EVENT = 'kuar_tor_active_master_event';
+        let activeMasterEvent = 'none';
+        try {
+            activeMasterEvent = localStorage.getItem(STORAGE_KEY_MASTER_EVENT) || 'none';
+        } catch (e) {}
+
+        function openMasterModeModal() {
+            const overlay = document.getElementById('modal-master-mode-overlay');
+            if (overlay) overlay.classList.add('open');
+            selectMasterEvent(activeMasterEvent, false);
+        }
+
+        function closeMasterModeModal() {
+            const overlay = document.getElementById('modal-master-mode-overlay');
+            if (overlay) overlay.classList.remove('open');
+        }
+
+        function closeMasterModeOnBackdrop(e) {
+            if (e.target && e.target.id === 'modal-master-mode-overlay') closeMasterModeModal();
+        }
+
+        function selectMasterEvent(eventKey, notify = true) {
+            activeMasterEvent = eventKey;
+            try { localStorage.setItem(STORAGE_KEY_MASTER_EVENT, eventKey); } catch (e) {}
+
+            const events = immersionSys ? immersionSys.MasterModeEngine.ARCANE_GLOBAL_EVENTS : {};
+            const ev = events[eventKey] || { name: 'Trama Mágica Normal', description: 'Nenhum evento ativo.' };
+
+            document.querySelectorAll('#master-events-selector button').forEach(btn => {
+                btn.className = (btn.id === `mevent-btn-${eventKey}`)
+                    ? 'p-2.5 rounded-lg border border-red-500 bg-red-950/40 text-left cursor-pointer transition-all'
+                    : 'p-2.5 rounded-lg border border-slate-700 bg-slate-900 hover:bg-slate-800 text-left cursor-pointer transition-all';
+            });
+
+            const badgeEl = document.getElementById('master-active-badge');
+            if (badgeEl) badgeEl.innerText = eventKey !== 'none' ? 'EVENTO CLIMÁTICO ATIVO' : 'ESTADO NORMAL';
+            const nameEl = document.getElementById('master-active-name');
+            if (nameEl) nameEl.innerText = ev.name;
+            const descEl = document.getElementById('master-active-desc');
+            if (descEl) descEl.innerText = ev.description;
+
+            if (notify && eventKey !== 'none') {
+                showToast(`👑 Evento Mestre Ativado: "${ev.name}"!`);
+            }
+        }
+
+        function broadcastCurrentMasterEventAction() {
+            if (!coopSys || !immersionSys) return;
+            const events = immersionSys.MasterModeEngine.ARCANE_GLOBAL_EVENTS;
+            const ev = events[activeMasterEvent] || { name: 'Trama Mágica Normal', description: 'Nenhum evento ativo.' };
+
+            const broadcast = coopSys.TabletopSyncEngine.createArcaneEventBroadcast(ev.name, ev.description);
+            showToast(`📡 Transmitido à Mesa: "${ev.name}" ativado pelo Mestre!`);
+        }
+
+        // =========================================================================
+        // SUBSISTEMA 7: CONQUISTAS MÁGICAS (ACHIEVEMENTS)
+        // =========================================================================
+        const STORAGE_KEY_ACHIEVEMENTS = 'kuar_tor_achievements_state';
+        let characterAchievements = null;
+
+        function initAchievementsState() {
+            try {
+                const raw = localStorage.getItem(STORAGE_KEY_ACHIEVEMENTS);
+                if (raw) characterAchievements = JSON.parse(raw);
+            } catch (e) {}
+            if (!characterAchievements && immersionSys && immersionSys.AchievementsEngine) {
+                characterAchievements = immersionSys.AchievementsEngine.createAchievementsState();
+            }
+            updateHUD();
+        }
+
+        function saveAchievements() {
+            if (!characterAchievements) return;
+            try {
+                localStorage.setItem(STORAGE_KEY_ACHIEVEMENTS, JSON.stringify(characterAchievements));
+            } catch (e) {}
+            updateHUD();
+        }
+
+        function openAchievementsModal() {
+            initAchievementsState();
+            const overlay = document.getElementById('modal-achievements-overlay');
+            if (overlay) overlay.classList.add('open');
+            renderAchievementsUI();
+        }
+
+        function closeAchievementsModal() {
+            const overlay = document.getElementById('modal-achievements-overlay');
+            if (overlay) overlay.classList.remove('open');
+        }
+
+        function closeAchievementsOnBackdrop(e) {
+            if (e.target && e.target.id === 'modal-achievements-overlay') closeAchievementsModal();
+        }
+
+        function renderAchievementsUI() {
+            if (!immersionSys || !immersionSys.AchievementsEngine || !characterAchievements) return;
+            const catalog = immersionSys.AchievementsEngine.ACHIEVEMENTS_CATALOG;
+            const unlocked = new Set(characterAchievements.unlockedIds || []);
+
+            const countEl = document.getElementById('achievements-modal-count');
+            if (countEl) countEl.innerText = unlocked.size;
+            const totalEl = document.getElementById('achievements-modal-total');
+            if (totalEl) totalEl.innerText = catalog.length;
+
+            const gridEl = document.getElementById('achievements-cards-grid');
+            if (gridEl) {
+                gridEl.innerHTML = catalog.map(ach => {
+                    const isUnlocked = unlocked.has(ach.id);
+                    return `
+                        <div class="p-3 rounded-xl border ${isUnlocked ? 'border-amber-400 bg-amber-950/30' : 'border-slate-800 bg-slate-950/60 opacity-60'} flex items-start gap-3 transition-all">
+                            <div class="w-10 h-10 rounded-full flex items-center justify-center ${isUnlocked ? 'bg-amber-400/20 text-amber-300 border border-amber-400/40 shadow-lg shadow-amber-400/20' : 'bg-slate-800 text-gray-500'} text-lg">
+                                <i class="${ach.icon || 'fa-solid fa-trophy'}"></i>
+                            </div>
+                            <div class="flex-1">
+                                <div class="flex items-center justify-between">
+                                    <h4 class="font-cinzel font-bold text-xs ${isUnlocked ? 'text-amber-300' : 'text-gray-400'}">${ach.title}</h4>
+                                    <span class="text-[9px] font-mono px-1.5 py-0.5 rounded ${isUnlocked ? 'bg-amber-950 text-amber-300' : 'bg-slate-900 text-gray-500'}">${isUnlocked ? 'DESBLOQUEADA' : 'BLOQUEADA'}</span>
+                                </div>
+                                <p class="text-[11px] text-gray-300 mt-1">${ach.description}</p>
+                                <span class="text-[10px] text-amber-400/80 font-mono mt-1 block"><i class="fa-solid fa-award mr-1"></i>${ach.reward}</span>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+            updateHUD();
+        }
+
+        // =========================================================================
+        // SUBSISTEMA 8: EXPORTAÇÃO DO GRIMÓRIO (PDF / FICHA IMPRIMÍVEL)
+        // =========================================================================
+        function exportGrimoireDoc() {
+            if (!immersionSys || !immersionSys.GrimoireExporter) {
+                showToast('Módulo de exportação de Grimório não disponível.', 'warning');
+                return;
+            }
+
+            const html = immersionSys.GrimoireExporter.generateGrimoireHTML(characterState, {
+                sheetName: characterState.characterName || 'Grimório do Mago',
+                playerPOD: characterState.characterPOD || 2
+            });
+
+            const win = window.open('', '_blank');
+            if (win) {
+                win.document.open();
+                win.document.write(html);
+                win.document.close();
+                showToast('📄 Grimório aberto para impressão / salvar em PDF!');
+            } else {
+                showToast('Pop-up bloqueado pelo navegador. Permita pop-ups para imprimir o Grimório.', 'warning');
+            }
+        }
+
+        // Inicializar novos subsistemas
+        initPartyManaPool();
+        initAchievementsState();
     </script>
 </body>
 

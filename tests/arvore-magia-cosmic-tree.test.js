@@ -210,6 +210,57 @@ QUnit.module('Biblioteca Arcana: Árvore Cósmica Ancestral Bioluminescente (AAA
         assert.ok(html.includes('computeCenteredCamera'), 'resetView e foco de nós utilizam computeCenteredCamera para centralização exata');
         assert.ok(html.includes('computeZoomAroundAnchor'), 'Zoom mantém o ponto central ancorado sem deslocar o tabuleiro');
     });
+
+    // -------------------------------------------------------------
+    // 11. Caminho Feliz e Integração: Subsistemas de Cooperação, Exploração e Imersão no DOM (AAA)
+    // -------------------------------------------------------------
+    QUnit.test('11. Caminho Feliz e Integração: Subsistemas de Cooperação, Exploração e Imersão no DOM e Scripts (AAA)', function (assert) {
+        // Arrange
+        const html = fs.readFileSync(ARVORE_HTML_PATH, 'utf-8');
+
+        // Act & Assert: Scripts carregados no head
+        assert.ok(html.includes('magic-cooperation-system.js'), 'Script magic-cooperation-system.js importado no head');
+        assert.ok(html.includes('magic-exploration-system.js'), 'Script magic-exploration-system.js importado no head');
+        assert.ok(html.includes('magic-immersion-system.js'), 'Script magic-immersion-system.js importado no head');
+
+        // Act & Assert: Botões no Header HUD
+        assert.ok(html.includes('openManaPoolModal()'), 'Botão de abertura do reservatório de mana no HUD');
+        assert.ok(html.includes('exportGrimoireDoc()'), 'Botão de exportação do grimório no HUD');
+        assert.ok(html.includes('openMasterModeModal()'), 'Botão do Modo Mestre no HUD');
+        assert.ok(html.includes('openAchievementsModal()'), 'Botão de conquistas no HUD');
+
+        // Act & Assert: Modais no DOM
+        assert.ok(html.includes('id="modal-mana-pool-overlay"'), 'Modal de Mana Compartilhada presente no DOM');
+        assert.ok(html.includes('id="modal-master-mode-overlay"'), 'Modal de Modo Mestre e Eventos Globais presente no DOM');
+        assert.ok(html.includes('id="modal-achievements-overlay"'), 'Modal de Conquistas presente no DOM');
+
+        // Act & Assert: Subtabs nos modais
+        assert.ok(html.includes('switchRitualSubtab'), 'Alternância de subtabs de ritual (dupla vs tríade) presente');
+        assert.ok(html.includes('ritual-mode-triad-container'), 'Container da Tríade Arcana com papéis presente');
+        assert.ok(html.includes('switchPuzzleSubtab'), 'Alternância de subtabs de puzzle presente');
+        assert.ok(html.includes('puzzle-subtab-multiseal'), 'Subtab de Portas Multi-Selos presente');
+        assert.ok(html.includes('puzzle-subtab-deduction'), 'Subtab de Enigmas por Dedução presente');
+        assert.ok(html.includes('puzzle-subtab-dungeon'), 'Subtab de Mapa de Masmorra presente');
+    });
+
+    // -------------------------------------------------------------
+    // 12. Casos de Borda e Qualidade de Vida: Rolador 3D, Som Rúnico e Modo Mestre (AAA)
+    // -------------------------------------------------------------
+    QUnit.test('12. Casos de Borda e Qualidade de Vida: Rolador 3D, Som Rúnico e Eventos do Mestre (AAA)', function (assert) {
+        // Arrange
+        const html = fs.readFileSync(ARVORE_HTML_PATH, 'utf-8');
+
+        // Act & Assert: Estilos e Animação 3D dos Dados
+        assert.ok(html.includes('.dice-3d-stage'), 'Classe CSS .dice-3d-stage com perspectiva definida');
+        assert.ok(html.includes('.die-3d'), 'Classe CSS .die-3d para os cubos de dados 3D definida');
+        assert.ok(html.includes('@keyframes dieTumble'), 'Keyframe dieTumble de rolagem dos dados presente');
+
+        // Act & Assert: Funções de Rolagem, Som e Conquistas
+        assert.ok(html.includes('RuneSoundSynthesizer'), 'Síntese de áudio Web Audio API integrada nas rolagens');
+        assert.ok(html.includes('activeMasterEvent'), 'Modo Mestre aplica modificadores de evento no 2d6');
+        assert.ok(html.includes('evaluateAchievements'), 'Sistema avalia desbloqueio de conquistas');
+        assert.ok(html.includes('generateGrimoireHTML'), 'Exportação do grimório imprimível conectada');
+    });
 });
 
 

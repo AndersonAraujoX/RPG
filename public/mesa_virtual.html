@@ -26,9 +26,20 @@
     <script src="../src/core/vtt-firestore.js"></script>
     <script src="../src/modules/puzzle-sync.js"></script>
 
+    <!-- PWA Manifest & Theme -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#07090e">
+
     <!-- PeerJS P2P Multiplayer (Fallback) -->
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <script src="../src/core/vtt-p2p.js"></script>
+
+    <!-- Core VTT Engines (+2d6) -->
+    <script src="../src/core/dice-roller.js"></script>
+    <script src="../src/core/audio-sfx-engine.js"></script>
+    <script src="../src/core/vtt-bestiary-engine.js"></script>
+    <script src="../src/core/vtt-fog-aoe-engine.js"></script>
+    <script src="../src/core/item-catalog-engine.js"></script>
 
     <style>
         :root {
@@ -456,6 +467,19 @@
             <i class="fa-solid fa-border-all"></i>
         </button>
         <hr class="border-slate-700 my-1">
+        <button id="tool-bestiary" class="tool-btn" onclick="openBestiaryModal()" title="Bestiário Rápido (+2d6)">
+            <i class="fa-solid fa-skull"></i>
+        </button>
+        <button id="tool-tracker" class="tool-btn" onclick="toggleTurnTracker()" title="Rastreador de Turnos (+2d6)">
+            <i class="fa-solid fa-stopwatch"></i>
+        </button>
+        <button id="tool-aoe" class="tool-btn" onclick="toggleAoEMenu()" title="Áreas de Efeito AoE (Raio, Cone, Linha)">
+            <i class="fa-solid fa-bullseye"></i>
+        </button>
+        <button id="tool-audio-mute" class="tool-btn" onclick="toggleVttAudioMute()" title="Efeitos Sonoros Sintetizados">
+            <i id="vtt-audio-icon" class="fa-solid fa-volume-high"></i>
+        </button>
+        <hr class="border-slate-700 my-1">
         <button class="tool-btn" onclick="adjustZoom(0.15)" title="Aproximar (+)">
             <i class="fa-solid fa-magnifying-glass-plus"></i>
         </button>
@@ -474,6 +498,7 @@
             <div id="grid-overlay"></div>
             <canvas id="fog-canvas"></canvas>
             <svg id="ruler-svg"></svg>
+            <svg id="aoe-svg" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 15;"></svg>
             <div id="tokens-layer"></div>
         </div>
     </div>
@@ -506,6 +531,69 @@
             <button onclick="toggleCondition('👻')" class="p-1 bg-slate-800 border border-slate-600 rounded text-xs hover:border-slate-300" title="Invisível">👻</button>
             <button onclick="toggleCondition('✨')" class="p-1 bg-slate-800 border border-slate-600 rounded text-xs hover:border-yellow-400" title="Abençoado">✨</button>
             <button onclick="deleteSelectedToken()" class="p-1 bg-red-900/60 border border-red-500 rounded text-xs text-red-300 hover:bg-red-800" title="Excluir Token"><i class="fa-solid fa-trash"></i></button>
+        </div>
+    </div>
+
+    <!-- Floating AoE Controls Bar -->
+    <div id="aoe-controls-bar" class="fixed left-20 top-20 bg-slate-900/95 backdrop-blur-md border border-cyan-400/40 rounded-xl p-3 shadow-2xl z-50 hidden flex flex-col gap-2 min-w-[220px]">
+        <div class="flex justify-between items-center pb-2 border-b border-slate-700">
+            <span class="text-xs font-cinzel font-bold text-cyan-300 flex items-center gap-1.5">
+                <i class="fa-solid fa-bullseye text-cyan-400"></i> Áreas de Efeito (AoE)
+            </span>
+            <button onclick="toggleAoEMenu()" class="text-gray-400 hover:text-white text-xs"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="grid grid-cols-2 gap-1.5 text-xs">
+            <button onclick="activateAoETemplate('circle_3m')" class="p-2 bg-slate-800 hover:bg-cyan-950 border border-slate-700 hover:border-cyan-400 rounded text-left transition">
+                <div class="font-bold text-cyan-300">Círculo 3m</div>
+                <div class="text-[10px] text-gray-400">Raio 2q &middot; Explosão</div>
+            </button>
+            <button onclick="activateAoETemplate('circle_6m')" class="p-2 bg-slate-800 hover:bg-cyan-950 border border-slate-700 hover:border-cyan-400 rounded text-left transition">
+                <div class="font-bold text-cyan-300">Círculo 6m</div>
+                <div class="text-[10px] text-gray-400">Raio 4q &middot; Grande</div>
+            </button>
+            <button onclick="activateAoETemplate('cone_6m')" class="p-2 bg-slate-800 hover:bg-cyan-950 border border-slate-700 hover:border-cyan-400 rounded text-left transition">
+                <div class="font-bold text-amber-300">Cone 6m</div>
+                <div class="text-[10px] text-gray-400">Ângulo 60° &middot; Sopro</div>
+            </button>
+            <button onclick="activateAoETemplate('line_15m')" class="p-2 bg-slate-800 hover:bg-cyan-950 border border-slate-700 hover:border-cyan-400 rounded text-left transition">
+                <div class="font-bold text-purple-300">Linha 15m</div>
+                <div class="text-[10px] text-gray-400">10q &middot; Relâmpago</div>
+            </button>
+        </div>
+        <button onclick="clearAoETemplates()" class="w-full py-1 bg-red-950/70 hover:bg-red-900 border border-red-500/40 text-red-300 text-xs rounded transition flex items-center justify-center gap-1 font-cinzel">
+            <i class="fa-solid fa-eraser"></i> Limpar Template AoE
+        </button>
+        <div id="aoe-targets-feedback" class="text-[11px] text-cyan-400 bg-slate-950 p-1.5 rounded border border-slate-800 hidden font-mono">
+        </div>
+    </div>
+
+    <!-- Floating Combat Tracker Bar -->
+    <div id="combat-tracker-hud" class="fixed top-16 left-1/2 -translate-x-1/2 bg-slate-900/95 backdrop-blur-md border border-amber-400/50 rounded-xl px-4 py-2 shadow-2xl z-40 hidden flex items-center gap-3">
+        <div class="flex items-center gap-2 pr-3 border-r border-slate-700">
+            <span class="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse"></span>
+            <div>
+                <div class="text-[10px] uppercase font-cinzel text-gray-400">Combate Ativo</div>
+                <div id="hud-round-label" class="font-cinzel text-sm font-bold text-amber-400">Rodada 1</div>
+            </div>
+        </div>
+        <div class="flex items-center gap-2">
+            <img id="hud-active-avatar" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80" class="w-8 h-8 rounded-full border-2 border-amber-400 object-cover">
+            <div>
+                <div class="text-[10px] text-gray-400">Turno Atual:</div>
+                <div id="hud-active-name" class="font-cinzel text-xs font-bold text-white truncate max-w-[120px]">Nenhum</div>
+            </div>
+        </div>
+        <div class="flex items-center gap-1.5 pl-3 border-l border-slate-700">
+            <button onclick="advanceCombatTurn()" class="px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-black font-cinzel font-bold text-xs rounded-lg transition flex items-center gap-1 shadow-[0_0_10px_rgba(251,191,36,0.3)]">
+                <span>Próximo</span>
+                <i class="fa-solid fa-forward"></i>
+            </button>
+            <button onclick="rollAllInitiative()" class="p-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded text-gray-200 text-xs" title="Rolar Iniciativas">
+                <i class="fa-solid fa-rotate-right"></i>
+            </button>
+            <button onclick="toggleTurnTracker()" class="p-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded text-gray-400 hover:text-white text-xs" title="Fechar HUD">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
         </div>
     </div>
 
@@ -729,6 +817,51 @@
                 </button>
             </div>
             <button onclick="closeCharModal()" class="w-full py-2 bg-slate-800 hover:bg-slate-700 text-gray-300 font-cinzel text-xs rounded">Fechar</button>
+        </div>
+    </div>
+
+    <!-- Bestiary Quick Modal (+2d6 Toolkit do Mestre) -->
+    <div id="bestiary-modal" class="fixed inset-0 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 hidden z-[125]">
+        <div class="bg-slate-900 border border-red-500/50 p-6 rounded-2xl max-w-4xl w-full max-h-[85vh] flex flex-col shadow-[0_0_50px_rgba(239,68,68,0.2)]">
+            <div class="flex justify-between items-center border-b border-slate-700 pb-3 mb-4">
+                <div class="flex items-center gap-2">
+                    <div class="w-9 h-9 rounded-lg bg-red-950/80 border border-red-500/60 flex items-center justify-center text-red-400">
+                        <i class="fa-solid fa-skull"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-cinzel text-lg font-bold text-red-300">Bestiário Rápido de Kuar-Tor (+2d6)</h3>
+                        <p class="text-[11px] text-gray-400">Criaturas Oficiais, Estatísticas e Invocação Imediata no VTT</p>
+                    </div>
+                </div>
+                <button onclick="closeBestiaryModal()" class="text-gray-400 hover:text-white text-lg"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <!-- Search & Filters -->
+            <div class="flex flex-wrap gap-2 mb-4">
+                <div class="flex-1 min-w-[200px] relative">
+                    <input type="text" id="bestiary-search" oninput="renderBestiaryList()" placeholder="Buscar criatura por nome, papel ou golpe..." class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 pl-9 text-xs text-white focus:outline-none focus:border-red-400">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-gray-400 text-xs"></i>
+                </div>
+                <select id="bestiary-filter-category" onchange="renderBestiaryList()" class="bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-gray-200 focus:outline-none focus:border-red-400 font-cinzel">
+                    <option value="ALL">Todas as Categorias</option>
+                    <option value="Humanoide">Humanoide</option>
+                    <option value="Fera Corrompida">Fera Corrompida</option>
+                    <option value="Construto Rúnico">Construto Rúnico</option>
+                    <option value="Espírito do Vazio">Espírito do Vazio</option>
+                    <option value="Aberração">Aberração</option>
+                </select>
+            </div>
+
+            <!-- Creatures Grid -->
+            <div id="bestiary-creatures-list" class="grid grid-cols-1 md:grid-cols-2 gap-3 overflow-y-auto pr-1 flex-1">
+                <!-- Populado dinamicamente via VttBestiaryEngine.getAllCreatures() -->
+            </div>
+
+            <div class="pt-3 border-t border-slate-800 flex justify-end mt-4">
+                <button onclick="closeBestiaryModal()" class="px-5 py-2 bg-slate-800 hover:bg-slate-700 text-gray-300 font-cinzel text-xs rounded-lg">
+                    Fechar Bestiário
+                </button>
+            </div>
         </div>
     </div>
 
@@ -1130,6 +1263,10 @@
                     const fill = el.querySelector('.token-bar-fill-hp');
                     if (fill) fill.style.width = `${(token.hp / token.maxHp) * 100}%`;
                 }
+                if (typeof AudioSfxEngine !== 'undefined') {
+                    if (delta < 0) AudioSfxEngine.playDamageTaken();
+                    else AudioSfxEngine.playHeal();
+                }
                 if (p2pNet) {
                     const payload = { id: token.id, hp: token.hp, pe: token.pe, conditions: token.conditions };
                     if (p2pNet.isHost) p2pNet.broadcast('TOKEN_UPDATE', payload);
@@ -1145,6 +1282,9 @@
             if (idx >= 0) token.conditions.splice(idx, 1);
             else token.conditions.push(icon);
             updateTokenConditionsUI(token.id);
+            if (typeof AudioSfxEngine !== 'undefined') {
+                AudioSfxEngine.playConditionToggle();
+            }
             if (p2pNet) {
                 const payload = { id: token.id, hp: token.hp, pe: token.pe, conditions: token.conditions };
                 if (p2pNet.isHost) p2pNet.broadcast('TOKEN_UPDATE', payload);
@@ -1194,6 +1334,13 @@
             else if (dice === 2) { outcome = `💥 FALHA CRÍTICA!`; type = 'fumble'; }
             else if (total >= cd) { outcome = `✓ SUCESSO (vs CD ${cd})`; }
             else { outcome = `✗ FALHA (vs CD ${cd})`; }
+
+            if (typeof AudioSfxEngine !== 'undefined') {
+                AudioSfxEngine.playDiceRoll();
+                if (dice === 12) AudioSfxEngine.playCriticalSuccess();
+                else if (dice === 2) AudioSfxEngine.playCriticalFailure();
+            }
+
             const formattedMsg = `🎲 [${d1} + ${d2}] + ${bonus} = <strong>${total}</strong> &middot; ${outcome}`;
             if (isSecret && p2pNet) {
                 p2pNet.sendSecretRoll(p2pNet.playerName || 'Jogador', `2d6+${bonus}`, total, outcome);
@@ -1262,9 +1409,62 @@
             if (p2pNet && p2pNet.isHost) p2pNet.broadcast('COMBAT_UPDATE', { combatants: state.combatants, round: state.currentRound, turn: state.currentTurnIndex });
         }
 
+        function advanceCombatTurn() {
+            if (typeof AudioSfxEngine !== 'undefined') AudioSfxEngine.playDiceRoll();
+            nextTurn();
+            // Processa condições no combatente da vez (ex: dano contínuo de Sangramento)
+            const active = state.combatants[state.currentTurnIndex];
+            if (active && state.tokens[active.id]) {
+                const tok = state.tokens[active.id];
+                if (tok.conditions && tok.conditions.includes('🩸')) {
+                    tok.hp = Math.max(0, tok.hp - 1);
+                    const el = document.getElementById(`token-${tok.id}`);
+                    if (el) {
+                        const fill = el.querySelector('.token-bar-fill-hp');
+                        if (fill) fill.style.width = `${(tok.hp / tok.maxHp) * 100}%`;
+                    }
+                    if (typeof AudioSfxEngine !== 'undefined') AudioSfxEngine.playDamageTaken();
+                    appendChatMessage('Condição Ativa', `🩸 ${tok.name} sangra e perde 1 PV! (${tok.hp}/${tok.maxHp})`);
+                }
+            }
+        }
+
+        function toggleTurnTracker() {
+            const hud = document.getElementById('combat-tracker-hud');
+            if (hud) {
+                hud.classList.toggle('hidden');
+                if (!hud.classList.contains('hidden')) renderInitiativeUI();
+            }
+        }
+
+        function toggleVttAudioMute() {
+            if (typeof AudioSfxEngine !== 'undefined') {
+                const isMuted = AudioSfxEngine.toggleMute();
+                const icon = document.getElementById('vtt-audio-icon');
+                if (icon) {
+                    icon.className = isMuted ? 'fa-solid fa-volume-xmark text-red-400' : 'fa-solid fa-volume-high text-cyan-400';
+                }
+                const btn = document.getElementById('tool-audio-mute');
+                if (btn) {
+                    btn.title = isMuted ? 'Áudio Mudo (Clique para reativar)' : 'Efeitos Sonoros Sintetizados (Clique para mutar)';
+                }
+            }
+        }
+
         function renderInitiativeUI() {
             const list = document.getElementById('initiative-list');
-            document.getElementById('round-counter').innerText = `Rodada ${state.currentRound}`;
+            const roundEl = document.getElementById('round-counter');
+            if (roundEl) roundEl.innerText = `Rodada ${state.currentRound}`;
+            const hudRound = document.getElementById('hud-round-label');
+            if (hudRound) hudRound.innerText = `Rodada ${state.currentRound}`;
+
+            const activeCombatant = state.combatants[state.currentTurnIndex];
+            const hudName = document.getElementById('hud-active-name');
+            const hudAvatar = document.getElementById('hud-active-avatar');
+            if (hudName) hudName.innerText = activeCombatant ? activeCombatant.name : 'Nenhum';
+            if (hudAvatar && activeCombatant) hudAvatar.src = activeCombatant.avatar;
+
+            if (!list) return;
             list.innerHTML = '';
             state.combatants.forEach((c, idx) => {
                 const isActive = idx === state.currentTurnIndex;
@@ -1274,6 +1474,203 @@
                 row.innerHTML = `<div class="flex items-center gap-2"><img src="${c.avatar}" class="w-7 h-7 rounded-full object-cover border ${isActive ? 'border-cyan-400' : 'border-slate-600'}"><div><div class="text-xs font-cinzel font-bold ${isActive ? 'text-cyan-300' : 'text-gray-200'}">${c.name}</div><div class="text-[10px] text-gray-400">Iniciativa: <strong>${c.init}</strong></div></div></div>${isActive ? '<span class="text-[10px] font-bold px-2 py-0.5 bg-cyan-400 text-black rounded font-cinzel">TURNO</span>' : ''}`;
                 list.appendChild(row);
             });
+        }
+
+        // ==========================================
+        // Toolkit do Mestre: Bestiário Rápido (+2d6)
+        // ==========================================
+        function openBestiaryModal() {
+            renderBestiaryList();
+            const modal = document.getElementById('bestiary-modal');
+            if (modal) modal.classList.remove('hidden');
+        }
+
+        function closeBestiaryModal() {
+            const modal = document.getElementById('bestiary-modal');
+            if (modal) modal.classList.add('hidden');
+        }
+
+        function renderBestiaryList() {
+            const list = document.getElementById('bestiary-creatures-list');
+            if (!list) return;
+            const term = (document.getElementById('bestiary-search')?.value || '').trim();
+            const cat = document.getElementById('bestiary-filter-category')?.value || 'ALL';
+
+            const creatures = (typeof VttBestiaryEngine !== 'undefined')
+                ? VttBestiaryEngine.filterCreatures(term, cat)
+                : [];
+
+            if (creatures.length === 0) {
+                list.innerHTML = `<div class="col-span-2 text-center text-gray-500 py-8 italic font-cinzel">Nenhuma criatura encontrada para os filtros selecionados.</div>`;
+                return;
+            }
+
+            list.innerHTML = creatures.map(c => `
+                <div class="p-3 bg-slate-950/80 border border-slate-700/80 hover:border-red-500/60 rounded-xl transition flex flex-col justify-between group">
+                    <div>
+                        <div class="flex items-center justify-between mb-2">
+                            <div class="flex items-center gap-2">
+                                <img src="${c.avatar}" class="w-10 h-10 rounded-full object-cover border-2 border-red-500/60 group-hover:scale-105 transition">
+                                <div>
+                                    <h4 class="font-cinzel text-sm font-bold text-red-300">${c.name}</h4>
+                                    <span class="text-[10px] text-gray-400 uppercase tracking-wider">${c.category} &middot; Tier ${c.tier}</span>
+                                </div>
+                            </div>
+                            <span class="text-[10px] px-2 py-0.5 rounded bg-red-950/80 border border-red-500/40 text-red-300 font-bold font-cinzel">${c.role}</span>
+                        </div>
+                        <p class="text-xs text-gray-300 mb-2 italic">"${c.description}"</p>
+                        
+                        <!-- Estatísticas Táticas -->
+                        <div class="grid grid-cols-4 gap-1 bg-black/60 p-2 rounded-lg border border-slate-800 text-center mb-2 font-mono text-xs">
+                            <div><span class="text-[9px] text-gray-400 block font-cinzel">PV</span><strong class="text-red-400">${c.stats.pv}</strong></div>
+                            <div><span class="text-[9px] text-gray-400 block font-cinzel">PE</span><strong class="text-cyan-400">${c.stats.pe}</strong></div>
+                            <div><span class="text-[9px] text-gray-400 block font-cinzel">DEF</span><strong class="text-amber-400">${c.stats.defesa}</strong></div>
+                            <div><span class="text-[9px] text-gray-400 block font-cinzel">ARM</span><strong class="text-purple-400">${c.stats.armadura}</strong></div>
+                        </div>
+
+                        <!-- Golpes & Ações -->
+                        <div class="space-y-1 mb-3 text-[11px]">
+                            ${c.attacks.map(atk => `
+                                <div class="text-gray-300 bg-slate-900/90 px-2 py-1 rounded border border-slate-800 flex justify-between">
+                                    <span>⚔️ <strong>${atk.name}</strong></span>
+                                    <span class="text-red-300 font-mono">${atk.bonusAcerto} acerto | ${atk.dano}</span>
+                                </div>
+                            `).join('')}
+                            ${c.specialAbilities.map(sp => `
+                                <div class="text-[10px] text-amber-300/90 bg-amber-950/30 px-2 py-0.5 rounded border border-amber-900/40">
+                                    ✨ <strong>${sp.name}:</strong> ${sp.desc}
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+
+                    <button onclick="spawnCreatureFromBestiary('${c.id}')" class="w-full py-1.5 bg-red-950/80 hover:bg-red-900 border border-red-500/50 hover:border-red-400 text-red-200 font-cinzel font-bold text-xs rounded-lg transition flex items-center justify-center gap-2 shadow-[0_0_10px_rgba(239,68,68,0.2)]">
+                        <i class="fa-solid fa-skull"></i> Invocar no Tabuleiro
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        function spawnCreatureFromBestiary(creatureId) {
+            if (typeof VttBestiaryEngine === 'undefined') return;
+            const creature = VttBestiaryEngine.getCreatureById(creatureId);
+            if (!creature) return;
+
+            const center = screenToWorld(viewport.clientWidth / 2, viewport.clientHeight / 2);
+            const token = VttBestiaryEngine.createEnemyToken(creatureId, {
+                x: Math.round(center.x / state.gridSize) * state.gridSize + 2,
+                y: Math.round(center.y / state.gridSize) * state.gridSize + 2
+            });
+
+            state.tokens[token.id] = token;
+            createTokenElement(token, true);
+            addCombatant(token, true);
+            closeBestiaryModal();
+
+            if (typeof AudioSfxEngine !== 'undefined') AudioSfxEngine.playSpellCast();
+            appendChatMessage('Bestiário (+2d6)', `⚔️ O Mestre invocou <strong>${creature.name}</strong> no tabuleiro!`);
+        }
+
+        // ==========================================
+        // Áreas de Efeito (AoE) e Modelos Táticos
+        // ==========================================
+        let activeAoETemplate = null;
+
+        function toggleAoEMenu() {
+            const bar = document.getElementById('aoe-controls-bar');
+            if (bar) bar.classList.toggle('hidden');
+        }
+
+        function activateAoETemplate(type) {
+            activeAoETemplate = type;
+            const center = screenToWorld(viewport.clientWidth / 2, viewport.clientHeight / 2);
+            renderAoETemplate(center.x, center.y, type);
+        }
+
+        function clearAoETemplates() {
+            activeAoETemplate = null;
+            const aoeSvg = document.getElementById('aoe-svg');
+            if (aoeSvg) aoeSvg.innerHTML = '';
+            const feedback = document.getElementById('aoe-targets-feedback');
+            if (feedback) feedback.classList.add('hidden');
+        }
+
+        function renderAoETemplate(x, y, type) {
+            const aoeSvg = document.getElementById('aoe-svg');
+            if (!aoeSvg) return;
+
+            let templateConfig = null;
+            if (type === 'circle_3m') templateConfig = { type: 'circle', radiusSquares: 2 };
+            else if (type === 'circle_6m') templateConfig = { type: 'circle', radiusSquares: 4 };
+            else if (type === 'cone_6m') templateConfig = { type: 'cone', lengthSquares: 4, angleDegrees: 60, directionAngle: 0 };
+            else if (type === 'line_15m') templateConfig = { type: 'line', lengthSquares: 10, widthSquares: 1, directionAngle: 0 };
+
+            if (!templateConfig) return;
+
+            const originCell = {
+                col: Math.floor(x / state.gridSize),
+                row: Math.floor(y / state.gridSize)
+            };
+
+            let svgMarkup = '';
+            const radiusPx = (templateConfig.radiusSquares || 2) * state.gridSize;
+
+            if (templateConfig.type === 'circle') {
+                svgMarkup = `
+                    <circle cx="${x}" cy="${y}" r="${radiusPx}" fill="rgba(239, 68, 68, 0.25)" stroke="#ef4444" stroke-width="2" stroke-dasharray="4,4" />
+                    <circle cx="${x}" cy="${y}" r="4" fill="#ef4444" />
+                `;
+            } else if (templateConfig.type === 'cone') {
+                const lenPx = templateConfig.lengthSquares * state.gridSize;
+                const halfAngleRad = (templateConfig.angleDegrees / 2) * (Math.PI / 180);
+                const x1 = x + lenPx * Math.cos(halfAngleRad);
+                const y1 = y + lenPx * Math.sin(halfAngleRad);
+                const x2 = x + lenPx * Math.cos(-halfAngleRad);
+                const y2 = y + lenPx * Math.sin(-halfAngleRad);
+                svgMarkup = `
+                    <polygon points="${x},${y} ${x1},${y1} ${x2},${y2}" fill="rgba(251, 191, 36, 0.25)" stroke="#fbbf24" stroke-width="2" />
+                    <circle cx="${x}" cy="${y}" r="4" fill="#fbbf24" />
+                `;
+            } else if (templateConfig.type === 'line') {
+                const lenPx = templateConfig.lengthSquares * state.gridSize;
+                const widthPx = templateConfig.widthSquares * state.gridSize;
+                svgMarkup = `
+                    <rect x="${x}" y="${y - widthPx/2}" width="${lenPx}" height="${widthPx}" rx="4" fill="rgba(168, 85, 247, 0.25)" stroke="#a855f7" stroke-width="2" />
+                    <circle cx="${x}" cy="${y}" r="4" fill="#a855f7" />
+                `;
+            }
+
+            aoeSvg.innerHTML = svgMarkup;
+
+            // Detectar alvos atingidos via VttFogAoeEngine
+            let hitTokens = [];
+            if (typeof VttFogAoeEngine !== 'undefined') {
+                let cells = [];
+                if (templateConfig.type === 'circle') {
+                    const radiusMeters = (templateConfig.radiusSquares || 2) * 1.5;
+                    cells = VttFogAoeEngine.calculateCircleAoE(x, y, radiusMeters, state.gridSize, 1.5);
+                } else if (templateConfig.type === 'cone') {
+                    const lengthMeters = templateConfig.lengthSquares * 1.5;
+                    cells = VttFogAoeEngine.calculateConeAoE(x, y, lengthMeters, 0, templateConfig.angleDegrees, state.gridSize, 1.5);
+                } else if (templateConfig.type === 'line') {
+                    const endX = x + templateConfig.lengthSquares * state.gridSize;
+                    cells = VttFogAoeEngine.calculateLineAoE(x, y, endX, y, 1.5, state.gridSize, 1.5);
+                }
+                hitTokens = VttFogAoeEngine.getTokensInAoE(state.tokens, cells, state.gridSize);
+            }
+
+            const feedback = document.getElementById('aoe-targets-feedback');
+            if (feedback) {
+                feedback.classList.remove('hidden');
+                if (hitTokens.length > 0) {
+                    feedback.innerHTML = `🎯 <strong>${hitTokens.length} alvo(s) atingido(s):</strong> ${hitTokens.map(t => t.name).join(', ')}`;
+                } else {
+                    feedback.innerHTML = `🎯 Nenhum alvo na área de efeito.`;
+                }
+            }
+
+            if (typeof AudioSfxEngine !== 'undefined') AudioSfxEngine.playSpellCast();
+            appendChatMessage('Área de Efeito (AoE)', `💥 Modelo ${type} projetado no mapa! (${hitTokens.length} alvo(s) detectado(s))`);
         }
 
         function setupP2PListeners() {
@@ -1504,14 +1901,70 @@
             reader.readAsDataURL(file);
         }
 
-        function openCharacterModal() { document.getElementById('char-modal').classList.remove('hidden'); }
+        function openCharacterModal() {
+            renderSavedSheetsInPicker();
+            document.getElementById('char-modal').classList.remove('hidden');
+        }
         function closeCharModal() { document.getElementById('char-modal').classList.add('hidden'); }
+
+        function renderSavedSheetsInPicker() {
+            const container = document.getElementById('char-picker-list');
+            if (!container) return;
+            try {
+                const saved = JSON.parse(localStorage.getItem('kuar_tor_saved_sheets') || '{}');
+                const sheets = Object.values(saved);
+                const existingSec = document.getElementById('saved-heroes-picker-section');
+                if (existingSec) existingSec.remove();
+
+                if (sheets.length > 0) {
+                    const sec = document.createElement('div');
+                    sec.id = 'saved-heroes-picker-section';
+                    sec.className = 'mb-3 pb-3 border-b border-slate-700';
+                    sec.innerHTML = `<div class="text-[11px] font-cinzel font-bold text-cyan-300 mb-2 uppercase flex items-center gap-1.5"><i class="fa-solid fa-folder-open text-amber-400"></i> Fichas Salvas no Portal:</div>` +
+                        sheets.map(item => {
+                            const data = item.sheetData || item;
+                            const name = data.charName || data.name || 'Herói';
+                            const pv = data.pontosVida || 16;
+                            const pe = data.pontosEnergia || 10;
+                            const avatar = data.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80';
+                            const safeName = name.replace(/'/g, "\\'");
+                            return `
+                                <button type="button" onclick="spawnPlayerToken('${safeName}', ${pv}, ${pe}, '${avatar}')" class="w-full p-2 bg-slate-950 border border-emerald-500/40 hover:border-emerald-400 rounded-lg flex items-center gap-3 text-left transition mb-1.5 cursor-pointer">
+                                    <img src="${avatar}" class="w-8 h-8 rounded-full object-cover border border-emerald-400 shrink-0">
+                                    <div class="truncate">
+                                        <div class="font-cinzel font-bold text-xs text-emerald-300 truncate">${name}</div>
+                                        <div class="text-[10px] text-gray-400">PV ${pv} &middot; PE ${pe}</div>
+                                    </div>
+                                </button>
+                            `;
+                        }).join('');
+                    container.prepend(sec);
+                }
+            } catch (e) {
+                console.warn('[VTT] Erro ao listar fichas salvas:', e);
+            }
+        }
 
         spawnPlayerToken('Guardião Kuar-Tor', 16, 8, 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80');
         spawnMonster('Lobo Sombrio', 10, 4, '#ef4444', 'https://images.unsplash.com/photo-1563089145-599997674d42?auto=format&fit=crop&w=200&q=80');
 
         window.addEventListener('DOMContentLoaded', () => {
             setupFirestoreListeners();
+
+            // Sincronização automática com herói vindo da Ficha de Personagem (Pilar 4)
+            try {
+                const activeHeroRaw = localStorage.getItem('kuartor_active_vtt_character');
+                if (activeHeroRaw) {
+                    const hero = JSON.parse(activeHeroRaw);
+                    if (hero && hero.name) {
+                        spawnPlayerToken(hero.name, hero.hp || 16, hero.pe || 8, hero.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80');
+                        console.log(`[VTT] Herói "${hero.name}" carregado automaticamente da Ficha.`);
+                    }
+                }
+            } catch (e) {
+                console.warn('[VTT] Erro ao carregar herói ativo da ficha:', e);
+            }
+
             const urlParams = new URLSearchParams(window.location.search);
             const roomParam = urlParams.get('room');
             if (roomParam) {

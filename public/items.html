@@ -5,47 +5,71 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="tailwind.css">
     <title>Inventário por Personagem - Kuar-Tor</title>
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="../src/styles/theme.css">
+
+    <!-- Core Rules & Engines (+2d6) -->
+    <script src="../src/core/dice-roller.js"></script>
+    <script src="../src/core/character-sheet.js"></script>
+    <script src="../src/core/item-catalog-engine.js"></script>
+    <script src="../src/core/character-inventory-bridge.js"></script>
+    <script src="../src/core/audio-sfx-engine.js"></script>
+
     <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
     <style>
-        body { background-image: url('https://www.transparenttextures.com/patterns/dark-matter.png'); }
+        body { background-image: url('https://www.transparenttextures.com/patterns/dark-matter.png'); font-family: 'Inter', sans-serif; }
         .font-cinzel { font-family: 'Cinzel', serif; }
         .main-container {
             background-color: rgba(31, 40, 51, 0.95);
-            backdrop-filter: blur(5px);
-            border: 1px solid rgba(102, 252, 241, 0.2);
-            box-shadow: 0 0 15px rgba(102, 252, 241, 0.1);
+            backdrop-filter: blur(6px);
+            border: 1px solid rgba(102, 252, 241, 0.25);
+            box-shadow: 0 0 25px rgba(0, 0, 0, 0.8), 0 0 15px rgba(102, 252, 241, 0.1);
         }
     </style>
 </head>
 <body class="bg-rpg-black text-rpg-silver min-h-screen flex items-center justify-center p-4">
-    <div class="main-container w-full max-w-4xl p-8 rounded-lg">
-        <div class="flex justify-between items-center mb-6">
-            <h1 class="font-cinzel text-4xl text-rpg-cyan" style="text-shadow: 0 0 10px rgba(102, 252, 241, 0.5);">Inventário de Personagem</h1>
-            <div class="flex gap-2">
-                <a href="../index.html" class="btn-rpg btn-rpg-danger">Voltar ao Menu</a>
+    <div class="main-container w-full max-w-5xl p-6 sm:p-8 rounded-xl my-6">
+        <!-- Topbar -->
+        <div class="flex flex-wrap justify-between items-center mb-6 pb-4 border-b border-gray-800 gap-4">
+            <div>
+                <h1 class="font-cinzel text-3xl sm:text-4xl text-rpg-cyan" style="text-shadow: 0 0 10px rgba(102, 252, 241, 0.5);">
+                    Inventário de Personagem
+                </h1>
+                <p class="text-xs text-gray-400 mt-1">Conexão direta com fichas, slots de combate e transferência entre heróis (+2d6)</p>
+            </div>
+            <div class="flex items-center gap-2">
+                <a href="../index.html" class="btn-rpg btn-rpg-danger text-sm">Voltar ao Menu</a>
+                <a href="formV6.html" class="btn-rpg text-sm bg-amber-600/30 hover:bg-amber-600/50 border-amber-500/50 text-amber-300">Ficha de Jogo</a>
                 <button id="logout-button" class="btn-rpg hidden">Logout</button>
             </div>
         </div>
 
-        <!-- Login Prompt -->
-        <div id="login-prompt" class="text-center">
-            <p class="mb-4">Por favor, faça login para acessar os inventários.</p>
-            <button id="login-button" class="btn-rpg">Login com Google</button>
+        <!-- Login Prompt (Opcional / Nuvem) -->
+        <div id="login-prompt" class="p-4 bg-gray-900/80 border border-gray-700/80 rounded-lg mb-6 flex flex-wrap justify-between items-center gap-4">
+            <div class="text-sm text-gray-300">
+                <span class="text-cyan-400 font-semibold">⚡ Conectado localmente:</span> Suas fichas salvas no navegador estão disponíveis abaixo. Faça login para sincronizar na nuvem.
+            </div>
+            <button id="login-button" class="btn-rpg text-xs py-2 px-4">Login com Google</button>
         </div>
 
-        <!-- Main content, hidden by default -->
-        <div id="main-content" class="hidden">
+        <!-- Main content -->
+        <div id="main-content" class="space-y-6">
             <!-- Character Selection -->
-            <div id="character-selection" class="mb-8">
-                <h2 class="text-2xl font-cinzel text-rpg-cyan mb-4">Selecione um Personagem</h2>
+            <div id="character-selection" class="p-5 bg-gray-900/90 rounded-lg border border-gray-800 shadow-md">
+                <div class="flex flex-wrap justify-between items-center mb-3 gap-2">
+                    <h2 class="text-xl font-cinzel text-rpg-cyan flex items-center gap-2">
+                        <i class="fa-solid fa-user-shield text-amber-400"></i> Selecione um Personagem
+                    </h2>
+                    <span id="character-count-badge" class="text-xs text-gray-400 font-mono"></span>
+                </div>
                 <div class="flex items-center space-x-4">
-                    <select id="character-dropdown" class="form-select w-full p-2 rounded text-white"></select>
+                    <select id="character-dropdown" class="form-select w-full p-2.5 rounded bg-neutral-900 border border-gray-700 text-white focus:border-cyan-400 transition"></select>
                 </div>
                 <p id="no-characters-message" class="text-center text-gray-400 mt-4 hidden">
                     Nenhum personagem encontrado. Crie um na página de <a href="formV6.html" class="text-rpg-cyan underline hover:text-white">Geração de Fichas</a>.
@@ -53,61 +77,185 @@
             </div>
 
             <!-- Character-specific content -->
-            <div id="character-content" class="hidden">
-                <!-- Item Form -->
-                <div id="item-form" class="mb-8 p-6 bg-gray-900 rounded-lg border border-gray-800 shadow-lg">
-                    <h2 class="text-2xl font-cinzel text-rpg-cyan mb-4 border-b border-gray-700 pb-2">Adicionar Novo Item</h2>
+            <div id="character-content" class="hidden space-y-6">
+                <!-- Painel de Carga & Vitals do Herói -->
+                <div id="character-encumbrance-card" class="bg-gray-900/90 rounded-lg p-5 border border-cyan-900/40 shadow-lg">
+                    <div class="flex flex-wrap justify-between items-center mb-4 gap-2">
+                        <div>
+                            <span class="text-xs text-gray-400 uppercase tracking-wider font-semibold">Herói Selecionado</span>
+                            <h3 class="text-2xl font-cinzel text-white flex items-center gap-2">
+                                <span id="character-name-display" class="text-rpg-cyan"></span>
+                                <span id="character-class-badge" class="text-xs font-normal text-amber-300 bg-amber-950/60 border border-amber-800/80 px-2 py-0.5 rounded"></span>
+                            </h3>
+                        </div>
+                        <div class="flex items-center gap-3 text-right">
+                            <div class="text-xs">
+                                <div class="text-gray-400">Defesa Total</div>
+                                <div id="hero-defense-display" class="text-lg font-bold text-amber-400 font-cinzel">8</div>
+                            </div>
+                            <div class="text-xs">
+                                <div class="text-gray-400">Absorção Armadura</div>
+                                <div id="hero-armor-display" class="text-lg font-bold text-cyan-400 font-cinzel">0</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Barra de Capacidade de Carga -->
+                    <div class="space-y-1.5">
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="text-gray-300 flex items-center gap-1.5">
+                                <i class="fa-solid fa-weight-hanging text-amber-400"></i>
+                                <span>Capacidade de Carga (+2d6 Daemon):</span>
+                                <strong id="encumbrance-text" class="text-white font-mono">0 / 20 kg</strong>
+                            </span>
+                            <span id="encumbrance-badge" class="px-2 py-0.5 rounded text-[11px] font-bold bg-neutral-800 text-gray-300">Carga Normal</span>
+                        </div>
+                        <div class="w-full bg-neutral-950 rounded-full h-2.5 overflow-hidden border border-neutral-700">
+                            <div id="encumbrance-bar" class="h-full bg-emerald-500 rounded-full transition-all duration-300" style="width: 0%"></div>
+                        </div>
+                        <div id="encumbrance-detail" class="text-[11px] text-gray-400 italic">
+                            Fórmula: (FOR x 5) + (CON x 2) kg. Sobrecarga impõe -2 em testes e Defesa Passiva.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Painel de Slots de Equipamento Tático -->
+                <div class="bg-gray-900/80 p-5 rounded-lg border border-gray-800 shadow-lg">
+                    <h3 class="text-sm font-bold text-amber-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+                        <i class="fa-solid fa-shield-halved"></i> Equipamento Tático em Uso
+                    </h3>
+                    <div id="equipped-slots-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                        <!-- Slots equipados gerados dinamicamente via JS -->
+                    </div>
+                </div>
+
+                <!-- Formulário de Adição de Item -->
+                <div id="item-form" class="p-6 bg-gray-900 rounded-lg border border-gray-800 shadow-lg">
+                    <div class="flex flex-wrap justify-between items-center mb-4 border-b border-gray-800 pb-2 gap-2">
+                        <h2 class="text-xl font-cinzel text-rpg-cyan">Adicionar Novo Item</h2>
+                        <div class="flex items-center gap-2 text-xs">
+                            <span class="text-gray-400">⚡ Catálogo Oficial:</span>
+                            <select id="catalog-quick-select" class="form-select text-xs py-1 px-2 rounded bg-neutral-800 border border-amber-500/50 text-amber-300">
+                                <option value="">-- Escolher do Catálogo Kuar-Tor --</option>
+                            </select>
+                        </div>
+                    </div>
                     <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
                         <div class="md:col-span-5">
-                            <label class="block text-gray-400 text-sm mb-1">Nome do Item</label>
-                            <input type="text" id="itemName" placeholder="Ex: Espada Longa" class="form-input w-full p-2 rounded">
+                            <label class="block text-gray-400 text-xs mb-1 font-semibold uppercase">Nome do Item</label>
+                            <input type="text" id="itemName" placeholder="Ex: Espada Longa" class="form-input w-full p-2 rounded bg-neutral-950 border border-gray-700 text-white">
                         </div>
                         <div class="md:col-span-4">
-                            <label class="block text-gray-400 text-sm mb-1">Tipo</label>
-                            <select id="itemType" class="form-select w-full p-2 rounded">
+                            <label class="block text-gray-400 text-xs mb-1 font-semibold uppercase">Categoria / Tipo</label>
+                            <select id="itemType" class="form-select w-full p-2 rounded bg-neutral-950 border border-gray-700 text-white">
                                 <option value="weapon">Arma</option>
                                 <option value="armor">Armadura</option>
                                 <option value="accessory">Acessório</option>
-                                <option value="consumable">Consumível</option>
-                                <option value="other">Outro</option>
+                                <option value="consumable">Consumível / Poção</option>
+                                <option value="other">Outro / Equipamento Geral</option>
                             </select>
                         </div>
                         <div class="md:col-span-3">
-                            <label class="block text-gray-400 text-sm mb-1">Qtd.</label>
-                            <input type="number" id="itemQuantity" placeholder="1" class="form-input w-full p-2 rounded" value="1" min="1">
+                            <label class="block text-gray-400 text-xs mb-1 font-semibold uppercase">Qtd.</label>
+                            <input type="number" id="itemQuantity" placeholder="1" class="form-input w-full p-2 rounded bg-neutral-950 border border-gray-700 text-white" value="1" min="1">
+                        </div>
+
+                        <!-- Atributos Técnicos (+2d6) -->
+                        <div class="md:col-span-3">
+                            <label class="block text-gray-400 text-xs mb-1 font-semibold uppercase">Peso Unitário (kg)</label>
+                            <input type="number" step="0.1" id="itemWeight" placeholder="1.0" class="form-input w-full p-2 rounded bg-neutral-950 border border-gray-700 text-white" value="0.5" min="0">
+                        </div>
+                        <div class="md:col-span-3">
+                            <label class="block text-gray-400 text-xs mb-1 font-semibold uppercase">Dano / Fórmula</label>
+                            <input type="text" id="itemDamage" placeholder="Ex: 1d6+2" class="form-input w-full p-2 rounded bg-neutral-950 border border-gray-700 text-white">
+                        </div>
+                        <div class="md:col-span-3">
+                            <label class="block text-gray-400 text-xs mb-1 font-semibold uppercase">Bônus de Defesa</label>
+                            <input type="number" id="itemDefense" placeholder="0" class="form-input w-full p-2 rounded bg-neutral-950 border border-gray-700 text-white" value="0">
+                        </div>
+                        <div class="md:col-span-3">
+                            <label class="block text-gray-400 text-xs mb-1 font-semibold uppercase">Absorção de Armadura</label>
+                            <input type="number" id="itemArmor" placeholder="0" class="form-input w-full p-2 rounded bg-neutral-950 border border-gray-700 text-white" value="0">
+                        </div>
+
+                        <div class="md:col-span-12">
+                            <label class="block text-gray-400 text-xs mb-1 font-semibold uppercase">Descrição / Efeitos Especiais</label>
+                            <textarea id="itemDescription" placeholder="Ex: Causa dano cortante; brilha com fogo azul." class="form-input w-full p-2 rounded bg-neutral-950 border border-gray-700 text-white h-16"></textarea>
                         </div>
                         <div class="md:col-span-12">
-                            <label class="block text-gray-400 text-sm mb-1">Descrição / Efeitos</label>
-                            <textarea id="itemDescription" placeholder="Ex: +2 de Dano; Brilha no escuro." class="form-input w-full p-2 rounded h-20"></textarea>
-                        </div>
-                        <div class="md:col-span-12">
-                            <button id="add-item-button" class="btn-rpg w-full block py-3">Adicionar ao Inventário</button>
+                            <button id="add-item-button" class="btn-rpg w-full block py-2.5 font-bold text-sm tracking-wide">
+                                ➕ Adicionar ao Inventário
+                            </button>
                         </div>
                     </div>
                 </div>
 
                 <!-- Items Display List -->
                 <div>
-                    <h2 class="text-3xl font-cinzel text-center text-rpg-silver mb-8">Inventário de <span id="character-name-display" class="text-rpg-cyan"></span></h2>
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                        <div class="bg-gray-900/50 p-4 rounded-lg border border-red-900/30">
-                            <h3 class="text-xl font-cinzel text-red-500 mb-4 border-b border-red-900/50 pb-2">⚔ Armas</h3>
-                            <div id="list-weapon" class="space-y-3 min-h-[100px]"></div>
+                    <h2 class="text-2xl font-cinzel text-center text-rpg-silver mb-6">Mochila & Inventário Geral</h2>
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div class="bg-gray-900/60 p-4 rounded-lg border border-red-900/40">
+                            <h3 class="text-lg font-cinzel text-red-400 mb-3 border-b border-red-900/50 pb-1.5 flex items-center justify-between">
+                                <span>⚔ Armas & Focos</span>
+                                <span class="text-xs text-gray-500 font-normal">Corpo-a-corpo e Distância</span>
+                            </h3>
+                            <div id="list-weapon" class="space-y-2.5 min-h-[80px]"></div>
                         </div>
-                        <div class="bg-gray-900/50 p-4 rounded-lg border border-blue-900/30">
-                            <h3 class="text-xl font-cinzel text-blue-500 mb-4 border-b border-blue-900/50 pb-2">🛡 Armaduras</h3>
-                            <div id="list-armor" class="space-y-3 min-h-[100px]"></div>
+                        <div class="bg-gray-900/60 p-4 rounded-lg border border-blue-900/40">
+                            <h3 class="text-lg font-cinzel text-blue-400 mb-3 border-b border-blue-900/50 pb-1.5 flex items-center justify-between">
+                                <span>🛡 Armaduras & Escudos</span>
+                                <span class="text-xs text-gray-500 font-normal">Proteções e Vestimentas</span>
+                            </h3>
+                            <div id="list-armor" class="space-y-2.5 min-h-[80px]"></div>
                         </div>
-                        <div class="bg-gray-900/50 p-4 rounded-lg border border-purple-900/30">
-                            <h3 class="text-xl font-cinzel text-purple-500 mb-4 border-b border-purple-900/50 pb-2">✦ Acessórios</h3>
-                            <div id="list-accessory" class="space-y-3 min-h-[100px]"></div>
+                        <div class="bg-gray-900/60 p-4 rounded-lg border border-purple-900/40">
+                            <h3 class="text-lg font-cinzel text-purple-400 mb-3 border-b border-purple-900/50 pb-1.5 flex items-center justify-between">
+                                <span>✦ Acessórios & Relíquias</span>
+                                <span class="text-xs text-gray-500 font-normal">Anéis, Capas e Amuletos</span>
+                            </h3>
+                            <div id="list-accessory" class="space-y-2.5 min-h-[80px]"></div>
                         </div>
-                        <div class="bg-gray-900/50 p-4 rounded-lg border border-green-900/30">
-                            <h3 class="text-xl font-cinzel text-green-500 mb-4 border-b border-green-900/50 pb-2">⚗ Consumíveis & Outros</h3>
-                            <div id="list-consumable" class="space-y-3 min-h-[100px]"></div>
+                        <div class="bg-gray-900/60 p-4 rounded-lg border border-green-900/40">
+                            <h3 class="text-lg font-cinzel text-green-400 mb-3 border-b border-green-900/50 pb-1.5 flex items-center justify-between">
+                                <span>⚗ Consumíveis & Outros</span>
+                                <span class="text-xs text-gray-500 font-normal">Poções, Tochas e Rações</span>
+                            </h3>
+                            <div id="list-consumable" class="space-y-2.5 min-h-[80px]"></div>
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Transferência de Itens entre Personagens -->
+    <div id="transfer-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-gray-900 border border-cyan-500/50 rounded-xl max-w-md w-full p-6 shadow-2xl">
+            <h3 class="text-xl font-cinzel text-cyan-400 mb-2 flex items-center gap-2">
+                <i class="fa-solid fa-people-arrows text-amber-400"></i> Transferir Item
+            </h3>
+            <p class="text-xs text-gray-300 mb-4">Mova este item para o inventário de outro personagem registrado.</p>
+
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs text-gray-400 uppercase font-semibold mb-1">Item a Transferir</label>
+                    <div id="transfer-item-name" class="p-2.5 bg-neutral-950 border border-gray-700 rounded text-amber-300 font-bold text-sm"></div>
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-400 uppercase font-semibold mb-1">Destinatário</label>
+                    <select id="transfer-recipient-select" class="form-select w-full p-2.5 rounded bg-neutral-950 border border-gray-700 text-white"></select>
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-400 uppercase font-semibold mb-1">Quantidade</label>
+                    <input type="number" id="transfer-quantity-input" min="1" value="1" class="form-input w-full p-2 rounded bg-neutral-950 border border-gray-700 text-white">
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-2 mt-6">
+                <button type="button" id="cancel-transfer-btn" class="btn-rpg btn-rpg-danger text-xs py-2 px-4">Cancelar</button>
+                <button type="button" id="confirm-transfer-btn" class="btn-rpg text-xs py-2 px-4 bg-emerald-600/40 hover:bg-emerald-600/60 border-emerald-500 text-emerald-300">
+                    Confirmar Envio
+                </button>
             </div>
         </div>
     </div>

@@ -7,6 +7,8 @@
     <title>Gerador de Ficha +2D6 Dark Fantasy - Kuar-Tor Final (Online)</title>
     <link rel="icon" type="image/x-icon" href="favicon.ico">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚔️</text></svg>">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#f59e0b">
     <link rel="stylesheet" href="tailwind.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -17,6 +19,11 @@
 
     <!-- Core Rules & Calculations (+2d6 v2.3) -->
     <script src="../src/core/character-sheet.js"></script>
+    <script src="../src/core/dice-roller.js"></script>
+    <script src="../src/core/live-sheet-controller.js"></script>
+    <script src="../src/core/item-catalog-engine.js"></script>
+    <script src="../src/core/character-inventory-bridge.js"></script>
+    <script src="../src/core/audio-sfx-engine.js"></script>
 
     <style>
         body {
@@ -388,10 +395,23 @@
                         Verificando conexão...
                     </div>
                 </div>
-            </div>
             <input type="file" id="fileInput" accept=".json" class="hidden">
 
-            <!-- Seção de Recursos -->
+            <!-- Seletor de Modo: Criação/Edição vs Modo Jogo Ao Vivo (Pilar 3) -->
+            <div class="flex border-b border-neutral-700 mb-6 gap-2 no-print">
+                <button type="button" id="tabModeEdit"
+                    class="py-2.5 px-5 font-bold text-sm rounded-t-lg transition-colors border-b-2 border-amber-500 text-amber-400 bg-neutral-800/90 hover:bg-neutral-800 flex items-center gap-2">
+                    <i class="fa-solid fa-pen-to-square"></i> Modo Criação & Edição
+                </button>
+                <button type="button" id="tabModeLive"
+                    class="py-2.5 px-5 font-bold text-sm rounded-t-lg transition-colors border-b-2 border-transparent text-gray-400 bg-neutral-900/60 hover:bg-neutral-800 hover:text-white flex items-center gap-2">
+                    <i class="fa-solid fa-dice-d20 text-cyan-400"></i> Modo Ficha de Jogo (Live Play)
+                </button>
+            </div>
+
+            <!-- CONTAINER DO MODO EDIÇÃO & CRIAÇÃO -->
+            <div id="editModeSection">
+                <!-- Seção de Recursos -->
             <div class="mb-6 no-print">
                 <h3 class="text-lg font-semibold text-amber-500 text-center mb-3 flex items-center justify-center gap-2">
                     <i class="fa-solid fa-book-bookmark text-amber-400"></i>
@@ -1035,8 +1055,12 @@
                         Narrativa</legend>
                     <div class="space-y-4">
                         <div>
-                            <label for="equipment" class="block text-sm font-medium mb-1">Equipamento e
-                                Relíquias:</label>
+                            <div class="flex items-center justify-between mb-1">
+                                <label for="equipment" class="block text-sm font-medium">Equipamento e Relíquias:</label>
+                                <button type="button" id="openItemCatalogBtn" onclick="openItemCatalogModal()" class="px-2.5 py-1 bg-amber-500/20 border border-amber-500/50 hover:bg-amber-500/30 text-amber-300 rounded text-xs font-cinzel flex items-center gap-1.5 transition cursor-pointer">
+                                    <i class="fa-solid fa-toolbox"></i> Catálogo de Equipamentos (+2d6)
+                                </button>
+                            </div>
                             <textarea id="equipment" name="equipment" rows="4"
                                 class="w-full p-2 bg-neutral-900 border-neutral-600 rounded-md"
                                 placeholder="Adaga ritualística, tomo esquecido, armadura de placas enferrujada..."></textarea>
@@ -1058,6 +1082,244 @@
                         Visualizar</button>
                 </div>
             </form>
+            </div> <!-- Fim de #editModeSection -->
+
+            <!-- ============================================================ -->
+            <!-- PILAR 3: MODO FICHA DE JOGO (LIVE PLAY SHEET)               -->
+            <!-- ============================================================ -->
+            <div id="livePlaySheetSection" class="hidden space-y-6 no-print">
+                <!-- Cabeçalho do Personagem em Jogo -->
+                <div class="bg-neutral-900/90 border border-amber-600/40 rounded-lg p-4 flex flex-col md:flex-row justify-between items-center gap-4 shadow-xl">
+                    <div class="flex items-center gap-4">
+                        <div id="liveAvatarContainer" class="w-16 h-16 rounded-full border-2 border-amber-500 overflow-hidden bg-neutral-800 flex items-center justify-center flex-shrink-0 shadow">
+                            <span id="liveAvatarIcon" class="text-3xl">⚔️</span>
+                        </div>
+                        <div>
+                            <h2 id="liveCharName" class="text-2xl font-bold text-amber-400 title-font tracking-wide">Sem Nome</h2>
+                            <p class="text-xs text-gray-400 mt-1">
+                                <span id="liveCharRace" class="text-cyan-300 font-semibold">Humano</span> • 
+                                <span id="liveCharClass" class="text-emerald-300 font-semibold">Guerreiro</span> • 
+                                Tradição: <span id="liveCharTradition" class="text-purple-300 font-semibold">Nenhuma</span>
+                            </p>
+                        </div>
+                    </div>
+                    <div class="flex flex-wrap gap-2 justify-center md:justify-end">
+                        <button type="button" id="livePlayVttBtn"
+                            class="px-3.5 py-2 bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-neutral-950 font-bold rounded shadow-lg text-xs flex items-center gap-2 transition transform active:scale-95"
+                            title="Lançar Personagem Diretamente na Mesa Virtual">
+                            <i class="fa-solid fa-dice-d20 text-sm"></i> ⚔️ Jogar na Mesa
+                        </button>
+                        <button type="button" id="liveSyncMagicTreeBtn"
+                            class="px-3 py-2 bg-purple-900/80 hover:bg-purple-800 border border-purple-500/50 text-purple-200 font-bold rounded shadow text-xs flex items-center gap-1.5 transition"
+                            title="Sincronizar Magias da Árvore de Magia (+2d6)">
+                            <i class="fa-solid fa-wand-magic-sparkles text-purple-300"></i> Grimório
+                        </button>
+                        <button type="button" id="liveDuplicateSheetBtn"
+                            class="px-3 py-2 bg-indigo-900/80 hover:bg-indigo-800 border border-indigo-500/50 text-indigo-200 font-bold rounded shadow text-xs flex items-center gap-1.5 transition"
+                            title="Criar Clone / Backup desta Ficha">
+                            <i class="fa-solid fa-copy text-indigo-300"></i> Duplicar
+                        </button>
+                        <button type="button" id="liveExportJsonBtn"
+                            class="px-3 py-2 bg-neutral-800 hover:bg-neutral-700 border border-neutral-600 text-gray-200 font-medium rounded shadow text-xs flex items-center gap-1.5 transition"
+                            title="Exportar JSON da Ficha com Estado Atual">
+                            <i class="fa-solid fa-download text-amber-400"></i> JSON
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Painel de Recursos Vitais (PV e PE) e Descansos -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Barra de Pontos de Vida (PV) -->
+                    <div class="bg-neutral-900/90 border border-red-900/40 rounded-lg p-4 shadow-lg flex flex-col justify-between">
+                        <div>
+                            <div class="flex justify-between items-center mb-1">
+                                <span class="font-bold text-red-400 flex items-center gap-1.5 text-sm">
+                                    <i class="fa-solid fa-heart-pulse"></i> Pontos de Vida (PV)
+                                </span>
+                                <span class="text-xs font-mono text-gray-300">
+                                    <strong id="liveHpText" class="text-sm text-red-300">20</strong> / <span id="liveMaxHpText">20</span>
+                                    (<span id="liveHpPercent">100%</span>)
+                                </span>
+                            </div>
+                            <!-- Barra Visual -->
+                            <div class="w-full h-4 bg-neutral-800 rounded-full overflow-hidden border border-red-900/50 p-0.5 mb-3">
+                                <div id="liveHpBar" class="h-full bg-gradient-to-r from-red-700 to-red-500 rounded-full transition-all duration-300" style="width: 100%;"></div>
+                            </div>
+                            <!-- Ações Rápidas de Ajuste de PV -->
+                            <div class="flex flex-wrap gap-1.5 items-center justify-between mb-2">
+                                <div class="flex gap-1">
+                                    <button type="button" class="live-hp-delta-btn px-2 py-1 bg-red-950/80 hover:bg-red-900 border border-red-800 text-red-200 text-xs font-bold rounded" data-delta="-5">-5</button>
+                                    <button type="button" class="live-hp-delta-btn px-2 py-1 bg-red-950/80 hover:bg-red-900 border border-red-800 text-red-200 text-xs font-bold rounded" data-delta="-1">-1</button>
+                                </div>
+                                <div class="flex items-center gap-1">
+                                    <input type="number" id="liveCustomHpInput" placeholder="Qtd" class="w-14 bg-neutral-950 border border-neutral-700 rounded text-center text-xs text-gray-200 py-1" min="1">
+                                    <button type="button" id="liveApplyDmgBtn" class="px-2 py-1 bg-red-800 hover:bg-red-700 text-white text-xs font-bold rounded" title="Aplicar Dano">Dano</button>
+                                    <button type="button" id="liveApplyHealBtn" class="px-2 py-1 bg-emerald-800 hover:bg-emerald-700 text-white text-xs font-bold rounded" title="Aplicar Cura">Cura</button>
+                                </div>
+                                <div class="flex gap-1">
+                                    <button type="button" class="live-hp-delta-btn px-2 py-1 bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-800 text-emerald-200 text-xs font-bold rounded" data-delta="1">+1</button>
+                                    <button type="button" class="live-hp-delta-btn px-2 py-1 bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-800 text-emerald-200 text-xs font-bold rounded" data-delta="5">+5</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Barra de Pontos de Energia (PE) -->
+                    <div class="bg-neutral-900/90 border border-cyan-900/40 rounded-lg p-4 shadow-lg flex flex-col justify-between">
+                        <div>
+                            <div class="flex justify-between items-center mb-1">
+                                <span class="font-bold text-cyan-400 flex items-center gap-1.5 text-sm">
+                                    <i class="fa-solid fa-bolt"></i> Pontos de Energia (PE)
+                                </span>
+                                <span class="text-xs font-mono text-gray-300">
+                                    <strong id="livePeText" class="text-sm text-cyan-300">16</strong> / <span id="liveMaxPeText">16</span>
+                                    (<span id="livePePercent">100%</span>)
+                                </span>
+                            </div>
+                            <!-- Barra Visual -->
+                            <div class="w-full h-4 bg-neutral-800 rounded-full overflow-hidden border border-cyan-900/50 p-0.5 mb-3">
+                                <div id="livePeBar" class="h-full bg-gradient-to-r from-cyan-700 to-cyan-500 rounded-full transition-all duration-300" style="width: 100%;"></div>
+                            </div>
+                            <!-- Ações Rápidas de Ajuste de PE -->
+                            <div class="flex flex-wrap gap-1.5 items-center justify-between mb-2">
+                                <div class="flex gap-1">
+                                    <button type="button" class="live-pe-delta-btn px-2 py-1 bg-cyan-950/80 hover:bg-cyan-900 border border-cyan-800 text-cyan-200 text-xs font-bold rounded" data-delta="-5">-5</button>
+                                    <button type="button" class="live-pe-delta-btn px-2 py-1 bg-cyan-950/80 hover:bg-cyan-900 border border-cyan-800 text-cyan-200 text-xs font-bold rounded" data-delta="-1">-1</button>
+                                </div>
+                                <div class="flex items-center gap-1">
+                                    <input type="number" id="liveCustomPeInput" placeholder="Qtd" class="w-14 bg-neutral-950 border border-neutral-700 rounded text-center text-xs text-gray-200 py-1" min="1">
+                                    <button type="button" id="liveSpendPeBtn" class="px-2 py-1 bg-cyan-800 hover:bg-cyan-700 text-white text-xs font-bold rounded" title="Gastar PE">Gastar</button>
+                                    <button type="button" id="liveRestorePeBtn" class="px-2 py-1 bg-blue-800 hover:bg-blue-700 text-white text-xs font-bold rounded" title="Restaurar PE">Recup</button>
+                                </div>
+                                <div class="flex gap-1">
+                                    <button type="button" class="live-pe-delta-btn px-2 py-1 bg-blue-950/80 hover:bg-blue-900 border border-blue-800 text-blue-200 text-xs font-bold rounded" data-delta="1">+1</button>
+                                    <button type="button" class="live-pe-delta-btn px-2 py-1 bg-blue-950/80 hover:bg-blue-900 border border-blue-800 text-blue-200 text-xs font-bold rounded" data-delta="5">+5</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Botões de Descanso Rápido -->
+                <div class="flex gap-3 justify-center">
+                    <button type="button" id="liveShortRestBtn"
+                        class="px-4 py-2 bg-neutral-800 hover:bg-neutral-700 border border-cyan-600/50 text-cyan-300 font-bold rounded text-xs flex items-center gap-2 transition"
+                        title="Descanso Curto: Recupera PE baseado em Vontade/CON">
+                        <i class="fa-solid fa-mug-hot"></i> Descanso Curto (+PE)
+                    </button>
+                    <button type="button" id="liveLongRestBtn"
+                        class="px-4 py-2 bg-neutral-800 hover:bg-neutral-700 border border-emerald-600/50 text-emerald-300 font-bold rounded text-xs flex items-center gap-2 transition"
+                        title="Descanso Longo: Recupera 100% de PV e PE e limpa condições">
+                        <i class="fa-solid fa-campground"></i> Descanso Longo (Full)
+                    </button>
+                </div>
+
+                <!-- Rastreador de Condições Temporárias (Pilar 3.4) -->
+                <div class="bg-neutral-900/90 border border-neutral-700 rounded-lg p-4 shadow-lg">
+                    <div class="flex justify-between items-center mb-3">
+                        <h3 class="text-sm font-bold text-amber-400 uppercase tracking-wider flex items-center gap-2">
+                            <i class="fa-solid fa-biohazard"></i> Condições Temporárias & Modificadores
+                        </h3>
+                        <span id="liveConditionStatusBadge" class="text-xs text-gray-400">Nenhuma ativa</span>
+                    </div>
+                    <div id="liveConditionsContainer" class="flex flex-wrap gap-2">
+                        <!-- Chips interativos de condições -->
+                    </div>
+                </div>
+
+                <!-- Estatísticas de Combate Efetivas (com modificadores das condições) -->
+                <div class="grid grid-cols-3 gap-3 text-center">
+                    <div class="bg-neutral-900/80 border border-neutral-700 p-3 rounded-lg">
+                        <div class="text-xs text-gray-400 font-medium uppercase">Defesa Passiva</div>
+                        <div id="liveEffectiveDefense" class="text-2xl font-bold text-amber-400 font-cinzel">8</div>
+                        <div id="liveDefenseModDetail" class="text-xs text-gray-500">Base 8</div>
+                    </div>
+                    <div class="bg-neutral-900/80 border border-neutral-700 p-3 rounded-lg">
+                        <div class="text-xs text-gray-400 font-medium uppercase">Iniciativa</div>
+                        <div id="liveEffectiveInitiative" class="text-2xl font-bold text-cyan-400 font-cinzel">+2</div>
+                        <div class="text-xs text-gray-500">DES</div>
+                    </div>
+                    <div class="bg-neutral-900/80 border border-neutral-700 p-3 rounded-lg">
+                        <div class="text-xs text-gray-400 font-medium uppercase">Dano de Força</div>
+                        <div id="liveEffectiveDmgForca" class="text-2xl font-bold text-red-400 font-cinzel">+1</div>
+                        <div class="text-xs text-gray-500">FOR</div>
+                    </div>
+                </div>
+
+                <!-- Painel de Ações: Ataques, Perícias 1-Clique, Magias -->
+                <div class="space-y-4">
+                    <!-- 1. Cartões de Ataques Formatados (Pilar 3.3) -->
+                    <div class="bg-neutral-900/90 border border-neutral-700 rounded-lg p-4">
+                        <h3 class="text-sm font-bold text-amber-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+                            <i class="fa-solid fa-khanda"></i> Ataques & Armas Formatadas
+                        </h3>
+                        <div id="liveAttacksGrid" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <!-- Cards de armas gerados dinamicamente -->
+                        </div>
+                    </div>
+
+                    <!-- 2. Grade de Perícias 1-Clique (+2d6) (Pilar 3.2) -->
+                    <div class="bg-neutral-900/90 border border-neutral-700 rounded-lg p-4">
+                        <h3 class="text-sm font-bold text-cyan-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+                            <i class="fa-solid fa-dice-d20"></i> Rolagem Rápida de Perícias (+2d6)
+                        </h3>
+                        <div id="liveSkillsGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                            <!-- Botões de perícias 1-clique gerados dinamicamente -->
+                        </div>
+                    </div>
+
+                    <!-- 3. Grimório de Magias & Rituais (Pilar 3.3 & Pilar 4.2) -->
+                    <div class="bg-neutral-900/90 border border-neutral-700 rounded-lg p-4">
+                        <h3 class="text-sm font-bold text-purple-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+                            <i class="fa-solid fa-book-sparkles"></i> Magias & Caminhos Mágicos
+                        </h3>
+                        <div id="liveSpellsGrid" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <!-- Cards de magias gerados dinamicamente -->
+                        </div>
+                    </div>
+
+                    <!-- 4. Inventário Tático & Equipamento (Conexão Ficha e Itens) -->
+                    <div id="liveInventorySection" class="bg-neutral-900/90 border border-neutral-700 rounded-lg p-4">
+                        <div class="flex flex-wrap justify-between items-center mb-3 gap-2">
+                            <h3 class="text-sm font-bold text-amber-500 uppercase tracking-wider flex items-center gap-2">
+                                <i class="fa-solid fa-toolbox"></i> Inventário Tático & Equipamento
+                            </h3>
+                            <div class="flex items-center gap-2">
+                                <span id="liveWeightDisplay" class="text-xs text-gray-400 font-mono">Carga: 0 / 20 kg</span>
+                                <span id="liveEncumbranceBadge" class="text-[11px] px-2 py-0.5 rounded font-bold bg-neutral-800 text-gray-300">Carga Normal</span>
+                                <a href="items.html" target="_blank" class="text-xs bg-amber-600/30 hover:bg-amber-600/50 text-amber-300 px-2.5 py-1 rounded border border-amber-500/40 flex items-center gap-1.5 transition">
+                                    <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i> Gerenciador de Itens
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- Barra visual de Carga -->
+                        <div class="w-full bg-neutral-800 rounded-full h-2 mb-4 overflow-hidden border border-neutral-700">
+                            <div id="liveWeightBar" class="h-full bg-cyan-500 rounded-full transition-all duration-300" style="width: 0%"></div>
+                        </div>
+
+                        <!-- Slots Equipados -->
+                        <div class="mb-4">
+                            <div class="text-xs text-gray-400 font-semibold mb-2 uppercase flex items-center gap-1.5">
+                                <i class="fa-solid fa-shield-halved text-amber-400"></i> Itens Equipados
+                            </div>
+                            <div id="liveEquippedGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+                                <!-- Slots gerados dinamicamente -->
+                            </div>
+                        </div>
+
+                        <!-- Mochila & Consumíveis -->
+                        <div>
+                            <div class="text-xs text-gray-400 font-semibold mb-2 uppercase flex items-center gap-1.5">
+                                <i class="fa-solid fa-sack-dollar text-cyan-400"></i> Na Mochila / Guardados
+                            </div>
+                            <div id="liveBackpackGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1">
+                                <!-- Itens na mochila gerados dinamicamente -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Seção de Fichas Salvas -->
@@ -1129,6 +1391,47 @@
             </div>
             <div class="modal-body">
                 <p id="alert-modal-message"></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal do Catálogo de Equipamentos (+2d6) -->
+    <div id="item-catalog-modal" class="modal hidden">
+        <div class="modal-content !max-w-3xl">
+            <div class="flex justify-between items-center mb-4 pb-2 border-b border-neutral-700">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded bg-amber-950/80 border border-amber-500/60 flex items-center justify-center text-amber-400">
+                        <i class="fa-solid fa-toolbox"></i>
+                    </div>
+                    <div>
+                        <h3 class="modal-title !text-amber-400 !mb-0">Catálogo de Equipamentos (+2d6)</h3>
+                        <p class="text-xs text-neutral-400">Armas, Armaduras, Escudos e Consumíveis Oficiais</p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeItemCatalogModal()" class="modal-close-button">&times;</button>
+            </div>
+
+            <!-- Search & Filters -->
+            <div class="flex flex-wrap gap-2 mb-4">
+                <input type="text" id="item-catalog-search" oninput="renderItemCatalogModalList()" placeholder="Buscar item por nome ou efeito..." class="flex-1 bg-neutral-900 border border-neutral-700 rounded-md px-3 py-1.5 text-xs text-white">
+                <select id="item-catalog-category" onchange="renderItemCatalogModalList()" class="bg-neutral-900 border border-neutral-700 rounded-md px-3 py-1.5 text-xs text-amber-300 font-cinzel">
+                    <option value="ALL">Todas as Categorias</option>
+                    <option value="Arma Corpo-a-Corpo">Armas Corpo-a-Corpo</option>
+                    <option value="Arma à Distância">Armas à Distância</option>
+                    <option value="Armadura Leve">Armaduras Leves</option>
+                    <option value="Armadura Pesada">Armaduras Pesadas</option>
+                    <option value="Escudo">Escudos</option>
+                    <option value="Consumível">Consumíveis & Alquimia</option>
+                    <option value="Aventura">Itens de Aventura</option>
+                </select>
+            </div>
+
+            <div id="item-catalog-list-container" class="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-[60vh] overflow-y-auto pr-1">
+                <!-- Populado dinamicamente via ItemCatalogEngine -->
+            </div>
+
+            <div class="mt-4 pt-3 border-t border-neutral-700 text-right">
+                <button type="button" onclick="closeItemCatalogModal()" class="action-button action-button-secondary px-4 py-1.5 text-xs">Fechar</button>
             </div>
         </div>
     </div>
@@ -1682,12 +1985,15 @@
                 data.pericias = JSON.parse(data.pericias || '[]');
                 data.vantagens = JSON.parse(data.vantagens || '[]');
                 data.desvantagens = JSON.parse(data.desvantagens || '[]');
+                if (typeof CharacterInventoryBridge !== 'undefined') {
+                    data.inventory = window._currentInventory || CharacterInventoryBridge.parseEquipmentTextToInventory(data.equipment || '');
+                }
                 return data;
             }
 
             function loadFormFromJson(data) {
                 for (const key in data) {
-                    if (key === 'pericias' || key === 'vantagens' || key === 'desvantagens' || key === 'caminhosMagia') continue;
+                    if (key === 'pericias' || key === 'vantagens' || key === 'desvantagens' || key === 'caminhosMagia' || key === 'inventory') continue;
                     const element = form.elements[key];
                     if (element) {
                         if (element.type === 'checkbox') element.checked = data[key];
@@ -1697,6 +2003,12 @@
                 document.getElementById('periciasInput').value = JSON.stringify(data.pericias || []);
                 document.getElementById('vantagensInput').value = JSON.stringify(data.vantagens || []);
                 document.getElementById('desvantagensInput').value = JSON.stringify(data.desvantagens || []);
+
+                if (typeof CharacterInventoryBridge !== 'undefined') {
+                    window._currentInventory = (data.inventory && Array.isArray(data.inventory) && data.inventory.length > 0)
+                        ? data.inventory
+                        : CharacterInventoryBridge.parseEquipmentTextToInventory(data.equipment || '');
+                }
 
                 caminhosContainer.innerHTML = '';
                 if (data.caminhosMagia) {
@@ -1813,6 +2125,8 @@
                             <span class="text-sm font-semibold text-gray-200 truncate">${item.name || 'Sem Nome'}</span>
                         </div>
                         <div class="flex items-center gap-1.5 flex-shrink-0">
+                            <button type="button" class="play-vtt-btn text-xs bg-amber-600 hover:bg-amber-500 text-neutral-950 font-bold px-2 py-1 rounded shadow inline-flex items-center gap-1" data-id="${item.id}" title="Jogar na Mesa Virtual"><i class="fa-solid fa-dice-d20"></i> Mesa</button>
+                            <button type="button" class="duplicate-sheet-btn text-xs bg-indigo-700 hover:bg-indigo-600 text-white font-bold px-2 py-1 rounded shadow inline-flex items-center gap-1" data-id="${item.id}" title="Duplicar / Clonar Ficha"><i class="fa-solid fa-copy"></i> Duplicar</button>
                             <button class="load-sheet-btn text-xs action-button action-button-secondary px-2.5 py-1" data-id="${item.id}">Carregar</button>
                             <button class="delete-sheet-btn text-xs action-button action-button-primary px-2.5 py-1" data-id="${item.id}">Excluir</button>
                         </div>
@@ -2069,20 +2383,959 @@
                 e.target.value = '';
             });
 
-            // Lógica para os botões de carregar e excluir (delegação de eventos)
+            // --- PILAR 4: AÇÕES DA LISTA DE FICHAS (VTT & DUPLICAÇÃO) ---
+            async function getSheetDataById(sheetId) {
+                if (!sheetId) return null;
+                // 1. Tenta do Firestore se autenticado
+                if (currentUserId) {
+                    try {
+                        const sheetDocRef = doc(db, `users/${currentUserId}/characters`, sheetId);
+                        const docSnap = await getDoc(sheetDocRef);
+                        if (docSnap.exists()) {
+                            return docSnap.data().sheetData;
+                        }
+                    } catch (e) {
+                        console.warn("Erro ao buscar no Firestore:", e);
+                    }
+                }
+                // 2. Fallback para LocalStorage
+                try {
+                    const localSheets = JSON.parse(localStorage.getItem('kuar_tor_saved_sheets') || '{}');
+                    if (localSheets[sheetId]) {
+                        return localSheets[sheetId].sheetData;
+                    }
+                } catch (e) {
+                    console.warn("Erro ao buscar no LocalStorage:", e);
+                }
+                return null;
+            }
+
+            async function launchSheetToVTT(sheetId) {
+                const sheetData = await getSheetDataById(sheetId);
+                if (!sheetData) {
+                    showModalMessage('Erro', 'Ficha não encontrada para lançamento na Mesa Virtual.');
+                    return;
+                }
+                const payload = (typeof LiveSheetController !== 'undefined')
+                    ? LiveSheetController.prepareVttTokenPayload(sheetData)
+                    : {
+                        name: sheetData.charName || 'Herói',
+                        hp: CharacterSheetRules.calcMaxPV(sheetData.con || 2),
+                        maxHp: CharacterSheetRules.calcMaxPV(sheetData.con || 2),
+                        pe: CharacterSheetRules.calcMaxPE(sheetData.tradicaoMagica || 'NENHUMA', sheetData),
+                        maxPe: CharacterSheetRules.calcMaxPE(sheetData.tradicaoMagica || 'NENHUMA', sheetData),
+                        defense: CharacterSheetRules.calcDefense(sheetData.des || 2),
+                        avatar: sheetData.avatarUrl || ''
+                    };
+                localStorage.setItem('kuartor_active_vtt_character', JSON.stringify(payload));
+                window.location.href = 'mesa_virtual.html';
+            }
+
+            async function duplicateSheetById(sheetId) {
+                const sheetData = await getSheetDataById(sheetId);
+                if (!sheetData) {
+                    showModalMessage('Erro', 'Ficha não encontrada para duplicação.');
+                    return;
+                }
+                const cloned = (typeof LiveSheetController !== 'undefined')
+                    ? LiveSheetController.duplicateSheet(sheetData)
+                    : JSON.parse(JSON.stringify(sheetData));
+                if (!cloned.charName.includes('(Cópia)')) {
+                    cloned.charName = `${cloned.charName || 'Personagem'} (Cópia)`;
+                }
+                const newId = crypto.randomUUID();
+                saveSheetToLocalStorage(newId, cloned);
+
+                if (currentUserId) {
+                    try {
+                        const sheetDocRef = doc(db, `users/${currentUserId}/characters`, newId);
+                        await setDoc(sheetDocRef, {
+                            name: cloned.charName,
+                            lastUpdated: serverTimestamp(),
+                            sheetData: cloned
+                        });
+                    } catch (e) {
+                        console.warn('Erro ao sincronizar duplicação no Firestore:', e);
+                    }
+                }
+
+                loadSavedSheetsFromFirestore();
+                showModalMessage('Ficha Duplicada', `Cópia criada com sucesso: "${cloned.charName}".`);
+            }
+
+            // Lógica para os botões da lista (delegação de eventos)
             savedSheetsListDiv.addEventListener('click', async (e) => {
                 const target = e.target;
                 const sheetItem = target.closest('.flex.justify-between.items-center');
                 if (!sheetItem) return;
 
-                const id = target.dataset.id;
+                const playVttBtn = target.closest('.play-vtt-btn');
+                const dupBtn = target.closest('.duplicate-sheet-btn');
+                const loadBtn = target.closest('.load-sheet-btn');
+                const delBtn = target.closest('.delete-sheet-btn');
 
-                if (target.classList.contains('load-sheet-btn')) {
-                    await loadSheetFromFirestore(id);
-                } else if (target.classList.contains('delete-sheet-btn')) {
-                    deleteSheetFromFirestore(id);
+                if (playVttBtn) {
+                    await launchSheetToVTT(playVttBtn.dataset.id);
+                } else if (dupBtn) {
+                    await duplicateSheetById(dupBtn.dataset.id);
+                } else if (loadBtn) {
+                    await loadSheetFromFirestore(loadBtn.dataset.id);
+                } else if (delBtn) {
+                    deleteSheetFromFirestore(delBtn.dataset.id);
                 }
             });
+
+            // --- PILAR 3: MODO FICHA DE JOGO (LIVE PLAY CONTROLLER) ---
+            const tabModeEdit = document.getElementById('tabModeEdit');
+            const tabModeLive = document.getElementById('tabModeLive');
+            const editModeSection = document.getElementById('editModeSection');
+            const livePlaySheetSection = document.getElementById('livePlaySheetSection');
+
+            let liveCharacterState = {
+                currentHP: null,
+                maxHP: null,
+                currentPE: null,
+                maxPE: null,
+                activeConditions: []
+            };
+
+            function switchMode(mode) {
+                if (mode === 'live') {
+                    const sheetData = getFormAsJson();
+                    const maxHP = CharacterSheetRules.calcMaxPV(sheetData.con || 2, sheetData.bonusManualPV || 0);
+                    const maxPE = CharacterSheetRules.calcMaxPE(sheetData.tradicaoMagica || 'NENHUMA', sheetData, sheetData.bonusManualPE || 0);
+
+                    if (liveCharacterState.maxHP !== maxHP || liveCharacterState.currentHP === null) {
+                        liveCharacterState.maxHP = maxHP;
+                        liveCharacterState.currentHP = maxHP;
+                    }
+                    if (liveCharacterState.maxPE !== maxPE || liveCharacterState.currentPE === null) {
+                        liveCharacterState.maxPE = maxPE;
+                        liveCharacterState.currentPE = maxPE;
+                    }
+
+                    if (editModeSection) editModeSection.classList.add('hidden');
+                    if (livePlaySheetSection) livePlaySheetSection.classList.remove('hidden');
+
+                    if (tabModeEdit) {
+                        tabModeEdit.classList.remove('border-amber-500', 'text-amber-400', 'bg-neutral-800/90');
+                        tabModeEdit.classList.add('border-transparent', 'text-gray-400', 'bg-neutral-900/60');
+                    }
+                    if (tabModeLive) {
+                        tabModeLive.classList.remove('border-transparent', 'text-gray-400', 'bg-neutral-900/60');
+                        tabModeLive.classList.add('border-amber-500', 'text-amber-400', 'bg-neutral-800/90');
+                    }
+
+                    renderLivePlaySheet();
+                } else {
+                    if (livePlaySheetSection) livePlaySheetSection.classList.add('hidden');
+                    if (editModeSection) editModeSection.classList.remove('hidden');
+
+                    if (tabModeLive) {
+                        tabModeLive.classList.remove('border-amber-500', 'text-amber-400', 'bg-neutral-800/90');
+                        tabModeLive.classList.add('border-transparent', 'text-gray-400', 'bg-neutral-900/60');
+                    }
+                    if (tabModeEdit) {
+                        tabModeEdit.classList.remove('border-transparent', 'text-gray-400', 'bg-neutral-900/60');
+                        tabModeEdit.classList.add('border-amber-500', 'text-amber-400', 'bg-neutral-800/90');
+                    }
+                }
+            }
+
+            if (tabModeEdit) tabModeEdit.addEventListener('click', () => switchMode('edit'));
+            if (tabModeLive) tabModeLive.addEventListener('click', () => switchMode('live'));
+
+            function renderLivePlaySheet() {
+                const sheetData = getFormAsJson();
+
+                const liveCharName = document.getElementById('liveCharName');
+                const liveCharRace = document.getElementById('liveCharRace');
+                const liveCharClass = document.getElementById('liveCharClass');
+                const liveCharTradition = document.getElementById('liveCharTradition');
+                const liveAvatarContainer = document.getElementById('liveAvatarContainer');
+
+                if (liveCharName) liveCharName.textContent = sheetData.charName || 'Sem Nome';
+                if (liveCharRace) liveCharRace.textContent = sheetData.charRace || 'Humano';
+                if (liveCharClass) liveCharClass.textContent = sheetData.charClass || 'Guerreiro';
+                if (liveCharTradition) liveCharTradition.textContent = sheetData.tradicaoMagica || 'Nenhuma';
+
+                if (liveAvatarContainer && sheetData.avatarUrl) {
+                    liveAvatarContainer.innerHTML = `<img src="${sheetData.avatarUrl}" alt="Avatar" class="w-full h-full object-cover">`;
+                } else if (liveAvatarContainer) {
+                    liveAvatarContainer.innerHTML = `<span class="text-3xl">⚔️</span>`;
+                }
+
+                updateLiveVitalsDisplay();
+                renderLiveConditions();
+                updateLiveEffectiveStats(sheetData);
+                renderLiveAttacks(sheetData);
+                renderLiveSkills(sheetData);
+                renderLiveSpells(sheetData);
+                renderLiveInventory(sheetData);
+            }
+
+            function updateLiveVitalsDisplay() {
+                const hpText = document.getElementById('liveHpText');
+                const maxHpText = document.getElementById('liveMaxHpText');
+                const hpPercent = document.getElementById('liveHpPercent');
+                const hpBar = document.getElementById('liveHpBar');
+
+                const peText = document.getElementById('livePeText');
+                const maxPeText = document.getElementById('liveMaxPeText');
+                const pePercent = document.getElementById('livePePercent');
+                const peBar = document.getElementById('livePeBar');
+
+                const curHP = liveCharacterState.currentHP;
+                const maxHP = liveCharacterState.maxHP;
+                const hpPct = Math.max(0, Math.min(100, Math.round((curHP / maxHP) * 100)));
+
+                if (hpText) hpText.textContent = curHP;
+                if (maxHpText) maxHpText.textContent = maxHP;
+                if (hpPercent) hpPercent.textContent = `${hpPct}%`;
+                if (hpBar) {
+                    hpBar.style.width = `${hpPct}%`;
+                    if (hpPct <= 25) {
+                        hpBar.className = 'h-full bg-gradient-to-r from-red-900 to-red-600 rounded-full transition-all duration-300';
+                    } else if (hpPct <= 50) {
+                        hpBar.className = 'h-full bg-gradient-to-r from-amber-700 to-amber-500 rounded-full transition-all duration-300';
+                    } else {
+                        hpBar.className = 'h-full bg-gradient-to-r from-red-700 to-red-500 rounded-full transition-all duration-300';
+                    }
+                }
+
+                if (curHP <= 0 && !liveCharacterState.activeConditions.includes('inconsciente')) {
+                    liveCharacterState.activeConditions.push('inconsciente');
+                    renderLiveConditions();
+                } else if (curHP > 0 && liveCharacterState.activeConditions.includes('inconsciente')) {
+                    liveCharacterState.activeConditions = liveCharacterState.activeConditions.filter(c => c !== 'inconsciente');
+                    renderLiveConditions();
+                }
+
+                const curPE = liveCharacterState.currentPE;
+                const maxPE = liveCharacterState.maxPE;
+                const pePct = Math.max(0, Math.min(100, Math.round((curPE / maxPE) * 100)));
+
+                if (peText) peText.textContent = curPE;
+                if (maxPeText) maxPeText.textContent = maxPE;
+                if (pePercent) pePercent.textContent = `${pePct}%`;
+                if (peBar) peBar.style.width = `${pePct}%`;
+            }
+
+            function modifyLiveHP(delta) {
+                const res = (typeof LiveSheetController !== 'undefined')
+                    ? LiveSheetController.modifyHP(liveCharacterState.currentHP, liveCharacterState.maxHP, delta)
+                    : { newHP: Math.max(0, Math.min(liveCharacterState.maxHP, liveCharacterState.currentHP + delta)) };
+                liveCharacterState.currentHP = res.newHP;
+                if (typeof AudioSfxEngine !== 'undefined') {
+                    if (delta < 0) AudioSfxEngine.playDamageTaken();
+                    else if (delta > 0) AudioSfxEngine.playHeal();
+                }
+                updateLiveVitalsDisplay();
+                updateLiveEffectiveStats(getFormAsJson());
+            }
+
+            function modifyLivePE(delta) {
+                const res = (typeof LiveSheetController !== 'undefined')
+                    ? LiveSheetController.modifyPE(liveCharacterState.currentPE, liveCharacterState.maxPE, delta)
+                    : { newPE: Math.max(0, Math.min(liveCharacterState.maxPE, liveCharacterState.currentPE + delta)) };
+                liveCharacterState.currentPE = res.newPE;
+                if (typeof AudioSfxEngine !== 'undefined' && delta > 0) {
+                    AudioSfxEngine.playHeal();
+                }
+                updateLiveVitalsDisplay();
+            }
+
+            function renderLiveConditions() {
+                const container = document.getElementById('liveConditionsContainer');
+                const badge = document.getElementById('liveConditionStatusBadge');
+                if (!container) return;
+
+                const allConditions = (typeof LiveSheetController !== 'undefined' && LiveSheetController.CONDITIONS)
+                    ? LiveSheetController.CONDITIONS
+                    : {};
+                const active = liveCharacterState.activeConditions;
+
+                if (badge) {
+                    badge.textContent = active.length > 0 ? `${active.length} ativa(s)` : 'Nenhuma ativa';
+                    badge.className = active.length > 0 ? 'text-xs text-amber-400 font-semibold' : 'text-xs text-gray-400';
+                }
+
+                container.innerHTML = Object.values(allConditions).map(cond => {
+                    const isActive = active.includes(cond.id);
+                    return `
+                        <button type="button" data-cond-id="${cond.id}"
+                            class="live-condition-chip px-3 py-1.5 rounded-md text-xs font-bold border transition flex items-center gap-1.5 shadow-sm ${
+                                isActive 
+                                    ? 'bg-amber-600/30 border-amber-500 text-amber-300 ring-1 ring-amber-500/50' 
+                                    : 'bg-neutral-800/60 border-neutral-700 text-gray-400 hover:text-gray-200 hover:border-neutral-600'
+                            }"
+                            title="${cond.desc}">
+                            <span>${cond.icon}</span>
+                            <span>${cond.name}</span>
+                            ${isActive ? '<i class="fa-solid fa-check text-[10px] ml-1 text-amber-400"></i>' : ''}
+                        </button>
+                    `;
+                }).join('');
+
+                container.querySelectorAll('.live-condition-chip').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const condId = btn.dataset.condId;
+                        if (typeof LiveSheetController !== 'undefined') {
+                            liveCharacterState.activeConditions = LiveSheetController.toggleCondition(liveCharacterState.activeConditions, condId);
+                        } else {
+                            const idx = liveCharacterState.activeConditions.indexOf(condId);
+                            if (idx >= 0) liveCharacterState.activeConditions.splice(idx, 1);
+                            else liveCharacterState.activeConditions.push(condId);
+                        }
+                        if (typeof AudioSfxEngine !== 'undefined') AudioSfxEngine.playConditionToggle();
+                        renderLiveConditions();
+                        updateLiveEffectiveStats(getFormAsJson());
+                        renderLiveAttacks(getFormAsJson());
+                    });
+                });
+            }
+
+            function updateLiveEffectiveStats(sheetData) {
+                const effectiveDefEl = document.getElementById('liveEffectiveDefense');
+                const defenseDetailEl = document.getElementById('liveDefenseModDetail');
+                const effectiveInitEl = document.getElementById('liveEffectiveInitiative');
+                const effectiveDmgForcaEl = document.getElementById('liveEffectiveDmgForca');
+
+                const des = parseInt(sheetData.des) || 2;
+                const forca = parseInt(sheetData.for) || 2;
+                const baseDef = CharacterSheetRules.calcDefense(des);
+                const effectiveDef = (typeof LiveSheetController !== 'undefined')
+                    ? LiveSheetController.getEffectiveDefense(baseDef, liveCharacterState.activeConditions)
+                    : baseDef;
+                const condMods = (typeof LiveSheetController !== 'undefined')
+                    ? LiveSheetController.getConditionModifiers(liveCharacterState.activeConditions)
+                    : { attackMod: 0, defenseMod: 0 };
+
+                if (effectiveDefEl) effectiveDefEl.textContent = effectiveDef;
+                if (defenseDetailEl) {
+                    const diff = effectiveDef - baseDef;
+                    defenseDetailEl.textContent = diff !== 0 ? `Base ${baseDef} (${diff > 0 ? '+' : ''}${diff})` : `Base ${baseDef}`;
+                }
+
+                if (effectiveInitEl) {
+                    const initVal = des + condMods.attackMod;
+                    effectiveInitEl.textContent = `${initVal >= 0 ? '+' : ''}${initVal}`;
+                }
+
+                if (effectiveDmgForcaEl) {
+                    const dano = CharacterSheetRules.calcDanoForca(forca);
+                    effectiveDmgForcaEl.textContent = `+${dano}`;
+                }
+            }
+
+            function renderLiveAttacks(sheetData) {
+                const container = document.getElementById('liveAttacksGrid');
+                if (!container) return;
+
+                const attacks = (typeof LiveSheetController !== 'undefined')
+                    ? LiveSheetController.extractAttackCards(sheetData, liveCharacterState.activeConditions)
+                    : [];
+                if (!attacks || attacks.length === 0) {
+                    container.innerHTML = '<p class="text-xs text-gray-500 italic col-span-2">Nenhum ataque ou arma configurada.</p>';
+                    return;
+                }
+
+                container.innerHTML = attacks.map(atk => `
+                    <div class="bg-neutral-800/90 border border-neutral-700 rounded-lg p-3 shadow flex flex-col justify-between">
+                        <div>
+                            <div class="flex justify-between items-center mb-1">
+                                <span class="font-bold text-gray-200 text-sm flex items-center gap-1.5">
+                                    <i class="fa-solid fa-khanda text-amber-400"></i> ${atk.name}
+                                </span>
+                                <span class="text-xs text-neutral-400">${atk.type || 'Corpo-a-corpo'}</span>
+                            </div>
+                            <div class="text-xs text-gray-400 mb-2">
+                                <span class="text-amber-400 font-semibold">Acerto:</span> ${atk.hitFormula} | 
+                                <span class="text-red-400 font-semibold">Dano:</span> ${atk.damageFormula}
+                            </div>
+                        </div>
+                        <div class="flex gap-2 mt-2">
+                            <button type="button" class="live-atk-hit-btn flex-1 py-1.5 px-2 bg-amber-600/20 hover:bg-amber-600/40 border border-amber-500/50 text-amber-300 font-bold rounded text-xs transition"
+                                data-name="${atk.name}" data-mod="${atk.hitModifier}">
+                                ⚔️ Acerto (${atk.hitModifier >= 0 ? '+' : ''}${atk.hitModifier})
+                            </button>
+                            <button type="button" class="live-atk-dmg-btn py-1.5 px-3 bg-red-600/20 hover:bg-red-600/40 border border-red-500/50 text-red-300 font-bold rounded text-xs transition"
+                                data-name="${atk.name}" data-dice="${atk.damageDice || 1}" data-bonus="${atk.damageBonus || 0}">
+                                💥 Dano
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+
+                container.querySelectorAll('.live-atk-hit-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const atkName = btn.dataset.name;
+                        const mod = parseInt(btn.dataset.mod) || 0;
+                        const res = (typeof DiceRoller !== 'undefined')
+                            ? DiceRoller.roll({ skillName: `Ataque com ${atkName}`, skillBonus: mod, cd: 10 })
+                            : { total: 10, formulaString: `Ataque + ${mod}`, isSuccess: true, outcome: 'Sucesso' };
+
+                        if (typeof AudioSfxEngine !== 'undefined') {
+                            AudioSfxEngine.playDiceRoll();
+                            if (res.isCrit) AudioSfxEngine.playCriticalSuccess();
+                            else if (res.isFumble) AudioSfxEngine.playCriticalFailure();
+                        }
+
+                        showModalMessage(
+                            `⚔️ Ataque com ${atkName}`,
+                            `<div class="space-y-2">
+                                <div class="text-sm font-mono bg-neutral-900 p-2.5 rounded border border-neutral-700 text-cyan-300">${res.formulaString}</div>
+                                <div class="text-base font-bold font-cinzel ${res.isCrit ? 'text-amber-400' : (res.isFumble ? 'text-red-400' : (res.isSuccess ? 'text-emerald-400' : 'text-red-400'))}">
+                                    Resultado: ${res.outcome}
+                                </div>
+                            </div>`
+                        );
+                    });
+                });
+
+                container.querySelectorAll('.live-atk-dmg-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const atkName = btn.dataset.name;
+                        const diceCount = parseInt(btn.dataset.dice) || 1;
+                        const bonus = parseInt(btn.dataset.bonus) || 0;
+                        const rolls = [];
+                        let diceTotal = 0;
+                        for (let i = 0; i < diceCount; i++) {
+                            const r = Math.floor(Math.random() * 6) + 1;
+                            rolls.push(r);
+                            diceTotal += r;
+                        }
+                        const grandTotal = Math.max(1, diceTotal + bonus);
+
+                        if (typeof AudioSfxEngine !== 'undefined') {
+                            AudioSfxEngine.playCombatHit();
+                        }
+
+                        showModalMessage(
+                            `💥 Dano de ${atkName}`,
+                            `<div class="space-y-2">
+                                <div class="text-sm font-mono bg-neutral-900 p-2.5 rounded border border-neutral-700 text-red-300">
+                                    ${diceCount}d6 [${rolls.join(' + ')}] + ${bonus} = <strong>${grandTotal} de Dano</strong>
+                                </div>
+                                <div class="text-xs text-gray-400">Aplique a redução de armadura do alvo conforme aplicável.</div>
+                            </div>`
+                        );
+                    });
+                });
+            }
+
+            function renderLiveSkills(sheetData) {
+                const container = document.getElementById('liveSkillsGrid');
+                if (!container) return;
+
+                const pericias = sheetData.pericias || [];
+                if (pericias.length === 0) {
+                    container.innerHTML = '<p class="text-xs text-gray-500 italic col-span-4">Nenhuma perícia cadastrada nesta ficha.</p>';
+                    return;
+                }
+
+                container.innerHTML = pericias.map(p => `
+                    <button type="button" class="live-skill-btn p-2 bg-neutral-800/80 hover:bg-neutral-800 border border-neutral-700 hover:border-cyan-500/50 rounded text-left transition flex flex-col justify-between"
+                        data-name="${p.nome}" data-attr="${p.atributo}" data-val="${p.valor}">
+                        <span class="text-xs font-semibold text-gray-200 truncate w-full">${p.nome}</span>
+                        <div class="flex justify-between items-center text-[11px] text-cyan-400 mt-1">
+                            <span>${p.atributo}</span>
+                            <span class="font-bold font-mono">+${p.valor}</span>
+                        </div>
+                    </button>
+                `).join('');
+
+                container.querySelectorAll('.live-skill-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const name = btn.dataset.name;
+                        const attr = btn.dataset.attr;
+                        const val = parseInt(btn.dataset.val) || 0;
+                        const res = (typeof LiveSheetController !== 'undefined')
+                            ? LiveSheetController.rollSkill(
+                                { nome: name, atributo: attr, valor: val },
+                                sheetData,
+                                { activeConditions: liveCharacterState.activeConditions }
+                            )
+                            : { total: 10, formulaString: `Perícia ${name}`, outcome: 'Sucesso' };
+
+                        if (typeof AudioSfxEngine !== 'undefined') {
+                            AudioSfxEngine.playDiceRoll();
+                            if (res.isCrit) AudioSfxEngine.playCriticalSuccess();
+                            else if (res.isFumble) AudioSfxEngine.playCriticalFailure();
+                        }
+
+                        showModalMessage(
+                            `🎲 Teste de ${name} (+2d6)`,
+                            `<div class="space-y-2">
+                                <div class="text-sm font-mono bg-neutral-900 p-2.5 rounded border border-neutral-700 text-cyan-300">${res.formulaString}</div>
+                                <div class="text-base font-bold font-cinzel ${res.isCrit ? 'text-amber-400' : (res.isFumble ? 'text-red-400' : (res.isSuccess ? 'text-emerald-400' : 'text-red-400'))}">
+                                    Resultado: ${res.outcome}
+                                </div>
+                            </div>`
+                        );
+                    });
+                });
+            }
+
+            function renderLiveSpells(sheetData) {
+                const container = document.getElementById('liveSpellsGrid');
+                if (!container) return;
+
+                let treeState = null;
+                try {
+                    treeState = JSON.parse(localStorage.getItem('rpg_kuartor_magic_tree_state') || 'null');
+                } catch (e) {}
+
+                const spells = (typeof LiveSheetController !== 'undefined')
+                    ? LiveSheetController.extractSpellCards(sheetData, treeState)
+                    : [];
+                if (!spells || spells.length === 0) {
+                    container.innerHTML = '<p class="text-xs text-gray-500 italic col-span-2">Nenhum caminho mágico ou magia aprendida no momento.</p>';
+                    return;
+                }
+
+                container.innerHTML = spells.map(sp => `
+                    <div class="bg-neutral-800/90 border border-purple-900/40 rounded-lg p-3 shadow flex flex-col justify-between">
+                        <div>
+                            <div class="flex justify-between items-center mb-1">
+                                <span class="font-bold text-purple-300 text-sm flex items-center gap-1.5">
+                                    <i class="fa-solid fa-wand-sparkles text-purple-400"></i> ${sp.name}
+                                </span>
+                                <span class="text-xs font-mono text-cyan-300 bg-cyan-950/60 border border-cyan-800 px-1.5 py-0.5 rounded">${sp.costPE} PE</span>
+                            </div>
+                            <p class="text-xs text-gray-400 mb-2">${sp.description || `Magia do caminho de ${sp.path} (Nível ${sp.level}).`}</p>
+                        </div>
+                        <button type="button" class="live-cast-spell-btn py-1.5 px-3 bg-purple-900/50 hover:bg-purple-800 border border-purple-600/50 text-purple-200 font-bold rounded text-xs transition flex items-center justify-center gap-1.5"
+                            data-name="${sp.name}" data-cost="${sp.costPE}" data-path="${sp.path}">
+                            <i class="fa-solid fa-fire text-amber-400"></i> Conjurar (${sp.costPE} PE)
+                        </button>
+                    </div>
+                `).join('');
+
+                container.querySelectorAll('.live-cast-spell-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const spName = btn.dataset.name;
+                        const cost = parseInt(btn.dataset.cost) || 1;
+                        if (liveCharacterState.currentPE < cost) {
+                            showModalMessage('PE Insuficiente', `Você precisa de ${cost} PE para conjurar ${spName}, mas possui apenas ${liveCharacterState.currentPE} PE.`);
+                            return;
+                        }
+                        modifyLivePE(-cost);
+                        const res = (typeof DiceRoller !== 'undefined')
+                            ? DiceRoller.roll({ skillName: `Conjuração: ${spName}`, skillBonus: 2, cd: 10 })
+                            : { formulaString: `Conjuração + 2`, outcome: 'Sucesso', isSuccess: true };
+
+                        if (typeof AudioSfxEngine !== 'undefined') {
+                            AudioSfxEngine.playSpellCast();
+                            AudioSfxEngine.playDiceRoll();
+                            if (res.isCrit) AudioSfxEngine.playCriticalSuccess();
+                            else if (res.isFumble) AudioSfxEngine.playCriticalFailure();
+                        }
+
+                        showModalMessage(
+                            `✨ Conjuração de ${spName}`,
+                            `<div class="space-y-2">
+                                <div class="text-xs text-purple-300">Gastou <strong>${cost} PE</strong> (Restante: ${liveCharacterState.currentPE} PE).</div>
+                                <div class="text-sm font-mono bg-neutral-900 p-2.5 rounded border border-neutral-700 text-cyan-300">${res.formulaString}</div>
+                                <div class="text-base font-bold font-cinzel ${res.isCrit ? 'text-amber-400' : (res.isFumble ? 'text-red-400' : (res.isSuccess ? 'text-emerald-400' : 'text-red-400'))}">
+                                    Resultado: ${res.outcome}
+                                </div>
+                            </div>`
+                        );
+                    });
+                });
+            }
+
+            function renderLiveInventory(sheetData) {
+                const weightBar = document.getElementById('liveWeightBar');
+                const weightDisplay = document.getElementById('liveWeightDisplay');
+                const encumbranceBadge = document.getElementById('liveEncumbranceBadge');
+                const equippedGrid = document.getElementById('liveEquippedGrid');
+                const backpackGrid = document.getElementById('liveBackpackGrid');
+
+                if (!equippedGrid || !backpackGrid) return;
+
+                if (typeof CharacterInventoryBridge === 'undefined') return;
+
+                // Garante que o inventário esteja inicializado na memória
+                if (!window._currentInventory || !Array.isArray(window._currentInventory)) {
+                    if (sheetData.inventory && Array.isArray(sheetData.inventory) && sheetData.inventory.length > 0) {
+                        window._currentInventory = JSON.parse(JSON.stringify(sheetData.inventory));
+                    } else {
+                        window._currentInventory = CharacterInventoryBridge.parseEquipmentTextToInventory(sheetData.equipment || '');
+                    }
+                }
+
+                const forca = parseInt(sheetData.for) || 2;
+                const constituicao = parseInt(sheetData.con) || 2;
+                const maxWeight = CharacterInventoryBridge.calculateCarryCapacity(forca, constituicao);
+                const curWeight = CharacterInventoryBridge.calculateTotalWeight(window._currentInventory);
+                const encumbrance = CharacterInventoryBridge.getEncumbranceStatus(curWeight, maxWeight);
+
+                if (weightDisplay) {
+                    weightDisplay.textContent = `Carga: ${curWeight} / ${maxWeight} kg`;
+                }
+
+                if (weightBar) {
+                    const pct = Math.min(100, encumbrance.ratio);
+                    weightBar.style.width = `${pct}%`;
+                    if (encumbrance.status === 'overburdened') {
+                        weightBar.className = 'h-full bg-red-600 rounded-full transition-all duration-300';
+                    } else if (encumbrance.status === 'heavy') {
+                        weightBar.className = 'h-full bg-amber-500 rounded-full transition-all duration-300';
+                    } else {
+                        weightBar.className = 'h-full bg-emerald-500 rounded-full transition-all duration-300';
+                    }
+                }
+
+                if (encumbranceBadge) {
+                    encumbranceBadge.textContent = encumbrance.label;
+                    if (encumbrance.status === 'overburdened') {
+                        encumbranceBadge.className = 'text-[11px] px-2 py-0.5 rounded font-bold bg-red-950/80 text-red-300 border border-red-700 ring-1 ring-red-500/50';
+                    } else if (encumbrance.status === 'heavy') {
+                        encumbranceBadge.className = 'text-[11px] px-2 py-0.5 rounded font-bold bg-amber-950/80 text-amber-300 border border-amber-700';
+                    } else {
+                        encumbranceBadge.className = 'text-[11px] px-2 py-0.5 rounded font-bold bg-neutral-800 text-gray-300';
+                    }
+                }
+
+                // Renderiza slots de equipamento
+                const slotsDef = [
+                    { id: 'mainHand', label: '⚔️ Mão Principal' },
+                    { id: 'offHand', label: '🛡️ Mão Secundária' },
+                    { id: 'armor', label: '🦺 Armadura' },
+                    { id: 'accessory1', label: '💍 Acessório 1' },
+                    { id: 'accessory2', label: '✨ Acessório 2' }
+                ];
+
+                equippedGrid.innerHTML = slotsDef.map(slot => {
+                    const item = window._currentInventory.find(it => it.isEquipped && it.slot === slot.id);
+                    if (item) {
+                        return `
+                            <div class="bg-neutral-800/80 border border-amber-500/40 rounded p-2 flex justify-between items-center text-xs shadow-sm">
+                                <div class="overflow-hidden pr-2">
+                                    <div class="text-[10px] text-amber-400 font-semibold uppercase">${slot.label}</div>
+                                    <div class="font-bold text-gray-100 truncate">${item.name}</div>
+                                    <div class="text-[10px] text-gray-400">
+                                        ${item.damage ? `Dano: ${item.damage} ` : ''}
+                                        ${item.defenseBonus ? `+${item.defenseBonus} Def ` : ''}
+                                        ${item.armorValue ? `Armad. ${item.armorValue} ` : ''}
+                                        (${item.weight || 0.5} kg)
+                                    </div>
+                                </div>
+                                <button type="button" class="live-unequip-btn text-xs px-2 py-1 bg-neutral-700/80 hover:bg-neutral-600 border border-neutral-600 text-gray-300 rounded transition cursor-pointer"
+                                    data-id="${item.id}" title="Desequipar para a mochila">
+                                    Desequipar
+                                </button>
+                            </div>
+                        `;
+                    } else {
+                        return `
+                            <div class="bg-neutral-900/60 border border-dashed border-neutral-700 rounded p-2 flex justify-between items-center text-xs opacity-75">
+                                <div>
+                                    <div class="text-[10px] text-gray-400 uppercase">${slot.label}</div>
+                                    <div class="italic text-gray-500">Vazio</div>
+                                </div>
+                            </div>
+                        `;
+                    }
+                }).join('');
+
+                // Renderiza itens na mochila
+                const backpackItems = window._currentInventory.filter(it => !it.isEquipped);
+                if (backpackItems.length === 0) {
+                    backpackGrid.innerHTML = '<p class="text-xs text-gray-500 italic col-span-2 py-2">Mochila vazia. Adicione itens pelo Catálogo Oficial ou Gerenciador.</p>';
+                } else {
+                    backpackGrid.innerHTML = backpackItems.map(it => {
+                        const isConsumable = String(it.category || it.type || '').toLowerCase().includes('consum') ||
+                                            String(it.name || '').toLowerCase().includes('poção') ||
+                                            String(it.name || '').toLowerCase().includes('elixir');
+                        const isEquippable = !isConsumable && (
+                            String(it.category || it.type || '').toLowerCase().includes('arma') ||
+                            String(it.category || it.type || '').toLowerCase().includes('armadura') ||
+                            String(it.category || it.type || '').toLowerCase().includes('escudo') ||
+                            String(it.category || it.type || '').toLowerCase().includes('acessório') ||
+                            it.damage || it.defenseBonus || it.armorValue
+                        );
+
+                        return `
+                            <div class="bg-neutral-800/90 border border-neutral-700 rounded p-2 flex justify-between items-center text-xs hover:border-neutral-600 transition shadow-sm">
+                                <div class="overflow-hidden pr-2">
+                                    <div class="font-bold text-gray-200 truncate flex items-center gap-1">
+                                        <span>${it.name}</span>
+                                        ${it.quantity > 1 ? `<span class="text-[10px] bg-neutral-700 text-amber-300 px-1 rounded">${it.quantity}x</span>` : ''}
+                                    </div>
+                                    <div class="text-[10px] text-gray-400 truncate">
+                                        ${it.weight ? `${it.weight} kg` : ''} ${it.description ? `• ${it.description}` : ''}
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-1 flex-shrink-0">
+                                    ${isConsumable ? `
+                                        <button type="button" class="live-consume-btn px-2 py-1 bg-emerald-700/40 hover:bg-emerald-600/60 border border-emerald-500/50 text-emerald-300 font-bold rounded text-[11px] transition flex items-center gap-1 cursor-pointer"
+                                            data-id="${it.id}">
+                                            🧪 Usar
+                                        </button>
+                                    ` : ''}
+                                    ${isEquippable ? `
+                                        <button type="button" class="live-equip-btn px-2 py-1 bg-amber-700/40 hover:bg-amber-600/60 border border-amber-500/50 text-amber-300 font-bold rounded text-[11px] transition flex items-center gap-1 cursor-pointer"
+                                            data-id="${it.id}">
+                                            ⚔️ Equipar
+                                        </button>
+                                    ` : ''}
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                }
+
+                // Eventos de Desequipar
+                equippedGrid.querySelectorAll('.live-unequip-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const itemId = btn.dataset.id;
+                        window._currentInventory = CharacterInventoryBridge.unequipItem(window._currentInventory, itemId);
+                        syncAndRefreshLiveState(sheetData);
+                    });
+                });
+
+                // Eventos de Equipar
+                backpackGrid.querySelectorAll('.live-equip-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const itemId = btn.dataset.id;
+                        window._currentInventory = CharacterInventoryBridge.equipItem(window._currentInventory, itemId);
+                        syncAndRefreshLiveState(sheetData);
+                    });
+                });
+
+                // Eventos de Consumo
+                backpackGrid.querySelectorAll('.live-consume-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const itemId = btn.dataset.id;
+                        const result = CharacterInventoryBridge.useConsumable(
+                            { ...sheetData, currentHP: liveCharacterState.currentHP, currentPE: liveCharacterState.currentPE, inventory: window._currentInventory },
+                            itemId
+                        );
+                        if (result.success) {
+                            liveCharacterState.currentHP = result.updatedSheet.currentHP;
+                            liveCharacterState.currentPE = result.updatedSheet.currentPE;
+                            window._currentInventory = result.updatedSheet.inventory;
+
+                            if (typeof AudioSfxEngine !== 'undefined') AudioSfxEngine.playHeal();
+                            updateLiveVitalsDisplay();
+                            syncAndRefreshLiveState(sheetData);
+
+                            showModalMessage('🧪 Item Consumido', `<div class="text-emerald-400 font-semibold">${result.log}</div>`);
+                        }
+                    });
+                });
+            }
+
+            function syncAndRefreshLiveState(sheetData) {
+                if (typeof CharacterInventoryBridge === 'undefined') return;
+                CharacterInventoryBridge.syncSheetWithInventory(sheetData, window._currentInventory);
+                const eqEl = document.getElementById('equipment');
+                if (eqEl) eqEl.value = sheetData.equipment;
+
+                if (typeof AudioSfxEngine !== 'undefined') AudioSfxEngine.playConditionToggle();
+
+                if (currentSheetId) {
+                    saveSheetToLocalStorage(currentSheetId, sheetData);
+                }
+
+                updateLiveEffectiveStats(sheetData);
+                renderLiveAttacks(sheetData);
+                renderLiveInventory(sheetData);
+            }
+
+            // Listeners de Botões de Ajuste de PV e PE
+            document.querySelectorAll('.live-hp-delta-btn').forEach(btn => {
+                btn.addEventListener('click', () => modifyLiveHP(parseInt(btn.dataset.delta) || 0));
+            });
+
+            document.querySelectorAll('.live-pe-delta-btn').forEach(btn => {
+                btn.addEventListener('click', () => modifyLivePE(parseInt(btn.dataset.delta) || 0));
+            });
+
+            const liveCustomHpInput = document.getElementById('liveCustomHpInput');
+            const liveApplyDmgBtn = document.getElementById('liveApplyDmgBtn');
+            const liveApplyHealBtn = document.getElementById('liveApplyHealBtn');
+            if (liveApplyDmgBtn) {
+                liveApplyDmgBtn.addEventListener('click', () => {
+                    const val = parseInt(liveCustomHpInput.value) || 0;
+                    if (val > 0) {
+                        modifyLiveHP(-val);
+                        liveCustomHpInput.value = '';
+                    }
+                });
+            }
+            if (liveApplyHealBtn) {
+                liveApplyHealBtn.addEventListener('click', () => {
+                    const val = parseInt(liveCustomHpInput.value) || 0;
+                    if (val > 0) {
+                        modifyLiveHP(val);
+                        liveCustomHpInput.value = '';
+                    }
+                });
+            }
+
+            const liveCustomPeInput = document.getElementById('liveCustomPeInput');
+            const liveSpendPeBtn = document.getElementById('liveSpendPeBtn');
+            const liveRestorePeBtn = document.getElementById('liveRestorePeBtn');
+            if (liveSpendPeBtn) {
+                liveSpendPeBtn.addEventListener('click', () => {
+                    const val = parseInt(liveCustomPeInput.value) || 0;
+                    if (val > 0) {
+                        modifyLivePE(-val);
+                        liveCustomPeInput.value = '';
+                    }
+                });
+            }
+            if (liveRestorePeBtn) {
+                liveRestorePeBtn.addEventListener('click', () => {
+                    const val = parseInt(liveCustomPeInput.value) || 0;
+                    if (val > 0) {
+                        modifyLivePE(val);
+                        liveCustomPeInput.value = '';
+                    }
+                });
+            }
+
+            // Descansos Curto e Longo
+            const liveShortRestBtn = document.getElementById('liveShortRestBtn');
+            const liveLongRestBtn = document.getElementById('liveLongRestBtn');
+            if (liveShortRestBtn) {
+                liveShortRestBtn.addEventListener('click', () => {
+                    const sheetData = getFormAsJson();
+                    const state = {
+                        ...sheetData,
+                        currentPE: liveCharacterState.currentPE,
+                        maxPE: liveCharacterState.maxPE
+                    };
+                    const res = (typeof LiveSheetController !== 'undefined')
+                        ? LiveSheetController.applyShortRest(state)
+                        : { currentPE: liveCharacterState.maxPE, log: 'Descanso curto concluído.' };
+                    liveCharacterState.currentPE = res.currentPE;
+                    if (typeof AudioSfxEngine !== 'undefined') AudioSfxEngine.playHeal();
+                    updateLiveVitalsDisplay();
+                    showModalMessage('☕ Descanso Curto (+2d6)', `<div class="text-sm text-cyan-300">${res.log}</div>`);
+                });
+            }
+            if (liveLongRestBtn) {
+                liveLongRestBtn.addEventListener('click', () => {
+                    const sheetData = getFormAsJson();
+                    const state = {
+                        ...sheetData,
+                        currentHP: liveCharacterState.currentHP,
+                        maxHP: liveCharacterState.maxHP,
+                        currentPE: liveCharacterState.currentPE,
+                        maxPE: liveCharacterState.maxPE,
+                        activeConditions: liveCharacterState.activeConditions
+                    };
+                    const res = (typeof LiveSheetController !== 'undefined')
+                        ? LiveSheetController.applyLongRest(state)
+                        : { currentHP: liveCharacterState.maxHP, currentPE: liveCharacterState.maxPE, activeConditions: [], log: 'Descanso longo concluído.' };
+                    liveCharacterState.currentHP = res.currentHP;
+                    liveCharacterState.currentPE = res.currentPE;
+                    liveCharacterState.activeConditions = res.activeConditions || [];
+                    if (typeof AudioSfxEngine !== 'undefined') AudioSfxEngine.playHeal();
+                    updateLiveVitalsDisplay();
+                    renderLiveConditions();
+                    updateLiveEffectiveStats(sheetData);
+                    showModalMessage('🏕️ Descanso Longo (+2d6)', `<div class="text-sm text-emerald-300">${res.log}</div>`);
+                });
+            }
+
+            // Botões do Topo da Ficha de Jogo
+            const livePlayVttBtn = document.getElementById('livePlayVttBtn');
+            const liveSyncMagicTreeBtn = document.getElementById('liveSyncMagicTreeBtn');
+            const liveDuplicateSheetBtn = document.getElementById('liveDuplicateSheetBtn');
+            const liveExportJsonBtn = document.getElementById('liveExportJsonBtn');
+
+            if (livePlayVttBtn) {
+                livePlayVttBtn.addEventListener('click', () => {
+                    const sheetData = getFormAsJson();
+                    const payload = (typeof LiveSheetController !== 'undefined')
+                        ? LiveSheetController.prepareVttTokenPayload(sheetData, liveCharacterState)
+                        : {
+                            name: sheetData.charName || 'Herói',
+                            hp: liveCharacterState.currentHP || 20,
+                            maxHp: liveCharacterState.maxHP || 20,
+                            pe: liveCharacterState.currentPE || 16,
+                            maxPe: liveCharacterState.maxPE || 16,
+                            defense: 8,
+                            avatar: sheetData.avatarUrl || ''
+                        };
+                    localStorage.setItem('kuartor_active_vtt_character', JSON.stringify(payload));
+                    window.location.href = 'mesa_virtual.html';
+                });
+            }
+
+            if (liveSyncMagicTreeBtn) {
+                liveSyncMagicTreeBtn.addEventListener('click', () => {
+                    let treeState = null;
+                    try {
+                        treeState = JSON.parse(localStorage.getItem('rpg_kuartor_magic_tree_state') || 'null');
+                    } catch (e) {}
+
+                    if (!treeState) {
+                        showModalMessage('Árvore de Magia', 'Nenhum estado da Árvore de Magia encontrado no navegador. Acesse a Árvore de Magia para desbloquear rituais.');
+                        return;
+                    }
+
+                    const sheetData = getFormAsJson();
+                    const synced = (typeof LiveSheetController !== 'undefined')
+                        ? LiveSheetController.syncMagicTree(sheetData, treeState)
+                        : sheetData;
+
+                    loadFormFromJson(synced);
+                    if (currentSheetId) {
+                        saveSheetToLocalStorage(currentSheetId, synced);
+                    }
+                    renderLiveSpells(synced);
+                    showModalMessage('Grimório Sincronizado', 'Magias e rituais aprendidos na Árvore de Magia foram integrados com sucesso à sua ficha ativa!');
+                });
+            }
+
+            if (liveDuplicateSheetBtn) {
+                liveDuplicateSheetBtn.addEventListener('click', () => {
+                    const sheetData = getFormAsJson();
+                    const cloned = (typeof LiveSheetController !== 'undefined')
+                        ? LiveSheetController.duplicateSheet(sheetData)
+                        : JSON.parse(JSON.stringify(sheetData));
+                    if (!cloned.charName.includes('(Cópia)')) {
+                        cloned.charName = `${cloned.charName || 'Personagem'} (Cópia)`;
+                    }
+                    const newId = crypto.randomUUID();
+                    saveSheetToLocalStorage(newId, cloned);
+                    if (currentUserId) {
+                        try {
+                            const sheetDocRef = doc(db, `users/${currentUserId}/characters`, newId);
+                            setDoc(sheetDocRef, {
+                                name: cloned.charName,
+                                lastUpdated: serverTimestamp(),
+                                sheetData: cloned
+                            });
+                        } catch (e) {}
+                    }
+                    loadSavedSheetsFromFirestore();
+                    showModalMessage('Ficha Duplicada', `Cópia criada com sucesso: "${cloned.charName}".`);
+                });
+            }
+
+            if (liveExportJsonBtn) {
+                liveExportJsonBtn.addEventListener('click', () => {
+                    const sheetData = getFormAsJson();
+                    const jsonStr = (typeof LiveSheetController !== 'undefined')
+                        ? LiveSheetController.exportJson(sheetData, liveCharacterState)
+                        : JSON.stringify(sheetData, null, 2);
+                    const blob = new Blob([jsonStr], { type: 'application/json' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `${sheetData.charName || 'personagem'}_ficha_jogo.json`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                });
+            }
 
             // Configura os botões de fechar dos modais existentes no HTML
             const customCancelBtn = document.getElementById('custom-cancel-button');
@@ -2111,6 +3364,82 @@
             loadSavedSheetsFromFirestore();
             updateAllStats();
         }
+
+        // ==========================================
+        // Catálogo de Equipamentos (+2d6) Modal Helpers
+        // ==========================================
+        window.openItemCatalogModal = function () {
+            window.renderItemCatalogModalList();
+            document.getElementById('item-catalog-modal')?.classList.remove('hidden');
+        };
+
+        window.closeItemCatalogModal = function () {
+            document.getElementById('item-catalog-modal')?.classList.add('hidden');
+        };
+
+        window.renderItemCatalogModalList = function () {
+            const container = document.getElementById('item-catalog-list-container');
+            if (!container) return;
+
+            const term = (document.getElementById('item-catalog-search')?.value || '').trim();
+            const cat = document.getElementById('item-catalog-category')?.value || 'ALL';
+
+            const items = (typeof ItemCatalogEngine !== 'undefined')
+                ? ItemCatalogEngine.filterItems(term, cat)
+                : [];
+
+            if (items.length === 0) {
+                container.innerHTML = `<div class="col-span-2 text-center text-gray-500 py-6 italic font-cinzel">Nenhum item encontrado para os filtros selecionados.</div>`;
+                return;
+            }
+
+            container.innerHTML = items.map(it => `
+                <div class="p-2.5 bg-neutral-900/90 border border-neutral-700/80 hover:border-amber-500/50 rounded-lg flex flex-col justify-between transition">
+                    <div>
+                        <div class="flex items-center justify-between mb-1">
+                            <span class="font-bold text-amber-300 text-xs font-cinzel">${it.name}</span>
+                            <span class="text-[10px] px-1.5 py-0.5 rounded bg-neutral-800 text-neutral-300 border border-neutral-700 font-mono">${it.category}</span>
+                        </div>
+                        <div class="text-[11px] text-gray-400 mb-1">
+                            ${it.bonusAcerto ? `<span class="text-amber-400 font-semibold mr-1">Acerto: ${it.bonusAcerto}</span>` : ''}
+                            ${it.dano ? `<span class="text-red-400 font-semibold mr-1">Dano: ${it.dano}</span>` : ''}
+                            ${it.armadura ? `<span class="text-purple-400 font-semibold mr-1">Armadura: ${it.armadura}</span>` : ''}
+                            ${it.defesa ? `<span class="text-cyan-400 font-semibold mr-1">Defesa: ${it.defesa >= 0 ? '+' : ''}${it.defesa}</span>` : ''}
+                            <span class="text-neutral-500 font-mono">(${it.custo})</span>
+                        </div>
+                        <p class="text-[10px] text-gray-400 italic">${it.description || ''}</p>
+                    </div>
+                    <button type="button" onclick="addItemFromCatalog('${it.id}')" class="mt-2 w-full py-1 bg-amber-600/20 hover:bg-amber-600/40 border border-amber-500/40 text-amber-300 font-bold rounded text-xs transition flex items-center justify-center gap-1.5 cursor-pointer">
+                        <i class="fa-solid fa-plus text-[10px]"></i> Equipar / Adicionar
+                    </button>
+                </div>
+            `).join('');
+        };
+
+        window.addItemFromCatalog = function (itemId) {
+            if (typeof ItemCatalogEngine !== 'undefined') {
+                const item = ItemCatalogEngine.getItemById(itemId);
+                if (!item) return;
+
+                const eqEl = document.getElementById('equipment');
+                if (eqEl) {
+                    if (typeof CharacterInventoryBridge !== 'undefined') {
+                        const curInv = window._currentInventory || CharacterInventoryBridge.parseEquipmentTextToInventory(eqEl.value || '');
+                        window._currentInventory = CharacterInventoryBridge.addItem(curInv, item);
+                        const dummySheet = { equipment: eqEl.value || '', inventory: window._currentInventory };
+                        const synced = CharacterInventoryBridge.syncSheetWithInventory(dummySheet, window._currentInventory);
+                        eqEl.value = synced.equipment;
+                    } else {
+                        const dummySheet = { equipment: eqEl.value || '' };
+                        const updated = ItemCatalogEngine.addItemToSheet(dummySheet, item);
+                        eqEl.value = updated.equipment;
+                    }
+                }
+
+                if (typeof AudioSfxEngine !== 'undefined') AudioSfxEngine.playConditionToggle();
+                showModalMessage('Equipamento Adicionado', `<div class="text-sm text-amber-300"><strong>${item.name}</strong> foi adicionado ao equipamento do personagem!</div>`);
+            }
+        };
     </script>
 </body>
 

@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cofre dos Segredos de Kuar-Tor</title>
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🗝️</text></svg>">
+    <link rel="stylesheet" href="tailwind.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800;900&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <style>
+        body {
+            background-color: #04070d;
+            color: #cbd5e1;
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            background-image: 
+                radial-gradient(circle at 50% 30%, rgba(217, 119, 6, 0.08) 0%, transparent 60%),
+                linear-gradient(to bottom, rgba(4, 7, 13, 0.92), rgba(4, 7, 13, 0.98)),
+                url('https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1920&auto=format&fit=crop');
+            background-size: cover;
+            background-position: center;
+        }
+
+        .font-cinzel { font-family: 'Cinzel', serif; }
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+
+        /* Cofre 3D */
+        .vault-frame {
+            perspective: 1200px;
+        }
+
+        .vault-door {
+            transition: transform 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+            transform-style: preserve-3d;
+        }
+
+        .vault-door-left {
+            transform-origin: left center;
+        }
+
+        .vault-door-right {
+            transform-origin: right center;
+        }
+
+        .vault-open .vault-door-left {
+            transform: rotateY(-115deg);
+        }
+
+        .vault-open .vault-door-right {
+            transform: rotateY(115deg);
+        }
+    </style>
+</head>
+
+<body class="flex flex-col items-center justify-between min-h-screen p-4 md:p-8 select-none">
+    <!-- Top Header -->
+    <header class="w-full max-w-4xl flex justify-between items-center pb-4 border-b border-slate-800">
+        <div class="flex items-center gap-3">
+            <span class="text-amber-500 text-2xl">ᚦ</span>
+            <h1 class="font-cinzel text-xl md:text-2xl font-bold text-amber-400">COFRE RÚNICO ANCESTRAL</h1>
+        </div>
+        <a href="../index.html" class="px-4 py-2 bg-neutral-800 hover:bg-neutral-700 border border-neutral-700 text-gray-200 rounded-lg text-xs font-cinzel font-bold transition flex items-center gap-2 no-underline">
+            <i class="fa-solid fa-arrow-left"></i> Menu Principal
+        </a>
+    </header>
+
+    <!-- Main Vault Display -->
+    <main class="w-full max-w-lg my-auto flex flex-col items-center">
+        <!-- Caixa do Cofre -->
+        <div id="vaultContainer" class="vault-frame relative w-80 sm:w-96 h-64 sm:h-72 bg-neutral-950 border-4 border-amber-900/80 rounded-2xl shadow-[0_0_50px_rgba(0,0,0,0.9)] overflow-hidden flex items-center justify-center">
+            
+            <!-- Conteúdo Secreto Revelado (Fundo) -->
+            <div id="vaultSecretContent" class="absolute inset-0 p-6 flex flex-col items-center justify-center text-center bg-gradient-to-br from-amber-950/40 via-neutral-900 to-slate-950">
+                <i class="fa-solid fa-gem text-5xl text-amber-400 animate-bounce mb-3"></i>
+                <h3 class="font-cinzel text-lg font-bold text-amber-300">ESPÓLIO DO NEXO REVELADO!</h3>
+                <p class="text-xs text-gray-300 mt-2 max-w-xs">
+                    Você recuperou o <strong>Orbe de Éter Ancestral</strong> e <strong>300 Peças de Ouro Imperial</strong>!
+                </p>
+                <span class="mt-3 px-3 py-1 bg-amber-600/30 border border-amber-500/50 text-amber-300 font-mono text-xs rounded-full">
+                    Selo Rúnico Quebrado
+                </span>
+            </div>
+
+            <!-- Portas 3D Esquerda e Direita -->
+            <div class="vault-door vault-door-left absolute left-0 top-0 bottom-0 w-1/2 bg-gradient-to-r from-neutral-800 to-neutral-750 border-r border-neutral-900 z-10 flex items-center justify-end pr-2 shadow-2xl">
+                <div class="w-8 h-8 rounded-full border-2 border-amber-700/60 bg-neutral-900 flex items-center justify-center text-amber-500 font-cinzel text-xs font-bold">
+                    ᚱ
+                </div>
+            </div>
+            <div class="vault-door vault-door-right absolute right-0 top-0 bottom-0 w-1/2 bg-gradient-to-l from-neutral-800 to-neutral-750 border-l border-neutral-900 z-10 flex items-center justify-start pl-2 shadow-2xl">
+                <div class="w-8 h-8 rounded-full border-2 border-amber-700/60 bg-neutral-900 flex items-center justify-center text-amber-500 font-cinzel text-xs font-bold">
+                    ᛋ
+                </div>
+            </div>
+        </div>
+
+        <!-- Painel de Combinação Rúnica -->
+        <div class="mt-6 w-full bg-neutral-900/90 border border-neutral-700 rounded-xl p-5 shadow-xl text-center">
+            <h4 class="font-cinzel text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">
+                Combinação do Mecanismo (3 Dígitos Rúnicos)
+            </h4>
+            
+            <div class="flex justify-center gap-3 mb-4">
+                <button type="button" class="digit-btn w-12 h-14 bg-neutral-950 border-2 border-amber-600/50 hover:border-amber-400 text-amber-400 font-cinzel text-2xl font-bold rounded-lg transition" data-index="0">2</button>
+                <button type="button" class="digit-btn w-12 h-14 bg-neutral-950 border-2 border-amber-600/50 hover:border-amber-400 text-amber-400 font-cinzel text-2xl font-bold rounded-lg transition" data-index="1">0</button>
+                <button type="button" class="digit-btn w-12 h-14 bg-neutral-950 border-2 border-amber-600/50 hover:border-amber-400 text-amber-400 font-cinzel text-2xl font-bold rounded-lg transition" data-index="2">6</button>
+            </div>
+
+            <p class="text-[11px] text-gray-500 mb-4">Clique nos dígitos para girar as engrenagens rúnicas (0 a 9).</p>
+
+            <div class="flex justify-center gap-3">
+                <button type="button" id="checkVaultBtn" class="px-6 py-2.5 bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-neutral-950 font-cinzel font-bold text-xs rounded-xl shadow-lg transition flex items-center gap-2">
+                    <i class="fa-solid fa-key"></i> Tentar Abrir Fechadura
+                </button>
+                <button type="button" id="resetVaultBtn" class="px-4 py-2 bg-neutral-800 hover:bg-neutral-700 border border-neutral-600 text-gray-300 font-cinzel font-bold text-xs rounded-xl transition">
+                    Resetar
+                </button>
+            </div>
+            <div id="vaultFeedback" class="mt-3 text-xs font-semibold h-4 text-cyan-400"></div>
+        </div>
+    </main>
+
+    <!-- Rodapé -->
+    <footer class="text-xs text-gray-500 font-mono py-2">
+        Kuar-Tor v2.3 &middot; Mecanismo Rúnico de Segurança
+    </footer>
+
+    <script type="module">
+        import AudioSfxEngine from '../src/core/audio-sfx-engine.js';
+
+        // A combinação correta oficial do cenário é o número de faces: 2-D-6 -> "2-1-6" ou "2-0-6"
+        const SECRET_CODE = [2, 1, 6];
+        const currentDigits = [2, 0, 6];
+
+        const digitBtns = document.querySelectorAll('.digit-btn');
+        const vaultContainer = document.getElementById('vaultContainer');
+        const feedback = document.getElementById('vaultFeedback');
+
+        digitBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const idx = parseInt(btn.dataset.index);
+                currentDigits[idx] = (currentDigits[idx] + 1) % 10;
+                btn.textContent = currentDigits[idx];
+                AudioSfxEngine.playConditionToggle();
+            });
+        });
+
+        document.getElementById('checkVaultBtn')?.addEventListener('click', () => {
+            const isMatch = currentDigits.every((d, i) => d === SECRET_CODE[i]);
+
+            if (isMatch) {
+                vaultContainer.classList.add('vault-open');
+                feedback.className = 'mt-3 text-xs font-semibold h-4 text-emerald-400 font-cinzel';
+                feedback.textContent = '★ O MECANISMO ESTALOU! COFRE DESTRANCADO!';
+                AudioSfxEngine.playCriticalSuccess();
+            } else {
+                feedback.className = 'mt-3 text-xs font-semibold h-4 text-red-400';
+                feedback.textContent = '✗ As engrenagens travaram com um rangido rúnico. Tente outra combinação.';
+                AudioSfxEngine.playCriticalFailure();
+            }
+        });
+
+        document.getElementById('resetVaultBtn')?.addEventListener('click', () => {
+            vaultContainer.classList.remove('vault-open');
+            currentDigits[0] = 0; currentDigits[1] = 0; currentDigits[2] = 0;
+            digitBtns.forEach((btn, i) => btn.textContent = currentDigits[i]);
+            feedback.textContent = '';
+            AudioSfxEngine.playConditionToggle();
+        });
+    </script>
+</body>
+</html>

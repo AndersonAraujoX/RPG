@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Terminal Rúnico do Nexo &middot; Kuar-Tor (+2d6)</title>
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💻</text></svg>">
+    <link rel="stylesheet" href="tailwind.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Cinzel:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <style>
+        body {
+            background-color: #030712;
+            color: #67e8f9;
+            font-family: 'JetBrains Mono', monospace;
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        .crt-overlay::before {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
+            z-index: 20;
+            background-size: 100% 3px, 6px 100%;
+            pointer-events: none;
+        }
+
+        .crt-glow {
+            text-shadow: 0 0 8px rgba(6, 182, 212, 0.6);
+        }
+
+        .terminal-scroll::-webkit-scrollbar {
+            width: 6px;
+        }
+        .terminal-scroll::-webkit-scrollbar-thumb {
+            background: #0e7490;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+
+<body class="crt-overlay flex flex-col p-3 md:p-6 select-none">
+    <!-- Top Bar -->
+    <header class="flex justify-between items-center pb-3 border-b border-cyan-800/60 z-30">
+        <div class="flex items-center gap-3">
+            <span class="w-3 h-3 rounded-full bg-cyan-400 animate-ping"></span>
+            <h1 class="font-bold text-sm md:text-base tracking-wider crt-glow text-cyan-300">
+                SOMBRA-OS // TERMINAL DO NEXO (KUAR-TOR v2.3)
+            </h1>
+        </div>
+        <div class="flex items-center gap-3">
+            <span class="text-[11px] text-cyan-600 font-mono hidden sm:inline">CONEXÃO: ESTÁVEL // ÉTER RÚNICO</span>
+            <a href="../index.html" class="px-3 py-1 bg-cyan-950/80 hover:bg-cyan-900 border border-cyan-700/80 text-cyan-300 rounded text-xs transition flex items-center gap-1.5 no-underline">
+                <i class="fa-solid fa-arrow-left"></i> Menu
+            </a>
+        </div>
+    </header>
+
+    <!-- Terminal Screen -->
+    <main class="flex-1 flex flex-col pt-3 overflow-hidden z-10">
+        <div id="terminalOutput" class="flex-1 overflow-y-auto terminal-scroll pr-2 space-y-2 text-xs md:text-sm">
+            <div class="text-cyan-500">
+                [+] SISTEMA OPERACIONAL RÚNICO INICIALIZADO COM SUCESSO.<br>
+                [+] ECO-FREQUÊNCIA: 432 MHz // PROTOCOLO +2d6 ATIVO.<br>
+                Digite <strong class="text-amber-400 underline cursor-pointer" onclick="runCommand('ajuda')">ajuda</strong> para listar os comandos disponíveis.
+            </div>
+        </div>
+
+        <!-- Prompt Input Bar -->
+        <div class="mt-3 pt-2 border-t border-cyan-900/80 flex items-center gap-2">
+            <span class="text-amber-400 font-bold">&gt;</span>
+            <input type="text" id="terminalInput" autofocus autocomplete="off" placeholder="Digite um comando rúnico..."
+                class="flex-1 bg-transparent border-none text-cyan-200 text-xs md:text-sm focus:outline-none focus:ring-0 crt-glow">
+            <button type="button" id="terminalSendBtn" class="px-3 py-1 bg-cyan-900/40 hover:bg-cyan-800 border border-cyan-700 text-cyan-300 text-xs rounded transition">
+                ENTER
+            </button>
+        </div>
+    </main>
+
+    <script type="module">
+        import '../src/core/dice-roller.js';
+
+        const output = document.getElementById('terminalOutput');
+        const input = document.getElementById('terminalInput');
+        const sendBtn = document.getElementById('terminalSendBtn');
+
+        function print(html, isCmd = false) {
+            const line = document.createElement('div');
+            if (isCmd) {
+                line.className = 'text-amber-300 font-bold mt-2';
+                line.innerHTML = `&gt; ${html}`;
+            } else {
+                line.className = 'text-cyan-300/90 leading-relaxed';
+                line.innerHTML = html;
+            }
+            output.appendChild(line);
+            output.scrollTop = output.scrollHeight;
+        }
+
+        window.runCommand = function(cmdStr) {
+            const raw = String(cmdStr || '').trim();
+            if (!raw) return;
+
+            print(raw, true);
+            const lower = raw.toLowerCase();
+
+            if (lower === 'ajuda' || lower === 'help') {
+                print(`
+                    <div class="p-2 border border-cyan-800 bg-cyan-950/40 rounded space-y-1">
+                        <div><strong class="text-amber-300">ajuda</strong> - Lista todos os comandos disponíveis.</div>
+                        <div><strong class="text-amber-300">rolar 2d6</strong> [ou 'rolar'] - Rola 2 dados de seis faces com cálculo do sistema oficial.</div>
+                        <div><strong class="text-amber-300">status</strong> - Exibe telemetria de conexão e armazenamento.</div>
+                        <div><strong class="text-amber-300">regras</strong> - Resumo dos cálculos vitais e testes do Sistema +2d6.</div>
+                        <div><strong class="text-amber-300">bestiario</strong> - Lista as 8 ameaças catalogadas da ilha.</div>
+                        <div><strong class="text-amber-300">itens</strong> - Lista armas e itens de sobrevivência.</div>
+                        <div><strong class="text-amber-300">limpar</strong> [ou 'clear'] - Limpa a tela do terminal.</div>
+                    </div>
+                `);
+            } else if (lower.startsWith('rolar') || lower === 'roll' || lower === '2d6') {
+                const d1 = Math.floor(Math.random() * 6) + 1;
+                const d2 = Math.floor(Math.random() * 6) + 1;
+                const total = d1 + d2;
+                const isCrit = (d1 === 6 && d2 === 6);
+                const isFumble = (d1 === 1 && d2 === 1);
+                let badge = '<span class="text-emerald-400 font-bold">✓ Sucesso Padrão</span>';
+                if (isCrit) badge = '<span class="text-amber-400 font-bold">★ ACERTO CRÍTICO (6+6)!</span>';
+                if (isFumble) badge = '<span class="text-red-400 font-bold">☠ FALHA CRÍTICA (1+1)!</span>';
+
+                print(`
+                    <div class="p-2 border border-cyan-800 bg-cyan-950/40 rounded">
+                        🎲 <strong>Rolagem +2d6:</strong> [${d1}] + [${d2}] = <span class="text-amber-300 font-bold text-base">${total}</span> &mdash; ${badge}
+                    </div>
+                `);
+            } else if (lower === 'status') {
+                const sheetsCount = Object.keys(JSON.parse(localStorage.getItem('kuar_tor_saved_sheets') || '{}')).length;
+                print(`
+                    <div class="p-2 border border-cyan-800 bg-cyan-950/40 rounded space-y-1">
+                        <div>SISTEMA: <span class="text-emerald-400 font-bold">OPERACIONAL</span></div>
+                        <div>FICHAS REGISTRADAS NO TERMINAL: <strong class="text-amber-300">${sheetsCount}</strong></div>
+                        <div>MEMÓRIA LOCAL: <span class="text-cyan-400">LocalStorage Ativo</span></div>
+                        <div>SINAL ÉTER: <span class="text-emerald-400">99.8%</span></div>
+                    </div>
+                `);
+            } else if (lower === 'regras') {
+                print(`
+                    <div class="p-2 border border-cyan-800 bg-cyan-950/40 rounded space-y-1">
+                        <div><strong>Pontos de Vida (PV):</strong> (Constituição × 2) + 10</div>
+                        <div><strong>Pontos de Energia (PE):</strong> Atributo Conjurador + Constituição + 10</div>
+                        <div><strong>Defesa Passiva:</strong> 7 + Destreza + Esquiva</div>
+                        <div><strong>Dificuldade Média (CD):</strong> 10 (Teste: 2d6 + Atributo + Perícia)</div>
+                    </div>
+                `);
+            } else if (lower === 'bestiario') {
+                print(`
+                    <div class="p-2 border border-cyan-800 bg-cyan-950/40 rounded space-y-1">
+                        <div>1. <strong>Salteador das Catacumbas</strong> (PV 10, Defesa 8)</div>
+                        <div>2. <strong>Cultista do Vazio</strong> (PV 14, Defesa 8)</div>
+                        <div>3. <strong>Lobo Corrompido</strong> (PV 16, Defesa 9, Sangramento)</div>
+                        <div>4. <strong>Soldado Renegado</strong> (PV 20, Defesa 10)</div>
+                        <div>5. <strong>Atirador Renegado</strong> (PV 16, Defesa 10)</div>
+                        <div>6. <strong>Guardião Rúnico Antigo</strong> (PV 28, Defesa 11)</div>
+                        <div>7. <strong>Eco Perdido</strong> (PV 14, Dreno PE, Defesa 10)</div>
+                        <div>8. <strong>Arauto do Abismo</strong> (Chefe, PV 44, Defesa 12)</div>
+                    </div>
+                `);
+            } else if (lower === 'itens') {
+                print(`
+                    <div class="p-2 border border-cyan-800 bg-cyan-950/40 rounded space-y-1">
+                        <div>⚔️ <strong>Espada Longa</strong> (1d6+2), <strong>Machado de Batalha</strong> (1d6+3)</div>
+                        <div>🏹 <strong>Arco Longo</strong> (1d6+2), <strong>Besta Pesada</strong> (2d6)</div>
+                        <div>🛡️ <strong>Cota de Malha</strong> (Armadura 2), <strong>Escudo de Aço</strong> (+2 Defesa)</div>
+                        <div>🧪 <strong>Poção de Vida</strong> (+5 PV), <strong>Elixir de Éter</strong> (+5 PE)</div>
+                    </div>
+                `);
+            } else if (lower === 'limpar' || lower === 'clear') {
+                output.innerHTML = '';
+            } else {
+                print(`<span class="text-red-400">Comando desconhecido: "${raw}". Digite 'ajuda' para instruções.</span>`);
+            }
+        };
+
+        function submitInput() {
+            const val = input.value;
+            input.value = '';
+            runCommand(val);
+        }
+
+        input?.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') submitInput();
+        });
+        sendBtn?.addEventListener('click', submitInput);
+    </script>
+</body>
+</html>
