@@ -1384,9 +1384,9 @@
             </button>
 
             <!-- Botão do Compêndio de 186 Círculos de Magia -->
-            <button onclick="toggleFusionTable()" class="btn-fusion-toggle" style="background: linear-gradient(135deg, rgba(251,191,36,0.25), rgba(180,142,173,0.2)); border-color: #fbbf24; color: #fbbf24; box-shadow: 0 0 15px rgba(251,191,36,0.2);">
-                <i class="fa-solid fa-dharmachakra"></i>
-                <span class="hidden md:inline">186 Círculos (66/120)</span>
+            <button id="btn-compendio-circulos" onclick="toggleFusionTable()" class="btn-fusion-toggle" style="background: linear-gradient(135deg, rgba(251,191,36,0.25), rgba(180,142,173,0.2)); border-color: #fbbf24; color: #fbbf24; box-shadow: 0 0 15px rgba(251,191,36,0.2);">
+                <i id="icon-compendio-circulos" class="fa-solid fa-lock text-purple-400"></i>
+                <span id="text-compendio-circulos" class="hidden md:inline">Compêndio Selado (0/186)</span>
             </button>
 
             <a href="../index.html" class="btn-top">
@@ -2918,9 +2918,9 @@
             if (!progSys) return null;
             let raw = null;
             try { raw = JSON.parse(localStorage.getItem(PROGRESSION_KEY)); } catch (e) { raw = null; }
-            if (!raw) {
+            if (!raw || raw.isSealed === undefined) {
                 // A Biblioteca Arcana começa SELADA por padrão: todos os 186 círculos selados sob o Selo Ancestral!
-                const initialSealed = progSys.sealLibrary(progSys.createProgressionState());
+                const initialSealed = progSys.sealLibrary(progSys.createProgressionState(raw || {}));
                 try { localStorage.setItem(PROGRESSION_KEY, JSON.stringify(initialSealed)); } catch (e) {}
                 return initialSealed;
             }
@@ -4855,6 +4855,21 @@
             }
             if (progressText) {
                 progressText.innerText = `${status.discoveredCount} revelados &middot; ${status.sealedCount} selados (${status.percentageDiscovered}%)`;
+            }
+
+            const headerIcon = document.getElementById('icon-compendio-circulos');
+            const headerText = document.getElementById('text-compendio-circulos');
+            if (headerIcon && headerText) {
+                if (status.isFullySealed) {
+                    headerIcon.className = 'fa-solid fa-lock text-purple-400';
+                    headerText.innerText = 'Compêndio Selado (0/186)';
+                } else if (status.isFullyUnsealed) {
+                    headerIcon.className = 'fa-solid fa-dharmachakra text-amber-400';
+                    headerText.innerText = '186 Círculos (Desvelados)';
+                } else {
+                    headerIcon.className = 'fa-solid fa-book-sparkles text-cyan-300';
+                    headerText.innerText = `Círculos (${status.discoveredCount}/186)`;
+                }
             }
         }
 

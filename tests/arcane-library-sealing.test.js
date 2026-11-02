@@ -105,6 +105,36 @@ QUnit.module('Selamento da Biblioteca Arcana — Mecânicas & Enigmas (AAA)', fu
         assert.ok(content.includes('updateSealStatusUI'), 'Função updateSealStatusUI presente');
         assert.ok(content.includes('library-seal-status-badge'), 'Badge visual de status do selo presente');
         assert.ok(content.includes('library-seal-progress-fill'), 'Barra de progresso de revelação presente');
+        assert.ok(content.includes('btn-compendio-circulos'), 'Botão do compêndio no cabeçalho com ID de selo presente');
+        assert.ok(content.includes('Compêndio Selado'), 'Estado inicial de texto do compêndio no cabeçalho indica selado');
         assert.ok(content.includes('circle-sealed-card') || content.includes('Selo Arcano'), 'Estilização de card selado presente');
     });
+
+    QUnit.test('6. Caminho Feliz: Portal Principal (index.html) e Hubs exibem a Biblioteca Arcana SELADA (AAA)', function (assert) {
+        // Arrange
+        const indexHtml = fs.readFileSync(path.resolve(__dirname, '../index.html'), 'utf-8');
+        const mainHtml = fs.readFileSync(path.resolve(__dirname, '../public/main.html'), 'utf-8');
+
+        // Act & Assert: index.html
+        assert.ok(indexHtml.includes('id="arcane-library-badge"'), 'Card do index.html possui badge de selo');
+        assert.ok(indexHtml.includes('🔒 Selada'), 'Card do index.html exibe texto de 🔒 Selada');
+        assert.ok(indexHtml.includes('id="arcane-library-icon"'), 'Card do index.html possui ícone de cadeado');
+        assert.ok(indexHtml.includes('ABRIR GRIMÓRIO ARCANO (SELADO)'), 'Botão de acesso no index.html indica estado selado');
+
+        // Act & Assert: public/main.html
+        assert.ok(mainHtml.includes('🔒 Selada'), 'Card no public/main.html indica 🔒 Selada');
+        assert.ok(mainHtml.includes('Abrir Biblioteca (Selada)'), 'Botão no public/main.html indica selamento');
+    });
+
+    QUnit.test('7. Casos de Borda: createProgressionState padroniza isSealed como true se não informado (AAA)', function (assert) {
+        // Arrange & Act
+        const emptyState = MagicProgressionSystem.createProgressionState();
+        const unsealedExplicit = MagicProgressionSystem.createProgressionState({ isSealed: false });
+
+        // Assert
+        assert.strictEqual(emptyState.isSealed, true, 'Por padrão canônico, todo estado novo inicia selado');
+        assert.ok(emptyState.sealedAt, 'Timestamp de selamento preenchido');
+        assert.strictEqual(unsealedExplicit.isSealed, false, 'Respeita flag explícita isSealed: false');
+    });
 });
+

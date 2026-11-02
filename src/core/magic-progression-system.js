@@ -109,8 +109,8 @@
             usage: Object.assign({}, src.usage),
             discovered: Object.assign({}, src.discovered),
             specializations: Object.assign({}, src.specializations),
-            isSealed: typeof src.isSealed === 'boolean' ? src.isSealed : false,
-            sealedAt: src.sealedAt || null
+            isSealed: typeof src.isSealed === 'boolean' ? src.isSealed : true,
+            sealedAt: src.sealedAt || (typeof src.isSealed === 'boolean' && !src.isSealed ? null : new Date().toISOString())
         };
         if (!raw && Array.isArray(seedDiscovered)) {
             seedDiscovered.forEach(id => { if (id) state.discovered[id] = true; });

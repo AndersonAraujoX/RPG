@@ -336,23 +336,28 @@
                 </div>
             </div>
 
-            <!-- Card 3: Biblioteca Arcana -->
+            <!-- Card 3: Biblioteca Arcana (Selada) -->
             <div class="tome-card resource-card rounded-2xl p-4 flex flex-col justify-between border border-purple-600/40 hover:border-purple-400">
                 <div class="flex items-start gap-3.5 mb-4">
                     <div class="w-14 h-14 md:w-16 md:h-16 rounded-xl bg-gradient-to-br from-purple-700/40 via-purple-900/30 to-slate-950 border border-purple-500/60 flex items-center justify-center text-purple-400 text-2xl md:text-3xl shrink-0 shadow-[0_0_15px_rgba(168,85,247,0.25)]">
-                        <i class="fa-solid fa-wand-magic-sparkles"></i>
+                        <i id="arcane-library-icon" class="fa-solid fa-lock"></i>
                     </div>
                     <div>
-                        <h4 class="font-cinzel text-sm md:text-base font-bold text-purple-300 leading-snug">
-                            BIBLIOTECA ARCANA
-                        </h4>
+                        <div class="flex items-center justify-between gap-1">
+                            <h4 class="font-cinzel text-sm md:text-base font-bold text-purple-300 leading-snug">
+                                BIBLIOTECA ARCANA
+                            </h4>
+                            <span id="arcane-library-badge" class="px-2 py-0.5 text-[10px] uppercase font-mono font-bold rounded bg-purple-950/90 border border-purple-500/60 text-purple-300">
+                                🔒 Selada
+                            </span>
+                        </div>
                         <p class="text-xs text-gray-400 mt-1 leading-relaxed">
-                            Acesse a grande teia mágica dos 12 Caminhos e 3 Formas Daemon adaptadas ao +2d6 com Síntese e Fusão de Feitiços.
+                            Acesse a grande teia mágica dos 12 Caminhos e 3 Formas Daemon adaptadas ao +2d6 com Síntese e Fusão de Feitiços. O compêndio de 186 círculos encontra-se protegido sob Selo Ancestral.
                         </p>
                     </div>
                 </div>
-                <a href="public/arvore_magia.html" class="beveled-btn block w-full py-2.5 text-center bg-gradient-to-r from-purple-950/80 via-slate-900 to-purple-950/80 hover:from-purple-900/90 hover:to-purple-900/90 border border-purple-500/50 text-purple-200 hover:text-white text-xs rounded-xl transition no-underline">
-                    ABRIR GRIMÓRIO ARCANO
+                <a id="arcane-library-btn" href="public/arvore_magia.html" class="beveled-btn block w-full py-2.5 text-center bg-gradient-to-r from-purple-950/80 via-slate-900 to-purple-950/80 hover:from-purple-900/90 hover:to-purple-900/90 border border-purple-500/50 text-purple-200 hover:text-white text-xs rounded-xl transition no-underline flex items-center justify-center gap-1.5">
+                    <i class="fa-solid fa-lock text-xs text-purple-400"></i> ABRIR GRIMÓRIO ARCANO (SELADO)
                 </a>
             </div>
 
@@ -1896,6 +1901,28 @@
                 signOut(auth).then(() => window.location.reload());
             });
         }
+
+        // Status Dinâmico da Biblioteca Arcana (Selo Ancestral)
+        (function initArcaneLibrarySealState() {
+            try {
+                const raw = JSON.parse(localStorage.getItem('rpg_kuartor_magic_tree_state_progression'));
+                if (raw && raw.isSealed === false) {
+                    const badge = document.getElementById('arcane-library-badge');
+                    const icon = document.getElementById('arcane-library-icon');
+                    const btn = document.getElementById('arcane-library-btn');
+                    if (badge) {
+                        badge.className = 'px-2 py-0.5 text-[10px] uppercase font-mono font-bold rounded bg-amber-950/90 border border-amber-500/60 text-amber-300';
+                        badge.innerHTML = '🔓 Desvelada';
+                    }
+                    if (icon) {
+                        icon.className = 'fa-solid fa-wand-magic-sparkles';
+                    }
+                    if (btn) {
+                        btn.innerHTML = '<i class="fa-solid fa-book-sparkles text-xs text-purple-400"></i> ABRIR GRIMÓRIO ARCANO';
+                    }
+                }
+            } catch (e) {}
+        })();
 
         recalcSheetDerivations();
     </script>

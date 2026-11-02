@@ -110,6 +110,11 @@ QUnit.module('Menu Principal: Design Épico Dark Fantasy (index.html)', function
         // Act & Assert: Nexo Selado
         assert.ok(html.includes('SELADO') || html.includes('Selado'), 'Badge do Nexo Selado deve estar visível');
 
+        // Act & Assert: Biblioteca Arcana Selada
+        assert.ok(html.includes('id="arcane-library-badge"') && (html.includes('Selada') || html.includes('SELADA')), 'Badge da Biblioteca Arcana Selada deve estar visível');
+        assert.ok(html.includes('id="arcane-library-icon"') && html.includes('fa-lock'), 'Ícone de cadeado do selo arcano presente no Card 3');
+        assert.ok(html.includes('ABRIR GRIMÓRIO ARCANO (SELADO)'), 'Botão da Biblioteca Arcana com indicação de selo ancestral');
+
         // Act & Assert: Links de PDFs no Gerador de Fichas
         const pdfFiles = [
             'medieval2d6-livreto.pdf',
