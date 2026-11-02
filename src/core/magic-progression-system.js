@@ -108,7 +108,9 @@
         const state = {
             usage: Object.assign({}, src.usage),
             discovered: Object.assign({}, src.discovered),
-            specializations: Object.assign({}, src.specializations)
+            specializations: Object.assign({}, src.specializations),
+            isSealed: typeof src.isSealed === 'boolean' ? src.isSealed : false,
+            sealedAt: src.sealedAt || null
         };
         if (!raw && Array.isArray(seedDiscovered)) {
             seedDiscovered.forEach(id => { if (id) state.discovered[id] = true; });
@@ -179,6 +181,68 @@
         return !!state.discovered[circleId];
     }
 
+    /**
+     * Sela a Biblioteca Arcana: redefine todos os círculos para o estado de selo ancestral (bloqueados).
+     * @param {Object} state - Estado de progressão atual.
+     * @param {Object} [options] - Opções de selamento.
+     * @param {boolean} [options.keepBasics=false] - Se deve manter círculos básicos desvelados.
+     * @param {string[]} [options.basicIds=[]] - IDs dos círculos básicos a manter se keepBasics for true.
+     * @returns {Object} Novo estado de progressão com a biblioteca selada.
+     */
+    function sealLibrary(state, options = {}) {
+        assertState(state);
+        const next = createProgressionState(state);
+        next.discovered = {};
+        if (options && options.keepBasics && Array.isArray(options.basicIds)) {
+            options.basicIds.forEach(id => {
+                if (id && typeof id === 'string') next.discovered[id] = true;
+            });
+        }
+        next.isSealed = true;
+        next.sealedAt = new Date().toISOString();
+        return next;
+    }
+
+    /**
+     * Desvela a Biblioteca Arcana inteira: marca todos os círculos fornecidos como conhecidos.
+     * @param {Object} state - Estado de progressão atual.
+     * @param {string[]} allCircleIds - Lista de IDs de todos os círculos a desvelar.
+     * @returns {Object} Novo estado de progressão com todos os círculos conhecidos.
+     */
+    function unsealLibrary(state, allCircleIds = []) {
+        assertState(state);
+        if (!Array.isArray(allCircleIds)) throw new Error('allCircleIds deve ser um array.');
+        const next = createProgressionState(state);
+        allCircleIds.forEach(id => {
+            if (id && typeof id === 'string') next.discovered[id] = true;
+        });
+        next.isSealed = false;
+        next.unsealedAt = new Date().toISOString();
+        return next;
+    }
+
+    /**
+     * Retorna métricas de selamento da biblioteca arcana.
+     * @param {Object} state - Estado de progressão atual.
+     * @param {number} [totalCatalogCount=186] - Total de círculos no compêndio (ex: 186).
+     * @returns {Object} { discoveredCount, totalCount, sealedCount, percentageDiscovered, isFullySealed, isFullyUnsealed }
+     */
+    function getLibrarySealStatus(state, totalCatalogCount = 186) {
+        assertState(state);
+        const discoveredCount = Object.keys(state.discovered || {}).filter(k => !!state.discovered[k]).length;
+        const total = Math.max(1, Number(totalCatalogCount) || 186);
+        const sealedCount = Math.max(0, total - discoveredCount);
+        const percentageDiscovered = Math.min(100, Math.round((discoveredCount / total) * 100));
+        return {
+            discoveredCount,
+            totalCount: total,
+            sealedCount,
+            percentageDiscovered,
+            isFullySealed: discoveredCount === 0,
+            isFullyUnsealed: discoveredCount >= total
+        };
+    }
+
     /** 5. Especialização */
     function getSpecializationOptions(pathKey) {
         const options = SPECIALIZATIONS[pathKey];
@@ -217,6 +281,7 @@
         SPECIALIZATION_LEVEL, MASTERY_TIERS, SPECIALIZATIONS, SURGES,
         createProgressionState, computeResonance, rollSurge, getMasteryTier, applyMastery,
         recordUsage, discoverCircle, isDiscovered,
+        sealLibrary, unsealLibrary, getLibrarySealStatus,
         getSpecializationOptions, chooseSpecialization, getSpecializationBonus
     };
 

@@ -617,6 +617,17 @@
                     missingPaths: ["metamagia"],
                     doorDescription: "Um portão esculpido em raízes entrelaçadas em pedra mármore. Falta o fluxo da mente arcana para dar senciência à construção.",
                     hints: ["Solo e flora precisam da trama metamágica pura para criar a vida consciente."]
+                },
+                {
+                    id: "puzzle_selo_biblioteca_arcana",
+                    title: "O Grande Selo da Biblioteca Arcana",
+                    circleId: "s21",
+                    circleName: "Runas & Selos Arcanos",
+                    tier: "SECUNDUS",
+                    activePaths: ["arkanum"],
+                    missingPaths: ["metamagia"],
+                    doorDescription: "Os imponentes portões da Biblioteca Arcana estão trancados sob um selo místico de estase milenar. Runas de Arkanum pulsam em vermelho escuro, aguardando a contra-chave metamágica para romper o selo e liberar os tomos.",
+                    hints: ["A entidade do pacto exige a manipulação pura da trama mágica (Metamagia) para destrancar os arquivos arcanos."]
                 }
             ];
         }

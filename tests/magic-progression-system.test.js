@@ -112,10 +112,100 @@ QUnit.module('Pontos de Especialização', function () {
     });
 });
 
-QUnit.module('Integração em arvore_magia.html', function () {
-    QUnit.test('Página carrega o módulo e aplica as 5 mecânicas', function (assert) {
-        assert.ok(HTML.includes('magic-progression-system.js'));
-        ['computeResonance', 'rollSurge', 'applyMastery', 'recordUsage', 'discoverCircle', 'chooseSpecialization', 'getSpecializationBonus']
-            .forEach(fn => assert.ok(HTML.includes(fn), `usa ${fn}`));
+QUnit.module('Selamento da Biblioteca Arcana (AAA)', function () {
+    QUnit.test('1. Caminho Feliz: sealLibrary sela todos os círculos e registra timestamp (AAA)', function (assert) {
+        // Arrange
+        const initialState = P.createProgressionState({
+            discovered: { s01: true, s02: true, t005: true },
+            usage: { s01: 5 }
+        });
+
+        // Act
+        const sealed = P.sealLibrary(initialState);
+
+        // Assert
+        assert.deepEqual(sealed.discovered, {}, 'Todos os círculos devem estar selados (apagados)');
+        assert.ok(sealed.isSealed, 'isSealed deve ser true');
+        assert.ok(sealed.sealedAt, 'Deve possuir timestamp de selamento');
+        assert.strictEqual(sealed.usage.s01, 5, 'Uso e maestria devem ser preservados');
+        assert.ok(initialState.discovered.s01, 'Imutabilidade: estado original não é modificado');
+    });
+
+    QUnit.test('2. Casos de Borda: sealLibrary com keepBasics preserva círculos fundamentais (AAA)', function (assert) {
+        // Arrange
+        const state = P.createProgressionState({
+            discovered: { s01: true, s02: true, s03: true, t005: true }
+        });
+
+        // Act
+        const sealed = P.sealLibrary(state, { keepBasics: true, basicIds: ['s01', 's02', null] });
+
+        // Assert
+        assert.ok(P.isDiscovered(sealed, 's01'), 's01 básico preservado');
+        assert.ok(P.isDiscovered(sealed, 's02'), 's02 básico preservado');
+        assert.notOk(P.isDiscovered(sealed, 's03'), 's03 selado');
+        assert.notOk(P.isDiscovered(sealed, 't005'), 't005 selado');
+    });
+
+    QUnit.test('3. Caminho Feliz: unsealLibrary desbloqueia todos os 186 círculos fornecidos (AAA)', function (assert) {
+        // Arrange
+        const sealed = P.sealLibrary(P.createProgressionState());
+        const allIds = ['s01', 's02', 's03', 't001', 't002'];
+
+        // Act
+        const unsealed = P.unsealLibrary(sealed, allIds);
+
+        // Assert
+        assert.notOk(unsealed.isSealed, 'isSealed deve ser false');
+        allIds.forEach(id => assert.ok(P.isDiscovered(unsealed, id), `${id} desvelado`));
+    });
+
+    QUnit.test('4. Casos de Borda: getLibrarySealStatus calcula percentuais e flags de borda (AAA)', function (assert) {
+        // Arrange 1: Totalmente selada
+        const sealedState = P.sealLibrary(P.createProgressionState());
+        const status1 = P.getLibrarySealStatus(sealedState, 186);
+
+        // Assert 1
+        assert.strictEqual(status1.discoveredCount, 0, '0 descobertos');
+        assert.strictEqual(status1.sealedCount, 186, '186 selados');
+        assert.strictEqual(status1.percentageDiscovered, 0, '0% desvelado');
+        assert.ok(status1.isFullySealed, 'isFullySealed deve ser true');
+        assert.notOk(status1.isFullyUnsealed, 'isFullyUnsealed deve ser false');
+
+        // Arrange 2: Parcialmente desvelada
+        const partialState = P.createProgressionState({
+            discovered: { s01: true, s02: true }
+        });
+        const status2 = P.getLibrarySealStatus(partialState, 10);
+
+        // Assert 2
+        assert.strictEqual(status2.discoveredCount, 2, '2 descobertos');
+        assert.strictEqual(status2.sealedCount, 8, '8 selados');
+        assert.strictEqual(status2.percentageDiscovered, 20, '20% desvelado');
+
+        // Arrange 3: Totalmente desvelada
+        const fullState = P.unsealLibrary(P.createProgressionState(), ['c1', 'c2']);
+        const status3 = P.getLibrarySealStatus(fullState, 2);
+        assert.ok(status3.isFullyUnsealed, 'Totalmente desvelada');
+    });
+
+    QUnit.test('5. Tratamento de Exceções: Entradas inválidas disparam erros descritivos (AAA)', function (assert) {
+        assert.throws(() => P.sealLibrary(null), /Estado de progressão inválido/);
+        assert.throws(() => P.unsealLibrary(null, []), /Estado de progressão inválido/);
+        assert.throws(() => P.unsealLibrary(P.createProgressionState(), 'não-array'), /allCircleIds deve ser um array/);
+        assert.throws(() => P.getLibrarySealStatus(null), /Estado de progressão inválido/);
     });
 });
+
+QUnit.module('Integração em arvore_magia.html', function () {
+    QUnit.test('Página carrega o módulo e aplica as mecânicas de progressão e selamento', function (assert) {
+        const freshHtml = fs.readFileSync(path.resolve(__dirname, '../public/arvore_magia.html'), 'utf-8');
+        assert.ok(freshHtml.includes('magic-progression-system.js'));
+        ['computeResonance', 'rollSurge', 'applyMastery', 'recordUsage', 'discoverCircle', 'chooseSpecialization', 'getSpecializationBonus', 'sealLibrary', 'unsealLibrary']
+            .forEach(fn => assert.ok(freshHtml.includes(fn), `usa ${fn}`));
+        assert.ok(freshHtml.includes('sealArcaneLibraryUI'), 'Função de selamento da biblioteca presente na UI');
+        assert.ok(freshHtml.includes('unsealArcaneLibraryUI'), 'Função de desvelamento da biblioteca presente na UI');
+        assert.ok(freshHtml.includes('library-seal-status-badge'), 'Badge de status de selamento presente');
+    });
+});
+

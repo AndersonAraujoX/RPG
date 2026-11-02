@@ -340,7 +340,7 @@
                     name: 'Vestíbulo dos Quatro Ventos',
                     description: 'Uma rotunda aberta com colunas de mármore e lufadas de ar.',
                     requiredPaths: [],
-                    connectedRoomIds: ['sala_forja', 'sala_aquifera'],
+                    connectedRoomIds: ['sala_forja', 'sala_aquifera', 'sala_biblioteca_selada'],
                     reward: 'Cristal de Mana (+2 PE)'
                 },
                 {
@@ -362,11 +362,20 @@
                     hazard: 'Correntezas traiçoeiras'
                 },
                 {
+                    id: 'sala_biblioteca_selada',
+                    name: 'Arquivo Proibido da Biblioteca Arcana',
+                    description: 'Uma galeria monumental repleta de grimórios e tomos ancestrais resguardados pelo Grande Selo Arcano.',
+                    requiredPaths: ['arkanum', 'metamagia'],
+                    connectedRoomIds: ['sala_entrada', 'sala_santuario_cataclismo'],
+                    reward: 'Tomo Perdido dos Selos Ancestrais (Desvela círculos no compêndio)',
+                    hazard: 'Estase Mística (drena 1 PE se não dominar Arkanum)'
+                },
+                {
                     id: 'sala_santuario_cataclismo',
                     name: 'Câmara do Selo do Cataclismo',
                     description: 'O epicentro da cidadela onde as três forças primordiais se unem.',
                     requiredPaths: ['fogo', 'ar', 'terra'],
-                    connectedRoomIds: ['sala_forja', 'sala_aquifera'],
+                    connectedRoomIds: ['sala_forja', 'sala_aquifera', 'sala_biblioteca_selada'],
                     reward: 'O Tomo Sagrado do Cataclismo (T005)',
                     hazard: 'Vórtice Elemental desestabilizador'
                 }

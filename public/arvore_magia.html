@@ -1559,8 +1559,34 @@
         <div class="fusion-table-modal">
             <button class="btn-close-modal" onclick="toggleFusionTable()" title="Fechar"><i class="fa-solid fa-xmark"></i></button>
 
-            <h2><i class="fa-solid fa-dharmachakra mr-2"></i>Compêndio de Círculos de Magia — 66 Secundus &amp; 120 Terceirus</h2>
-            <p style="color:#94a3b8; font-size:13px; margin-bottom:16px;">Cada combinação de 2 caminhos (<strong>66 Secundus</strong>) ou 3 caminhos (<strong>120 Terceirus</strong>) gera um Círculo de Magia rúnico exclusivo. Clique em qualquer círculo para carregá-lo no Altar de Fusão!</p>
+            <!-- Painel de Selamento e Descoberta da Biblioteca Arcana -->
+            <div class="glass-panel" style="background:linear-gradient(135deg, rgba(15,23,42,0.95), rgba(88,28,135,0.25)); border:1px solid rgba(168,85,247,0.3); border-radius:12px; padding:12px 16px; margin-bottom:16px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <span id="library-seal-status-badge">
+                            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-purple-950/80 text-purple-300 border border-purple-500/50"><i class="fa-solid fa-lock mr-1"></i>BIBLIOTECA SELADA</span>
+                        </span>
+                        <div style="font-size:11px; color:#cbd5e1;">
+                            <strong>Progresso de Revelação:</strong> <span id="library-seal-progress-text" class="text-xs text-cyan-300 font-mono">0 revelados &middot; 186 selados (0%)</span>
+                        </div>
+                    </div>
+                    <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                        <button onclick="sealArcaneLibraryUI()" class="btn-top text-xs" style="background:rgba(239,68,68,0.15); border-color:#ef4444; color:#fca5a5;" title="Impõe o Grande Selo sobre a Biblioteca Arcana (todos os círculos voltam ao estado selado)">
+                            <i class="fa-solid fa-lock mr-1"></i>Selar Biblioteca
+                        </button>
+                        <button onclick="decipherRandomTomeUI()" class="btn-top text-xs" style="background:rgba(102,252,241,0.15); border-color:#66fcf1; color:#67e8f9;" title="Decifra 1 tomo rúnico e revela 1 círculo aleatório">
+                            <i class="fa-solid fa-scroll mr-1"></i>Decifrar Tomo
+                        </button>
+                        <button onclick="unsealArcaneLibraryUI()" class="btn-top text-xs" style="background:rgba(251,191,36,0.15); border-color:#fbbf24; color:#fde68a;" title="Desvela todos os 186 círculos para consulta livre (Modo Mestre)">
+                            <i class="fa-solid fa-unlock mr-1"></i>Desvelar Tudo
+                        </button>
+                    </div>
+                </div>
+                <!-- Barra de progresso do selo -->
+                <div style="width:100%; height:4px; background:rgba(30,41,59,0.8); border-radius:999px; margin-top:8px; overflow:hidden;">
+                    <div id="library-seal-progress-fill" style="height:100%; width:0%; background:linear-gradient(90deg, #a855f7, #66fcf1); transition:width 0.4s ease;"></div>
+                </div>
+            </div>
 
             <!-- Barra de Busca e Filtros de Tier / Caminho -->
             <div style="display:flex; flex-wrap:wrap; gap:10px; align-items:center; justify-content:space-between; margin-bottom:16px;">
@@ -2892,8 +2918,13 @@
             if (!progSys) return null;
             let raw = null;
             try { raw = JSON.parse(localStorage.getItem(PROGRESSION_KEY)); } catch (e) { raw = null; }
-            // Círculos iniciais (já em destaque no tabuleiro) começam revelados
-            return progSys.createProgressionState(raw, fusionNodes.map(f => f.circleId));
+            if (!raw) {
+                // A Biblioteca Arcana começa SELADA por padrão: todos os 186 círculos selados sob o Selo Ancestral!
+                const initialSealed = progSys.sealLibrary(progSys.createProgressionState());
+                try { localStorage.setItem(PROGRESSION_KEY, JSON.stringify(initialSealed)); } catch (e) {}
+                return initialSealed;
+            }
+            return progSys.createProgressionState(raw);
         }
 
         function saveProgression() {
@@ -4700,6 +4731,7 @@
             if (countLabel) {
                 countLabel.innerText = `Exibindo ${filtered.length} de ${allEntries.length} Círculos de Magia`;
             }
+            updateSealStatusUI();
 
             grid.innerHTML = filtered.map(entry => {
                 const svg = circleGen ? circleGen.generateCircleSVG(entry, magicPaths) : '';
@@ -4715,22 +4747,25 @@
                 const usesCount = (progression && progression.usage[entry.id]) || 0;
                 const tierLabel = progSys ? progSys.getMasteryTier(usesCount).label : '';
                 const clickAction = known ? `loadCircleIntoAltar('${entry.id}')` : `revealCircle('${entry.id}')`;
-                const hint = known ? 'Clique para invocar este Círculo de Magia no Altar' : 'Círculo apagado — clique para decifrar o tomo e revelá-lo';
+                const hint = known ? 'Clique para invocar este Círculo de Magia no Altar' : 'Círculo selado sob Selo Ancestral — clique para decifrar o tomo e romper o selo';
 
                 return `
-                    <div class="magic-circle-card" onclick="${clickAction}" title="${hint}">
+                    <div class="magic-circle-card ${known ? '' : 'circle-sealed-card'}" onclick="${clickAction}" title="${hint}">
                         <div style="width:100%; display:flex; justify-content:space-between; align-items:center; font-size:10px; margin-bottom:4px;">
                             <span class="font-mono font-bold" style="color:${badgeColor};">${entry.tier} ${numCode}</span>
-                            <span class="text-[10px] text-cyan-300 font-cinzel">${known ? `${tierLabel} &middot; Invocar &rarr;` : '🔒 Decifrar tomo'}</span>
+                            <span class="text-[10px] ${known ? 'text-cyan-300' : 'text-purple-400 font-bold'} font-cinzel">${known ? `${tierLabel} &middot; Invocar &rarr;` : '<i class="fa-solid fa-lock mr-1"></i>Selo Arcano'}</span>
                         </div>
-                        <div class="circle-svg-wrap" style="${known ? '' : 'filter: grayscale(1) brightness(0.45) blur(1px); opacity:0.7;'}">${svg}</div>
-                        <div class="font-cinzel font-bold text-xs text-white text-center mb-1">${known ? entry.name : '???'}</div>
-                        <div class="text-center mb-2">${pathTags}</div>
+                        <div class="circle-svg-wrap" style="${known ? '' : 'filter: grayscale(1) brightness(0.35) blur(1px); opacity:0.6; position:relative;'}">
+                            ${svg}
+                            ${known ? '' : '<div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:#c084fc; font-size:24px; text-shadow:0 0 12px rgba(168,85,247,0.9);"><i class="fa-solid fa-lock"></i></div>'}
+                        </div>
+                        <div class="font-cinzel font-bold text-xs text-white text-center mb-1">${known ? entry.name : '<span style="color:#a855f7;">??? (Selo Ancestral)</span>'}</div>
+                        <div class="text-center mb-2">${known ? pathTags : '<span class="text-[10px] text-gray-500 italic">Caminhos Ocultos sob Selo</span>'}</div>
                         <div style="width:100%; font-size:10px; color:#cbd5e1; border-top:1px solid rgba(148,163,184,0.15); padding-top:6px; line-height:1.45;">
                             ${known ? `
                             <div><strong class="text-amber-300">Criar:</strong> ${entry.spells ? entry.spells.Criar : ''}</div>
                             <div><strong class="text-cyan-300">Controlar:</strong> ${entry.spells ? entry.spells.Controlar : ''}</div>
-                            <div><strong class="text-purple-300">Entender:</strong> ${entry.spells ? entry.spells.Entender : ''}</div>` : `<div class="text-gray-500 italic">Magias desconhecidas. Use o círculo ou encontre um tomo.</div>`}
+                            <div><strong class="text-purple-300">Entender:</strong> ${entry.spells ? entry.spells.Entender : ''}</div>` : `<div class="text-purple-300/80 italic text-center py-1 font-cinzel text-[10px]"><i class="fa-solid fa-scroll mr-1"></i>Clique para decifrar tomo</div>`}
                         </div>
                     </div>
                 `;
@@ -4742,10 +4777,89 @@
             if (!progSys || !progression) return;
             progression = progSys.discoverCircle(progression, circleId);
             saveProgression();
+            updateSealStatusUI();
             const inp = document.getElementById('fusion-search-input');
             renderModalCirclesGallery(inp ? inp.value : '');
-            showToast(`🔓 Círculo ${circleId.toUpperCase()} revelado no compêndio!`);
+            showToast(`✨ Selo rompido! Círculo ${circleId.toUpperCase()} revelado no compêndio!`);
         }
+
+        /** Sela toda a Biblioteca Arcana (todos os círculos retornam ao estado de selo ancestral) */
+        function sealArcaneLibraryUI(confirmPrompt = true) {
+            if (!progSys) return;
+            if (confirmPrompt) {
+                const ok = confirm('🔒 Deseja impor o Grande Selo sobre a Biblioteca Arcana?\\n\\nTodos os 186 círculos voltarão ao estado de selo místico ancestral (bloqueados e apagados), simulando a exploração e descoberta de tomos em jogo!');
+                if (!ok) return;
+            }
+            progression = progSys.sealLibrary(progression || progSys.createProgressionState());
+            saveProgression();
+            updateSealStatusUI();
+            const inp = document.getElementById('fusion-search-input');
+            renderModalCirclesGallery(inp ? inp.value : '');
+            showToast('🔒 O Grande Selo foi imposto! A Biblioteca Arcana está selada.');
+        }
+
+        /** Desvela todos os círculos da Biblioteca Arcana (Modo Consulta do Mestre) */
+        function unsealArcaneLibraryUI(confirmPrompt = true) {
+            if (!progSys || !circlesCatalog) return;
+            if (confirmPrompt) {
+                const ok = confirm('🔓 Deseja quebrar todos os selos e revelar os 186 círculos de magia?\\n\\nIsso permitirá consultar todos os círculos Secundus e Terceirus imediatamente.');
+                if (!ok) return;
+            }
+            const allIds = [
+                ...(circlesCatalog.secundus || []).map(c => c.id),
+                ...(circlesCatalog.terceirus || []).map(c => c.id)
+            ];
+            progression = progSys.unsealLibrary(progression || progSys.createProgressionState(), allIds);
+            saveProgression();
+            updateSealStatusUI();
+            const inp = document.getElementById('fusion-search-input');
+            renderModalCirclesGallery(inp ? inp.value : '');
+            showToast('✨ Todos os selos foram rompidos! Compêndio desvelado.');
+        }
+
+        /** Decifra um tomo aleatório ainda selado */
+        function decipherRandomTomeUI() {
+            if (!progSys || !circlesCatalog || !progression) return;
+            const allEntries = [
+                ...(circlesCatalog.secundus || []),
+                ...(circlesCatalog.terceirus || [])
+            ];
+            const sealedEntries = allEntries.filter(e => !progSys.isDiscovered(progression, e.id));
+            if (sealedEntries.length === 0) {
+                showToast('Todos os círculos da Biblioteca Arcana já foram desvelados!', 'info');
+                return;
+            }
+            const chosen = sealedEntries[Math.floor(Math.random() * sealedEntries.length)];
+            revealCircle(chosen.id);
+        }
+
+        function updateSealStatusUI() {
+            if (!progSys || !progression) return;
+            const totalCount = 186;
+            const status = progSys.getLibrarySealStatus(progression, totalCount);
+            const label = document.getElementById('library-seal-status-badge');
+            const progressFill = document.getElementById('library-seal-progress-fill');
+            const progressText = document.getElementById('library-seal-progress-text');
+            
+            if (label) {
+                if (status.isFullySealed) {
+                    label.innerHTML = '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-purple-950/80 text-purple-300 border border-purple-500/50"><i class="fa-solid fa-lock mr-1"></i>BIBLIOTECA SELADA</span>';
+                } else if (status.isFullyUnsealed) {
+                    label.innerHTML = '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-950/80 text-amber-300 border border-amber-500/50"><i class="fa-solid fa-lock-open mr-1"></i>TOTALMENTE DESVELADA</span>';
+                } else {
+                    label.innerHTML = `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-cyan-950/80 text-cyan-300 border border-cyan-500/50"><i class="fa-solid fa-book-sparkles mr-1"></i>${status.discoveredCount}/${status.totalCount} DESVELADOS</span>`;
+                }
+            }
+            if (progressFill) {
+                progressFill.style.width = `${status.percentageDiscovered}%`;
+            }
+            if (progressText) {
+                progressText.innerText = `${status.discoveredCount} revelados &middot; ${status.sealedCount} selados (${status.percentageDiscovered}%)`;
+            }
+        }
+
+        window.sealArcaneLibrary = sealArcaneLibraryUI;
+        window.unsealArcaneLibrary = unsealArcaneLibraryUI;
 
         /** Seletor de aspecto (Pontos de Especialização, nível 5 do caminho). */
         function openSpecializationPicker(pathKey) {
