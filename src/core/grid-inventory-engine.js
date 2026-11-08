@@ -132,10 +132,11 @@
         return { cols: c, rows: r, items: [], nextUid: 1 };
     }
 
-    /** Maleta cresce com FOR (0..4): +1 linha por ponto. */
-    function capacityFromStrength(forVal) {
-        const f = Math.max(0, Math.min(4, Number(forVal) || 0));
-        return { cols: DEFAULT_COLS, rows: 4 + f };
+    function clampAttr(v) { return Math.max(0, Math.min(4, Math.floor(Number(v)) || 0)); }
+
+    /** Maleta: FOR (0..4) define as linhas (4 + FOR); CON (0..4) define as colunas (6 + CON). */
+    function capacityFromAttributes(forVal, conVal) {
+        return { cols: 6 + clampAttr(conVal), rows: 4 + clampAttr(forVal) };
     }
 
     /** Resolve o tamanho de uma entrada colocada usando o catálogo injetado. */
@@ -227,18 +228,16 @@
         return placeItem(inv, item, slot.x, slot.y, slot.rotated, resolveItem);
     }
 
-    /** Estatísticas de ocupação e peso. */
+    /** Estatísticas de ocupação (somente espaço). */
     function getStats(inv, resolveItem) {
         assertInventory(inv);
         let used = 0;
-        let weight = 0;
         inv.items.forEach(e => {
             const s = sizeOf(e, resolveItem);
             used += s.w * s.h;
-            weight += Number(resolveItem(e.itemId).weight) || 0;
         });
         const total = inv.cols * inv.rows;
-        return { totalCells: total, usedCells: used, freeCells: total - used, weight: Math.round(weight * 100) / 100 };
+        return { totalCells: total, usedCells: used, freeCells: total - used };
     }
 
     /** Valida/normaliza dado salvo; descarta itens que não cabem ou desconhecidos. */
@@ -257,7 +256,7 @@
     return {
         DEFAULT_COLS, DEFAULT_ROWS, GENERIC_CLASSES, ITEM_OVERRIDES, CATEGORY_FALLBACK,
         getFootprint, getEffectiveSize, getFootprintTable, buildItemAreaTable,
-        createInventory, capacityFromStrength, canPlace, placeItem, removeItem,
+        createInventory, capacityFromAttributes, canPlace, placeItem, removeItem,
         moveItem, rotateItem, findFreeSlot, autoPlace, getStats, restoreInventory
     };
 }));

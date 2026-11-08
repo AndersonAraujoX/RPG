@@ -89,7 +89,7 @@ QUnit.module('GridInventoryEngine — Maleta Tática (AAA)', function () {
         assert.throws(() => G.autoPlace(full, get('espada_longa'), resolve), /Maleta cheia/);
     });
 
-    QUnit.test('6. Caminho Feliz: estatísticas, capacidade por FOR e imutabilidade (AAA)', function (assert) {
+    QUnit.test('6. Caminho Feliz: estatísticas de espaço, capacidade por FOR e CON e imutabilidade (AAA)', function (assert) {
         // Arrange
         const inv = G.createInventory(8, 5);
 
@@ -101,10 +101,14 @@ QUnit.module('GridInventoryEngine — Maleta Tática (AAA)', function () {
         assert.equal(inv.items.length, 0, 'Estado original não foi mutado');
         assert.equal(stats.usedCells, 1);
         assert.equal(stats.freeCells, 39);
-        assert.equal(stats.weight, 0.3);
-        assert.deepEqual(G.capacityFromStrength(4), { cols: 8, rows: 8 });
-        assert.deepEqual(G.capacityFromStrength(99), { cols: 8, rows: 8 }, 'FOR limitado a 4');
-        assert.deepEqual(G.capacityFromStrength(null), { cols: 8, rows: 4 }, 'Nulo vira 0');
+        assert.notOk('weight' in stats, 'Peso não faz parte das estatísticas');
+        assert.deepEqual(G.capacityFromAttributes(0, 0), { cols: 6, rows: 4 }, 'Mínimo 6x4');
+        assert.deepEqual(G.capacityFromAttributes(1, 2), { cols: 8, rows: 5 }, 'FOR 1 / CON 2 = 8x5');
+        assert.deepEqual(G.capacityFromAttributes(3, 3), { cols: 9, rows: 7 }, 'FOR 3 / CON 3 = 9x7');
+        assert.deepEqual(G.capacityFromAttributes(4, 4), { cols: 10, rows: 8 }, 'Máximo 10x8');
+        assert.deepEqual(G.capacityFromAttributes(99, -5), { cols: 6, rows: 8 }, 'Valores limitados a 0..4');
+        assert.deepEqual(G.capacityFromAttributes(null, undefined), { cols: 6, rows: 4 }, 'Nulos viram 0');
+        assert.deepEqual(G.capacityFromAttributes('2', '1.9'), { cols: 7, rows: 6 }, 'Strings numéricas e decimais truncados');
     });
 
     QUnit.test('7. Tratamento de Exceções: entradas inválidas e restauração segura (AAA)', function (assert) {

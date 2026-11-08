@@ -43,8 +43,11 @@
     </header>
 
     <div class="flex flex-wrap items-end gap-4 mb-4 text-sm">
-        <label>FOR do herói (0–4):
+        <label>FOR — linhas (0–4):
             <input id="for-input" type="number" min="0" max="4" value="1" class="bg-slate-900 border border-slate-700 rounded px-2 py-1 w-16 ml-1">
+        </label>
+        <label>CON — colunas (0–4):
+            <input id="con-input" type="number" min="0" max="4" value="2" class="bg-slate-900 border border-slate-700 rounded px-2 py-1 w-16 ml-1">
         </label>
         <div id="stats" class="text-cyan-300 font-mono text-xs"></div>
         <div id="msg" class="text-amber-300 text-xs min-h-[1rem]"></div>
@@ -93,11 +96,16 @@
     const msg = t => { $('msg').textContent = t || ''; };
     const save = () => { try { localStorage.setItem(KEY, JSON.stringify(inv)); } catch (e) {} };
 
+    const ATTR_KEY = 'kuartor_grid_inventory_attrs';
     function load() {
         let raw = null;
         try { raw = JSON.parse(localStorage.getItem(KEY)); } catch (e) {}
-        const cap = G.capacityFromStrength($('for-input').value);
-        inv = raw ? G.restoreInventory(raw, resolve) : G.createInventory(cap.cols, cap.rows);
+        try {
+            const a = JSON.parse(localStorage.getItem(ATTR_KEY));
+            if (a) { $('for-input').value = a.f; $('con-input').value = a.c; }
+        } catch (e) {}
+        const cap = G.capacityFromAttributes($('for-input').value, $('con-input').value);
+        inv = raw ? G.restoreInventory(Object.assign({}, raw, { cols: cap.cols, rows: cap.rows }), resolve) : G.createInventory(cap.cols, cap.rows);
     }
 
     function catClass(it) { return 'cat-' + (['Armas','Armaduras','Escudos','Consumíveis','Aventura'].includes(it.category) ? it.category : 'default'); }
@@ -133,7 +141,7 @@
             grid.appendChild(el);
         });
         const st = G.getStats(inv, resolve);
-        $('stats').textContent = `Espaços: ${st.usedCells}/${st.totalCells} · Livres: ${st.freeCells} · Peso: ${st.weight} kg`;
+        $('stats').textContent = `Maleta ${inv.cols}×${inv.rows} · Espaços: ${st.usedCells}/${st.totalCells} · Livres: ${st.freeCells}`;
     }
 
     function onDragOverPassThrough(ev) { ev.preventDefault(); }
@@ -242,13 +250,17 @@
     $('btn-remove').addEventListener('click', removeSelected);
     $('btn-clear').addEventListener('click', () => { inv = G.createInventory(inv.cols, inv.rows); selectedUid = null; save(); render(); });
     $('search').addEventListener('input', buildPalette);
-    $('for-input').addEventListener('change', () => {
-        const cap = G.capacityFromStrength($('for-input').value);
-        const next = G.createInventory(cap.cols, cap.rows);
+    function onAttrChange() {
+        const cap = G.capacityFromAttributes($('for-input').value, $('con-input').value);
+        const dropped = inv.items.length;
         inv = G.restoreInventory(Object.assign({}, inv, { cols: cap.cols, rows: cap.rows }), resolve);
-        if (!inv.items.length && !next.items.length) inv = next;
+        const lost = dropped - inv.items.length;
+        msg(lost > 0 ? `${lost} item(ns) não cabem mais e foram removidos.` : '');
+        try { localStorage.setItem(ATTR_KEY, JSON.stringify({ f: $('for-input').value, c: $('con-input').value })); } catch (e) {}
         save(); render();
-    });
+    }
+    $('for-input').addEventListener('change', onAttrChange);
+    $('con-input').addEventListener('change', onAttrChange);
     document.addEventListener('keydown', ev => {
         if (ev.target.tagName === 'INPUT') return;
         if (ev.key === 'r' || ev.key === 'R') rotateSelected();
