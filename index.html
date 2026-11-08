@@ -385,20 +385,30 @@
             <div class="tome-card resource-card rounded-2xl p-4 flex flex-col justify-between border border-cyan-600/40 hover:border-cyan-400">
                 <div class="flex items-start gap-3.5 mb-4">
                     <div class="w-14 h-14 md:w-16 md:h-16 rounded-xl bg-gradient-to-br from-cyan-700/40 via-cyan-900/30 to-slate-950 border border-cyan-500/60 flex items-center justify-center text-cyan-400 text-2xl md:text-3xl shrink-0 shadow-[0_0_15px_rgba(6,182,212,0.2)]">
-                        <i class="fa-solid fa-shield-halved"></i>
+                        <i class="fa-solid fa-briefcase"></i>
                     </div>
                     <div>
-                        <h4 class="font-cinzel text-sm md:text-base font-bold text-cyan-300 leading-snug">
-                            GERENCIADOR DE ITENS
-                        </h4>
+                        <div class="flex items-center justify-between gap-1">
+                            <h4 class="font-cinzel text-sm md:text-base font-bold text-cyan-300 leading-snug">
+                                GERENCIADOR DE ITENS
+                            </h4>
+                            <span class="px-2 py-0.5 text-[10px] uppercase font-mono font-bold rounded bg-cyan-950/90 border border-cyan-500/60 text-cyan-300">
+                                Grid RE
+                            </span>
+                        </div>
                         <p class="text-xs text-gray-400 mt-1 leading-relaxed">
-                            Cadastre, organize e consulte os itens, armas e armaduras dos personagens de forma individual e segura.
+                            Organize os equipamentos dos heróis com o Baú da Guilda e a nova <strong>Maleta Tática em Grade</strong> estilo Resident Evil.
                         </p>
                     </div>
                 </div>
-                <a href="public/items.html" class="beveled-btn block w-full py-2.5 text-center bg-gradient-to-r from-cyan-950/80 via-slate-900 to-cyan-950/80 hover:from-cyan-900/90 hover:to-cyan-900/90 border border-cyan-500/50 text-cyan-200 hover:text-white text-xs rounded-xl transition no-underline">
-                    ACESSAR INVENTÁRIO
-                </a>
+                <div class="space-y-2">
+                    <a href="public/inventario_grid.html" class="beveled-btn block w-full py-2.5 text-center bg-gradient-to-r from-cyan-900/80 via-slate-900 to-cyan-950/90 hover:from-cyan-800/90 hover:to-cyan-800/90 border border-cyan-400/60 text-cyan-200 hover:text-white text-xs rounded-xl transition no-underline flex items-center justify-center gap-1.5 font-bold">
+                        <i class="fa-solid fa-briefcase text-amber-400"></i> ABRIR MALETA TÁTICA (GRID)
+                    </a>
+                    <a href="public/items.html" class="block w-full py-1.5 text-center bg-slate-950/70 hover:bg-slate-900 border border-slate-700 text-gray-300 hover:text-cyan-300 text-[11px] rounded-lg transition no-underline">
+                        ACESSAR INVENTÁRIO (BAÚ)
+                    </a>
+                </div>
             </div>
 
             <!-- Card 6: O Nexo -->
