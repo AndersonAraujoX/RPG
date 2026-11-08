@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maleta Tática — Inventário em Grade · Kuar-Tor (+2d6)</title>
+    <link rel="stylesheet" href="tailwind.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="../src/core/item-catalog-engine.js"></script>
+    <script src="../src/core/grid-inventory-engine.js"></script>
+    <style>
+        body { background:#04070d; color:#cbd5e1; font-family:'Inter',sans-serif; }
+        .font-cinzel { font-family:'Cinzel',serif; }
+        :root { --cell: 48px; }
+        #case-grid { position:relative; display:grid; gap:2px; background:#0b1220; padding:6px; border:2px solid #475569; border-radius:10px; width:max-content; box-shadow:0 0 25px rgba(0,0,0,.7) inset; }
+        .cell { width:var(--cell); height:var(--cell); background:rgba(30,41,59,.55); border:1px solid rgba(100,116,139,.35); }
+        .cell.ok { background:rgba(16,185,129,.35); border-color:#10b981; }
+        .cell.bad { background:rgba(239,68,68,.35); border-color:#ef4444; }
+        .placed { position:absolute; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; font-size:10px; line-height:1.1; padding:2px; cursor:grab; border:2px solid; border-radius:6px; overflow:hidden; user-select:none; z-index:2; }
+        .placed.selected { box-shadow:0 0 0 2px #fde047, 0 0 14px #fde047; }
+        .cat-Armas { background:rgba(127,29,29,.75); border-color:#f87171; }
+        .cat-Armaduras { background:rgba(30,58,138,.75); border-color:#60a5fa; }
+        .cat-Escudos { background:rgba(21,94,117,.75); border-color:#22d3ee; }
+        .cat-Consumíveis { background:rgba(20,83,45,.75); border-color:#4ade80; }
+        .cat-Aventura { background:rgba(120,53,15,.75); border-color:#fbbf24; }
+        .cat-default { background:rgba(51,65,85,.8); border-color:#94a3b8; }
+        .pal-item { cursor:grab; }
+        table td, table th { padding:4px 8px; border-bottom:1px solid #1e293b; }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+<div class="max-w-6xl mx-auto">
+    <header class="flex flex-wrap items-center justify-between gap-3 mb-6 pb-4 border-b border-slate-800">
+        <div>
+            <h1 class="font-cinzel text-2xl md:text-3xl text-amber-400"><i class="fa-solid fa-briefcase mr-2"></i>MALETA TÁTICA</h1>
+            <p class="text-xs text-slate-400">Inventário em grade: cada item ocupa um espaço. Arraste, gire (<kbd>R</kbd>) e organize.</p>
+        </div>
+        <div class="flex gap-2 text-sm">
+            <a href="items.html" class="px-3 py-1.5 rounded border border-cyan-600 text-cyan-300">Baú da Guilda</a>
+            <a href="../index.html" class="px-3 py-1.5 rounded border border-slate-600">Menu</a>
+        </div>
+    </header>
+
+    <div class="flex flex-wrap items-end gap-4 mb-4 text-sm">
+        <label>FOR do herói (0–4):
+            <input id="for-input" type="number" min="0" max="4" value="1" class="bg-slate-900 border border-slate-700 rounded px-2 py-1 w-16 ml-1">
+        </label>
+        <div id="stats" class="text-cyan-300 font-mono text-xs"></div>
+        <div id="msg" class="text-amber-300 text-xs min-h-[1rem]"></div>
+    </div>
+
+    <div class="grid lg:grid-cols-[auto_1fr] gap-6">
+        <section>
+            <div id="case-grid"></div>
+            <div class="flex gap-2 mt-3 text-xs">
+                <button id="btn-rotate" class="px-3 py-1.5 rounded border border-amber-600 text-amber-300">Girar (R)</button>
+                <button id="btn-remove" class="px-3 py-1.5 rounded border border-red-600 text-red-300">Descartar (Del)</button>
+                <button id="btn-clear" class="px-3 py-1.5 rounded border border-slate-600">Esvaziar</button>
+            </div>
+        </section>
+
+        <section>
+            <h2 class="font-cinzel text-amber-300 mb-2">Catálogo (arraste ou clique para guardar)</h2>
+            <input id="search" placeholder="Buscar item..." class="bg-slate-900 border border-slate-700 rounded px-2 py-1 mb-2 w-full text-sm">
+            <div id="palette" class="flex flex-wrap gap-2 max-h-72 overflow-y-auto"></div>
+        </section>
+    </div>
+
+    <section class="mt-10">
+        <h2 class="font-cinzel text-amber-300 text-xl mb-1">Tabela de Áreas — Classes Genéricas</h2>
+        <p class="text-xs text-slate-400 mb-2">Regra geral usada quando o item não tem tamanho próprio (ex.: toda espada ocupa 1×4).</p>
+        <div class="overflow-x-auto"><table id="table-classes" class="text-sm w-full"></table></div>
+    </section>
+    <section class="mt-8 mb-10">
+        <h2 class="font-cinzel text-amber-300 text-xl mb-1">Tabela de Áreas — Todos os Itens</h2>
+        <div class="overflow-x-auto"><table id="table-items" class="text-sm w-full"></table></div>
+    </section>
+</div>
+
+<script>
+(function () {
+    const G = GridInventoryEngine;
+    const catalog = ItemCatalogEngine.getAllItems();
+    const resolve = id => ItemCatalogEngine.getItemById(id);
+    const KEY = 'kuartor_grid_inventory';
+    const CELL = 48, GAP = 2, PAD = 6;
+    let inv;
+    let selectedUid = null;
+    let drag = null; // { kind:'new'|'move', itemId, uid, rotated }
+
+    const $ = id => document.getElementById(id);
+    const msg = t => { $('msg').textContent = t || ''; };
+    const save = () => { try { localStorage.setItem(KEY, JSON.stringify(inv)); } catch (e) {} };
+
+    function load() {
+        let raw = null;
+        try { raw = JSON.parse(localStorage.getItem(KEY)); } catch (e) {}
+        const cap = G.capacityFromStrength($('for-input').value);
+        inv = raw ? G.restoreInventory(raw, resolve) : G.createInventory(cap.cols, cap.rows);
+    }
+
+    function catClass(it) { return 'cat-' + (['Armas','Armaduras','Escudos','Consumíveis','Aventura'].includes(it.category) ? it.category : 'default'); }
+
+    function render() {
+        const grid = $('case-grid');
+        grid.style.gridTemplateColumns = `repeat(${inv.cols}, var(--cell))`;
+        grid.innerHTML = '';
+        for (let y = 0; y < inv.rows; y++) for (let x = 0; x < inv.cols; x++) {
+            const c = document.createElement('div');
+            c.className = 'cell'; c.dataset.x = x; c.dataset.y = y;
+            c.addEventListener('dragover', onDragOver);
+            c.addEventListener('dragleave', clearHints);
+            c.addEventListener('drop', onDrop);
+            c.addEventListener('click', () => onCellClick(x, y));
+            grid.appendChild(c);
+        }
+        inv.items.forEach(e => {
+            const it = resolve(e.itemId);
+            const s = G.getEffectiveSize(it, e.rotated);
+            const el = document.createElement('div');
+            el.className = `placed ${catClass(it)}` + (e.uid === selectedUid ? ' selected' : '');
+            el.style.left = (PAD + e.x * (CELL + GAP)) + 'px';
+            el.style.top = (PAD + e.y * (CELL + GAP)) + 'px';
+            el.style.width = (s.w * CELL + (s.w - 1) * GAP) + 'px';
+            el.style.height = (s.h * CELL + (s.h - 1) * GAP) + 'px';
+            el.draggable = true;
+            el.title = `${it.name} (${s.w}×${s.h})`;
+            el.innerHTML = `<strong>${it.name}</strong><span>${s.w}×${s.h}</span>`;
+            el.addEventListener('click', ev => { ev.stopPropagation(); selectedUid = e.uid; render(); });
+            el.addEventListener('dragstart', ev => { drag = { kind: 'move', uid: e.uid, itemId: e.itemId, rotated: e.rotated }; ev.dataTransfer.setData('text/plain', 'x'); });
+            el.addEventListener('dragover', onDragOverPassThrough);
+            grid.appendChild(el);
+        });
+        const st = G.getStats(inv, resolve);
+        $('stats').textContent = `Espaços: ${st.usedCells}/${st.totalCells} · Livres: ${st.freeCells} · Peso: ${st.weight} kg`;
+    }
+
+    function onDragOverPassThrough(ev) { ev.preventDefault(); }
+
+    function clearHints() { document.querySelectorAll('.cell.ok,.cell.bad').forEach(c => c.classList.remove('ok', 'bad')); }
+
+    function dragState() {
+        if (!drag) return null;
+        const item = resolve(drag.itemId);
+        return { item, size: G.getEffectiveSize(item, drag.rotated) };
+    }
+
+    function validAt(x, y) {
+        const ds = dragState();
+        if (!ds) return false;
+        if (drag.kind === 'move') {
+            const probe = G.removeItem(inv, drag.uid);
+            return G.canPlace(probe, ds.item, x, y, drag.rotated, resolve);
+        }
+        return G.canPlace(inv, ds.item, x, y, drag.rotated, resolve);
+    }
+
+    function onDragOver(ev) {
+        ev.preventDefault();
+        const x = +ev.currentTarget.dataset.x, y = +ev.currentTarget.dataset.y;
+        const ds = dragState();
+        if (!ds) return;
+        clearHints();
+        const ok = validAt(x, y);
+        for (let dy = 0; dy < ds.size.h; dy++) for (let dx = 0; dx < ds.size.w; dx++) {
+            const c = document.querySelector(`.cell[data-x="${x + dx}"][data-y="${y + dy}"]`);
+            if (c) c.classList.add(ok ? 'ok' : 'bad');
+        }
+    }
+
+    function onDrop(ev) {
+        ev.preventDefault();
+        clearHints();
+        const x = +ev.currentTarget.dataset.x, y = +ev.currentTarget.dataset.y;
+        applyDrop(x, y);
+    }
+
+    function applyDrop(x, y) {
+        if (!drag) return;
+        try {
+            if (drag.kind === 'new') {
+                inv = G.placeItem(inv, resolve(drag.itemId), x, y, drag.rotated, resolve);
+                selectedUid = inv.items[inv.items.length - 1].uid;
+            } else {
+                inv = G.moveItem(inv, drag.uid, x, y, resolve);
+            }
+            msg(''); save();
+        } catch (e) { msg(e.message); }
+        drag = null; render();
+    }
+
+    let pendingItemId = null;
+    function onCellClick(x, y) {
+        if (pendingItemId) {
+            drag = { kind: 'new', itemId: pendingItemId, rotated: false };
+            applyDrop(x, y);
+            pendingItemId = null;
+        } else { selectedUid = null; render(); }
+    }
+
+    function buildPalette() {
+        const q = $('search').value.trim().toLowerCase();
+        const pal = $('palette');
+        pal.innerHTML = '';
+        catalog.filter(i => i.name.toLowerCase().includes(q)).forEach(it => {
+            const s = G.getFootprint(it);
+            const b = document.createElement('button');
+            b.className = `pal-item text-xs px-2 py-1 rounded border ${catClass(it)}`;
+            b.draggable = true;
+            b.textContent = `${it.name} · ${s.w}×${s.h}`;
+            b.addEventListener('dragstart', ev => { drag = { kind: 'new', itemId: it.id, rotated: false }; ev.dataTransfer.setData('text/plain', 'x'); });
+            b.addEventListener('click', () => {
+                try { inv = G.autoPlace(inv, it, resolve); selectedUid = inv.items[inv.items.length - 1].uid; msg(''); save(); }
+                catch (e) { msg(e.message); }
+                render();
+            });
+            pal.appendChild(b);
+        });
+    }
+
+    function rotateSelected() {
+        if (selectedUid == null) return msg('Selecione um item.');
+        try { inv = G.rotateItem(inv, selectedUid, resolve); msg(''); save(); } catch (e) { msg('Não há espaço para girar.'); }
+        render();
+    }
+    function removeSelected() {
+        if (selectedUid == null) return msg('Selecione um item.');
+        inv = G.removeItem(inv, selectedUid); selectedUid = null; save(); render();
+    }
+
+    function buildTables() {
+        const cls = G.getFootprintTable(catalog);
+        $('table-classes').innerHTML = '<tr class="text-left text-amber-300"><th>Escopo</th><th>Nome</th><th>Área (L×A)</th><th>Células</th><th>Exemplos</th></tr>' +
+            cls.map(r => `<tr><td>${r.scope}</td><td>${r.name}</td><td>${r.w}×${r.h}</td><td>${r.area}</td><td>${r.examples}</td></tr>`).join('');
+        const all = G.buildItemAreaTable(catalog);
+        $('table-items').innerHTML = '<tr class="text-left text-amber-300"><th>Item</th><th>Categoria</th><th>Área (L×A)</th><th>Células</th><th>Regra aplicada</th></tr>' +
+            all.map(r => `<tr><td>${r.name}</td><td>${r.category}</td><td>${r.w}×${r.h}</td><td>${r.area}</td><td>${r.source}</td></tr>`).join('');
+    }
+
+    $('btn-rotate').addEventListener('click', rotateSelected);
+    $('btn-remove').addEventListener('click', removeSelected);
+    $('btn-clear').addEventListener('click', () => { inv = G.createInventory(inv.cols, inv.rows); selectedUid = null; save(); render(); });
+    $('search').addEventListener('input', buildPalette);
+    $('for-input').addEventListener('change', () => {
+        const cap = G.capacityFromStrength($('for-input').value);
+        const next = G.createInventory(cap.cols, cap.rows);
+        inv = G.restoreInventory(Object.assign({}, inv, { cols: cap.cols, rows: cap.rows }), resolve);
+        if (!inv.items.length && !next.items.length) inv = next;
+        save(); render();
+    });
+    document.addEventListener('keydown', ev => {
+        if (ev.target.tagName === 'INPUT') return;
+        if (ev.key === 'r' || ev.key === 'R') rotateSelected();
+        if (ev.key === 'Delete') removeSelected();
+    });
+
+    load(); buildPalette(); buildTables(); render();
+})();
+</script>
+</body>
+</html>
