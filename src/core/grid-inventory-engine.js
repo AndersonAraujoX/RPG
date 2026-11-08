@@ -253,10 +253,108 @@
         return inv;
     }
 
+    /**
+     * Extrai com segurança FOR, CON e metadados de qualquer ficha ou objeto salvo.
+     * Trunca e delimita valores entre 0 e 4 (regra de atributos de Kuar-Tor).
+     * @param {Object} sheet Ficha ou entrada de ficha.
+     * @returns {{ forVal: number, conVal: number, name: string, id: string }}
+     */
+    function extractAttributesFromSheet(sheet) {
+        if (!sheet || typeof sheet !== 'object') {
+            return { forVal: 1, conVal: 2, name: 'Sem Ficha', id: '' };
+        }
+        const data = sheet.sheetData || sheet;
+        const rawFor = data.for !== undefined ? data.for
+            : (data.forVal !== undefined ? data.forVal
+            : (data.forca !== undefined ? data.forca
+            : (data.attributes && data.attributes.for !== undefined ? data.attributes.for : 1)));
+
+        const rawCon = data.con !== undefined ? data.con
+            : (data.conVal !== undefined ? data.conVal
+            : (data.constituicao !== undefined ? data.constituicao
+            : (data.attributes && data.attributes.con !== undefined ? data.attributes.con : 2)));
+
+        const name = String(sheet.name || data.charName || data.name || 'Herói Sem Nome').trim();
+        const id = String(sheet.id || data.id || '').trim();
+
+        return {
+            forVal: clampAttr(rawFor),
+            conVal: clampAttr(rawCon),
+            name: name || 'Herói Sem Nome',
+            id
+        };
+    }
+
+    /**
+     * Retorna a chave do LocalStorage para persistir a maleta de um personagem.
+     * Permite maletas isoladas por herói ou chave padrão para uso manual.
+     * @param {string} [characterId]
+     * @returns {string}
+     */
+    function getStorageKeyForCharacter(characterId) {
+        const cleanId = String(characterId || '').trim();
+        return cleanId ? `kuartor_grid_inventory_${cleanId}` : 'kuartor_grid_inventory';
+    }
+
+    /**
+     * Sincroniza e redimensiona a maleta com os atributos FOR e CON de uma ficha,
+     * preservando itens existentes que couberem nas novas dimensões.
+     * @param {Object} inv Estado atual da maleta.
+     * @param {Object} sheet Ficha do herói.
+     * @param {Function} resolveItem Função para resolver item por ID.
+     * @returns {Object} Novo estado da maleta com dimensões ajustadas.
+     */
+    function syncWithCharacterSheet(inv, sheet, resolveItem) {
+        assertInventory(inv);
+        const { forVal, conVal } = extractAttributesFromSheet(sheet);
+        const cap = capacityFromAttributes(forVal, conVal);
+        return restoreInventory(Object.assign({}, inv, { cols: cap.cols, rows: cap.rows }), resolveItem);
+    }
+
+    /**
+     * Importa itens de uma lista de inventário de ficha (ex: bridge de equipamentos)
+     * adicionando-os na maleta nos primeiros espaços disponíveis.
+     * @param {Object} inv Estado atual da maleta.
+     * @param {Array} sheetInventory Lista de itens da ficha.
+     * @param {Function} resolveItem Função para resolver item por ID.
+     * @returns {{ inv: Object, importedCount: number, skippedCount: number }}
+     */
+    function importItemsFromSheetInventory(inv, sheetInventory, resolveItem) {
+        assertInventory(inv);
+        if (!Array.isArray(sheetInventory) || typeof resolveItem !== 'function') {
+            return { inv, importedCount: 0, skippedCount: 0 };
+        }
+        let currentInv = inv;
+        let importedCount = 0;
+        let skippedCount = 0;
+
+        for (const rawItem of sheetInventory) {
+            if (!rawItem) continue;
+            const itemId = rawItem.id || rawItem.itemId;
+            const item = itemId ? resolveItem(itemId) : null;
+            if (!item) {
+                skippedCount++;
+                continue;
+            }
+            const qty = Math.max(1, parseInt(rawItem.quantity || rawItem.qtd || 1) || 1);
+            for (let q = 0; q < qty; q++) {
+                try {
+                    currentInv = autoPlace(currentInv, item, resolveItem);
+                    importedCount++;
+                } catch (e) {
+                    skippedCount++;
+                }
+            }
+        }
+
+        return { inv: currentInv, importedCount, skippedCount };
+    }
+
     return {
         DEFAULT_COLS, DEFAULT_ROWS, GENERIC_CLASSES, ITEM_OVERRIDES, CATEGORY_FALLBACK,
         getFootprint, getEffectiveSize, getFootprintTable, buildItemAreaTable,
         createInventory, capacityFromAttributes, canPlace, placeItem, removeItem,
-        moveItem, rotateItem, findFreeSlot, autoPlace, getStats, restoreInventory
+        moveItem, rotateItem, findFreeSlot, autoPlace, getStats, restoreInventory,
+        extractAttributesFromSheet, getStorageKeyForCharacter, syncWithCharacterSheet, importItemsFromSheetInventory
     };
 }));
