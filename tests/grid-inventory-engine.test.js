@@ -238,5 +238,133 @@ QUnit.module('GridInventoryEngine — Maleta Tática (AAA)', function () {
         assert.equal(overflowRes.importedCount, 1, 'Primeira espada cabe (rotacionada 4x1)');
         assert.equal(overflowRes.skippedCount, 1, 'Segunda espada não cabe e foi contada como skipped');
     });
+
+    QUnit.test('12. Caminho Feliz: criação de item customizado com opção 1x1 para consumíveis (createCustomItem e getFootprint) (AAA)', function (assert) {
+        // Arrange
+        const erva = G.createCustomItem({
+            name: 'Erva Verde Medicinal',
+            category: 'Consumíveis',
+            w: 1,
+            h: 1
+        });
+
+        const pocaoMenor = G.createCustomItem({
+            name: 'Pequeno Frasco de Sangue',
+            isConsumable: true
+        });
+
+        const adagaCustom = G.createCustomItem({
+            name: 'Adaga Serrilhada',
+            category: 'Armas',
+            w: 1,
+            h: 2
+        });
+
+        // Act
+        const fpErva = G.getFootprint(erva);
+        const fpPocao = G.getFootprint(pocaoMenor);
+        const fpAdaga = G.getFootprint(adagaCustom);
+
+        // Assert
+        assert.deepEqual([erva.w, erva.h], [1, 1], 'Erva customizada criada como 1x1');
+        assert.deepEqual([pocaoMenor.w, pocaoMenor.h], [1, 1], 'Item com isConsumable padroniza 1x1');
+        assert.deepEqual([fpErva.w, fpErva.h, fpErva.source], [1, 1, 'proprio'], 'Footprint respeita 1x1 próprio');
+        assert.deepEqual([fpPocao.w, fpPocao.h, fpPocao.source], [1, 1, 'proprio'], 'Footprint de consumível próprio é 1x1');
+        assert.deepEqual([fpAdaga.w, fpAdaga.h], [1, 2], 'Arma customizada respeita dimensões fornecidas');
+    });
+
+    QUnit.test('13. Caminho Feliz & Casos de Borda: Registro de itens customizados e resolução combinada (AAA)', function (assert) {
+        // Arrange
+        G.clearCustomItems();
+        assert.equal(G.getCustomItems().length, 0, 'Registro limpo');
+
+        const customItem = G.registerCustomItem({
+            id: 'item_erva_teste',
+            name: 'Erva de Cura dos Bosques',
+            category: 'Consumíveis',
+            w: 1,
+            h: 1
+        });
+
+        // Act
+        const combined = G.createCombinedResolver(resolve);
+        const resolvedCustom = combined('item_erva_teste');
+        const resolvedOfficial = combined('espada_longa');
+        const resolvedUnknown = combined('item_que_nao_existe');
+        const resolvedNull = combined(null);
+
+        // Assert
+        assert.equal(G.getCustomItems().length, 1, '1 item registrado');
+        assert.equal(resolvedCustom.name, 'Erva de Cura dos Bosques', 'Resolve item customizado registrado');
+        assert.equal(resolvedCustom.w, 1, 'Largura 1');
+        assert.equal(resolvedCustom.h, 1, 'Altura 1');
+        assert.equal(resolvedOfficial.name, 'Espada Longa', 'Resolve item do catálogo base');
+        assert.equal(resolvedUnknown, null, 'ID inexistente retorna null');
+        assert.equal(resolvedNull, null, 'ID nulo retorna null');
+    });
+
+    QUnit.test('14. Caminho Feliz: Alocação em massa de consumíveis 1x1 na maleta tática (AAA)', function (assert) {
+        // Arrange: Maleta 3x3 = 9 células
+        let inv = G.createInventory(3, 3);
+        const ervas = [];
+        for (let i = 1; i <= 9; i++) {
+            ervas.push(G.createCustomItem({ id: `erva_${i}`, name: `Erva Verde #${i}`, category: 'Consumíveis', w: 1, h: 1 }));
+        }
+        const resolver = G.createCombinedResolver(resolve, ervas);
+
+        // Act: Encaixa as 9 ervas 1x1 perfeitamente
+        ervas.forEach(e => {
+            inv = G.autoPlace(inv, e, resolver);
+        });
+        const stats = G.getStats(inv, resolver);
+
+        // Assert
+        assert.equal(inv.items.length, 9, 'Todos os 9 itens 1x1 foram acomodados');
+        assert.equal(stats.usedCells, 9, 'Todas as 9 células ocupadas');
+        assert.equal(stats.freeCells, 0, 'Zero células livres restantes');
+
+        // Casos de Borda: 10º item 1x1 estoura
+        const decimaErva = G.createCustomItem({ id: 'erva_10', name: 'Erva Extra', category: 'Consumíveis', w: 1, h: 1 });
+        const fullResolver = G.createCombinedResolver(resolve, ervas.concat(decimaErva));
+        assert.throws(() => G.autoPlace(inv, decimaErva, fullResolver), /Maleta cheia/);
+    });
+
+    QUnit.test('15. Casos de Borda & Tratamento de Exceções na criação de itens customizados (AAA)', function (assert) {
+        // Act & Assert
+        assert.throws(() => G.createCustomItem(null), /Dados do item inválidos/, 'Nulo rejeitado');
+        assert.throws(() => G.createCustomItem({}), /Nome do item é obrigatório/, 'Item sem nome rejeitado');
+        assert.throws(() => G.createCustomItem({ name: '   ' }), /Nome do item é obrigatório/, 'Nome em branco rejeitado');
+
+        // Dimensões negativas, zero ou inválidas são ajustadas para no mínimo 1
+        const clampedNegative = G.createCustomItem({ name: 'Item Negativo', w: -2, h: 0 });
+        assert.equal(clampedNegative.w, 1, 'Largura negativa corrigida para 1');
+        assert.equal(clampedNegative.h, 1, 'Altura zero corrigida para 1');
+
+        const clampedNaN = G.createCustomItem({ name: 'Item NaN', w: 'texto', h: null });
+        assert.equal(clampedNaN.w, 1, 'NaN em largura vira 1');
+        assert.equal(clampedNaN.h, 1, 'Null em altura vira 1');
+    });
+
+    QUnit.test('16. Integração HTML: Controles de criação 1x1 e Maleta Tática presentes nas páginas (AAA)', function (assert) {
+        // Arrange
+        const gridHtml = fs.readFileSync(path.resolve(__dirname, '../public/inventario_grid.html'), 'utf-8');
+        const itemsHtml = fs.readFileSync(path.resolve(__dirname, '../public/items.html'), 'utf-8');
+        const indexHtml = fs.readFileSync(path.resolve(__dirname, '../index.html'), 'utf-8');
+
+        // Assert: inventario_grid.html
+        assert.ok(gridHtml.includes('id="custom-item-name"'), 'Campo de nome do item customizado presente');
+        assert.ok(gridHtml.includes('id="custom-item-size"'), 'Seletor de tamanho com opção 1x1 presente');
+        assert.ok(gridHtml.includes('value="1x1"'), 'Opção 1x1 explícita no HTML');
+        assert.ok(gridHtml.includes('id="btn-create-and-place"'), 'Botão criar e guardar na maleta presente');
+        assert.ok(gridHtml.includes('id="btn-create-to-palette"'), 'Botão criar na paleta presente');
+
+        // Assert: items.html
+        assert.ok(itemsHtml.includes('id="itemGridSize"'), 'Seletor de tamanho na maleta presente em items.html');
+        assert.ok(itemsHtml.includes('value="1x1"'), 'Opção 1x1 presente em items.html');
+        assert.ok(itemsHtml.includes('SISTEMA OFICIAL DE INVENTÁRIO: MALETA TÁTICA'), 'Banner oficial presente em items.html');
+
+        // Assert: index.html
+        assert.ok(indexHtml.includes('MALETA TÁTICA (SISTEMA OFICIAL)'), 'Card 5 do portal destaca a Maleta Tática como Sistema Oficial');
+    });
 });
 

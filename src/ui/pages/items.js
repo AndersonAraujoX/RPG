@@ -93,6 +93,24 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('itemArmor').value = item.armorReduction || 0;
             document.getElementById('itemDescription').value = item.desc || item.description || '';
 
+            const itemGridSizeSelect = document.getElementById('itemGridSize');
+            const itemGridSizeBadge = document.getElementById('itemGridSizeBadge');
+            if (itemGridSizeSelect) {
+                if (typeof GridInventoryEngine !== 'undefined') {
+                    const fp = GridInventoryEngine.getFootprint(item);
+                    const optKey = `${fp.w}x${fp.h}`;
+                    if (itemGridSizeSelect.querySelector(`option[value="${optKey}"]`)) {
+                        itemGridSizeSelect.value = optKey;
+                    } else {
+                        itemGridSizeSelect.value = mappedType === 'consumable' ? '1x1' : '1x2';
+                    }
+                    if (itemGridSizeBadge) itemGridSizeBadge.textContent = `${fp.w}×${fp.h}`;
+                } else if (mappedType === 'consumable') {
+                    itemGridSizeSelect.value = '1x1';
+                    if (itemGridSizeBadge) itemGridSizeBadge.textContent = '1×1';
+                }
+            }
+
             if (typeof AudioSfxEngine !== 'undefined') AudioSfxEngine.playConditionToggle();
         });
     }
@@ -662,7 +680,14 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!currentChar) return;
         const sheet = currentChar.sheetData;
 
+        const itemGridSizeEl = document.getElementById('itemGridSize');
+        const rawGridSize = itemGridSizeEl ? itemGridSizeEl.value : (itemType === 'consumable' ? '1x1' : '1x2');
+        const gridParts = (rawGridSize || '1x1').split('x');
+        const gridW = parseInt(gridParts[0], 10) || 1;
+        const gridH = parseInt(gridParts[1], 10) || 1;
+
         const newItem = {
+            id: 'item_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
             name: itemName,
             type: itemType,
             category: itemType === 'weapon' ? 'Arma' : (itemType === 'armor' ? 'Armadura' : (itemType === 'accessory' ? 'Acessório' : (itemType === 'consumable' ? 'Consumível' : 'Outro'))),
@@ -671,7 +696,10 @@ document.addEventListener('DOMContentLoaded', () => {
             weight: itemWeight,
             damage: itemDamage,
             defenseBonus: itemDefense,
-            armorValue: itemArmor
+            armorValue: itemArmor,
+            w: gridW,
+            h: gridH,
+            gridSize: `${gridW}x${gridH}`
         };
 
         if (typeof CharacterInventoryBridge !== 'undefined') {
@@ -683,6 +711,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
         await saveCharacter(selectedCharacterId, sheet);
 
+        // Sincroniza diretamente na Maleta Tática do personagem no LocalStorage
+        if (typeof GridInventoryEngine !== 'undefined') {
+            try {
+                const key = GridInventoryEngine.getStorageKeyForCharacter(selectedCharacterId);
+                let rawInv = null;
+                try { rawInv = JSON.parse(localStorage.getItem(key)); } catch (e) {}
+                const cap = GridInventoryEngine.capacityFromAttributes(sheet.for || 1, sheet.con || 2);
+                let heroBriefcase = rawInv ? GridInventoryEngine.restoreInventory(Object.assign({}, rawInv, { cols: cap.cols, rows: cap.rows }), id => (id === newItem.id ? newItem : (typeof ItemCatalogEngine !== 'undefined' ? ItemCatalogEngine.getItemById(id) : null))) : GridInventoryEngine.createInventory(cap.cols, cap.rows);
+
+                for (let q = 0; q < newItem.quantity; q++) {
+                    try {
+                        heroBriefcase = GridInventoryEngine.autoPlace(heroBriefcase, newItem, id => (id === newItem.id ? newItem : (typeof ItemCatalogEngine !== 'undefined' ? ItemCatalogEngine.getItemById(id) : null)));
+                    } catch (e) {
+                        console.warn("Item não coube na Maleta Tática:", e.message);
+                    }
+                }
+                localStorage.setItem(key, JSON.stringify(heroBriefcase));
+            } catch (err) {
+                console.warn("Falha ao salvar na Maleta Tática:", err);
+            }
+        }
+
         // Limpa campos
         document.getElementById('itemName').value = '';
         document.getElementById('itemDescription').value = '';
@@ -692,6 +742,11 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('itemDefense').value = '0';
         document.getElementById('itemArmor').value = '0';
         if (catalogQuickSelect) catalogQuickSelect.value = '';
+        if (itemGridSizeEl) {
+            itemGridSizeEl.value = '1x1';
+            const itemGridSizeBadge = document.getElementById('itemGridSizeBadge');
+            if (itemGridSizeBadge) itemGridSizeBadge.textContent = '1×1';
+        }
 
         if (typeof AudioSfxEngine !== 'undefined') AudioSfxEngine.playConditionToggle();
         renderSelectedCharacter();
@@ -750,6 +805,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (addItemButton) {
         addItemButton.addEventListener('click', addItem);
+    }
+
+    const itemTypeSelect = document.getElementById('itemType');
+    const itemGridSizeSelect = document.getElementById('itemGridSize');
+    const itemGridSizeBadge = document.getElementById('itemGridSizeBadge');
+
+    if (itemTypeSelect && itemGridSizeSelect) {
+        itemTypeSelect.addEventListener('change', (e) => {
+            if (e.target.value === 'consumable') {
+                itemGridSizeSelect.value = '1x1';
+                if (itemGridSizeBadge) itemGridSizeBadge.textContent = '1×1 ⭐';
+            }
+        });
+        itemGridSizeSelect.addEventListener('change', (e) => {
+            if (itemGridSizeBadge) itemGridSizeBadge.textContent = e.target.value;
+        });
     }
 
     const createSampleCharacterBtn = document.getElementById('create-sample-character-btn');

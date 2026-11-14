@@ -38,7 +38,7 @@
         { id: 'armadura_pesada', label: 'Armadura Pesada (geral)', w: 3, h: 4, pattern: /placas|armadura completa|armadura pesada/, examples: 'Armadura de Placas' },
         { id: 'armadura_media', label: 'Armadura Média (geral)', w: 3, h: 3, pattern: /malha|cota|armadura media|brigantina/, examples: 'Cota de Malha' },
         { id: 'armadura_leve', label: 'Armadura Leve (geral)', w: 2, h: 3, pattern: /armadura|couro|gibao|manto/, examples: 'Armadura de Couro' },
-        { id: 'pocao', label: 'Poção / Elixir / Antídoto (geral)', w: 1, h: 1, pattern: /pocao|elixir|antidoto|tonico|frasco/, examples: 'Poção de Sangue Vital' },
+        { id: 'pocao', label: 'Poção / Consumível (geral 1×1)', w: 1, h: 1, pattern: /pocao|elixir|antidoto|tonico|frasco|erva|remedio|curativo|atadura|balsamo|unguento|comida|racao|municao|flecha|consumivel|consumiveis/, examples: 'Poção de Sangue, Erva Verde' },
         { id: 'luz', label: 'Tocha / Lanterna (geral)', w: 1, h: 2, pattern: /tocha|lanterna|lampiao/, examples: 'Tocha Rúnica' },
         { id: 'pergaminho', label: 'Pergaminho / Tomo (geral)', w: 1, h: 2, pattern: /pergaminho|tomo|grimorio|livro|mapa/, examples: 'Grimório' },
         { id: 'chave', label: 'Chave / Gema / Runa (geral)', w: 1, h: 1, pattern: /chave|gema|runa|anel|amuleto|moeda/, examples: 'Chave, Anel' }
@@ -47,10 +47,24 @@
     /** Fallback por categoria quando nenhuma classe genérica casa. */
     const CATEGORY_FALLBACK = {
         armas: { w: 1, h: 3 },
+        arma: { w: 1, h: 3 },
+        weapon: { w: 1, h: 3 },
         armaduras: { w: 3, h: 3 },
+        armadura: { w: 3, h: 3 },
+        armor: { w: 3, h: 3 },
         escudos: { w: 2, h: 3 },
+        escudo: { w: 2, h: 3 },
+        shield: { w: 2, h: 3 },
         consumiveis: { w: 1, h: 1 },
-        aventura: { w: 1, h: 2 }
+        consumivel: { w: 1, h: 1 },
+        consumable: { w: 1, h: 1 },
+        pocao: { w: 1, h: 1 },
+        acessorios: { w: 1, h: 1 },
+        acessorio: { w: 1, h: 1 },
+        accessory: { w: 1, h: 1 },
+        aventura: { w: 1, h: 2 },
+        outro: { w: 1, h: 1 },
+        other: { w: 1, h: 1 }
     };
 
     /** Overrides exatos por ID (sobrepõem as classes genéricas). */
@@ -77,17 +91,37 @@
         }
     }
 
-    /** Resolve a área base (sem rotação) de um item do catálogo. */
+    /** Resolve a área base (sem rotação) de um item do catálogo ou personalizado. */
     function getFootprint(item) {
         if (!item || typeof item !== 'object') throw new Error('Item inválido.');
+
+        // 1. Overrides específicos de ID oficial
         if (item.id && ITEM_OVERRIDES[item.id]) {
             return Object.assign({ source: 'item' }, ITEM_OVERRIDES[item.id]);
         }
-        const haystack = normalize(`${item.id || ''} ${item.name || ''}`);
+
+        // 2. Dimensões explícitas no próprio item (itens customizados ou 1x1 definidos na criação)
+        const explicitW = parseInt(item.w !== undefined ? item.w : (item.gridWidth !== undefined ? item.gridWidth : (item.width !== undefined ? item.width : (typeof item.gridSize === 'string' ? item.gridSize.split('x')[0] : NaN))), 10);
+        const explicitH = parseInt(item.h !== undefined ? item.h : (item.gridHeight !== undefined ? item.gridHeight : (item.height !== undefined ? item.height : (typeof item.gridSize === 'string' ? item.gridSize.split('x')[1] : NaN))), 10);
+        if (Number.isInteger(explicitW) && Number.isInteger(explicitH) && explicitW >= 1 && explicitH >= 1) {
+            return { w: explicitW, h: explicitH, source: 'proprio' };
+        }
+
+        // 3. Classes genéricas por regex no nome, id ou tipo
+        const haystack = normalize(`${item.id || ''} ${item.name || ''} ${item.type || ''}`);
         const cls = GENERIC_CLASSES.find(c => c.pattern.test(haystack));
         if (cls) return { w: cls.w, h: cls.h, source: 'classe', classId: cls.id };
-        const cat = CATEGORY_FALLBACK[normalize(item.category)];
+
+        // 4. Fallback por categoria ou tipo
+        const normCat = normalize(item.category || item.type);
+        const cat = CATEGORY_FALLBACK[normCat];
         if (cat) return { w: cat.w, h: cat.h, source: 'categoria' };
+
+        // Se a categoria mencionar consumível em qualquer variação, garante 1x1
+        if (normCat.includes('consum')) {
+            return { w: 1, h: 1, source: 'categoria' };
+        }
+
         return Object.assign({ source: 'padrao' }, DEFAULT_FOOTPRINT);
     }
 
@@ -350,11 +384,98 @@
         return { inv: currentInv, importedCount, skippedCount };
     }
 
+    let customItemsRegistry = [];
+
+    /**
+     * Cria e valida um item customizado com dimensões específicas para a grade da maleta.
+     * Suporta a opção 1x1 ideal para itens consumíveis, poções, ervas e pequenos objetos.
+     * @param {Object} data
+     * @returns {Object}
+     */
+    function createCustomItem(data) {
+        if (!data || typeof data !== 'object') throw new Error('Dados do item inválidos.');
+        const name = String(data.name || '').trim();
+        if (!name) throw new Error('Nome do item é obrigatório.');
+
+        const category = String(data.category || '').trim() || 'Consumíveis';
+        const isConsumable = !!data.isConsumable || normalize(category).includes('consum');
+
+        let w = parseInt(data.w !== undefined ? data.w : (data.gridWidth !== undefined ? data.gridWidth : (isConsumable ? 1 : 1)), 10);
+        let h = parseInt(data.h !== undefined ? data.h : (data.gridHeight !== undefined ? data.gridHeight : (isConsumable ? 1 : 1)), 10);
+
+        if (isNaN(w) || w < 1) w = 1;
+        if (isNaN(h) || h < 1) h = 1;
+
+        const id = String(data.id || `custom_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`).trim();
+
+        return {
+            id,
+            name,
+            category: isConsumable ? 'Consumíveis' : category,
+            type: data.type || (isConsumable ? 'Consumível' : 'Outro'),
+            w,
+            h,
+            weight: Math.max(0, parseFloat(data.weight) || (isConsumable ? 0.2 : 0.5)),
+            desc: String(data.desc || data.description || '').trim(),
+            damage: data.damage ? String(data.damage).trim() : null,
+            defenseBonus: parseInt(data.defenseBonus, 10) || 0,
+            armorReduction: parseInt(data.armorReduction, 10) || 0,
+            custom: true
+        };
+    }
+
+    /**
+     * Registra ou atualiza um item customizado no registro em memória.
+     * @param {Object} item
+     * @returns {Object}
+     */
+    function registerCustomItem(item) {
+        const validated = createCustomItem(item);
+        const idx = customItemsRegistry.findIndex(i => i.id === validated.id);
+        if (idx >= 0) {
+            customItemsRegistry[idx] = validated;
+        } else {
+            customItemsRegistry.push(validated);
+        }
+        return validated;
+    }
+
+    /** Retorna cópia da lista de itens customizados registrados. */
+    function getCustomItems() {
+        return customItemsRegistry.slice();
+    }
+
+    /** Limpa o registro de itens customizados. */
+    function clearCustomItems() {
+        customItemsRegistry = [];
+    }
+
+    /**
+     * Cria um resolver combinado que consulta uma lista fornecida, o registro interno de customizados
+     * e o catálogo base padrão.
+     * @param {Function} baseResolve
+     * @param {Array<Object>} [customList]
+     * @returns {Function}
+     */
+    function createCombinedResolver(baseResolve, customList) {
+        return function (id) {
+            if (!id) return null;
+            if (Array.isArray(customList)) {
+                const found = customList.find(i => i && i.id === id);
+                if (found) return found;
+            }
+            const fromRegistry = customItemsRegistry.find(i => i && i.id === id);
+            if (fromRegistry) return fromRegistry;
+            return typeof baseResolve === 'function' ? baseResolve(id) : null;
+        };
+    }
+
     return {
         DEFAULT_COLS, DEFAULT_ROWS, GENERIC_CLASSES, ITEM_OVERRIDES, CATEGORY_FALLBACK,
         getFootprint, getEffectiveSize, getFootprintTable, buildItemAreaTable,
         createInventory, capacityFromAttributes, canPlace, placeItem, removeItem,
         moveItem, rotateItem, findFreeSlot, autoPlace, getStats, restoreInventory,
-        extractAttributesFromSheet, getStorageKeyForCharacter, syncWithCharacterSheet, importItemsFromSheetInventory
+        extractAttributesFromSheet, getStorageKeyForCharacter, syncWithCharacterSheet, importItemsFromSheetInventory,
+        createCustomItem, registerCustomItem, getCustomItems, clearCustomItems, createCombinedResolver
     };
 }));
